@@ -37,6 +37,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DeleteForever
@@ -155,6 +156,7 @@ fun ProfileScreen(
     onPaywall: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
     osgbWorkspaceViewModel: OsgbWorkspaceViewModel = hiltViewModel(),
+    referralViewModel: ReferralRewardsViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
@@ -162,6 +164,16 @@ fun ProfileScreen(
     val restoreState by viewModel.restoreState.collectAsState()
     var isEditing by remember { mutableStateOf(false) }
     var showNotebook by remember { mutableStateOf(false) }
+    var showReferrals by remember { mutableStateOf(false) }
+    // An invite link, or a shell's "Arkadaşını davet et", asks for the invite page once.
+    val referralRequested by referralViewModel.openRequested.collectAsState()
+    LaunchedEffect(referralRequested) {
+        if (referralRequested) { showReferrals = true; referralViewModel.consumeOpen() }
+    }
+    if (showReferrals) {
+        ReferralRewardsScreen(onClose = { showReferrals = false }, onPlanChanged = viewModel::load, viewModel = referralViewModel)
+        return
+    }
     if (showNotebook && NotebookUIRelease.enabled) {
         NotebookScreen(onClose = { showNotebook = false })
         return
@@ -227,6 +239,7 @@ fun ProfileScreen(
                     onManageCompanies = onManageCompanies,
                     showOsgbWorkspace = osgbState.hasWorkspace == true,
                     onOsgbWorkspace = onOsgbWorkspace,
+                    onReferrals = { showReferrals = true },
                     onAnalyses = onAnalyses,
                     onReports = onReports,
                     onNotificationSettings = onNotificationSettings,
@@ -357,6 +370,7 @@ fun ProfileLoadedSurface(
     onManageCompanies: () -> Unit = {},
     showOsgbWorkspace: Boolean = false,
     onOsgbWorkspace: () -> Unit = {},
+    onReferrals: () -> Unit = {},
     onAnalyses: () -> Unit = {},
     onReports: () -> Unit = {},
     onNotificationSettings: () -> Unit = {},
@@ -417,6 +431,8 @@ fun ProfileLoadedSurface(
                     onClick = onOsgbWorkspace,
                 )
             }
+            ProfileMenuDivider()
+            ProfileMenuRow("Arkadaşını davet et", Icons.Filled.CardGiftcard, detail = "İkiniz de 7 gün Plus", onClick = onReferrals)
             ProfileMenuDivider()
             ProfileMenuRow(stringResource(RdR.string.rd_gecmis_analizler), Icons.Filled.Assessment, detail = stats?.analysisCount?.toString() ?: "—", onClick = onAnalyses)
             ProfileMenuDivider()

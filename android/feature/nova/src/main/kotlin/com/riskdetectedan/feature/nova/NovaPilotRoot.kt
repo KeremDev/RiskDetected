@@ -102,6 +102,10 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
     // The notebook is offered only when the server's personal_notes rollout says so (iOS NotebookUIRelease).
     var notebookAvailable by remember { mutableStateOf(false) }
     LaunchedEffect(identity) { notebookAvailable = services.notebook.enabled() }
+    // An invite link or the menu's invite banner lands on the profile, which opens the invite page (iOS `.referral`).
+    val referral: com.riskdetectedan.feature.profile.ReferralRewardsViewModel = hiltViewModel()
+    val referralRequested by referral.openRequested.collectAsState()
+    LaunchedEffect(referralRequested) { if (referralRequested) navigate(NovaDestination.profile) }
     NovaExpertShell(state.navigation, state.userName, viewModel::apply,
         profileAvatar = state.avatar, menuRoleTitle = "İSG Uzmanı", notebookAvailable = notebookAvailable,
         menuStats = menuStats(state, equipmentBoard), menuNextAction = nextAction(state, equipmentBoard),
@@ -118,6 +122,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             onOpenNotice = ::openNotice,
             // Only a personal account opens a company of its own (iOS `onCompanyCreate`).
             onCompanyCreate = if (state.isWorkspaceExpert) null else ({ navigate(NovaDestination.newCompany) }),
+            onInvite = referral::requestOpen,
             onLogout = viewModel::signOut,
         )) { destination ->
         when (destination) {

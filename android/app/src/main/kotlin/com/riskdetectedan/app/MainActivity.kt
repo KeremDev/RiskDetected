@@ -1,6 +1,7 @@
 package com.riskdetectedan.app
 
 import android.content.Intent
+import com.riskdetectedan.core.data.referral.ReferralDeepLinkStore
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -66,6 +67,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var notificationEngagementRepository: NotificationEngagementRepository
     @Inject lateinit var onboardingAnswersRepository: OnboardingAnswersRepository
     @Inject lateinit var paywallEventRepository: PaywallEventRepository
+    @Inject lateinit var referralDeepLinkStore: ReferralDeepLinkStore
 
     private val updateResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -78,6 +80,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         handleAuthDeepLink(intent)
         handleNotificationDeepLink(intent)
+        handleReferralDeepLink(intent)
         setContent {
             val appearanceMode by appearanceViewModel.mode.collectAsState()
             val systemDark = isSystemInDarkTheme()
@@ -170,6 +173,13 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         handleAuthDeepLink(intent)
         handleNotificationDeepLink(intent)
+        handleReferralDeepLink(intent)
+    }
+
+    /** `io.supabase.riskdetected://invite?code=…` keeps the code and opens the invite page (iOS `ReferralDeepLinkStore`). */
+    private fun handleReferralDeepLink(intent: Intent) {
+        val uri = intent.data ?: return
+        referralDeepLinkStore.capture(uri.scheme, uri.host, uri.getQueryParameter("code"))
     }
 
     private fun handleAuthDeepLink(intent: Intent) {

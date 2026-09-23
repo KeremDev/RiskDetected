@@ -25,6 +25,7 @@ import com.riskdetectedan.app.push.NotificationRouteViewModel
 import com.riskdetectedan.app.reports.GeneratedReportsScreen
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.feature.profile.ProfileScreen
+import com.riskdetectedan.feature.profile.ReferralRewardsViewModel
 import com.riskdetectedan.feature.reports.ReportsScreen
 
 /**
@@ -46,6 +47,7 @@ fun MainShellScreen(
     navController: NavHostController,
     notificationRouteViewModel: NotificationRouteViewModel = hiltViewModel(),
     homeTierViewModel: HomeTierViewModel = hiltViewModel(),
+    referralViewModel: ReferralRewardsViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     // rememberSaveable (not remember) — MainShellScreen's composition is disposed while a
@@ -91,6 +93,10 @@ fun MainShellScreen(
         activeTab = previous.active
         tabHistoryNames = previous.history.map(RdTab::name)
     }
+
+    // An invite link opens Profil, where the profile screen shows the invite page.
+    val referralRequested by referralViewModel.openRequested.collectAsState()
+    LaunchedEffect(referralRequested) { if (referralRequested) selectTab(RdTab.Profile) }
 
     LaunchedEffect(pendingNotification) {
         val route = pendingNotification ?: return@LaunchedEffect

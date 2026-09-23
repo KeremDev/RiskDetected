@@ -105,6 +105,15 @@
                     android:scheme="${applicationId}"
                     android:host="login-callback" />
             </intent-filter>
+            <!-- Invite links shared from either platform (referral_dashboard_v1 share_url). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="io.supabase.riskdetected"
+                    android:host="invite" />
+            </intent-filter>
         </activity>
 
         <!-- Generated PDF/XLSX report files are written to cache and handed to a viewer/share
