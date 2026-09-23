@@ -1,4 +1,6 @@
 {
+  "rd_firma_adi": "Company Name",
+  "rd_pdf_method": "METHOD",
   "update_ready_title": "Update ready",
   "update_ready_message": "The new version has been downloaded. Restart the app to finish updating.",
   "restart_and_update": "Restart and update",
