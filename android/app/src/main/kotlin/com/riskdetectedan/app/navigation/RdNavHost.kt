@@ -20,6 +20,8 @@ import com.riskdetectedan.feature.analysis.AnalysisScreen
 import com.riskdetectedan.feature.capture.CaptureScreen
 import com.riskdetectedan.feature.onboarding.LoginScreen
 import com.riskdetectedan.feature.onboarding.OnboardingFlow
+import com.riskdetectedan.feature.onboarding.nova.NovaLoginScreen
+import com.riskdetectedan.feature.onboarding.nova.NovaOnboardingFlow
 import com.riskdetectedan.feature.paywall.PaywallScreen
 import com.riskdetectedan.feature.paywall.PaywallPlan
 import com.riskdetectedan.feature.profile.AccountDeletionScreen
@@ -102,16 +104,22 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
             // design-system provider here preserves that behavior even when the device/app
             // appearance preference is dark, while the main application remains theme-aware.
             RiskDetectedLightOnlyTheme {
-                OnboardingFlow(
-                    onFinished = viewModel::finishOnboarding,
-                    onSkip = viewModel::finishOnboarding,
-                )
+                // Pilot bundles run the Nova funnel (iOS NovaPilotEntryGate); production keeps V2.
+                if (BuildConfig.NOVA_PILOT) {
+                    NovaOnboardingFlow(onOpenLogin = viewModel::openLogin, onFinished = viewModel::finishNovaOnboarding)
+                } else {
+                    OnboardingFlow(
+                        onFinished = viewModel::finishOnboarding,
+                        onSkip = viewModel::finishOnboarding,
+                    )
+                }
             }
         }
         composable<Auth> {
             // AuthView.swift is also explicitly light-only on iOS.
             RiskDetectedLightOnlyTheme {
-                LoginScreen(onAuthenticated = viewModel::authenticated)
+                // The session flow moves Auth to Main on its own; the Nova surface needs no callback.
+                if (BuildConfig.NOVA_PILOT) NovaLoginScreen() else LoginScreen(onAuthenticated = viewModel::authenticated)
             }
         }
         composable<MainShell> { MainShellScreen(navController) }

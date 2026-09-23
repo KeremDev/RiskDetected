@@ -3,6 +3,7 @@ package com.riskdetectedan.app.bootstrap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.onboarding.OnboardingAnswersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +42,7 @@ internal object BootstrapReducer {
 class AppBootstrapViewModel @Inject constructor(
     private val store: AppBootstrapStore,
     private val authRepository: AuthRepository,
+    private val onboardingAnswersRepository: OnboardingAnswersRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(BootstrapState.Splash)
     val state: StateFlow<BootstrapState> = _state.asStateFlow()
@@ -72,6 +74,19 @@ class AppBootstrapViewModel @Inject constructor(
     fun finishOnboarding() {
         store.markOnboardingCompleted()
         _state.value = if (authRepository.currentUserId != null) BootstrapState.Main else BootstrapState.Auth
+    }
+
+    /** Pilot funnel's "Giriş yap" / skip: the sign-in surface without completing onboarding
+     * (iOS NovaPilotEntryGate keeps its completion flag unset until the funnel finishes). */
+    fun openLogin() {
+        _state.value = if (authRepository.currentUserId != null) BootstrapState.Main else BootstrapState.Auth
+    }
+
+    /** Pilot funnel finish: the answers are already the pending draft; a signed-in account syncs
+     * it now, a signed-out one when the session arrives (MainActivity's resume retry). */
+    fun finishNovaOnboarding() {
+        if (authRepository.currentUserId != null) viewModelScope.launch { onboardingAnswersRepository.syncPending() }
+        finishOnboarding()
     }
 
     fun authenticated() {
