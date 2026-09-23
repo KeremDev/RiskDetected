@@ -220,6 +220,33 @@ private fun NovaEducationEntry(client: NovaTrainingClient, companies: List<NovaC
     }
 }
 
+/** One training opened from a followup row or a filed document (iOS `NovaFollowupEducation`). */
+@Composable
+fun NovaTrainingRecordScreen(client: NovaTrainingClient, session: String?, company: String, canWrite: Boolean, onBack: () -> Unit) {
+    BackHandler(onBack = onBack)
+    var loaded by remember { mutableStateOf<Triple<List<NovaCompanyOption>, Set<String>, NovaEducationContext>?>(null) }
+    var failed by remember { mutableStateOf(false) }
+    LaunchedEffect(session) {
+        try {
+            val id = session ?: throw NovaTrainingException("ACCESS_DENIED")
+            loaded = Triple(client.companies(), client.page(null).writableCompanies, client.context(id))
+        } catch (_: Exception) { failed = true }
+    }
+    val value = loaded
+    when {
+        value != null -> {
+            val (companies, writable, context) = value
+            NovaEducationEditor(client, companies.filter { it.id.lowercase() in writable }, company, context.row, context,
+                canWrite && context.row?.companies?.all { it.companyId.lowercase() in writable } == true, onBack)
+        }
+        failed -> Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            NovaBackButton(onClick = onBack)
+            NovaText("Eğitim açılamadı. Eğitimler listesinden yeniden deneyin.")
+        }
+        else -> NovaLoadingView("Eğitim yükleniyor…")
+    }
+}
+
 private val basicCycles = setOf("initial", "periodic_repeat")
 
 /**

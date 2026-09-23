@@ -60,6 +60,15 @@ class DesignPreviewActivity : ComponentActivity() {
                             onBack = { navigate(NovaDestination.home) })
                         NovaDestination.checklists -> com.riskdetectedan.feature.nova.NovaChecklistScreen(PreviewChecklistClient, true,
                             onBack = { navigate(NovaDestination.home) })
+                        NovaDestination.statistics -> com.riskdetectedan.feature.nova.NovaStatisticsScreen(PreviewStatisticsClient,
+                            onBack = { navigate(NovaDestination.home) }, onNavigate = navigate, openTracked = { kind, company, onBack ->
+                                when (kind) {
+                                    "emergency_plan" -> com.riskdetectedan.feature.nova.NovaEmergencyScreen(PreviewEmergencyClient, true, onBack, initialCompany = company)
+                                    "drill" -> com.riskdetectedan.feature.nova.NovaDrillScreen(PreviewDrillClient, true, onBack, initialCompany = company)
+                                    "checklist_run" -> com.riskdetectedan.feature.nova.NovaChecklistScreen(PreviewChecklistClient, true, onBack, initialCompany = company)
+                                    else -> com.riskdetectedan.feature.nova.NovaProcessGate(PreviewProcessClient, "site_visit", true, onBack)
+                                }
+                            }) { _, onBack -> com.riskdetectedan.core.designsystem.isg.NovaPageHeading("Evrak Takibi", onBack = onBack) }
                         NovaDestination.training, NovaDestination.newTraining -> com.riskdetectedan.feature.nova.NovaTrainingScreen(PreviewTrainingClient, true,
                             onBack = { navigate(NovaDestination.home) }, createOnOpen = destination == NovaDestination.newTraining)
                         NovaDestination.companies -> NovaCompaniesScreen(listOf(NovaCompanyItem("fixture", "Koza Altın A.Ş", "Kaymaz Mah. · Maden · Çok tehlikeli")),

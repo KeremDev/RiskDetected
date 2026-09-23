@@ -184,9 +184,9 @@ class NovaProcessService @Inject constructor(private val transport: NovaExpertTr
         }).decode(NovaProcessRow.serializer())
 
     /** A summary that does not answer for this owner and company is refused rather than shown. */
-    suspend fun visitSummary(identity: IsgWorkspaceIdentity, company: String?): NovaVisitSummary {
+    suspend fun visitSummary(identity: IsgWorkspaceIdentity, company: String?, from: String? = null, to: String? = null): NovaVisitSummary {
         val result = call(identity, "isg_pilot_visit_summary_v1", buildJsonObject {
-            put("p_company", text(company)); put("p_from", JsonNull); put("p_to", JsonNull)
+            put("p_company", text(company)); put("p_from", text(from)); put("p_to", text(to))
         }).decode(NovaVisitSummary.serializer())
         if (result.schemaVersion != 1 || !result.ownerId.equals(identity.userId, true) || !result.companyId.equals(company, true) ||
             result.visits < 0 || result.timedVisits < 0 || result.timedVisits > result.visits) throw NovaProcessException("ACCESS_DENIED")

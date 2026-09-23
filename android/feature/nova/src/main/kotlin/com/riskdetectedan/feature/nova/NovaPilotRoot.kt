@@ -94,15 +94,21 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             }
             NovaDestination.documents, NovaDestination.newDocument -> key(destination) {
                 NovaFileLibraryScreen(services.fileClient(identity), services.companyOptions(identity), state.writable, onBack = { navigate(NovaDestination.home) },
-                    sources = { entry -> services.fileSources(identity, entry) }, openSource = recordOpener(services, identity, state.writable),
+                    sources = { entry -> services.fileSources(identity, entry) }, openSource = recordOpener(services, identity, state.writable, state.userName),
                     startInAddMode = destination == NovaDestination.newDocument)
             }
             NovaDestination.documentChecklist -> NovaFollowupScreen({ company, status, query, offset -> services.followup(identity, company, status, query, offset) },
-                services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable),
+                services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable, state.userName),
                 onBack = { navigate(NovaDestination.home) })
             NovaDestination.training, NovaDestination.newTraining -> key(destination) {
                 NovaTrainingScreen(services.trainingClient(identity, state.userName), state.writable, onBack = { navigate(NovaDestination.home) },
                     createOnOpen = destination == NovaDestination.newTraining)
+            }
+            NovaDestination.statistics -> NovaStatisticsScreen(services.statisticsClient(identity), onBack = { navigate(NovaDestination.home) },
+                onNavigate = navigate, openTracked = trackedOpener(services, identity, state.writable)) { company, onBack ->
+                NovaFollowupScreen({ selected, status, query, offset -> services.followup(identity, selected, status, query, offset) },
+                    services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable, state.userName),
+                    onBack = onBack, initialCompany = company)
             }
             NovaDestination.checklists -> NovaChecklistScreen(services.checklistClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
@@ -112,7 +118,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
 }
 
 /** Opens the module record a followup row or a file link points at (iOS `NovaFollowupDestination`). */
-private fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdentity, canWrite: Boolean): NovaRecordOpener = { row, onBack ->
+private fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdentity, canWrite: Boolean, userName: String): NovaRecordOpener = { row, onBack ->
     when (row.kind) {
         "completed_drill", "personnel_certificate", "katip_contract", "approved_notebook", "site_visit", "board", "board_decision", "annual_work_item" ->
             NovaProcessEditor(services.processClient(identity), row.kind, row.companyId, null, row.recordId, canWrite, onBack)
@@ -120,11 +126,24 @@ private fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdent
         "equipment" -> NovaEquipmentScreen(services.equipmentClient(identity), canWrite, onBack, initialCompany = row.companyId)
         "emergency_plan" -> NovaEmergencyScreen(services.emergencyClient(identity), canWrite, onBack, initialCompany = row.companyId)
         "appointment" -> NovaAppointmentScreen(services.appointmentClient(identity), canWrite, onBack, initialCompany = row.companyId)
+        "training" -> NovaTrainingRecordScreen(services.trainingClient(identity, userName), row.sourceId, row.companyId, canWrite, onBack)
         "document" -> Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             NovaPageHeading("Önceki evrak kaydı", onBack = onBack)
             NovaText("Önceki evrak kaydı · ${row.title}")
         }
         else -> NovaFileLibraryScreen(services.fileClient(identity), services.companyOptions(identity), canWrite, onBack, initialCompany = row.companyId)
+    }
+}
+
+/** The module page a tracking row opens (iOS `NovaTrackedModuleDestination`). */
+private fun trackedOpener(services: NovaRootServices, identity: IsgWorkspaceIdentity, canWrite: Boolean): NovaTrackedModuleOpener = { kind, company, onBack ->
+    when (kind) {
+        "emergency_plan" -> NovaEmergencyScreen(services.emergencyClient(identity), canWrite, onBack, initialCompany = company)
+        "drill" -> NovaDrillScreen(services.drillClient(identity), canWrite, onBack, initialCompany = company)
+        "appointment" -> NovaAppointmentScreen(services.appointmentClient(identity), canWrite, onBack, initialCompany = company)
+        "checklist_run" -> NovaChecklistScreen(services.checklistClient(identity), canWrite, onBack, initialCompany = company)
+        "ppe" -> NovaPPEScreen(services.ppeClient(identity), canWrite, onBack, initialCompany = company)
+        else -> key(kind) { NovaProcessGate(services.processClient(identity), kind, canWrite, onBack, initialCompany = company) }
     }
 }
 
@@ -259,6 +278,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val checklists: NovaChecklistService,
     private val checklistQueue: NovaChecklistOfflineQueue,
     private val training: NovaTrainingService,
+    private val statistics: NovaStatisticsService,
     private val personnel: com.riskdetectedan.core.data.company.PersonnelRepository,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
@@ -281,6 +301,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     }
     fun emergencyClient(identity: IsgWorkspaceIdentity) =
         NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity))
+    fun statisticsClient(identity: IsgWorkspaceIdentity) = NovaServiceStatisticsClient(statistics, process, followups, identity, changes(identity))
     fun trainingClient(identity: IsgWorkspaceIdentity, userName: String) =
         NovaServiceTrainingClient(training, identity, companies(identity), userName, people(identity))
     fun checklistClient(identity: IsgWorkspaceIdentity) = NovaServiceChecklistClient(checklists, checklistQueue, files, identity, companies(identity))
