@@ -130,8 +130,6 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                         onPaywall = { navController.navigate(PaywallForTier(tier = "plus", entryPoint = "nova_profile")) },
                     )
                 },
-                // The OSGB management root is ported separately; until then managers keep the existing workspace screen.
-                manager = { onSwitch -> OsgbWorkspaceScreen(onBack = onSwitch) },
                 analysisReports = {
                     ReportsScreen(embeddedInMainShell = true, onOpenAnalysis = { analysisId -> navController.navigate(AnalysisResult(analysisId)) })
                 },

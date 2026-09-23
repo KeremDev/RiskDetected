@@ -18,7 +18,13 @@ import javax.inject.Inject
 
 /** One OSGB company as the workspace lists it. */
 data class NovaWorkspaceCompany(val id: String, val name: String, val hazardClass: String, val sector: String?,
-                                val version: Long)
+                                val version: Long, val email: String? = null, val declaredEmployeeCount: Int? = null,
+                                val address: String? = null, val responsibleName: String? = null, val responsiblePhone: String? = null,
+                                val responsibleEmail: String? = null, val profileVersion: Long? = null) {
+    /** Filled profile fields out of eight, as the company list's progress shows them. */
+    val profileCompletionCount: Int get() = listOf(sector, email, address, responsibleName, responsiblePhone, responsibleEmail, hazardClass)
+        .count { !it.isNullOrBlank() } + if (declaredEmployeeCount == null) 0 else 1
+}
 
 /** Aggregate counters for the selected workspace (iOS `IsgWorkspaceDashboard`). */
 data class NovaWorkspaceDashboard(
@@ -172,9 +178,11 @@ class NovaWorkspaceStore @Inject constructor(private val repository: IsgWorkspac
     private fun parseCompanies(response: JsonObject): List<NovaWorkspaceCompany> =
         (response["rows"] as? JsonArray).orEmpty().mapNotNull { item ->
             val row = item as? JsonObject ?: return@mapNotNull null
-            NovaWorkspaceCompany(row["company_id"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null,
-                row["name"]?.jsonPrimitive?.contentOrNull ?: "Firma", row["hazard_class"]?.jsonPrimitive?.contentOrNull ?: "",
-                row["sector"]?.jsonPrimitive?.contentOrNull, row["version"]?.jsonPrimitive?.longOrNull ?: 0)
+            fun text(key: String) = (row[key] as? JsonPrimitive)?.contentOrNull?.takeIf { (row[key] as JsonPrimitive).isString }
+            NovaWorkspaceCompany(text("company_id") ?: return@mapNotNull null, text("name") ?: "Firma", text("hazard_class") ?: "",
+                text("sector"), row["version"]?.jsonPrimitive?.longOrNull ?: 0, text("email"),
+                (row["declared_employee_count"] as? JsonPrimitive)?.intOrNull, text("address"), text("responsible_name"),
+                text("responsible_phone"), text("responsible_email"), (row["profile_version"] as? JsonPrimitive)?.longOrNull)
         }
 
     private fun isCurrent(token: String, expected: IsgWorkspaceIdentity) = token == generation && identity == expected

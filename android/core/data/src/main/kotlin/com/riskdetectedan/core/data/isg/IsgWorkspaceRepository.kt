@@ -11,6 +11,9 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.Base64
@@ -138,6 +141,51 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
         gateway.createExport(context.workspaceId, context.membership.membershipId,
             context.membership.permissionRevision, context.canOperate, UUID.randomUUID().toString(),
             companyId, analysisId, format, emptyList(), emptyList(), emptyList())
+    }
+
+    /** One domain's rows with its counters; a domain without counters shows its rows alone. */
+    suspend fun snapshot(context: IsgWorkspaceContext, companyId: String, domain: IsgWorkspaceDomain): IsgWorkspaceSnapshot {
+        val page = domain(context, companyId, domain)
+        val metrics = try { domainMetrics(context, companyId, domain) } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { null }
+        return IsgWorkspaceRecords.snapshot(domain, page, metrics)
+    }
+
+    suspend fun personnelMetrics(context: IsgWorkspaceContext, companyId: String?): JsonObject = inScope(context, companyId) {
+        gateway.personnelMetrics(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId)
+    }
+
+    /**
+     * Every active workplace, department or employee of a company as id to name (iOS `directory` / `employees`),
+     * reading until the cursor ends; ids are lowercased so facts in either case resolve.
+     */
+    suspend fun directory(context: IsgWorkspaceContext, companyId: String, kind: String, archived: Boolean = false): List<Pair<String, String>> =
+        inScope(context, companyId) {
+            val key = when (kind) { "workplaces" -> "workplace_id"; "departments" -> "department_id"; else -> "employee_id" }
+            val rows = mutableListOf<Pair<String, String>>()
+            var cursor: String? = null
+            var pages = 0
+            do {
+                if (++pages > 100) throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
+                val page = gateway.personnelRead(context.workspaceId, context.membership.membershipId,
+                    context.membership.permissionRevision, companyId, kind, archived = archived, after = cursor)
+                page["rows"]!!.jsonArray.forEach { item ->
+                    val row = item.jsonObject
+                    val id = row[key]?.jsonPrimitive?.contentOrNull ?: throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
+                    rows += id.lowercase() to (row["name"]?.jsonPrimitive?.contentOrNull ?: "")
+                }
+                val next = (page["next"] as? JsonPrimitive)?.contentOrNull
+                if (next != null && next == cursor) throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
+                cursor = next
+            } while (cursor != null)
+            rows
+        }
+
+    suspend fun search(context: IsgWorkspaceContext, companyId: String, query: String): JsonObject = inScope(context, companyId) {
+        gateway.search(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId, query)
+    }
+
+    suspend fun changes(context: IsgWorkspaceContext, companyId: String?, limit: Int = 100): JsonObject = inScope(context, companyId) {
+        gateway.changes(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId, limit = limit)
     }
 
     private suspend fun <T> inScope(context: IsgWorkspaceContext, companyId: String? = null,

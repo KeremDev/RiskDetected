@@ -155,6 +155,25 @@ class IsgWorkspaceGateway(
         return result
     }
 
+    /** One page of workplaces, departments or employees (`isg_workspace_personnel_read_v1`), cursor-paged by id. */
+    suspend fun personnelRead(workspaceId: String, membershipId: String, permissionRevision: Long,
+                              companyId: String, kind: String, query: String = "", archived: Boolean = false,
+                              after: String? = null, id: String? = null, limit: Int = 100): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        if (kind !in setOf("workplaces", "departments", "employees")) validation()
+        requireLimit(limit, 100)
+        val result = invoke("isg_workspace_personnel_read_v1", buildJsonObject {
+            put("p_workspace", workspaceId); put("p_company", companyId); put("p_kind", kind); put("p_query", query)
+            put("p_archived", archived); put("p_after", after?.let(::JsonPrimitive) ?: JsonNull)
+            put("p_id", id?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        requireEnvelope(result, workspaceId, companyId)
+        val rows = result["rows"] as? JsonArray ?: fail()
+        if (rows.size > limit || rows.any { it !is JsonObject }) fail()
+        return result
+    }
+
     suspend fun personnelAdvanced(workspaceId: String, membershipId: String, permissionRevision: Long,
                                   companyId: String, kind: IsgWorkspacePersonnelAdvancedKind,
                                   limit: Int = 100): JsonObject = advancedRead(

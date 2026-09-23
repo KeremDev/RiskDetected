@@ -38,7 +38,6 @@ class NovaSessionViewModel @Inject constructor(personnel: PersonnelRepository) :
 /** What the app shell lends the NOVA root: the regular profile page and anything that needs app routes. */
 class NovaPilotSlots(
     val profile: @Composable (onBack: () -> Unit) -> Unit,
-    val manager: @Composable (onSwitch: () -> Unit) -> Unit,
     /** The photo-analysis report list the archive's "Analiz raporları" tab shows (iOS `ReportView`). */
     val analysisReports: @Composable () -> Unit,
 )
@@ -69,7 +68,10 @@ fun NovaPilotEntry(slots: NovaPilotSlots, session: NovaSessionViewModel = hiltVi
                     key("expert:${state.selection?.workspaceId}:${state.selection?.membership?.permissionRevision}") {
                         NovaPilotRoot(identity!!, state, slots, onWorkspaceSwitch = { choosing = true })
                     }
-                state.selection?.kind == "osgb" -> slots.manager { choosing = true }
+                state.selection?.kind == "osgb" ->
+                    key("manager:${state.selection?.workspaceId}:${state.selection?.membership?.permissionRevision}") {
+                        NovaOsgbManagerRoot(identity!!, state, store, slots)
+                    }
                 else -> key("personal:${identity?.userId}") {
                     NovaPilotRoot(identity!!, null, slots, onWorkspaceSwitch = if (state.contexts.isNotEmpty()) ({ choosing = true }) else null)
                 }
