@@ -123,8 +123,8 @@ fun String.sameId(other: String?) = other != null && equals(other, ignoreCase = 
     fun isComplete(step: NovaEducationStep): Boolean = when (step) {
         NovaEducationStep.companies -> scopes.firstOrNull()?.hazardClass?.let { hazard -> scopes.all { it.hazardClass == hazard } } ?: false
         NovaEducationStep.info -> title.isNotBlank() && providerName.isNotBlank()
-        NovaEducationStep.topics -> scopes.isNotEmpty() && scopes.all { it.net > 0 }
-        NovaEducationStep.schedule -> scopes.isNotEmpty() && scopes.all { it.lessons.isNotEmpty() }
+        NovaEducationStep.topics -> title.isNotBlank() && scopes.isNotEmpty() && scopes.all { it.net > 0 }
+        NovaEducationStep.schedule -> title.isNotBlank() && scopes.isNotEmpty() && scopes.all { it.lessons.isNotEmpty() }
         NovaEducationStep.trainers -> trainers.isNotEmpty() && trainers.size <= 20 && trainers.all {
             val name = it.name.trim()
             name.isNotEmpty() && name.length <= 200 && it.title.length <= 200
