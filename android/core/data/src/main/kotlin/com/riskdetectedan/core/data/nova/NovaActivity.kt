@@ -110,10 +110,12 @@ class NovaActivityService @Inject constructor(private val client: SupabaseClient
 
     suspend fun page(identity: IsgWorkspaceIdentity, workspace: String? = null, member: String? = null, after: Long? = null, from: String? = null,
                      action: String? = null, company: String? = null): NovaActivityPage {
+        // Absent values are omitted, as iOS's Encodable query does: isg_activity_self_v1 has no
+        // p_workspace/p_user, and PostgREST matches a function by the argument names it is sent.
         val data = rpc(identity, if (workspace == null) "isg_activity_self_v1" else "isg_workspace_member_activity_v1", buildJsonObject {
-            put("p_workspace", workspace?.let(::JsonPrimitive) ?: JsonNull); put("p_user", member?.let(::JsonPrimitive) ?: JsonNull)
-            put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_from", from?.let(::JsonPrimitive) ?: JsonNull)
-            put("p_action", action?.let(::JsonPrimitive) ?: JsonNull); put("p_company", company?.let(::JsonPrimitive) ?: JsonNull)
+            workspace?.let { put("p_workspace", it) }; member?.let { put("p_user", it) }
+            after?.let { put("p_after", it) }; from?.let { put("p_from", it) }
+            action?.let { put("p_action", it) }; company?.let { put("p_company", it) }
         }, 2_000_000)
         val page = runCatching { novaJson.decodeFromJsonElement(NovaActivityPage.serializer(), data) }.getOrNull() ?: throw NovaActivityException()
         if (page.schemaVersion != 1 || page.items.size > 30) throw NovaActivityException()
