@@ -24,6 +24,8 @@ internal data class NovaWorkspaceState(
         return NovaPersonnelScope(actor.userID, actor.sessionID, selected, host.navigation.epoch)
     }
     val canWrite: Boolean get() = scope != null && capability?.canWrite == true
+    /** Personnel has its own pilot grant; the general capability still reflects paid access for the other modules (iOS). */
+    val canWritePersonnel: Boolean get() = scope != null && capability?.canRead == true && capability.archived != true
 }
 
 @HiltViewModel
@@ -35,7 +37,8 @@ internal class NovaWorkspaceViewModel @Inject constructor(private val repository
     private val rawPersonnel = repository.novaClient { state.value.scope }
     private val rawDirectory = repository.novaDirectoryClient { state.value.scope }
     val personnel = NovaPersonnelClient(rawPersonnel.employees, rawPersonnel.departments, rawPersonnel.detail, { intent ->
-        requireWritable(intent.scope); rawPersonnel.save(intent)
+        if (state.value.scope != intent.scope || !state.value.canWritePersonnel) throw NovaPersonnelFailure(NovaPersonnelFailure.Kind.denied)
+        rawPersonnel.save(intent)
     }, rawPersonnel.pending)
     val directory = rawDirectory.copy(save = { intent -> requireWritable(intent.scope); rawDirectory.save(intent) })
     private fun requireWritable(scope: NovaPersonnelScope) {

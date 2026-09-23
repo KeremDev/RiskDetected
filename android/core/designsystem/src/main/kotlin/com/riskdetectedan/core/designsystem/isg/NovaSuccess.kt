@@ -23,7 +23,7 @@ object NovaSuccessMessage {
     const val companyCreated = "Firma başarıyla eklendi!"
     const val companyUpdated = "Firma bilgileri başarıyla güncellendi!"
     const val companyLogoAdded = "Firma logosu başarıyla eklendi!"
-    const val personnelCreated = "Personel başarıyla eklendi!"
+    const val personnelCreated = "Tebrikler, personel eklendi!"
     const val personnelUpdated = "Personel bilgileri başarıyla güncellendi!"
     const val personnelArchived = "Personel başarıyla arşivlendi!"
     const val findingCreated = "Uygunsuzluk başarıyla eklendi!"

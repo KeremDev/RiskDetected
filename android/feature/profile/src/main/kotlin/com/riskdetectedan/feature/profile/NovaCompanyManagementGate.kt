@@ -43,7 +43,8 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
         }
         state.available && !legacy -> key(state.host.navigation.epoch) {
             state.scope?.let { scope ->
-                NovaCompanyWorkspace(scope, state.capability?.companyName ?: "Firma", state.canWrite, workspace.personnel, workspace.directory) { workspace.select(null) }
+                NovaCompanyWorkspace(scope, state.capability?.companyName ?: "Firma", state.canWrite, state.canWritePersonnel, workspace.personnel,
+                    workspace.directory) { workspace.select(null) }
             } ?: NovaPageSurface {
                 Column {
                     Box(Modifier.weight(1f)) {
@@ -64,13 +65,14 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
 }
 
 @Composable
-internal fun NovaCompanyWorkspace(scope: NovaPersonnelScope, companyName: String, canWrite: Boolean, personnel: NovaPersonnelClient, directory: NovaDirectoryClient, onBack: () -> Unit) {
+internal fun NovaCompanyWorkspace(scope: NovaPersonnelScope, companyName: String, canWrite: Boolean, canWritePersonnel: Boolean,
+                                  personnel: NovaPersonnelClient, directory: NovaDirectoryClient, onBack: () -> Unit) {
     var educationOpen by remember(scope) { mutableStateOf(false) }
     var personnelOpen by remember(scope) { mutableStateOf(false) }
     var catalog by remember(scope) { mutableStateOf<NovaDirectoryKind?>(null) }
     when {
         educationOpen -> EducationScreen(com.riskdetectedan.core.data.company.PersonnelWorkspaceIdentity(scope.ownerID,scope.sessionID),canWrite,{educationOpen=false})
-        personnelOpen -> NovaPersonnelDestination(scope, companyName, personnel, { personnelOpen = false }, directory, canWrite)
+        personnelOpen -> NovaPersonnelDestination(scope, companyName, personnel, { personnelOpen = false }, directory, canWritePersonnel)
         catalog != null -> NovaDirectoryDestination(scope, catalog!!, client = directory, canWrite = canWrite) { catalog = null }
         else -> NovaPageSurface {
             BackHandler(onBack = onBack)

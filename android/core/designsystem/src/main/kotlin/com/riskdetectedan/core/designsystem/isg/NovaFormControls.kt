@@ -122,7 +122,7 @@ enum class NovaCompanySection(val title: String, val symbol: String) {
     risk("Risk Analizi", "exclamationmark.triangle"), emergency("Acil Durum Eylem Planı", "shield"),
     inspections("Periyodik Kontroller", "wrench.and.screwdriver"), accidents("İş Kazaları", "cross.case"),
     board("İSG Kurulu", "person.3.sequence"), training("Eğitimler", "graduationcap"), files("Dosyalarım", "folder"),
-    handover("Zimmet Formları", "doc.text"),
+    handover("KKD Zimmet Formu Örneği", "doc.text"),
 }
 
 /** Collapsible heading used by the company page and the stepwise forms. */

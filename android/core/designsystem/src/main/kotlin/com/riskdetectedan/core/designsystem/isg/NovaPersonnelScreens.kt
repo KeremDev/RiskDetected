@@ -205,7 +205,7 @@ private fun EmployeeList(scope: NovaPersonnelScope, companyName: String, client:
 }
 
 private fun personnelSuccess(action: NovaEmployeeIntent.Action) = when (action) {
-    NovaEmployeeIntent.Action.create, NovaEmployeeIntent.Action.restore -> "Personel başarıyla eklendi!"
+    NovaEmployeeIntent.Action.create, NovaEmployeeIntent.Action.restore -> NovaSuccessMessage.personnelCreated
     NovaEmployeeIntent.Action.edit -> "Personel bilgileri başarıyla güncellendi!"
     NovaEmployeeIntent.Action.archive -> "Personel başarıyla arşivlendi!"
 }
