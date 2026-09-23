@@ -74,7 +74,7 @@ fun NovaPilotEntry(slots: NovaPilotSlots, session: NovaSessionViewModel = hiltVi
                         onSelect = { store.select(it); choosing = false }) { choosing = false }
                 state.selection?.kind == "osgb" && state.isExpert ->
                     key("expert:${state.selection?.workspaceId}:${state.selection?.membership?.permissionRevision}") {
-                        NovaPilotRoot(identity!!, state, slots, onWorkspaceSwitch = { choosing = true })
+                        NovaPilotRoot(identity!!, state, slots, onWorkspaceSwitch = { choosing = true }, workspaceStore = store)
                     }
                 state.selection?.kind == "osgb" ->
                     key("manager:${state.selection?.workspaceId}:${state.selection?.membership?.permissionRevision}") {

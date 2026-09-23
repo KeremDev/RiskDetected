@@ -30,7 +30,7 @@ import com.riskdetectedan.core.designsystem.isg.*
  */
 @Composable
 fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiState?, slots: NovaPilotSlots,
-                  onWorkspaceSwitch: (() -> Unit)?, viewModel: NovaPilotViewModel = hiltViewModel(),
+                  onWorkspaceSwitch: (() -> Unit)?, workspaceStore: NovaWorkspaceStore? = null, viewModel: NovaPilotViewModel = hiltViewModel(),
                   services: NovaRootServices = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(identity, workspace?.selection, workspace?.dashboard) {
@@ -146,7 +146,8 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             } else NovaFindingsDestination(identity, NovaFindingsSurface.board, state.writable, navigate, workspace?.selection)
             NovaDestination.newFinding -> NovaFindingsDestination(identity, NovaFindingsSurface.addFinding, state.writable, navigate)
             NovaDestination.companies, NovaDestination.newCompany -> key(destination) {
-                CompaniesDestination(services, identity, state, workspace, navigate, viewModel::reload, startCreating = destination == NovaDestination.newCompany)
+                CompaniesDestination(services, identity, state, workspace, workspaceStore, navigate, viewModel::reload,
+                    startCreating = destination == NovaDestination.newCompany)
             }
             NovaDestination.riskAssessments -> NovaRiskScreen(services.riskClient(identity), state.writable,
                 onBack = { navigate(NovaDestination.home) })
@@ -312,7 +313,7 @@ private fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdent
 
 /** Firmalar (iOS `companies`): the list, and once one is chosen its company page over the same identity. */
 @Composable
-private fun CompaniesDestination(services: NovaRootServices, identity: IsgWorkspaceIdentity, state: NovaPilotUiState, workspace: NovaWorkspaceUiState?,
+private fun CompaniesDestination(services: NovaRootServices, identity: IsgWorkspaceIdentity, state: NovaPilotUiState, workspace: NovaWorkspaceUiState?, workspaceStore: NovaWorkspaceStore?,
                                  navigate: (NovaDestination) -> Unit, reload: () -> Unit, startCreating: Boolean = false) {
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
     // Only a personal account manages its own companies; an OSGB expert works on assigned ones.
@@ -343,7 +344,8 @@ private fun CompaniesDestination(services: NovaRootServices, identity: IsgWorksp
         error = if (state.overviewFailed && workspace == null) "Firmalar yüklenemedi. Lütfen tekrar deneyin." else null,
         isOwnedList = workspace == null, onSelect = { selected = it },
         onBack = { navigate(NovaDestination.home) }, onRetry = reload, onCreate = if (canCreate) ({ creating = true }) else null,
-        loadLogo = if (workspace == null) remember(identity) { services.ownedCompanyLogos() } else null)
+        loadLogo = if (workspace == null) remember(identity) { services.ownedCompanyLogos() }
+            else workspaceStore?.let { store -> { id, _ -> store.companyLogo(id)?.let { bytes -> decodeLogo(bytes) } } })
 }
 
 /** One module page opened from a company, already narrowed to that company. */
@@ -463,9 +465,15 @@ private fun status(state: NovaPilotUiState): String = when {
     else -> "Canlı pilot erişimi henüz kullanılamıyor"
 }
 
+/** A stored logo, decoded off the main thread; an unreadable image keeps the initials. */
+private suspend fun decodeLogo(bytes: ByteArray) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+    android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+}
+
 private fun companyItems(state: NovaPilotUiState, workspace: NovaWorkspaceUiState?): List<NovaCompanyItem> =
     if (workspace != null) workspace.companies.map { NovaCompanyItem(it.id, it.name,
-        listOfNotNull(hazardTitle(it.hazardClass), it.sector).filter(String::isNotBlank).joinToString(" · ")) }
+        listOfNotNull(hazardTitle(it.hazardClass), it.sector).filter(String::isNotBlank).joinToString(" · "),
+        progressCompleted = it.profileCompletionCount, progressTotal = 8) }
     else state.activeCompanies.orEmpty().map { company ->
         NovaCompanyItem(company.id, company.name, listOfNotNull(hazardTitle(company.hazardClass), company.sector)
             .filter(String::isNotBlank).joinToString(" · "),
@@ -588,11 +596,7 @@ class NovaRootServices @javax.inject.Inject constructor(
                     ?.value?.associate { it.id.lowercase() to it.logoPath }?.also { paths = it }
             }
             known?.get(id.lowercase())?.let { path ->
-                (companyRecords.downloadLogo(path) as? com.riskdetectedan.core.common.RdResult.Success)?.value?.let { bytes ->
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
-                    }
-                }
+                (companyRecords.downloadLogo(path) as? com.riskdetectedan.core.common.RdResult.Success)?.value?.let { decodeLogo(it) }
             }
         }
     }

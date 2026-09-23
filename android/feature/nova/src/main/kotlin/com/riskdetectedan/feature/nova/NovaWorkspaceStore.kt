@@ -13,6 +13,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.*
 import java.util.UUID
 import javax.inject.Inject
@@ -100,6 +101,20 @@ class NovaWorkspaceStore @Inject constructor(private val repository: IsgWorkspac
             companies = emptyList(), dashboard = null, selectedCompanyId = null)
         val token = generation
         request = viewModelScope.launch { resolve(context, current, token) }
+    }
+
+    private val logoLock = kotlinx.coroutines.sync.Mutex()
+
+    /**
+     * A company's logo from its file archive, for the list row (iOS `loadNovaWorkspaceCompanyLogo`). Reads run one at
+     * a time because each one scopes the repository to its company.
+     */
+    suspend fun companyLogo(companyId: String): ByteArray? = logoLock.withLock {
+        val context = state.value.selection ?: return@withLock null
+        val page = repository.domain(context, companyId, com.riskdetectedan.core.data.isg.IsgWorkspaceDomain.FILES)
+        val row = com.riskdetectedan.core.data.isg.IsgWorkspaceRecords.snapshot(com.riskdetectedan.core.data.isg.IsgWorkspaceDomain.FILES, page, null)
+            .rows.firstOrNull { it.fact("category") == "company_logo" } ?: return@withLock null
+        repository.downloadAsset(context, row.assetId ?: return@withLock null)
     }
 
     /** Creates an OSGB and opens it (iOS `IsgWorkspaceStore.createWorkspace`). */
