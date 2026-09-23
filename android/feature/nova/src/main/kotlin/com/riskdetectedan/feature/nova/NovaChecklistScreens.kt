@@ -72,11 +72,20 @@ class NovaServiceChecklistClient(private val service: NovaChecklistService, priv
     override suspend fun templates(company: String?) = service.templates(identity, company)
     override suspend fun assignments(company: String) = service.assignments(identity, company)
     override suspend fun board(query: NovaChecklistQuery) = service.board(identity, query)
-    override suspend fun detail(run: String) = service.detail(identity, run)
+    /** A run row from a start, answer or detail call carries no company name (only the board's
+     *  list read joins it), so the company picker's own names fill it in. */
+    private var companyNames: Map<String, String>? = null
+    private suspend fun named(run: NovaChecklistRun?): NovaChecklistRun? {
+        val company = run?.companyId ?: return run
+        if (!run.companyName.isNullOrBlank()) return run
+        val names = companyNames ?: runCatching { companies().associate { it.id to it.name } }.getOrNull()?.also { companyNames = it }
+        return names?.get(company)?.let { run.copy(companyName = it) } ?: run
+    }
+    override suspend fun detail(run: String) = named(service.detail(identity, run))!!
     override suspend fun startRun(company: String?, workplace: String?, template: String, startedOn: String, area: String, equipment: String, document: String) =
-        service.startRun(identity, company, workplace, template, startedOn, area, equipment, document)
+        named(service.startRun(identity, company, workplace, template, startedOn, area, equipment, document))
     override suspend fun answer(company: String?, draft: NovaChecklistAnswerDraft): NovaChecklistRun? = try {
-        service.recordAnswer(identity, company, draft)
+        named(service.recordAnswer(identity, company, draft))
     } catch (failure: NovaChecklistException) {
         if (failure.failure != NovaChecklistFailure.unavailable) throw failure
         queue.enqueue(identity, company, draft); null
@@ -89,9 +98,9 @@ class NovaServiceChecklistClient(private val service: NovaChecklistService, priv
         if (!entry.state.isFiled) throw NovaFileException(NovaFileFailure.inspectionUnavailable)
         return entry.assetId ?: throw NovaFileException(NovaFileFailure.inspectionUnavailable)
     }
-    override suspend fun submit(company: String?, run: String, revision: Long) = service.submitRun(identity, company, run, revision)
-    override suspend fun cancel(company: String?, run: String, revision: Long) = service.cancelRun(identity, company, run, revision)
-    override suspend fun revise(company: String?, run: String, revision: Long, startedOn: String) = service.reviseRun(identity, company, run, revision, startedOn)
+    override suspend fun submit(company: String?, run: String, revision: Long) = named(service.submitRun(identity, company, run, revision))
+    override suspend fun cancel(company: String?, run: String, revision: Long) = named(service.cancelRun(identity, company, run, revision))
+    override suspend fun revise(company: String?, run: String, revision: Long, startedOn: String) = named(service.reviseRun(identity, company, run, revision, startedOn))
     override suspend fun draftTemplate(company: String?, title: String) = service.draftTemplate(identity, company, title)
     override suspend fun setItem(company: String?, template: String, version: Int, revision: Long, itemCode: String, prompt: String, allowsNotApplicable: Boolean,
                                  position: Int) = service.setItem(identity, company, template, version, revision, itemCode, prompt, allowsNotApplicable, position)
@@ -309,9 +318,15 @@ private fun optimistic(draft: NovaChecklistAnswerDraft, run: NovaChecklistRun): 
         progressPercent = if (run.expected > 0) answered * 100.0 / run.expected else null)
 }
 
+/** Only a run with no company is standalone; a company run whose name did not come back
+ *  still reads as a company inspection. */
+private fun checklistRunScope(run: NovaChecklistRun): String =
+    listOfNotNull(run.companyName?.takeIf { it.isNotBlank() }, run.workplaceName?.takeIf { it.isNotBlank() })
+        .joinToString(" · ").ifEmpty { if (run.companyId == null) "Bağımsız kontrol" else "Firma kontrolü" }
+
 @Composable
 private fun ChecklistRunRow(run: NovaChecklistRun, modifier: Modifier, onClick: () -> Unit) {
-    val scope = listOfNotNull(run.companyName, run.workplaceName).joinToString(" · ").ifEmpty { "Bağımsız kontrol" }
+    val scope = checklistRunScope(run)
     Column(modifier.fillMaxWidth().novaRowPress(onClick = onClick).padding(vertical = 14.dp).testTag("nova.checklist.row.${run.id}"),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -592,7 +607,7 @@ private fun ChecklistRunTask(run: NovaChecklistRun, canWrite: Boolean, onAnswer:
     var working by remember { mutableStateOf(false) }
     var confirmingExit by remember { mutableStateOf(false) }
     LaunchedEffect(run.state) { if (run.state != NovaChecklistRunState.`open`) page = RunPage.result }
-    val scope = listOfNotNull(run.companyName, run.workplaceName).joinToString(" · ").ifEmpty { "Bağımsız kontrol" }
+    val scope = checklistRunScope(run)
     val current = ordered.getOrNull(currentIndex)
     fun draftFor(answer: NovaChecklistAnswer) = localDrafts[answer.itemCode] ?: NovaChecklistAnswerDraft(run.id, answer.itemCode, answer.prompt,
         answer.allowsNotApplicable, answer.verificationMethod, answer.helpText, answer.naReasonRequired, answer.evidenceRecommended, answer.photoRequired,
