@@ -167,13 +167,13 @@ struct NovaDrillPlanSheet: View {
     var body: some View {
         Group {
             if saved {
-                NovaTaskSuccessView(title: "Tatbikat planlandı",
-                    message: "Plan tarihi ve prova edilecek acil durum planı firma kaydına eklendi.",
+                NovaTaskSuccessView(title: RDLocalization.string("localizable.nova.drill.sheets.tatbikat.planlandi.8e418f49", table: .localizable, fallback: "Tatbikat planlandı"),
+                    message: RDLocalization.string("localizable.nova.drill.sheets.plan.tarihi.ve.prova.edilecek.acil.durum.plani.f.d5ad4af4", table: .localizable, fallback: "Plan tarihi ve prova edilecek acil durum planı firma kaydına eklendi."),
                     doneTitle: "Tatbikatlara dön", onDone: onClose)
             } else {
                 NovaPageSurface(onEdgeBack: goBack) {
                     VStack(spacing: 0) {
-                        NovaTaskHeader(title: "Tatbikat planla", step: step + 1, total: 3,
+                        NovaTaskHeader(title: RDLocalization.string("localizable.nova.drill.sheets.tatbikat.planla.95102735", table: .localizable, fallback: "Tatbikat planla"), step: step + 1, total: 3,
                             stepTitle: ["Plan seçimi", "Tarih", "Kontrol"][step], onClose: goBack)
                             .padding(.horizontal, 18).padding(.top, 10)
                         ScrollView {
@@ -199,7 +199,7 @@ struct NovaDrillPlanSheet: View {
 
     private var planStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaHelpHint(text: "Prova edilecek planı seçin. Plan sürümü arka planda sabitlenir ve sonraki adımlara taşınır.")
+            NovaHelpHint(text: RDLocalization.string("localizable.nova.drill.sheets.prova.edilecek.plani.secin.plan.surumu.arka.plan.ef1b8e16", table: .localizable, fallback: "Prova edilecek planı seçin. Plan sürümü arka planda sabitlenir ve sonraki adımlara taşınır."))
                     if catalogue?.plans.isEmpty ?? true {
                         NovaHelpHint(text: RDLocalization.string("localizable.nova.drill.empty.noplan",
                             table: .localizable,
@@ -248,7 +248,7 @@ struct NovaDrillPlanSheet: View {
     private var reviewStep: some View {
         NovaCard(padding: 14) {
             VStack(alignment: .leading, spacing: 8) {
-                NovaText(text: "Tatbikat özeti", style: .bodyStrong)
+                NovaText(text: RDLocalization.string("localizable.nova.drill.sheets.tatbikat.ozeti.78e1a85b", table: .localizable, fallback: "Tatbikat özeti"), style: .bodyStrong)
                 NovaText(text: chosen.map { $0.scope + " · " + $0.workplaceName } ?? "Plan seçilmedi", style: .body)
                 NovaText(text: draft.plannedOn, style: .metaQuiet)
             }.frame(maxWidth: .infinity, alignment: .leading)
@@ -283,13 +283,13 @@ struct NovaDrillResultSheet: View {
     var body: some View {
         Group {
             if saved {
-                NovaTaskSuccessView(title: "Tatbikat kaydedildi",
-                    message: "Tarih, katılımcılar, gözlem ve iyileştirme bilgileri firma kaydına eklendi.",
+                NovaTaskSuccessView(title: RDLocalization.string("localizable.nova.drill.sheets.tatbikat.kaydedildi.a75bb560", table: .localizable, fallback: "Tatbikat kaydedildi"),
+                    message: RDLocalization.string("localizable.nova.drill.sheets.tarih.katilimcilar.gozlem.ve.iyilestirme.bilgile.bdd0b7eb", table: .localizable, fallback: "Tarih, katılımcılar, gözlem ve iyileştirme bilgileri firma kaydına eklendi."),
                     doneTitle: "Tatbikatlara dön", onDone: onClose)
             } else {
                 NovaPageSurface(onEdgeBack: goBack) {
                     VStack(spacing: 0) {
-                        NovaTaskHeader(title: "Tatbikat kaydı", step: step + 1, total: 4,
+                        NovaTaskHeader(title: RDLocalization.string("localizable.nova.drill.sheets.tatbikat.kaydi.3104551f", table: .localizable, fallback: "Tatbikat kaydı"), step: step + 1, total: 4,
                             stepTitle: ["Tarih", "Katılımcılar", "Sonuçlar", "Kontrol"][step], onClose: goBack)
                             .padding(.horizontal, 18).padding(.top, 10)
                         ScrollView {
@@ -314,27 +314,27 @@ struct NovaDrillResultSheet: View {
         switch step {
         case 0:
             if !draft.planScope.isEmpty { NovaText(text: draft.planScope, style: .bodyStrong) }
-            NovaDayField(label: "Yapılan", value: $draft.performedOn,
+            NovaDayField(label: RDLocalization.string("localizable.nova.drill.sheets.yapilan.771108cc", table: .localizable, fallback: "Yapılan"), value: $draft.performedOn,
                 identifier: "nova.drill.result.performed")
         case 1:
             participants
         case 2:
             VStack(alignment: .leading, spacing: 5) {
-                NovaText(text: "Gözlem", style: .label)
+                NovaText(text: RDLocalization.string("localizable.nova.drill.sheets.gozlem.0c0e69cc", table: .localizable, fallback: "Gözlem"), style: .label)
                 TextEditor(text: $draft.observation).frame(minHeight: 100)
                     .accessibilityIdentifier("nova.drill.result.observation")
             }
             VStack(alignment: .leading, spacing: 5) {
-                NovaText(text: "İyileştirme", style: .label)
+                NovaText(text: RDLocalization.string("localizable.nova.drill.sheets.iyilestirme.62fb4fea", table: .localizable, fallback: "İyileştirme"), style: .label)
                 TextEditor(text: $draft.improvement).frame(minHeight: 100)
                     .accessibilityIdentifier("nova.drill.result.improvement")
             }
         default:
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 8) {
-                    NovaText(text: "Tatbikat özeti", style: .bodyStrong)
+                    NovaText(text: RDLocalization.string("localizable.nova.drill.sheets.tatbikat.ozeti.cbde121b", table: .localizable, fallback: "Tatbikat özeti"), style: .bodyStrong)
                     NovaText(text: draft.planScope, style: .body)
-                    NovaText(text: "\(draft.performedOn) · \(draft.participants.count) katılımcı", style: .metaQuiet)
+                    NovaText(text: RDLocalization.format("localizable.nova.drill.sheets.1.2.katilimci.9e46c92e", table: .localizable, fallback: "%1$@ · %2$@ katılımcı", arguments: [String(describing: draft.performedOn), String(describing: draft.participants.count)]), style: .metaQuiet)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
         }

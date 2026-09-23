@@ -189,8 +189,8 @@ struct RiskDetailView: View {
                 .foregroundStyle(ink)
             Spacer(minLength: 0)
             Menu {
-                if let onEdit { Button(action: onEdit) { Label("Düzenle", systemImage: "square.and.pencil") } }
-                if let onShareReport { Button(action: onShareReport) { Label("Paylaş", systemImage: "square.and.arrow.up") } }
+                if let onEdit { Button(action: onEdit) { Label(RDLocalization.string("analysis.risk.detail.view.duzenle.82146ffa", table: .analysis, fallback: "Düzenle"), systemImage: "square.and.pencil") } }
+                if let onShareReport { Button(action: onShareReport) { Label(RDLocalization.string("analysis.risk.detail.view.paylas.9fcb7d68", table: .analysis, fallback: "Paylaş"), systemImage: "square.and.arrow.up") } }
                 if let onDelete { Button(role: .destructive, action: onDelete) { Label("Sil", systemImage: "trash") } }
             } label: {
                 Image(systemName: "ellipsis")
@@ -200,7 +200,7 @@ struct RiskDetailView: View {
                     .background(Color.rdResultSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
             }
-            .accessibilityLabel("Bulgu işlemleri")
+            .accessibilityLabel(RDLocalization.string("analysis.risk.detail.view.bulgu.islemleri.5b06133a", table: .analysis, fallback: "Bulgu işlemleri"))
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 7)
@@ -213,7 +213,7 @@ struct RiskDetailView: View {
             .background(Color.rdResultSubtleSurface)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(alignment: .bottomTrailing) {
-                Label("Fotoğraf \(photoIndex)", systemImage: "photo")
+                Label(RDLocalization.format("analysis.risk.detail.view.fotograf.1.cef4e007", table: .analysis, fallback: "Fotoğraf %1$@", arguments: [String(describing: photoIndex)]), systemImage: "photo")
                     .font(referenceFont(9.5, .bold))
                     .foregroundStyle(ink)
                     .padding(.horizontal, 8)
@@ -296,7 +296,7 @@ struct RiskDetailView: View {
         let score = finding.score(for: method)
         return VStack(alignment: .leading, spacing: 9) {
             Divider().padding(.top, 16)
-            Picker("Risk yöntemi", selection: $method) {
+            Picker(RDLocalization.string("analysis.risk.detail.view.risk.yontemi.eaa4f4ba", table: .analysis, fallback: "Risk yöntemi"), selection: $method) {
                 Text("Fine-Kinney").tag(RiskMethod.fineKinney)
                 Text("5×5").tag(RiskMethod.matrix5x5)
             }
@@ -312,7 +312,7 @@ struct RiskDetailView: View {
                             .foregroundStyle(Color.rdResultSecondaryText)
                     }
                     Spacer(minLength: 0)
-                    Text("Skor nasıl oluştu?")
+                    Text(RDLocalization.string("analysis.risk.detail.view.skor.nasil.olustu.8a08b396", table: .analysis, fallback: "Skor nasıl oluştu?"))
                         .font(referenceFont(10.5, .heavy))
                         .foregroundStyle(greenDark)
                     Image(systemName: scoreExpanded ? "chevron.up" : "chevron.down")
@@ -349,7 +349,7 @@ struct RiskDetailView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(copy("analysis.risk.detail.v2.mevzuat.3eef1ac3", "Mevzuat ve ek bilgiler", "Regulatory references"))
                             .font(referenceFont(12.5, .heavy))
-                        Text("Plus / Pro ile görüntüle")
+                        Text(RDLocalization.string("analysis.risk.detail.view.plus.pro.ile.goruntule.0d40d1ff", table: .analysis, fallback: "Plus / Pro ile görüntüle"))
                             .font(referenceFont(10.5, .medium))
                             .foregroundStyle(Color.rdResultSecondaryText)
                     }
@@ -366,12 +366,12 @@ struct RiskDetailView: View {
     private var redesignedFeedback: some View {
         VStack(alignment: .leading, spacing: 9) {
             Divider().padding(.top, 16)
-            Text("Bu bulgu faydalı mıydı?")
+            Text(RDLocalization.string("analysis.risk.detail.view.bu.bulgu.faydali.miydi.c27c027f", table: .analysis, fallback: "Bu bulgu faydalı mıydı?"))
                 .font(referenceFont(12.5, .heavy))
                 .foregroundStyle(ink)
             HStack(spacing: 8) {
-                feedbackButton(.like, symbol: "hand.thumbsup", label: "Faydalı")
-                feedbackButton(.dislike, symbol: "hand.thumbsdown", label: "Faydalı değil")
+                feedbackButton(.like, symbol: "hand.thumbsup", label: RDLocalization.string("analysis.risk.detail.view.faydali.484e0d91", table: .analysis, fallback: "Faydalı"))
+                feedbackButton(.dislike, symbol: "hand.thumbsdown", label: RDLocalization.string("analysis.risk.detail.view.faydali.degil.4b1c65d2", table: .analysis, fallback: "Faydalı değil"))
             }
         }
     }

@@ -232,6 +232,8 @@ function isGenericTechnicalLiteral(value, line, sourceFile) {
   const decoded = decodeLiteral(value);
   const staticText = decoded.replace(/\\\([^)]*\)/g, "").trim();
   if (!/[A-Za-zÇĞİÖŞÜçğıöşü]/u.test(staticText)) return true;
+  // Markup templates (XLSX/XML parts) are file syntax, not user copy.
+  if (/^<[A-Za-z][\w:.-]*[\s>/]/u.test(staticText)) return true;
   if (
     /^#[0-9A-Fa-f]{3,8}$/u.test(decoded) ||
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(decoded) ||

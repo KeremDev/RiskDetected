@@ -61,7 +61,7 @@ struct NovaCompanyCreateFlow<Catalogue, Content: View>: View {
                         NovaText(text: selected.name, style: .label).lineLimit(2)
                         Spacer(minLength: 8)
                         if fixedCompany == nil { Button { self.loaded = nil; self.selected = nil } label: {
-                            Label("Değiştir", systemImage: "arrow.left.arrow.right")
+                            Label(RDLocalization.string("localizable.nova.company.create.flow.degistir.0b7915a0", table: .localizable, fallback: "Değiştir"), systemImage: "arrow.left.arrow.right")
                                 .font(NovaFont.font(.micro)).fixedSize().frame(minHeight: 36)
                         }.buttonStyle(NovaRowPressStyle()).disabled(formBusy) }
                     }.padding(.horizontal, 14).padding(.vertical, 4)
@@ -94,19 +94,19 @@ struct NovaCompanyCreateFlow<Catalogue, Content: View>: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                         if showHeading {
-                            NovaPopupHeading(text: title, symbol: "building.2", subtitle: "Kaydı eklemek istediğiniz firmayı seçin.")
+                            NovaPopupHeading(text: title, symbol: "building.2", subtitle: RDLocalization.string("localizable.nova.company.create.flow.kaydi.eklemek.istediginiz.firmayi.secin.1381edd9", table: .localizable, fallback: "Kaydı eklemek istediğiniz firmayı seçin."))
                         } else {
-                            NovaHelpHint(text: "Kaydı eklemek istediğiniz firmayı seçin.")
+                            NovaHelpHint(text: RDLocalization.string("localizable.nova.company.create.flow.kaydi.eklemek.istediginiz.firmayi.secin.b21abc84", table: .localizable, fallback: "Kaydı eklemek istediğiniz firmayı seçin."))
                         }
                         HStack {
                             Image(systemName: "magnifyingglass")
-                            TextField("Firma ara", text: $search)
+                            TextField(RDLocalization.string("localizable.nova.company.create.flow.firma.ara.cf588545", table: .localizable, fallback: "Firma ara"), text: $search)
                                 .autocorrectionDisabled()
                         }.font(NovaFont.font(.body)).padding(12).novaControlBackground(cornerRadius: 14)
                         if busy { ProgressView("Yükleniyor…").frame(maxWidth: .infinity) }
                         if let failure {
                             Text(failure).font(NovaFont.font(.meta))
-                            Button("Yeniden dene") { Task { await loadCompanies() } }
+                            Button(RDLocalization.string("localizable.nova.company.create.flow.yeniden.dene.a9bda935", table: .localizable, fallback: "Yeniden dene")) { Task { await loadCompanies() } }
                         }
                         let matches = options.filter { search.isEmpty || $0.name.localizedStandardContains(search) }
                         if matches.isEmpty && !busy && failure == nil {

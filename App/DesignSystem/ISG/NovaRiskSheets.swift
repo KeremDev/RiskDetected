@@ -83,9 +83,9 @@ struct NovaRiskDetailSheet: View {
                     style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
                 if canWrite, let version = row.draftVersion {
                     if let draft = row.versions.first(where: { $0.version == version }), let onEdit {
-                        NovaButton(label: "Taslağı düzenle", symbol: "pencil", variant: .surface) { onEdit(draft) }
+                        NovaButton(label: RDLocalization.string("localizable.nova.risk.sheets.taslagi.duzenle.a0e0919a", table: .localizable, fallback: "Taslağı düzenle"), symbol: "pencil", variant: .surface) { onEdit(draft) }
                     }
-                    if let onCancelDraft { NovaButton(label: "Taslağı iptal et", symbol: "xmark", variant: .surface, action: onCancelDraft) }
+                    if let onCancelDraft { NovaButton(label: RDLocalization.string("localizable.nova.risk.sheets.taslagi.iptal.et.c3d84855", table: .localizable, fallback: "Taslağı iptal et"), symbol: "xmark", variant: .surface, action: onCancelDraft) }
                     NovaButton(label: RDLocalization.string("localizable.nova.risk.draft.finalize",
                         table: .localizable, fallback: "Taslağı tamamla"),
                         symbol: "checkmark.seal", variant: .primary) { onFinalize(version) }
@@ -118,7 +118,7 @@ struct NovaRiskDetailSheet: View {
                 NovaCard(padding: 12) {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
-                            NovaText(text: "v\(version.version) · " + version.kind.title, style: .cardTitle)
+                            NovaText(text: RDLocalization.format("localizable.nova.risk.sheets.v.1.dac33a35", table: .localizable, fallback: "v%1$@ · ", arguments: [String(describing: version.version)]) + version.kind.title, style: .cardTitle)
                             Spacer(minLength: 0)
                             NovaStatusPill(label: stateWord(version.state),
                                 status: version.isFinal ? .success
@@ -141,7 +141,7 @@ struct NovaRiskDetailSheet: View {
                                 color: NovaColorToken.textSecondary.color(in: scheme))
                         }
                         if let note = version.cancellationNote, !note.isEmpty {
-                            NovaText(text: "İptal gerekçesi: " + note, style: .body)
+                            NovaText(text: RDLocalization.string("localizable.nova.risk.sheets.iptal.gerekcesi.bd64d4d1", table: .localizable, fallback: "İptal gerekçesi: ") + note, style: .body)
                         }
                         if !version.scope.isEmpty {
                             NovaText(text: RDLocalization.string("localizable.nova.risk.scope", table: .localizable,
@@ -174,7 +174,7 @@ struct NovaRiskDetailSheet: View {
     }
     private func stateWord(_ value: String) -> String {
         switch value {
-        case "cancelled": return "İptal edildi"
+        case "cancelled": return RDLocalization.string("localizable.nova.risk.sheets.iptal.edildi.c2669b2d", table: .localizable, fallback: "İptal edildi")
         case "draft": return RDLocalization.string("localizable.nova.risk.version.draft", table: .localizable, fallback: "Taslak")
         case "final": return RDLocalization.string("localizable.nova.risk.version.final", table: .localizable, fallback: "Yürürlükte")
         default: return RDLocalization.string("localizable.nova.risk.version.superseded", table: .localizable, fallback: "Geçmiş")
@@ -368,18 +368,18 @@ struct NovaRiskFinalizeSheet: View {
                     }
 
                     if draft.ruleCode.isEmpty {
-                        NovaFormValueRow(label: "Geçerlilik süresi", symbol: "clock") {
+                        NovaFormValueRow(label: RDLocalization.string("localizable.nova.risk.sheets.gecerlilik.suresi.16a4b798", table: .localizable, fallback: "Geçerlilik süresi"), symbol: "clock") {
                             HStack(spacing: 6) {
                                 TextField("", text: $draft.periodYears).keyboardType(.numberPad)
                                     .font(NovaFont.font(.body)).multilineTextAlignment(.trailing).frame(width: 46).frame(minHeight: 36)
-                                    .accessibilityLabel("Geçerlilik süresi, yıl")
+                                    .accessibilityLabel(RDLocalization.string("localizable.nova.risk.sheets.gecerlilik.suresi.yil.8cfcfe5f", table: .localizable, fallback: "Geçerlilik süresi, yıl"))
                                     .accessibilityIdentifier("nova.risk.finalize.years")
-                                NovaText(text: "yıl", style: .meta)
+                                NovaText(text: RDLocalization.string("localizable.nova.risk.sheets.yil.178d3801", table: .localizable, fallback: "yıl"), style: .meta)
                             }
                         }
                     }
                     } else {
-                        NovaHelpHint(text: "Bu revizyon mevcut değerlendirme tarihini ve süre kaynağını korur.")
+                        NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.sheets.bu.revizyon.mevcut.degerlendirme.tarihini.ve.sur.a8321e1f", table: .localizable, fallback: "Bu revizyon mevcut değerlendirme tarihini ve süre kaynağını korur."))
                     }
                     if let failure {
                         NovaText(text: failure, style: .meta,
@@ -415,11 +415,11 @@ struct NovaRiskCancelDraftSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaPopupHeading(text: "Taslağı iptal et", symbol: "checkmark.shield")
-                    NovaText(text: "Taslak geçmişte korunur. Yürürlükteki sürüm ve tarihleri değişmez.", style: .body)
-                    TextField("İptal gerekçesi (en az 10 karakter)", text: $reason, axis: .vertical).lineLimit(3...6)
+                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.risk.sheets.taslagi.iptal.et.346b0679", table: .localizable, fallback: "Taslağı iptal et"), symbol: "checkmark.shield")
+                    NovaText(text: RDLocalization.string("localizable.nova.risk.sheets.taslak.gecmiste.korunur.yururlukteki.surum.ve.ta.921673fa", table: .localizable, fallback: "Taslak geçmişte korunur. Yürürlükteki sürüm ve tarihleri değişmez."), style: .body)
+                    TextField(RDLocalization.string("localizable.nova.risk.sheets.iptal.gerekcesi.en.az.10.karakter.2d129851", table: .localizable, fallback: "İptal gerekçesi (en az 10 karakter)"), text: $reason, axis: .vertical).lineLimit(3...6)
                     if let failure { NovaText(text: failure, style: .meta) }
-                    NovaButton(label: "Taslağı iptal et", symbol: "xmark", isEnabled: !busy && reason.trimmingCharacters(in: .whitespacesAndNewlines).count >= 10) {
+                    NovaButton(label: RDLocalization.string("localizable.nova.risk.sheets.taslagi.iptal.et.ce7c8d8f", table: .localizable, fallback: "Taslağı iptal et"), symbol: "xmark", isEnabled: !busy && reason.trimmingCharacters(in: .whitespacesAndNewlines).count >= 10) {
                         Task { busy = true; failure = await onConfirm(reason.trimmingCharacters(in: .whitespacesAndNewlines)); busy = false }
                     }
                 }.padding(20).novaPopupContentSize().disabled(busy)

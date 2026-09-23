@@ -30,22 +30,22 @@ struct NovaChecklistMyListEditorScreen: View {
                         VStack(alignment: .leading, spacing: 20) {
                             VStack(alignment: .leading, spacing: 5) {
                                 NovaText(text: template.title, style: .screenTitle)
-                                NovaText(text: "\(version.statusTitle) · v\(version.version) · \(version.items.count) soru",
+                                NovaText(text: RDLocalization.format("localizable.nova.checklist.list.editor.1.v.2.3.soru.1cd2b1aa", table: .localizable, fallback: "%1$@ · v%2$@ · %3$@ soru", arguments: [String(describing: version.statusTitle), String(describing: version.version), String(describing: version.items.count)]),
                                     style: .body, color: NovaColorToken.textSecondary.color(in: scheme))
                             }
                             if isEditable {
                                 VStack(spacing: 0) {
-                                    editorAction("Hazır maddelerden seç", subtitle: "Katalogda ara ve listeye ekle",
+                                    editorAction("Hazır maddelerden seç", subtitle: RDLocalization.string("localizable.nova.checklist.list.editor.katalogda.ara.ve.listeye.ekle.a8bac370", table: .localizable, fallback: "Katalogda ara ve listeye ekle"),
                                         symbol: "text.badge.plus") { showingCatalogue = true }
                                     Divider().overlay(NovaColorToken.hairline.color(in: scheme))
-                                    editorAction("Kendi sorunu yaz", subtitle: "Bu listeye özel bir soru ekle",
+                                    editorAction("Kendi sorunu yaz", subtitle: RDLocalization.string("localizable.nova.checklist.list.editor.bu.listeye.ozel.bir.soru.ekle.c40e0449", table: .localizable, fallback: "Bu listeye özel bir soru ekle"),
                                         symbol: "square.and.pencil") { showingManual = true }
                                 }
                             }
                             NovaText(text: "Sorular", style: .sectionTitle)
                             if version.items.isEmpty {
-                                NovaChecklistMessageState(symbol: "list.number", title: "Henüz soru yok",
-                                    message: "Hazır maddelerden seçin veya kendi sorunuzu yazın.",
+                                NovaChecklistMessageState(symbol: "list.number", title: RDLocalization.string("localizable.nova.checklist.list.editor.henuz.soru.yok.1de0dc7c", table: .localizable, fallback: "Henüz soru yok"),
+                                    message: RDLocalization.string("localizable.nova.checklist.list.editor.hazir.maddelerden.secin.veya.kendi.sorunuzu.yazi.fb865af6", table: .localizable, fallback: "Hazır maddelerden seçin veya kendi sorunuzu yazın."),
                                     actionTitle: nil, action: {})
                             } else {
                                 ForEach(version.items.sorted { $0.position < $1.position }) { item in
@@ -54,7 +54,7 @@ struct NovaChecklistMyListEditorScreen: View {
                                 }
                             }
                             if !isEditable {
-                                NovaText(text: "Yayımlanmış sürüm değiştirilemez. Değişiklikler yeni bir taslak sürüm üzerinden yapılır.",
+                                NovaText(text: RDLocalization.string("localizable.nova.checklist.list.editor.yayimlanmis.surum.degistirilemez.degisiklikler.y.9e35f57b", table: .localizable, fallback: "Yayımlanmış sürüm değiştirilemez. Değişiklikler yeni bir taslak sürüm üzerinden yapılır."),
                                     style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
                             }
                             if let failure {
@@ -74,7 +74,7 @@ struct NovaChecklistMyListEditorScreen: View {
                         .background(NovaColorToken.surface.color(in: scheme))
                     }
                 } else {
-                    NovaChecklistMessageState(symbol: "wifi.exclamationmark", title: "Liste yüklenemedi",
+                    NovaChecklistMessageState(symbol: "wifi.exclamationmark", title: RDLocalization.string("localizable.nova.checklist.list.editor.liste.yuklenemedi.b0396880", table: .localizable, fallback: "Liste yüklenemedi"),
                         message: failure ?? "Liste bulunamadı.", actionTitle: "Yeniden dene") {
                         Task { await load() }
                     }
@@ -106,7 +106,7 @@ struct NovaChecklistMyListEditorScreen: View {
                 .buttonStyle(NovaRowPressStyle())
             Spacer()
         }
-        .overlay { NovaText(text: "Listeyi düzenle", style: .label) }
+        .overlay { NovaText(text: RDLocalization.string("localizable.nova.checklist.list.editor.listeyi.duzenle.3511222f", table: .localizable, fallback: "Listeyi düzenle"), style: .label) }
         .padding(.horizontal, 16).padding(.vertical, 4)
     }
 
@@ -139,11 +139,11 @@ struct NovaChecklistMyListEditorScreen: View {
             Spacer(minLength: 6)
             if isEditable {
                 Menu {
-                    Button("Yukarı taşı", systemImage: "arrow.up") { move(item, delta: -1, version: version) }
+                    Button(RDLocalization.string("localizable.nova.checklist.list.editor.yukari.tasi.6b897cdd", table: .localizable, fallback: "Yukarı taşı"), systemImage: "arrow.up") { move(item, delta: -1, version: version) }
                         .disabled(item.position == 1)
-                    Button("Aşağı taşı", systemImage: "arrow.down") { move(item, delta: 1, version: version) }
+                    Button(RDLocalization.string("localizable.nova.checklist.list.editor.asagi.tasi.85a3a292", table: .localizable, fallback: "Aşağı taşı"), systemImage: "arrow.down") { move(item, delta: 1, version: version) }
                         .disabled(item.position == version.items.count)
-                    Button("Soruyu kaldır", systemImage: "trash", role: .destructive) {
+                    Button(RDLocalization.string("localizable.nova.checklist.list.editor.soruyu.kaldir.29d6f8bc", table: .localizable, fallback: "Soruyu kaldır"), systemImage: "trash", role: .destructive) {
                         remove(item, version: version)
                     }
                 } label: {
@@ -246,21 +246,21 @@ private struct NovaChecklistCatalogItemPickerScreen: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         NovaAnalysisSearchField(text: $query,
-                            placeholder: "Soru, risk, ekipman veya konu ara",
+                            placeholder: RDLocalization.string("localizable.nova.checklist.list.editor.soru.risk.ekipman.veya.konu.ara.96a8edb1", table: .localizable, fallback: "Soru, risk, ekipman veya konu ara"),
                             identifier: "nova.checklist.builder.search")
                             .padding(.bottom, 14)
                         if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            NovaChecklistMessageState(symbol: "magnifyingglass", title: "Hazır madde bulun",
-                                message: "Yazdıkça katalogdaki sorular süzülecek.",
+                            NovaChecklistMessageState(symbol: "magnifyingglass", title: RDLocalization.string("localizable.nova.checklist.list.editor.hazir.madde.bulun.7031cc98", table: .localizable, fallback: "Hazır madde bulun"),
+                                message: RDLocalization.string("localizable.nova.checklist.list.editor.yazdikca.katalogdaki.sorular.suzulecek.7e0b4377", table: .localizable, fallback: "Yazdıkça katalogdaki sorular süzülecek."),
                                 actionTitle: nil, action: {})
                         } else if working && result == nil {
                             NovaChecklistRunSkeleton()
                         } else if let failure {
-                            NovaChecklistMessageState(symbol: "wifi.exclamationmark", title: "Maddeler yüklenemedi",
+                            NovaChecklistMessageState(symbol: "wifi.exclamationmark", title: RDLocalization.string("localizable.nova.checklist.list.editor.maddeler.yuklenemedi.44a0fca5", table: .localizable, fallback: "Maddeler yüklenemedi"),
                                 message: failure, actionTitle: nil, action: {})
                         } else if let items = result?.matchedItems, items.isEmpty {
-                            NovaChecklistMessageState(symbol: "magnifyingglass", title: "Sonuç bulunamadı",
-                                message: "Daha kısa bir konu, risk veya ekipman adı deneyin.",
+                            NovaChecklistMessageState(symbol: "magnifyingglass", title: RDLocalization.string("localizable.nova.checklist.list.editor.sonuc.bulunamadi.989d8691", table: .localizable, fallback: "Sonuç bulunamadı"),
+                                message: RDLocalization.string("localizable.nova.checklist.list.editor.daha.kisa.bir.konu.risk.veya.ekipman.adi.deneyin.13d6ac33", table: .localizable, fallback: "Daha kısa bir konu, risk veya ekipman adı deneyin."),
                                 actionTitle: nil, action: {})
                         } else if let items = result?.matchedItems {
                             ForEach(items) { item in
@@ -285,11 +285,11 @@ private struct NovaChecklistCatalogItemPickerScreen: View {
 
     private var header: some View {
         HStack {
-            Button(action: onBack) { Label("Listeye dön", systemImage: "chevron.left").frame(minHeight: 44) }
+            Button(action: onBack) { Label(RDLocalization.string("localizable.nova.checklist.list.editor.listeye.don.530d84dc", table: .localizable, fallback: "Listeye dön"), systemImage: "chevron.left").frame(minHeight: 44) }
                 .buttonStyle(NovaRowPressStyle())
             Spacer()
         }
-        .overlay { NovaText(text: "Hazır madde ekle", style: .label) }
+        .overlay { NovaText(text: RDLocalization.string("localizable.nova.checklist.list.editor.hazir.madde.ekle.c3fe0e42", table: .localizable, fallback: "Hazır madde ekle"), style: .label) }
         .padding(.horizontal, 16).padding(.vertical, 4)
     }
 
@@ -351,7 +351,7 @@ private struct NovaChecklistManualItemScreen: View {
                 header
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        NovaText(text: "Kontrol sorusunu yazın", style: .screenTitle)
+                        NovaText(text: RDLocalization.string("localizable.nova.checklist.list.editor.kontrol.sorusunu.yazin.86cef2f0", table: .localizable, fallback: "Kontrol sorusunu yazın"), style: .screenTitle)
                         TextEditor(text: $prompt).frame(minHeight: 180).padding(9)
                             .scrollContentBackground(.hidden)
                             .background(NovaColorToken.surface.color(in: scheme),
@@ -361,7 +361,7 @@ private struct NovaChecklistManualItemScreen: View {
                         Button { allowsNA.toggle() } label: {
                             HStack {
                                 Image(systemName: allowsNA ? "checkmark.square.fill" : "square")
-                                NovaText(text: "“Uygulanamaz” yanıtına izin ver", style: .body)
+                                NovaText(text: RDLocalization.string("localizable.nova.checklist.list.editor.uygulanamaz.yanitina.izin.ver.1c428beb", table: .localizable, fallback: "“Uygulanamaz” yanıtına izin ver"), style: .body)
                                 Spacer()
                             }
                             .frame(minHeight: 44).contentShape(Rectangle())
@@ -388,11 +388,11 @@ private struct NovaChecklistManualItemScreen: View {
 
     private var header: some View {
         HStack {
-            Button(action: onBack) { Label("Listeye dön", systemImage: "chevron.left").frame(minHeight: 44) }
+            Button(action: onBack) { Label(RDLocalization.string("localizable.nova.checklist.list.editor.listeye.don.2af656ab", table: .localizable, fallback: "Listeye dön"), systemImage: "chevron.left").frame(minHeight: 44) }
                 .buttonStyle(NovaRowPressStyle())
             Spacer()
         }
-        .overlay { NovaText(text: "Yeni soru", style: .label) }
+        .overlay { NovaText(text: RDLocalization.string("localizable.nova.checklist.list.editor.yeni.soru.81453733", table: .localizable, fallback: "Yeni soru"), style: .label) }
         .padding(.horizontal, 16).padding(.vertical, 4)
     }
     private var cleanPrompt: String { prompt.trimmingCharacters(in: .whitespacesAndNewlines) }

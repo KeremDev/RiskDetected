@@ -19,19 +19,19 @@ struct NovaNumberedItemsEditor: View {
                             next[index] = text.replacingOccurrences(of: "\n", with: " ")
                             value = next.joined(separator: "\n")
                         }), axis: .vertical).lineLimit(1...6)
-                        .accessibilityLabel("\(title), madde \(index + 1)")
+                        .accessibilityLabel(RDLocalization.format("localizable.nova.numbered.items.editor.1.madde.2.5429b500", table: .localizable, fallback: "%1$@, madde %2$@", arguments: [String(describing: title), String(describing: index + 1)]))
                     Button {
                         var next = lines
                         guard next.indices.contains(index) else { return }
                         next.remove(at: index)
                         value = next.joined(separator: "\n")
                     } label: { NovaIcon(symbol: "minus.circle", size: 18).frame(width: 44, height: 44) }
-                    .buttonStyle(NovaRowPressStyle()).accessibilityLabel("Madde \(index + 1) sil")
+                    .buttonStyle(NovaRowPressStyle()).accessibilityLabel(RDLocalization.format("localizable.nova.numbered.items.editor.madde.1.sil.f4cd4b70", table: .localizable, fallback: "Madde %1$@ sil", arguments: [String(describing: index + 1)]))
                 }
             }
             Button {
                 value = (lines + [""]).joined(separator: "\n")
-            } label: { Label("Madde ekle", systemImage: "plus").font(NovaFont.font(.buttonSm)).frame(minHeight: 44) }
+            } label: { Label(RDLocalization.string("localizable.nova.numbered.items.editor.madde.ekle.74913715", table: .localizable, fallback: "Madde ekle"), systemImage: "plus").font(NovaFont.font(.buttonSm)).frame(minHeight: 44) }
                 .buttonStyle(NovaRowPressStyle())
         }
     }

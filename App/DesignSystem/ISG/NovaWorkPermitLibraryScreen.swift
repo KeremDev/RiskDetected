@@ -81,21 +81,21 @@ struct NovaWorkPermitLibraryScreen: View {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    NovaPageHeading(title: "Çalışma İzni Örnekleri", onBack: onBack)
-                    NovaHelpHint(text: "56 düzenlenebilir Word örneği. Uygun formu arayın, indirin ve kendi saha prosedürünüze göre uyarlayın. Bu örnekler çalışma onayı veya izin kaydı oluşturmaz.")
+                    NovaPageHeading(title: RDLocalization.string("localizable.nova.work.permit.library.screen.calisma.izni.ornekleri.c37a490d", table: .localizable, fallback: "Çalışma İzni Örnekleri"), onBack: onBack)
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.work.permit.library.screen.56.duzenlenebilir.word.ornegi.uygun.formu.arayin.a258ccc9", table: .localizable, fallback: "56 düzenlenebilir Word örneği. Uygun formu arayın, indirin ve kendi saha prosedürünüze göre uyarlayın. Bu örnekler çalışma onayı veya izin kaydı oluşturmaz."))
                     HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
-                        TextField("Form, iş veya kelime ara", text: $query)
+                        TextField(RDLocalization.string("localizable.nova.work.permit.library.screen.form.is.veya.kelime.ara.4a1cdb74", table: .localizable, fallback: "Form, iş veya kelime ara"), text: $query)
                             .accessibilityIdentifier("permit.search")
                     }
                     .padding(12)
                     .background(.white, in: RoundedRectangle(cornerRadius: 14))
                     HStack(spacing: 8) {
-                        NovaFileChooserButton(label: "Sektör", value: sector ?? "Tüm sektörler",
+                        NovaFileChooserButton(label: RDLocalization.string("localizable.nova.work.permit.library.screen.sektor.40d89aaf", table: .localizable, fallback: "Sektör"), value: sector ?? "Tüm sektörler",
                             isOpen: openFilter == "sector", identifier: "permit.sector") {
                             openFilter = openFilter == "sector" ? nil : "sector"
                         }
-                        NovaFileChooserButton(label: "İş grubu", value: job ?? "Tüm işler",
+                        NovaFileChooserButton(label: RDLocalization.string("localizable.nova.work.permit.library.screen.is.grubu.c3856e06", table: .localizable, fallback: "İş grubu"), value: job ?? "Tüm işler",
                             isOpen: openFilter == "job", identifier: "permit.job") {
                             openFilter = openFilter == "job" ? nil : "job"
                         }
@@ -103,20 +103,20 @@ struct NovaWorkPermitLibraryScreen: View {
                     if let openFilter {
                         NovaFileChooserPanel(
                             options: openFilter == "sector"
-                                ? [.init(id: nil, title: "Tüm sektörler")] + sectors.map { .init(id: $0, title: $0) }
-                                : [.init(id: nil, title: "Tüm işler")] + jobs.map { .init(id: $0, title: $0) },
+                                ? [.init(id: nil, title: RDLocalization.string("localizable.nova.work.permit.library.screen.tum.sektorler.acccefbc", table: .localizable, fallback: "Tüm sektörler"))] + sectors.map { .init(id: $0, title: $0) }
+                                : [.init(id: nil, title: RDLocalization.string("localizable.nova.work.permit.library.screen.tum.isler.495911c9", table: .localizable, fallback: "Tüm işler"))] + jobs.map { .init(id: $0, title: $0) },
                             selected: openFilter == "sector" ? sector : job,
                             identifier: "permit.\(openFilter).options") { value in
                             if openFilter == "sector" { sector = value } else { job = value }
                             self.openFilter = nil
                         }
                     }
-                    NovaText(text: "\(visible.count) / \(templates.count) örnek form", style: .metaQuiet)
+                    NovaText(text: RDLocalization.format("localizable.nova.work.permit.library.screen.1.2.ornek.form.27f33b22", table: .localizable, fallback: "%1$@ / %2$@ örnek form", arguments: [String(describing: visible.count), String(describing: templates.count)]), style: .metaQuiet)
                     if let exportError { NovaText(text: exportError, style: .metaQuiet) }
                     if templates.isEmpty {
-                        NovaEmptyState(title: "Formlar yüklenemedi", message: "Uygulama paketindeki Word kataloğu bulunamadı.")
+                        NovaEmptyState(title: RDLocalization.string("localizable.nova.work.permit.library.screen.formlar.yuklenemedi.2d408e6c", table: .localizable, fallback: "Formlar yüklenemedi"), message: RDLocalization.string("localizable.nova.work.permit.library.screen.uygulama.paketindeki.word.katalogu.bulunamadi.78218506", table: .localizable, fallback: "Uygulama paketindeki Word kataloğu bulunamadı."))
                     } else if visible.isEmpty {
-                        NovaEmptyState(title: "Uygun form bulunamadı", message: "Arama kelimesini veya filtreleri değiştirin.")
+                        NovaEmptyState(title: RDLocalization.string("localizable.nova.work.permit.library.screen.uygun.form.bulunamadi.27545fa2", table: .localizable, fallback: "Uygun form bulunamadı"), message: RDLocalization.string("localizable.nova.work.permit.library.screen.arama.kelimesini.veya.filtreleri.degistirin.beb9d84b", table: .localizable, fallback: "Arama kelimesini veya filtreleri değiştirin."))
                     } else {
                         ForEach(visible) { item in
                             NovaCard(padding: 12) {
@@ -138,11 +138,11 @@ struct NovaWorkPermitLibraryScreen: View {
                                                 .background(Color.black.opacity(0.045), in: RoundedRectangle(cornerRadius: 12))
                                         }
                                         .buttonStyle(.plain)
-                                        .accessibilityLabel("\(item.title) Word dosyasını indir")
+                                        .accessibilityLabel(RDLocalization.format("localizable.nova.work.permit.library.screen.1.word.dosyasini.indir.17a3d8f1", table: .localizable, fallback: "%1$@ Word dosyasını indir", arguments: [String(describing: item.title)]))
                                         .accessibilityIdentifier("permit.download.\(item.code)")
                                     } else {
                                         Image(systemName: "exclamationmark.triangle")
-                                            .accessibilityLabel("Word dosyası bulunamadı")
+                                            .accessibilityLabel(RDLocalization.string("localizable.nova.work.permit.library.screen.word.dosyasi.bulunamadi.6854465e", table: .localizable, fallback: "Word dosyası bulunamadı"))
                                     }
                                 }
                             }

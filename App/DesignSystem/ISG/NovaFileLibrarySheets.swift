@@ -275,7 +275,7 @@ struct NovaFileRenameSheet: View {
                 NovaText(text: entry.fileName, style: .metaQuiet)
                 field(RDLocalization.string("localizable.nova.file.field.title", table: .localizable, fallback: "Başlık"), $title, id: "title")
                 categoryPicker
-                field("Etiketler · virgülle ayırın", $tags, id: "tags")
+                field(RDLocalization.string("localizable.nova.file.library.sheets.etiketler.virgulle.ayirin.4446a7cc", table: .localizable, fallback: "Etiketler · virgülle ayırın"), $tags, id: "tags")
                 field(RDLocalization.string("localizable.nova.document.field.note", table: .localizable, fallback: "Not"), $note, id: "note")
                 if let error {
                     NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
@@ -439,7 +439,7 @@ struct NovaFileAddInline: View {
             field(RDLocalization.string("localizable.nova.file.field.title", table: .localizable, fallback: "Başlık"),
                   $draft.title, id: "title")
             categoryPicker
-            field("Etiketler · virgülle ayırın", $draft.tags, id: "tags")
+            field(RDLocalization.string("localizable.nova.file.library.sheets.etiketler.virgulle.ayirin.bebc82f8", table: .localizable, fallback: "Etiketler · virgülle ayırın"), $draft.tags, id: "tags")
             field(RDLocalization.string("localizable.nova.document.field.note", table: .localizable, fallback: "Not"),
                   $draft.note, id: "note")
         }
@@ -447,16 +447,16 @@ struct NovaFileAddInline: View {
             NovaText(text: "\(allExtensions.joined(separator: ", ").uppercased()) · En fazla \(NovaFileWords.size(maxBytes))", style: .metaQuiet)
                 .fixedSize(horizontal: false, vertical: true)
             if !assurance.malwareScanningAvailable {
-                NovaText(text: "Dosya biçimi kontrol edilir; virüs taraması yapılmaz.", style: .metaQuiet)
+                NovaText(text: RDLocalization.string("localizable.nova.file.library.sheets.dosya.bicimi.kontrol.edilir.virus.taramasi.yapil.31b261ee", table: .localizable, fallback: "Dosya biçimi kontrol edilir; virüs taraması yapılmaz."), style: .metaQuiet)
             }
         } label: {
-            Label("Dosya bilgileri", systemImage: "info.circle").font(NovaFont.font(.meta))
+            Label(RDLocalization.string("localizable.nova.file.library.sheets.dosya.bilgileri.9b37a4f2", table: .localizable, fallback: "Dosya bilgileri"), systemImage: "info.circle").font(NovaFont.font(.meta))
         }.tint(NovaColorToken.textSecondary.color(in: scheme))
         if let error {
             NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
         }
         if payload != nil {
-            NovaButton(label: "Dosyayı ekle", symbol: "arrow.up.doc", isEnabled: !busy && draft.isReady,
+            NovaButton(label: RDLocalization.string("localizable.nova.file.library.sheets.dosyayi.ekle.b6a2d164", table: .localizable, fallback: "Dosyayı ekle"), symbol: "arrow.up.doc", isEnabled: !busy && draft.isReady,
                 isLoading: busy) { send() }.accessibilityIdentifier("file.add.save")
         }
     }
@@ -471,7 +471,7 @@ struct NovaFileAddInline: View {
             identifier: "file.add.company") { choosingCompany.toggle() }
         if choosingCompany {
             NovaFileChooserPanel(
-                options: [NovaFileChooserOption(id: nil, title: "Kişisel dosya", symbol: "person")] + companies.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
+                options: [NovaFileChooserOption(id: nil, title: RDLocalization.string("localizable.nova.file.library.sheets.kisisel.dosya.1c93d4e6", table: .localizable, fallback: "Kişisel dosya"), symbol: "person")] + companies.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
                 selected: company?.uuidString, identifier: "file.add.company") { picked in
                     company = picked.flatMap(UUID.init(uuidString:))
                     choosingCompany = false

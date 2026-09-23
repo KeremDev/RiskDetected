@@ -86,12 +86,12 @@ struct IsgWorkspaceDomainScreen: View {
 
     private var addTitle: String {
         switch domain {
-        case .emergencyPlan: return "Plan Ekle"
-        case .appointment: return "Atama Ekle"
-        case .board: return "Toplantı Ekle"
-        case .risk: return "Kayıt Ekle"
-        case .training: return "Eğitim Ekle"
-        case .equipment: return "Ekipman Ekle"
+        case .emergencyPlan: return RDLocalization.string("localizable.isg.workspace.domain.screen.plan.ekle.5cc8bddf", table: .localizable, fallback: "Plan Ekle")
+        case .appointment: return RDLocalization.string("localizable.isg.workspace.domain.screen.atama.ekle.77b1cfc0", table: .localizable, fallback: "Atama Ekle")
+        case .board: return RDLocalization.string("localizable.isg.workspace.domain.screen.toplanti.ekle.5553e10f", table: .localizable, fallback: "Toplantı Ekle")
+        case .risk: return RDLocalization.string("localizable.isg.workspace.domain.screen.kayit.ekle.1c67a9f1", table: .localizable, fallback: "Kayıt Ekle")
+        case .training: return RDLocalization.string("localizable.isg.workspace.domain.screen.egitim.ekle.e9135a5c", table: .localizable, fallback: "Eğitim Ekle")
+        case .equipment: return RDLocalization.string("localizable.isg.workspace.domain.screen.ekipman.ekle.1a66792c", table: .localizable, fallback: "Ekipman Ekle")
         default: return "Ekle"
         }
     }
@@ -99,50 +99,50 @@ struct IsgWorkspaceDomainScreen: View {
     private var helpText: String {
         switch domain {
         case .emergencyPlan:
-            return "Firmanın yürürlükteki acil durum planını, ekibini ve geçerlilik tarihini kaydedin; yenileme zamanını takip edin."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.firmanin.yururlukteki.acil.durum.planini.ekibini.2b0a367d", table: .localizable, fallback: "Firmanın yürürlükteki acil durum planını, ekibini ve geçerlilik tarihini kaydedin; yenileme zamanını takip edin.")
         case .appointment:
-            return "Firma personeline çalışan temsilcisi, destek elemanı ve acil durum ekip görevlerini verin; görev süresini takip edin."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.firma.personeline.calisan.temsilcisi.destek.elem.76044708", table: .localizable, fallback: "Firma personeline çalışan temsilcisi, destek elemanı ve acil durum ekip görevlerini verin; görev süresini takip edin.")
         case .board:
-            return "Gerçekleşen kurul toplantısının gündemini, katılımcılarını ve kararlarını firma kapsamında kaydedin."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.gerceklesen.kurul.toplantisinin.gundemini.katili.a75bbe02", table: .localizable, fallback: "Gerçekleşen kurul toplantısının gündemini, katılımcılarını ve kararlarını firma kapsamında kaydedin.")
         case .risk:
-            return "Firmanın risk değerlendirmesini ve revizyonlarını işyeri bazında kaydedin; geçerlilik durumunu takip edin."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.firmanin.risk.degerlendirmesini.ve.revizyonlarin.d612371a", table: .localizable, fallback: "Firmanın risk değerlendirmesini ve revizyonlarını işyeri bazında kaydedin; geçerlilik durumunu takip edin.")
         case .training:
-            return "Gerçekleşen eğitimi, katılımcıları ve süreyi kaydedin. Eğitim planlama ve müfredat bu akışın parçası değildir."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.gerceklesen.egitimi.katilimcilari.ve.sureyi.kayd.3f1f57bb", table: .localizable, fallback: "Gerçekleşen eğitimi, katılımcıları ve süreyi kaydedin. Eğitim planlama ve müfredat bu akışın parçası değildir.")
         case .equipment:
-            return "Firmaya ekipman ekleyin; kontrol sonucu, tarih ve rapor geçmişini tek yerden takip edin."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.firmaya.ekipman.ekleyin.kontrol.sonucu.tarih.ve..d0389084", table: .localizable, fallback: "Firmaya ekipman ekleyin; kontrol sonucu, tarih ve rapor geçmişini tek yerden takip edin.")
         default:
-            return "\(companyName) firmasına ait yetkili OSGB kayıtları gösteriliyor."
+            return RDLocalization.format("localizable.isg.workspace.domain.screen.1.firmasina.ait.yetkili.osgb.kayitlari.gosterili.324456d6", table: .localizable, fallback: "%1$@ firmasına ait yetkili OSGB kayıtları gösteriliyor.", arguments: [String(describing: companyName)])
         }
     }
 
     private var emptyTitle: String {
         switch domain {
-        case .emergencyPlan: return "Henüz acil durum planı yok"
-        case .appointment: return "Henüz atama kaydı yok"
-        case .board: return "Henüz kurul toplantısı kaydı yok"
-        case .risk: return "Henüz risk değerlendirmesi yok"
-        case .training: return "Henüz gerçekleşen eğitim kaydı yok"
-        case .equipment: return "Henüz ekipman kaydı yok"
-        default: return "Henüz \(domain.title.lowercased()) kaydı yok"
+        case .emergencyPlan: return RDLocalization.string("localizable.isg.workspace.domain.screen.henuz.acil.durum.plani.yok.68aca146", table: .localizable, fallback: "Henüz acil durum planı yok")
+        case .appointment: return RDLocalization.string("localizable.isg.workspace.domain.screen.henuz.atama.kaydi.yok.4c56592b", table: .localizable, fallback: "Henüz atama kaydı yok")
+        case .board: return RDLocalization.string("localizable.isg.workspace.domain.screen.henuz.kurul.toplantisi.kaydi.yok.f24b3dfd", table: .localizable, fallback: "Henüz kurul toplantısı kaydı yok")
+        case .risk: return RDLocalization.string("localizable.isg.workspace.domain.screen.henuz.risk.degerlendirmesi.yok.39d53e55", table: .localizable, fallback: "Henüz risk değerlendirmesi yok")
+        case .training: return RDLocalization.string("localizable.isg.workspace.domain.screen.henuz.gerceklesen.egitim.kaydi.yok.6ec82d56", table: .localizable, fallback: "Henüz gerçekleşen eğitim kaydı yok")
+        case .equipment: return RDLocalization.string("localizable.isg.workspace.domain.screen.henuz.ekipman.kaydi.yok.c049dbae", table: .localizable, fallback: "Henüz ekipman kaydı yok")
+        default: return RDLocalization.format("localizable.isg.workspace.domain.screen.henuz.1.kaydi.yok.2f44dd1c", table: .localizable, fallback: "Henüz %1$@ kaydı yok", arguments: [String(describing: domain.title.lowercased())])
         }
     }
 
     private var emptyMessage: String {
         switch domain {
         case .emergencyPlan:
-            return "Planı ve görevli ekibi ekleyerek geçerlilik süresini dijital ortamda takip edebilirsiniz."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.plani.ve.gorevli.ekibi.ekleyerek.gecerlilik.sure.39f8e736", table: .localizable, fallback: "Planı ve görevli ekibi ekleyerek geçerlilik süresini dijital ortamda takip edebilirsiniz.")
         case .appointment:
-            return "Firma personeline görev vererek çalışan temsilcisi ve destek elemanı kayıtlarını tek yerden izleyebilirsiniz."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.firma.personeline.gorev.vererek.calisan.temsilci.6621b995", table: .localizable, fallback: "Firma personeline görev vererek çalışan temsilcisi ve destek elemanı kayıtlarını tek yerden izleyebilirsiniz.")
         case .board:
-            return "Toplantıyı ekleyerek gündemi, katılımcıları ve alınan kararları birlikte takip edebilirsiniz."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.toplantiyi.ekleyerek.gundemi.katilimcilari.ve.al.423169cd", table: .localizable, fallback: "Toplantıyı ekleyerek gündemi, katılımcıları ve alınan kararları birlikte takip edebilirsiniz.")
         case .risk:
-            return "İlk değerlendirmeyi ekleyerek geçerlilik süresini ve sonraki revizyonları takip edebilirsiniz."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.ilk.degerlendirmeyi.ekleyerek.gecerlilik.suresin.6bdf7d9b", table: .localizable, fallback: "İlk değerlendirmeyi ekleyerek geçerlilik süresini ve sonraki revizyonları takip edebilirsiniz.")
         case .training:
-            return "Gerçekleşen eğitimi ve katılımcıları ekleyerek eğitim saatlerini ve eksik personeli takip edebilirsiniz."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.gerceklesen.egitimi.ve.katilimcilari.ekleyerek.e.5693fdb3", table: .localizable, fallback: "Gerçekleşen eğitimi ve katılımcıları ekleyerek eğitim saatlerini ve eksik personeli takip edebilirsiniz.")
         case .equipment:
-            return "Periyodik kontrole giren ekipmanları ekleyerek kontrol tarihlerini ve raporlarını takip edebilirsiniz."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.periyodik.kontrole.giren.ekipmanlari.ekleyerek.k.8efe7a3e", table: .localizable, fallback: "Periyodik kontrole giren ekipmanları ekleyerek kontrol tarihlerini ve raporlarını takip edebilirsiniz.")
         default:
-            return "Yeni kayıtlar bu firmaya ve yetkili çalışma alanına bağlı olarak burada görünür."
+            return RDLocalization.string("localizable.isg.workspace.domain.screen.yeni.kayitlar.bu.firmaya.ve.yetkili.calisma.alan.93e67095", table: .localizable, fallback: "Yeni kayıtlar bu firmaya ve yetkili çalışma alanına bağlı olarak burada görünür.")
         }
     }
 
@@ -452,7 +452,7 @@ struct IsgWorkspaceDomainScreen: View {
         if domain == .appointment, let id = uuidFact("employee_id", in: row), let name = employees[id] { return name }
         if domain == .risk, let id = uuidFact("workplace_id", in: row), let name = workplaces[id] { return name }
         if domain == .board, let date = fact("held_on", in: row) ?? fact("planned_on", in: row) {
-            return "Kurul toplantısı · \(date)"
+            return RDLocalization.format("localizable.isg.workspace.domain.screen.kurul.toplantisi.1.06da7905", table: .localizable, fallback: "Kurul toplantısı · %1$@", arguments: [String(describing: date)])
         }
         return row.title
     }
@@ -582,7 +582,7 @@ private struct IsgWorkspaceDomainDetail: View {
                 if domain == .training, !row.trainingParticipants.isEmpty {
                     NovaCard(padding: 14) {
                         VStack(alignment: .leading, spacing: 10) {
-                            NovaText(text: "Katılımcılar", style: .bodyStrong)
+                            NovaText(text: RDLocalization.string("localizable.isg.workspace.domain.screen.katilimcilar.10685ae1", table: .localizable, fallback: "Katılımcılar"), style: .bodyStrong)
                             ForEach(row.trainingParticipants) { participant in
                                 HStack(spacing: 10) {
                                     Image(systemName: participant.attended ? "checkmark.circle.fill" : "circle")
@@ -620,7 +620,7 @@ private struct IsgWorkspaceDomainDetail: View {
                 if domain == .board, !row.boardDecisions.isEmpty {
                     NovaCard(padding: 14) {
                         VStack(alignment: .leading, spacing: 12) {
-                            NovaText(text: "Kararlar ve takip", style: .bodyStrong)
+                            NovaText(text: RDLocalization.string("localizable.isg.workspace.domain.screen.kararlar.ve.takip.bd5b857a", table: .localizable, fallback: "Kararlar ve takip"), style: .bodyStrong)
                             ForEach(row.boardDecisions.sorted { $0.number < $1.number }) { decision in
                                 VStack(alignment: .leading, spacing: 6) {
                                     HStack(alignment: .top, spacing: 8) {
@@ -639,7 +639,7 @@ private struct IsgWorkspaceDomainDetail: View {
                                             NovaButton(label: "Tamamla", symbol: "checkmark", compact: true) {
                                                 settle(decision, as: "done")
                                             }
-                                            NovaButton(label: "İptal", symbol: "xmark", compact: true) {
+                                            NovaButton(label: RDLocalization.string("localizable.isg.workspace.domain.screen.iptal.e901aa0d", table: .localizable, fallback: "İptal"), symbol: "xmark", compact: true) {
                                                 settle(decision, as: "cancelled")
                                             }
                                         }
@@ -745,16 +745,16 @@ private struct IsgWorkspaceDomainDetail: View {
 
     private var riskHistory: some View {
         VStack(alignment: .leading, spacing: 8) {
-            NovaText(text: "Sürüm geçmişi", style: .cardTitle)
+            NovaText(text: RDLocalization.string("localizable.isg.workspace.domain.screen.surum.gecmisi.6037bfa5", table: .localizable, fallback: "Sürüm geçmişi"), style: .cardTitle)
             if row.riskVersions.isEmpty {
-                NovaEmptyState(title: "Henüz sürüm yok",
-                               message: "İlk değerlendirme taslağı eklendiğinde sürüm geçmişi burada oluşur.")
+                NovaEmptyState(title: RDLocalization.string("localizable.isg.workspace.domain.screen.henuz.surum.yok.b8adf932", table: .localizable, fallback: "Henüz sürüm yok"),
+                               message: RDLocalization.string("localizable.isg.workspace.domain.screen.ilk.degerlendirme.taslagi.eklendiginde.surum.gec.c3d0c022", table: .localizable, fallback: "İlk değerlendirme taslağı eklendiğinde sürüm geçmişi burada oluşur."))
             } else {
                 ForEach(row.riskVersions.sorted { $0.number > $1.number }) { version in
                     NovaCard(padding: 12) {
                         VStack(alignment: .leading, spacing: 7) {
                             HStack(spacing: 8) {
-                                NovaText(text: "v\(version.number) · \(IsgWorkspaceDisplayText.value(version.kind))",
+                                NovaText(text: RDLocalization.format("localizable.isg.workspace.domain.screen.v.1.2.9b3e53f3", table: .localizable, fallback: "v%1$@ · %2$@", arguments: [String(describing: version.number), String(describing: IsgWorkspaceDisplayText.value(version.kind))]),
                                          style: .bodyStrong)
                                 Spacer(minLength: 0)
                                 NovaStatusPill(label: IsgWorkspaceDisplayText.value(version.state),
@@ -762,16 +762,16 @@ private struct IsgWorkspaceDomainDetail: View {
                                             version.state == "draft" ? .warning : .neutral)
                             }
                             HStack(spacing: 10) {
-                                NovaText(text: "Değerlendirme: \(version.assessmentOn)", style: .metaQuiet)
+                                NovaText(text: RDLocalization.format("localizable.isg.workspace.domain.screen.degerlendirme.1.f5130918", table: .localizable, fallback: "Değerlendirme: %1$@", arguments: [String(describing: version.assessmentOn)]), style: .metaQuiet)
                                 if let revisionOn = version.revisionOn {
                                     NovaText(text: "Revizyon: \(revisionOn)", style: .metaQuiet)
                                 }
                             }
                             if let until = version.validUntil {
-                                NovaText(text: "Geçerlilik: \(until)", style: .metaQuiet)
+                                NovaText(text: RDLocalization.format("localizable.isg.workspace.domain.screen.gecerlilik.1.1958bec5", table: .localizable, fallback: "Geçerlilik: %1$@", arguments: [String(describing: until)]), style: .metaQuiet)
                             }
                             if let period = version.periodYears {
-                                NovaText(text: "Süre: \(period) yıl" +
+                                NovaText(text: RDLocalization.format("localizable.isg.workspace.domain.screen.sure.1.yil.185d3ffc", table: .localizable, fallback: "Süre: %1$@ yıl", arguments: [String(describing: period)]) +
                                     (version.periodSource.map { " · \(IsgWorkspaceDisplayText.value($0))" } ?? ""),
                                     style: .metaQuiet)
                             }
@@ -779,16 +779,16 @@ private struct IsgWorkspaceDomainDetail: View {
                                 NovaText(text: "Kapsam: \(scope)", style: .meta)
                             }
                             if let reason = version.reason, !reason.isEmpty {
-                                NovaText(text: "Gerekçe: \(reason)", style: .meta)
+                                NovaText(text: RDLocalization.format("localizable.isg.workspace.domain.screen.gerekce.1.3dc158dd", table: .localizable, fallback: "Gerekçe: %1$@", arguments: [String(describing: reason)]), style: .meta)
                             }
                             if let cancellation = version.cancellationNote, !cancellation.isEmpty {
-                                NovaText(text: "İptal gerekçesi: \(cancellation)", style: .meta)
+                                NovaText(text: RDLocalization.format("localizable.isg.workspace.domain.screen.iptal.gerekcesi.1.36440d66", table: .localizable, fallback: "İptal gerekçesi: %1$@", arguments: [String(describing: cancellation)]), style: .meta)
                             }
                             if version.periodNeedsReview {
-                                NovaHelpHint(text: "Süre uzman tarafından belirlenmiştir; kaynak ve geçerlilik bilgisi gözden geçirilmelidir.")
+                                NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.domain.screen.sure.uzman.tarafindan.belirlenmistir.kaynak.ve.g.f3370bf6", table: .localizable, fallback: "Süre uzman tarafından belirlenmiştir; kaynak ve geçerlilik bilgisi gözden geçirilmelidir."))
                             }
                             if version.sourceDrift {
-                                NovaHelpHint(text: "Kaynak analiz bu sürümden sonra değişmiştir; kayıt otomatik değiştirilmedi.")
+                                NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.domain.screen.kaynak.analiz.bu.surumden.sonra.degismistir.kayi.42f150f8", table: .localizable, fallback: "Kaynak analiz bu sürümden sonra değişmiştir; kayıt otomatik değiştirilmedi."))
                             }
                         }
                     }
@@ -799,10 +799,10 @@ private struct IsgWorkspaceDomainDetail: View {
 
     private var equipmentHistory: some View {
         VStack(alignment: .leading, spacing: 8) {
-            NovaText(text: "Kontrol ve rapor geçmişi", style: .cardTitle)
+            NovaText(text: RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.ve.rapor.gecmisi.dea55504", table: .localizable, fallback: "Kontrol ve rapor geçmişi"), style: .cardTitle)
             if row.equipmentInspections.isEmpty {
-                NovaEmptyState(title: "Henüz kontrol kaydı yok",
-                               message: "İlk periyodik kontrolü eklediğinizde tarih, sonuç ve rapor bilgileri burada görünür.")
+                NovaEmptyState(title: RDLocalization.string("localizable.isg.workspace.domain.screen.henuz.kontrol.kaydi.yok.7edb6c22", table: .localizable, fallback: "Henüz kontrol kaydı yok"),
+                               message: RDLocalization.string("localizable.isg.workspace.domain.screen.ilk.periyodik.kontrolu.eklediginizde.tarih.sonuc.f78839b5", table: .localizable, fallback: "İlk periyodik kontrolü eklediğinizde tarih, sonuç ve rapor bilgileri burada görünür."))
             } else {
                 ForEach(row.equipmentInspections) { inspection in
                     NovaCard(padding: 12) {
@@ -815,21 +815,21 @@ private struct IsgWorkspaceDomainDetail: View {
                                             inspection.result == "fail" ? .danger : .warning)
                             }
                             if let next = inspection.nextDueOn {
-                                NovaText(text: "Sonraki kontrol: \(next)", style: .metaQuiet)
+                                NovaText(text: RDLocalization.format("localizable.isg.workspace.domain.screen.sonraki.kontrol.1.edda1e69", table: .localizable, fallback: "Sonraki kontrol: %1$@", arguments: [String(describing: next)]), style: .metaQuiet)
                             }
                             if let inspector = inspection.inspector, !inspector.isEmpty {
-                                NovaText(text: "Kontrolü yapan: \(inspector)", style: .meta)
+                                NovaText(text: RDLocalization.format("localizable.isg.workspace.domain.screen.kontrolu.yapan.1.669c1570", table: .localizable, fallback: "Kontrolü yapan: %1$@", arguments: [String(describing: inspector)]), style: .meta)
                             }
                             if let reference = inspection.externalRef, !reference.isEmpty {
-                                NovaText(text: "Rapor no: \(reference)", style: .meta)
+                                NovaText(text: RDLocalization.format("localizable.isg.workspace.domain.screen.rapor.no.1.f16776bc", table: .localizable, fallback: "Rapor no: %1$@", arguments: [String(describing: reference)]), style: .meta)
                             }
                             if let note = inspection.note, !note.isEmpty { NovaText(text: note, style: .meta) }
                             HStack(spacing: 8) {
                                 if inspection.assetID != nil {
-                                    NovaStatusPill(label: "Rapor arşivde", status: .success)
+                                    NovaStatusPill(label: RDLocalization.string("localizable.isg.workspace.domain.screen.rapor.arsivde.d811f524", table: .localizable, fallback: "Rapor arşivde"), status: .success)
                                 }
                                 if inspection.katipDeclared {
-                                    NovaStatusPill(label: "İSG-KATİP beyanı", status: .neutral)
+                                    NovaStatusPill(label: RDLocalization.string("localizable.isg.workspace.domain.screen.isg.katip.beyani.00fd7d82", table: .localizable, fallback: "İSG-KATİP beyanı"), status: .neutral)
                                 }
                             }
                         }
@@ -845,7 +845,7 @@ private struct IsgWorkspaceDomainDetail: View {
         if domain == .risk, let raw = fact("workplace_id"), let id = UUID(uuidString: raw),
            let name = workplaces[id] { return name }
         if domain == .board, let date = fact("held_on") ?? fact("planned_on") {
-            return "Kurul toplantısı · \(date)"
+            return RDLocalization.format("localizable.isg.workspace.domain.screen.kurul.toplantisi.1.06da7905", table: .localizable, fallback: "Kurul toplantısı · %1$@", arguments: [String(describing: date)])
         }
         return row.title
     }
@@ -962,36 +962,36 @@ private enum IsgWorkspaceDomainAction: Identifiable, Equatable {
     }
     var title: String {
         switch self {
-        case .trainingComplete: return "Eğitimi tamamla"
-        case .trainingCancel: return "Eğitimi iptal et"
-        case .riskEditDraft: return "Taslağı düzenle"
-        case .riskFinalize: return "Risk analizini kesinleştir"
-        case .riskCancelDraft: return "Taslağı iptal et"
+        case .trainingComplete: return RDLocalization.string("localizable.isg.workspace.domain.screen.egitimi.tamamla.a5adb53f", table: .localizable, fallback: "Eğitimi tamamla")
+        case .trainingCancel: return RDLocalization.string("localizable.isg.workspace.domain.screen.egitimi.iptal.et.720b4c9b", table: .localizable, fallback: "Eğitimi iptal et")
+        case .riskEditDraft: return RDLocalization.string("localizable.isg.workspace.domain.screen.taslagi.duzenle.ec22aa03", table: .localizable, fallback: "Taslağı düzenle")
+        case .riskFinalize: return RDLocalization.string("localizable.isg.workspace.domain.screen.risk.analizini.kesinlestir.cfa56190", table: .localizable, fallback: "Risk analizini kesinleştir")
+        case .riskCancelDraft: return RDLocalization.string("localizable.isg.workspace.domain.screen.taslagi.iptal.et.59d997b7", table: .localizable, fallback: "Taslağı iptal et")
         case .nonconformityTransition(let state):
             return ["open": "Kaydı aç", "assigned": "Sorumlu ata", "in_progress": "İşleme al",
                     "pending_verification": "Doğrulamaya gönder", "closed": "Kaydı kapat",
                     "reopened": "Yeniden aç", "cancelled": "Kaydı iptal et"][state] ?? "Durumu güncelle"
-        case .nonconformityAddAction: return "Düzeltici faaliyet ekle"
-        case .nonconformityVerify: return "Doğrulama kaydet"
-        case .checklistAnswer: return "Kontrol maddesini yanıtla"
-        case .checklistSubmit: return "Kontrol listesini gönder"
-        case .checklistCancel: return "Kontrol listesini iptal et"
-        case .drillPerform: return "Tatbikatı tamamla"
-        case .drillCancel: return "Tatbikatı iptal et"
-        case .appointmentEnd: return "Atamayı sonlandır"
-        case .ppeReturn: return "KKD iadesi kaydet"
-        case .equipmentInspect: return "Periyodik kontrol ekle"
-        case .equipmentEdit: return "Ekipmanı düzenle"
-        case .equipmentRule: return "Kontrol süresini düzenle"
-        case .equipmentArchive: return "Ekipmanı arşivle"
-        case .katipArchive: return "Sözleşmeyi arşivle"
-        case .annualAddItem: return "Plan faaliyeti ekle"
-        case .annualClose: return "Yıllık planı kapat"
-        case .boardHold: return "Toplantıyı gerçekleştir"
-        case .boardAddDecision: return "Karar ekle"
-        case .boardCancel: return "Toplantıyı iptal et"
-        case .permitArchive: return "İzin formunu arşivle"
-        case .visitAddObservation: return "Ziyaret gözlemi ekle"
+        case .nonconformityAddAction: return RDLocalization.string("localizable.isg.workspace.domain.screen.duzeltici.faaliyet.ekle.327cdaf4", table: .localizable, fallback: "Düzeltici faaliyet ekle")
+        case .nonconformityVerify: return RDLocalization.string("localizable.isg.workspace.domain.screen.dogrulama.kaydet.e64d4540", table: .localizable, fallback: "Doğrulama kaydet")
+        case .checklistAnswer: return RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.maddesini.yanitla.7c3de50d", table: .localizable, fallback: "Kontrol maddesini yanıtla")
+        case .checklistSubmit: return RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.listesini.gonder.b716df10", table: .localizable, fallback: "Kontrol listesini gönder")
+        case .checklistCancel: return RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.listesini.iptal.et.6d309419", table: .localizable, fallback: "Kontrol listesini iptal et")
+        case .drillPerform: return RDLocalization.string("localizable.isg.workspace.domain.screen.tatbikati.tamamla.578b1ac6", table: .localizable, fallback: "Tatbikatı tamamla")
+        case .drillCancel: return RDLocalization.string("localizable.isg.workspace.domain.screen.tatbikati.iptal.et.f4c73855", table: .localizable, fallback: "Tatbikatı iptal et")
+        case .appointmentEnd: return RDLocalization.string("localizable.isg.workspace.domain.screen.atamayi.sonlandir.80de0787", table: .localizable, fallback: "Atamayı sonlandır")
+        case .ppeReturn: return RDLocalization.string("localizable.isg.workspace.domain.screen.kkd.iadesi.kaydet.17b5e5b9", table: .localizable, fallback: "KKD iadesi kaydet")
+        case .equipmentInspect: return RDLocalization.string("localizable.isg.workspace.domain.screen.periyodik.kontrol.ekle.ee87f5c3", table: .localizable, fallback: "Periyodik kontrol ekle")
+        case .equipmentEdit: return RDLocalization.string("localizable.isg.workspace.domain.screen.ekipmani.duzenle.fba2a351", table: .localizable, fallback: "Ekipmanı düzenle")
+        case .equipmentRule: return RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.suresini.duzenle.09bd7aaa", table: .localizable, fallback: "Kontrol süresini düzenle")
+        case .equipmentArchive: return RDLocalization.string("localizable.isg.workspace.domain.screen.ekipmani.arsivle.6b0ede70", table: .localizable, fallback: "Ekipmanı arşivle")
+        case .katipArchive: return RDLocalization.string("localizable.isg.workspace.domain.screen.sozlesmeyi.arsivle.cc430786", table: .localizable, fallback: "Sözleşmeyi arşivle")
+        case .annualAddItem: return RDLocalization.string("localizable.isg.workspace.domain.screen.plan.faaliyeti.ekle.ae4c1840", table: .localizable, fallback: "Plan faaliyeti ekle")
+        case .annualClose: return RDLocalization.string("localizable.isg.workspace.domain.screen.yillik.plani.kapat.fca8488d", table: .localizable, fallback: "Yıllık planı kapat")
+        case .boardHold: return RDLocalization.string("localizable.isg.workspace.domain.screen.toplantiyi.gerceklestir.7900e884", table: .localizable, fallback: "Toplantıyı gerçekleştir")
+        case .boardAddDecision: return RDLocalization.string("localizable.isg.workspace.domain.screen.karar.ekle.311ba06f", table: .localizable, fallback: "Karar ekle")
+        case .boardCancel: return RDLocalization.string("localizable.isg.workspace.domain.screen.toplantiyi.iptal.et.832b050c", table: .localizable, fallback: "Toplantıyı iptal et")
+        case .permitArchive: return RDLocalization.string("localizable.isg.workspace.domain.screen.izin.formunu.arsivle.ce746b0f", table: .localizable, fallback: "İzin formunu arşivle")
+        case .visitAddObservation: return RDLocalization.string("localizable.isg.workspace.domain.screen.ziyaret.gozlemi.ekle.3c85c532", table: .localizable, fallback: "Ziyaret gözlemi ekle")
         }
     }
     var symbol: String {
@@ -1071,7 +1071,7 @@ private struct IsgWorkspaceDomainActionEditor: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 NovaText(text: action.title, style: .sectionTitle)
-                NovaHelpHint(text: "İşlem \(row.title) kaydına uygulanır ve değişiklik geçmişine yazılır.")
+                NovaHelpHint(text: RDLocalization.format("localizable.isg.workspace.domain.screen.islem.1.kaydina.uygulanir.ve.degisiklik.gecmisin.15d59692", table: .localizable, fallback: "İşlem %1$@ kaydına uygulanır ve değişiklik geçmişine yazılır.", arguments: [String(describing: row.title)]))
                 fields
                 if let error { NovaHelpHint(text: error) }
                 NovaCompactActionButton(title: saving ? "Kaydediliyor…" : action.title,
@@ -1087,11 +1087,11 @@ private struct IsgWorkspaceDomainActionEditor: View {
     @ViewBuilder private var fields: some View {
         switch action {
         case .trainingComplete:
-            NovaHelpHint(text: "Eğitime katılan personeli seçin. Sınavlı müfredatta seçilen herkesin başarılı sınav kaydı bulunmalıdır.")
+            NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.domain.screen.egitime.katilan.personeli.secin.sinavli.mufredat.458bc204", table: .localizable, fallback: "Eğitime katılan personeli seçin. Sınavlı müfredatta seçilen herkesin başarılı sınav kaydı bulunmalıdır."))
             employeePicker
         case .riskEditDraft:
             if let draft = riskDraft {
-                NovaFormValueRow(label: "Sürüm türü", symbol: "square.stack.3d.up") {
+                NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.domain.screen.surum.turu.a67ad9ca", table: .localizable, fallback: "Sürüm türü"), symbol: "square.stack.3d.up") {
                     NovaText(text: IsgWorkspaceDisplayText.value(draft.kind), style: .bodyStrong)
                 }
                 compactDate(draft.kind == "full" ? "Değerlendirme tarihi" : "Revizyon tarihi",
@@ -1100,19 +1100,19 @@ private struct IsgWorkspaceDomainActionEditor: View {
                 if ["partial", "metadata"].contains(draft.kind) {
                     textField("Değişiklik gerekçesi · en az 10 karakter", text: $note)
                 }
-                NovaHelpHint(text: "Sürüm türü taslak açıldıktan sonra değiştirilemez. Tamamlanmış sürümler düzenlenmez.")
+                NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.domain.screen.surum.turu.taslak.acildiktan.sonra.degistirileme.6da0c8fc", table: .localizable, fallback: "Sürüm türü taslak açıldıktan sonra değiştirilemez. Tamamlanmış sürümler düzenlenmez."))
             }
         case .riskFinalize:
             if fact("draft_kind") == "full" {
                 Stepper("Geçerlilik süresi: \(number) yıl", value: $number, in: 1...20)
                     .padding(12).novaControlBackground(cornerRadius: 14)
-                NovaHelpHint(text: "\(IsgWorkspaceDisplayText.value(companyHazardClass)) tehlike sınıfı için önerilen süre \(suggestedRiskPeriod) yıldır; gerektiğinde değiştirebilirsiniz.")
+                NovaHelpHint(text: RDLocalization.format("localizable.isg.workspace.domain.screen.1.tehlike.sinifi.icin.onerilen.sure.2.yildir.ger.1df898eb", table: .localizable, fallback: "%1$@ tehlike sınıfı için önerilen süre %2$@ yıldır; gerektiğinde değiştirebilirsiniz.", arguments: [String(describing: IsgWorkspaceDisplayText.value(companyHazardClass)), String(describing: suggestedRiskPeriod)]))
             } else {
-                NovaHelpHint(text: "Kısmi revizyon ve bilgi düzeltmesi ilk değerlendirmenin geçerlilik tarihini değiştirmez.")
+                NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.domain.screen.kismi.revizyon.ve.bilgi.duzeltmesi.ilk.degerlend.0447010a", table: .localizable, fallback: "Kısmi revizyon ve bilgi düzeltmesi ilk değerlendirmenin geçerlilik tarihini değiştirmez."))
             }
         case .riskCancelDraft:
             textField("İptal gerekçesi · en az 5 karakter", text: $note)
-            NovaHelpHint(text: "Taslak iptal edilir; yürürlükteki risk değerlendirmesi değişmez.")
+            NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.domain.screen.taslak.iptal.edilir.yururlukteki.risk.degerlendi.31a323c1", table: .localizable, fallback: "Taslak iptal edilir; yürürlükteki risk değerlendirmesi değişmez."))
         case .nonconformityTransition(let state):
             if ["assigned"].contains(state) { textField("Sorumlu / iletişim", text: $contact) }
             if ["cancelled", "open", "in_progress", "reopened"].contains(state) {
@@ -1129,7 +1129,7 @@ private struct IsgWorkspaceDomainActionEditor: View {
                 .padding(12).novaControlBackground(cornerRadius: 14)
             textField("Doğrulama notu", text: $note)
         case .checklistAnswer:
-            Picker("Kontrol maddesi", selection: $checklistItemCode) {
+            Picker(RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.maddesi.9362b2f1", table: .localizable, fallback: "Kontrol maddesi"), selection: $checklistItemCode) {
                 ForEach(row.checklistItems) { item in Text(item.prompt).tag(item.code) }
             }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
                 .onChange(of: checklistItemCode) { code in
@@ -1142,13 +1142,13 @@ private struct IsgWorkspaceDomainActionEditor: View {
             picker("Sonuç", values: checklistResultOptions)
             if option == "nonconform" {
                 if selectedChecklistItem?.nonconformityID != nil {
-                    NovaHelpHint(text: "Bu maddeye bağlı uygunsuzluk kaydı daha önce oluşturuldu.")
+                    NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.domain.screen.bu.maddeye.bagli.uygunsuzluk.kaydi.daha.once.olu.ac5dd1ad", table: .localizable, fallback: "Bu maddeye bağlı uygunsuzluk kaydı daha önce oluşturuldu."))
                 } else {
-                    Toggle("Bu madde için uygunsuzluk kaydı aç", isOn: $createChecklistNonconformity)
+                    Toggle(RDLocalization.string("localizable.isg.workspace.domain.screen.bu.madde.icin.uygunsuzluk.kaydi.ac.9513ff63", table: .localizable, fallback: "Bu madde için uygunsuzluk kaydı aç"), isOn: $createChecklistNonconformity)
                         .padding(12).novaControlBackground(cornerRadius: 14)
                 }
                 if createChecklistNonconformity && selectedChecklistItem?.nonconformityID == nil {
-                    Picker("Önem", selection: $checklistSeverity) {
+                    Picker(RDLocalization.string("localizable.isg.workspace.domain.screen.onem.9e19318d", table: .localizable, fallback: "Önem"), selection: $checklistSeverity) {
                         ForEach(["low", "medium", "high", "critical"], id: \.self) { value in
                             Text(IsgWorkspaceDisplayText.value(value)).tag(value)
                         }
@@ -1183,8 +1183,8 @@ private struct IsgWorkspaceDomainActionEditor: View {
             picker("Durum", values: ["reusable", "worn", "damaged", "lost"])
             textField("Not", text: $note)
         case .equipmentEdit:
-            Picker("İşyeri", selection: $workplaceID) {
-                Text("İşyeri seçin").tag(Optional<UUID>.none)
+            Picker(RDLocalization.string("localizable.isg.workspace.domain.screen.isyeri.54980c69", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
+                Text(RDLocalization.string("localizable.isg.workspace.domain.screen.isyeri.secin.506239f3", table: .localizable, fallback: "İşyeri seçin")).tag(Optional<UUID>.none)
                 ForEach(workplaces.keys.sorted { (workplaces[$0] ?? "") < (workplaces[$1] ?? "") }, id: \.self) { id in
                     Text(workplaces[id] ?? id.uuidString).tag(Optional(id))
                 }
@@ -1193,22 +1193,22 @@ private struct IsgWorkspaceDomainActionEditor: View {
             textField("Konum (isteğe bağlı)", text: $locationNote)
             compactDate("Edinme tarihi", selection: $date, limitToToday: true)
         case .equipmentRule:
-            NovaFormValueRow(label: "Ekipman türü", symbol: "shippingbox") {
+            NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.domain.screen.ekipman.turu.d7f0e965", table: .localizable, fallback: "Ekipman türü"), symbol: "shippingbox") {
                 NovaText(text: row.title, style: .bodyStrong)
             }
             Stepper("Kontrol süresi: \(number) ay", value: $number, in: 1...240)
                 .padding(12).novaControlBackground(cornerRadius: 14)
-            Picker("Süre kaynağı", selection: $option) {
-                Text("Üretici kılavuzu").tag("manufacturer")
-                Text("Yayımlanmış kural / standart").tag("rule_version")
+            Picker(RDLocalization.string("localizable.isg.workspace.domain.screen.sure.kaynagi.d2eecb73", table: .localizable, fallback: "Süre kaynağı"), selection: $option) {
+                Text(RDLocalization.string("localizable.isg.workspace.domain.screen.uretici.kilavuzu.204d1af5", table: .localizable, fallback: "Üretici kılavuzu")).tag("manufacturer")
+                Text(RDLocalization.string("localizable.isg.workspace.domain.screen.yayimlanmis.kural.standart.c722e72f", table: .localizable, fallback: "Yayımlanmış kural / standart")).tag("rule_version")
                 Text("Uzman tarafından belirlenen").tag("unapproved_fixture")
             }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
             if option == "unapproved_fixture" {
                 textField("İstisna ve dayanak notu · en az 10 karakter", text: $note)
             }
-            NovaHelpHint(text: "Bu süre aynı firmadaki aynı ekipman türünün sonraki kontrollerinde kullanılır; geçmiş raporların tarihleri değişmez.")
+            NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.domain.screen.bu.sure.ayni.firmadaki.ayni.ekipman.turunun.sonr.79fbc2f2", table: .localizable, fallback: "Bu süre aynı firmadaki aynı ekipman türünün sonraki kontrollerinde kullanılır; geçmiş raporların tarihleri değişmez."))
         case .equipmentInspect:
-            equipmentAccordion(.control, title: "Kontrol ve sonuç", symbol: "calendar.badge.checkmark") {
+            equipmentAccordion(.control, title: RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.ve.sonuc.c9bf7e32", table: .localizable, fallback: "Kontrol ve sonuç"), symbol: "calendar.badge.checkmark") {
                 HStack(alignment: .top, spacing: 8) {
                     compactDate("Kontrol tarihi", selection: $date, limitToToday: true)
                     compactDate("Sonraki kontrol", selection: $secondDate,
@@ -1219,19 +1219,19 @@ private struct IsgWorkspaceDomainActionEditor: View {
                     ? "Olumsuz kontrolde sonraki tarih oluşturulmaz. Düzeltme sonrası yeni kontrol kaydı girin."
                     : "Sonraki tarih \(periodMonths) aylık süreden hesaplandı; uzman gerekirse değiştirebilir.")
             }
-            equipmentAccordion(.details, title: "Kontrol bilgileri", symbol: "person.text.rectangle") {
+            equipmentAccordion(.details, title: RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.bilgileri.ca81ece4", table: .localizable, fallback: "Kontrol bilgileri"), symbol: "person.text.rectangle") {
                 textField("Kontrolü yapan", text: $contact)
                 textField("Rapor no / harici referans", text: $externalRef)
-                Toggle("İSG-KATİP ataması yapıldı", isOn: $katipDeclared)
+                Toggle(RDLocalization.string("localizable.isg.workspace.domain.screen.isg.katip.atamasi.yapildi.37a8955f", table: .localizable, fallback: "İSG-KATİP ataması yapıldı"), isOn: $katipDeclared)
                     .padding(12).novaControlBackground(cornerRadius: 14)
                 if katipDeclared { textField("İSG-KATİP beyan notu", text: $katipNote) }
                 textField("Kontrol notu", text: $note)
             }
-            equipmentAccordion(.report, title: "Kontrol raporu", symbol: "doc.badge.plus") {
+            equipmentAccordion(.report, title: RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.raporu.093f107c", table: .localizable, fallback: "Kontrol raporu"), symbol: "doc.badge.plus") {
                 IsgWorkspaceInlineAttachmentField(
-                    title: "Kontrol raporunu bu işlemde ekle (isteğe bağlı)",
+                    title: RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.raporunu.bu.islemde.ekle.istege.bagli.7a08c34c", table: .localizable, fallback: "Kontrol raporunu bu işlemde ekle (isteğe bağlı)"),
                     attachment: $attachment)
-                NovaHelpHint(text: "Rapor seçilirse kontrol kaydıyla birlikte yüklenir ve ekipman geçmişine bağlanır.")
+                NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.domain.screen.rapor.secilirse.kontrol.kaydiyla.birlikte.yuklen.ebf87a01", table: .localizable, fallback: "Rapor seçilirse kontrol kaydıyla birlikte yüklenir ve ekipman geçmişine bağlanır."))
             }
         case .annualAddItem:
             textField("Faaliyet", text: $note)
@@ -1250,14 +1250,14 @@ private struct IsgWorkspaceDomainActionEditor: View {
             textField("Gözlem", text: $note)
             textField("Harici referans", text: $contact)
         default:
-            NovaHelpHint(text: "Bu işlem mevcut kayıt sürümü doğrulandıktan sonra uygulanır.")
+            NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.domain.screen.bu.islem.mevcut.kayit.surumu.dogrulandiktan.sonr.ed8f2a7b", table: .localizable, fallback: "Bu işlem mevcut kayıt sürümü doğrulandıktan sonra uygulanır."))
         }
         if action.acceptsAttachment && action != .equipmentInspect {
-            NovaCompanyAccordion(title: "Dosya ve kanıt", symbol: "doc.badge.plus",
+            NovaCompanyAccordion(title: RDLocalization.string("localizable.isg.workspace.domain.screen.dosya.ve.kanit.e60e0008", table: .localizable, fallback: "Dosya ve kanıt"), symbol: "doc.badge.plus",
                 identifier: "workspace.domain.action.attachment",
                 expanded: $attachmentOpen) {
                 IsgWorkspaceInlineAttachmentField(
-                    title: "Bu işleme dosya ekle (isteğe bağlı)",
+                    title: RDLocalization.string("localizable.isg.workspace.domain.screen.bu.isleme.dosya.ekle.istege.bagli.ad36b169", table: .localizable, fallback: "Bu işleme dosya ekle (isteğe bağlı)"),
                     attachment: $attachment)
             }
         }
@@ -1265,7 +1265,7 @@ private struct IsgWorkspaceDomainActionEditor: View {
 
     private var employeePicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            NovaText(text: "Katılımcılar", style: .bodyStrong)
+            NovaText(text: RDLocalization.string("localizable.isg.workspace.domain.screen.katilimcilar.b4ba3a15", table: .localizable, fallback: "Katılımcılar"), style: .bodyStrong)
             if loading { ProgressView() }
             ForEach(selectableEmployees) { employee in
                 Button {
@@ -1312,7 +1312,7 @@ private struct IsgWorkspaceDomainActionEditor: View {
                         .labelsHidden().datePickerStyle(.compact)
                 }
             } else {
-                NovaText(text: "Tarih yok", style: .bodyStrong)
+                NovaText(text: RDLocalization.string("localizable.isg.workspace.domain.screen.tarih.yok.561d1479", table: .localizable, fallback: "Tarih yok"), style: .bodyStrong)
             }
         }.padding(10).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
             .novaControlBackground(cornerRadius: 14)

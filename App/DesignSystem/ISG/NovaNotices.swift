@@ -27,8 +27,8 @@ enum NovaNoticeKind: String, CaseIterable, Identifiable, Equatable {
         case .boardDecision: return RDLocalization.string("localizable.nova.notice.kind.decision", table: .localizable, fallback: "Kurul kararı")
         case .riskAssessment: return RDLocalization.string("localizable.nova.notice.kind.risk", table: .localizable, fallback: "Risk değerlendirmesi")
         case .equipment: return RDLocalization.string("localizable.nova.notice.kind.equipment", table: .localizable, fallback: "Periyodik kontrol")
-        case .personnelCertificate: return "Personel belgesi"
-        case .training: return "Eğitim"
+        case .personnelCertificate: return RDLocalization.string("localizable.nova.notices.personel.belgesi.74015fca", table: .localizable, fallback: "Personel belgesi")
+        case .training: return RDLocalization.string("localizable.nova.notices.egitim.e3f122f3", table: .localizable, fallback: "Eğitim")
         case .document: return RDLocalization.string("localizable.nova.notice.kind.document", table: .localizable, fallback: "Evrak")
         }
     }

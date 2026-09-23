@@ -60,22 +60,22 @@ struct NovaModuleEditor: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    NovaPageHeading(title: "Kaydı düzenle", onBack: { dismiss() })
+                    NovaPageHeading(title: RDLocalization.string("localizable.nova.module.editor.kaydi.duzenle.6737bb23", table: .localizable, fallback: "Kaydı düzenle"), onBack: { dismiss() })
                     if let data = envelope {
                         NovaText(text: data.company_name, style: .cardTitle)
                         NovaCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 14) { fields(data) }
                         }
-                        NovaButton(label: "Değişiklikleri kaydet", symbol: "checkmark", variant: .primary) { Task { await save("update", close: true) } }
-                        NovaButton(label: "Kaydı sil", symbol: "trash", variant: .surface) { confirmDelete = true }
+                        NovaButton(label: RDLocalization.string("localizable.nova.module.editor.degisiklikleri.kaydet.fd642c7d", table: .localizable, fallback: "Değişiklikleri kaydet"), symbol: "checkmark", variant: .primary) { Task { await save("update", close: true) } }
+                        NovaButton(label: RDLocalization.string("localizable.nova.module.editor.kaydi.sil.0a785cbd", table: .localizable, fallback: "Kaydı sil"), symbol: "trash", variant: .surface) { confirmDelete = true }
                     } else if busy { ProgressView("Kayıt yükleniyor…").frame(maxWidth: .infinity) }
                     if let failure { NovaText(text: failure, style: .body) }
                 }.padding(20).novaPopupContentSize().disabled(busy)
             }
             .background(NovaColorToken.canvas.color(in: .light))
             .task { await load() }
-            .confirmationDialog("Kayıt listeden kaldırılacak. İşlem geçmişi korunacak.", isPresented: $confirmDelete, titleVisibility: .visible) {
-                Button("Kaydı sil", role: .destructive) { Task { await save("delete", close: true) } }
+            .confirmationDialog(RDLocalization.string("localizable.nova.module.editor.kayit.listeden.kaldirilacak.islem.gecmisi.koruna.93763221", table: .localizable, fallback: "Kayıt listeden kaldırılacak. İşlem geçmişi korunacak."), isPresented: $confirmDelete, titleVisibility: .visible) {
+                Button(RDLocalization.string("localizable.nova.module.editor.kaydi.sil.7d29d01c", table: .localizable, fallback: "Kaydı sil"), role: .destructive) { Task { await save("delete", close: true) } }
             }
             .novaPopup(isPresented: $showingDocuments, onDismiss: { Task { await load(preserveValues: true) } }) {
                 NovaModuleDocumentsHost(identity: identity, company: company, onClose: { showingDocuments = false })
@@ -86,32 +86,32 @@ struct NovaModuleEditor: View {
         switch module {
         case "emergency_plan":
             options("İşyeri", "workplace_id", data.workplaces)
-            field("Kapsam", "scope"); field("Hazırlık tarihi (YYYY-AA-GG)", "prepared_on")
-            field("Geçerlilik tarihi (isteğe bağlı)", "valid_until"); field("Dayanak / açıklama", "review_note")
+            field("Kapsam", "scope"); field(RDLocalization.string("localizable.nova.module.editor.hazirlik.tarihi.yyyy.aa.gg.6d1b9360", table: .localizable, fallback: "Hazırlık tarihi (YYYY-AA-GG)"), "prepared_on")
+            field(RDLocalization.string("localizable.nova.module.editor.gecerlilik.tarihi.istege.bagli.94672036", table: .localizable, fallback: "Geçerlilik tarihi (isteğe bağlı)"), "valid_until"); field(RDLocalization.string("localizable.nova.module.editor.dayanak.aciklama.0050bdb6", table: .localizable, fallback: "Dayanak / açıklama"), "review_note")
             teamFields
         case "drill":
             options("Acil durum planı", "plan_id", data.plans)
-            field("Planlanan tarih (YYYY-AA-GG)", "planned_on")
+            field(RDLocalization.string("localizable.nova.module.editor.planlanan.tarih.yyyy.aa.gg.33ad1dba", table: .localizable, fallback: "Planlanan tarih (YYYY-AA-GG)"), "planned_on")
             if values["state"]?.text == "performed" {
-                field("Gerçekleşme tarihi (YYYY-AA-GG)", "performed_on")
-                NovaText(text: "Katılımcılar", style: .label)
+                field(RDLocalization.string("localizable.nova.module.editor.gerceklesme.tarihi.yyyy.aa.gg.cb875b1e", table: .localizable, fallback: "Gerçekleşme tarihi (YYYY-AA-GG)"), "performed_on")
+                NovaText(text: RDLocalization.string("localizable.nova.module.editor.katilimcilar.3388d488", table: .localizable, fallback: "Katılımcılar"), style: .label)
                 ForEach(data.employees) { employee in
                     Toggle(employee.name, isOn: participant(employee.id))
                 }
             }
-            field("Gözlemler", "observation"); field("İyileştirmeler", "improvement")
+            field(RDLocalization.string("localizable.nova.module.editor.gozlemler.1d59c3b5", table: .localizable, fallback: "Gözlemler"), "observation"); field(RDLocalization.string("localizable.nova.module.editor.iyilestirmeler.421d77eb", table: .localizable, fallback: "İyileştirmeler"), "improvement")
         case "ppe":
             options("Personel", "employee_id", data.employees)
-            field("KKD adı", "item")
-            field("Teslim tarihi (YYYY-AA-GG)", "handed_on"); field("Belgenin bulunduğu yer", "signed_copy_location")
+            field(RDLocalization.string("localizable.nova.module.editor.kkd.adi.edbe0088", table: .localizable, fallback: "KKD adı"), "item")
+            field(RDLocalization.string("localizable.nova.module.editor.teslim.tarihi.yyyy.aa.gg.66ea918f", table: .localizable, fallback: "Teslim tarihi (YYYY-AA-GG)"), "handed_on"); field(RDLocalization.string("localizable.nova.module.editor.belgenin.bulundugu.yer.939f74a6", table: .localizable, fallback: "Belgenin bulunduğu yer"), "signed_copy_location")
         default:
             options("Personel", "employee_id", data.employees); options("İşyeri", "scope_workplace_id", data.workplaces)
             choices("Görev", "kind", [("representative","Çalışan temsilcisi"),("support_staff","Destek elemanı"),("team_member","Ekip üyesi"),("first_aid","İlk yardımcı"),("fire_team","Yangın ekibi")])
-            field("Başlangıç tarihi (YYYY-AA-GG)", "starts_on"); field("Bitiş tarihi (isteğe bağlı)", "ends_before")
+            field(RDLocalization.string("localizable.nova.module.editor.baslangic.tarihi.yyyy.aa.gg.f1dfb36f", table: .localizable, fallback: "Başlangıç tarihi (YYYY-AA-GG)"), "starts_on"); field(RDLocalization.string("localizable.nova.module.editor.bitis.tarihi.istege.bagli.eca58d2b", table: .localizable, fallback: "Bitiş tarihi (isteğe bağlı)"), "ends_before")
             choices("Dayanak", "basis", [("elected","Seçim"),("appointed","Atama")])
-            field("Dayanak açıklaması", "basis_note")
+            field(RDLocalization.string("localizable.nova.module.editor.dayanak.aciklamasi.f2c37f9e", table: .localizable, fallback: "Dayanak açıklaması"), "basis_note")
             VStack(alignment: .leading, spacing: 5) {
-                NovaText(text: "Atama yazısı", style: .label)
+                NovaText(text: RDLocalization.string("localizable.nova.module.editor.atama.yazisi.55b3abff", table: .localizable, fallback: "Atama yazısı"), style: .label)
                 NovaInlineFileField(category: "personnel_document", company: company, fileClient: fileClient,
                     assetID: binding("asset_id"))
             }
@@ -129,7 +129,7 @@ struct NovaModuleEditor: View {
     }
     private func options(_ title: String, _ key: String, _ items: [Option]) -> some View {
         Picker(title, selection: binding(key)) {
-            Text("Seçin").tag("")
+            Text(RDLocalization.string("localizable.nova.module.editor.secin.44cf451c", table: .localizable, fallback: "Seçin")).tag("")
             ForEach(items) { Text($0.name).tag($0.id.uuidString.lowercased()) }
         }
     }
@@ -144,17 +144,17 @@ struct NovaModuleEditor: View {
         VStack(alignment: .leading, spacing: 10) {
             NovaText(text: "Ekip", style: .cardTitle)
             ForEach(members.indices, id: \.self) { index in
-                TextField("Ad soyad", text: memberBinding(index,"full_name"))
-                Picker("Görev", selection: memberBinding(index,"role")) {
-                    Text("Koordinatör").tag("coordinator"); Text("Yangın").tag("fire")
-                    Text("İlk yardım").tag("first_aid"); Text("Tahliye").tag("evacuation"); Text("Diğer").tag("other")
+                TextField(RDLocalization.string("localizable.nova.module.editor.ad.soyad.5a7dcd07", table: .localizable, fallback: "Ad soyad"), text: memberBinding(index,"full_name"))
+                Picker(RDLocalization.string("localizable.nova.module.editor.gorev.a6bf9337", table: .localizable, fallback: "Görev"), selection: memberBinding(index,"role")) {
+                    Text(RDLocalization.string("localizable.nova.module.editor.koordinator.45ecae2b", table: .localizable, fallback: "Koordinatör")).tag("coordinator"); Text(RDLocalization.string("localizable.nova.module.editor.yangin.b885b8d4", table: .localizable, fallback: "Yangın")).tag("fire")
+                    Text(RDLocalization.string("localizable.nova.module.editor.ilk.yardim.5870e931", table: .localizable, fallback: "İlk yardım")).tag("first_aid"); Text("Tahliye").tag("evacuation"); Text(RDLocalization.string("localizable.nova.module.editor.diger.6340eb6e", table: .localizable, fallback: "Diğer")).tag("other")
                 }
-                TextField("İletişim", text: memberBinding(index,"contact"))
-                Button("Ekipten kaldır", role: .destructive) {
+                TextField(RDLocalization.string("localizable.nova.module.editor.iletisim.9ffe02c1", table: .localizable, fallback: "İletişim"), text: memberBinding(index,"contact"))
+                Button(RDLocalization.string("localizable.nova.module.editor.ekipten.kaldir.b6350981", table: .localizable, fallback: "Ekipten kaldır"), role: .destructive) {
                     var list=members; list.remove(at:index); values["team_snapshot"] = .array(list.map { .object($0) })
                 }
             }
-            Button("Ekip üyesi ekle") {
+            Button(RDLocalization.string("localizable.nova.module.editor.ekip.uyesi.ekle.0721f9cc", table: .localizable, fallback: "Ekip üyesi ekle")) {
                 var list=members; list.append(["full_name":.string(""),"role":.string("other")])
                 values["team_snapshot"] = .array(list.map { .object($0) })
             }
@@ -209,14 +209,14 @@ struct NovaModuleEditor: View {
     private func message(_ error: Error) -> String {
         if let e=error as? PostgrestError {
             switch e.message {
-            case "VERSION_CONFLICT": return "Kayıt değişmiş. Kapatıp yeniden açarak güncel bilgilerle deneyin."
-            case "DEPENDENT_RECORDS": return "Bu plana bağlı tatbikat var. Önce bağlı tatbikatı kaldırın."
-            case "RETURN_CONFLICT": return "Teslim bilgileri kayıtlı iadelerle çelişiyor."
-            case "ACCESS_DENIED": return "Firma, personel, işyeri veya evrak bu kayda uygun değil."
-            default: return "Bilgileri kontrol edin. Kayıt güncellenemedi."
+            case "VERSION_CONFLICT": return RDLocalization.string("localizable.nova.module.editor.kayit.degismis.kapatip.yeniden.acarak.guncel.bil.799c4871", table: .localizable, fallback: "Kayıt değişmiş. Kapatıp yeniden açarak güncel bilgilerle deneyin.")
+            case "DEPENDENT_RECORDS": return RDLocalization.string("localizable.nova.module.editor.bu.plana.bagli.tatbikat.var.once.bagli.tatbikati.1261ca1d", table: .localizable, fallback: "Bu plana bağlı tatbikat var. Önce bağlı tatbikatı kaldırın.")
+            case "RETURN_CONFLICT": return RDLocalization.string("localizable.nova.module.editor.teslim.bilgileri.kayitli.iadelerle.celisiyor.1f6eb3bf", table: .localizable, fallback: "Teslim bilgileri kayıtlı iadelerle çelişiyor.")
+            case "ACCESS_DENIED": return RDLocalization.string("localizable.nova.module.editor.firma.personel.isyeri.veya.evrak.bu.kayda.uygun..574043d3", table: .localizable, fallback: "Firma, personel, işyeri veya evrak bu kayda uygun değil.")
+            default: return RDLocalization.string("localizable.nova.module.editor.bilgileri.kontrol.edin.kayit.guncellenemedi.f68588c5", table: .localizable, fallback: "Bilgileri kontrol edin. Kayıt güncellenemedi.")
             }
         }
-        return "İşlem tamamlanamadı. Bağlantınızı kontrol edip yeniden deneyin."
+        return RDLocalization.string("localizable.nova.module.editor.islem.tamamlanamadi.baglantinizi.kontrol.edip.ye.a63e5253", table: .localizable, fallback: "İşlem tamamlanamadı. Bağlantınızı kontrol edip yeniden deneyin.")
     }
 }
 
@@ -225,7 +225,7 @@ struct NovaModuleManageAction: View {
     let onDone: () -> Void
     @State private var showing = false
     var body: some View {
-        NovaButton(label:"Düzenle · Evrak bağla · Sil",symbol:"slider.horizontal.3",variant:.surface) { showing=true }
+        NovaButton(label:RDLocalization.string("localizable.nova.module.editor.duzenle.evrak.bagla.sil.f2bf06b4", table: .localizable, fallback: "Düzenle · Evrak bağla · Sil"),symbol:"slider.horizontal.3",variant:.surface) { showing=true }
             .padding(12).frame(maxWidth:.infinity).background(Color.white)
             .novaPopup(isPresented:$showing,onDismiss:onDone,content:content)
     }

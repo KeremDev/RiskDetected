@@ -22,15 +22,15 @@ enum NovaSuccessMessage {
     static func serverKey(_ key: String) -> String {
         switch key {
         case "analysis_finding_filed": return findingCreated
-        case "analysis_finding_already_filed": return "Bu uygunsuzluk firmada zaten kayıtlı."
+        case "analysis_finding_already_filed": return RDLocalization.string("localizable.nova.success.presentation.bu.uygunsuzluk.firmada.zaten.kayitli.bdfa6846", table: .localizable, fallback: "Bu uygunsuzluk firmada zaten kayıtlı.")
         case "ppe_handover_created": return recordSaved("KKD zimmeti")
-        default: return "İşlem başarıyla tamamlandı!"
+        default: return RDLocalization.string("localizable.nova.success.presentation.islem.basariyla.tamamlandi.c654fd9d", table: .localizable, fallback: "İşlem başarıyla tamamlandı!")
         }
     }
 
     static func normalized(_ text: String) -> String {
         let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else { return "İşlem başarıyla tamamlandı!" }
+        guard !value.isEmpty else { return RDLocalization.string("localizable.nova.success.presentation.islem.basariyla.tamamlandi.040f01da", table: .localizable, fallback: "İşlem başarıyla tamamlandı!") }
         return value.last == "!" || value.last == "." ? value : value + "!"
     }
 }

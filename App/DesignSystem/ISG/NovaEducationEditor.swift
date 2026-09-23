@@ -214,20 +214,20 @@ struct NovaEducationEditor: View {
         .overlay(alignment: .top) {
             if showingRestoredBanner {
                 HStack(spacing: 12) {
-                    Text("Önceki taslağınız geri yüklendi").font(NovaFont.font(.meta))
+                    Text(RDLocalization.string("localizable.nova.education.editor.onceki.taslaginiz.geri.yuklendi.a6f5481a", table: .localizable, fallback: "Önceki taslağınız geri yüklendi")).font(NovaFont.font(.meta))
                     Spacer(minLength: 0)
-                    if !pending { Button("Baştan başla", action: discardDraft).font(NovaFont.font(.bodyStrong)) }
+                    if !pending { Button(RDLocalization.string("localizable.nova.education.editor.bastan.basla.d82a021f", table: .localizable, fallback: "Baştan başla"), action: discardDraft).font(NovaFont.font(.bodyStrong)) }
                 }
                 .padding(14).background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 20).padding(.top, 8)
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .alert("Eğitim silinsin mi?", isPresented: $deleteConfirmation) {
-            Button("Eğitimi sil", role: .destructive) { Task { await deleteTraining() } }
-            Button("Vazgeç", role: .cancel) {}
+        .alert(RDLocalization.string("localizable.nova.education.editor.egitim.silinsin.mi.283e2f5f", table: .localizable, fallback: "Eğitim silinsin mi?"), isPresented: $deleteConfirmation) {
+            Button(RDLocalization.string("localizable.nova.education.editor.egitimi.sil.53a3a96b", table: .localizable, fallback: "Eğitimi sil"), role: .destructive) { Task { await deleteTraining() } }
+            Button(RDLocalization.string("localizable.nova.education.editor.vazgec.26b69b1a", table: .localizable, fallback: "Vazgeç"), role: .cancel) {}
         } message: {
-            Text("Eğitim tüm seçili firmaların ve katılımcıların güncel kayıtlarından kaldırılır. Önceki sürümler geçmişte korunur.")
+            Text(RDLocalization.string("localizable.nova.education.editor.egitim.tum.secili.firmalarin.ve.katilimcilarin.g.1f9eb854", table: .localizable, fallback: "Eğitim tüm seçili firmaların ve katılımcıların güncel kayıtlarından kaldırılır. Önceki sürümler geçmişte korunur."))
         }
     }
 
@@ -245,10 +245,10 @@ struct NovaEducationEditor: View {
             Spacer(minLength: 0)
             if restoredDraft && !pending {
                 Menu {
-                    Button("Baştan başla", role: .destructive, action: discardDraft)
+                    Button(RDLocalization.string("localizable.nova.education.editor.bastan.basla.452aecd3", table: .localizable, fallback: "Baştan başla"), role: .destructive, action: discardDraft)
                         .accessibilityIdentifier("education.draft.discard")
                 } label: { Image(systemName: "ellipsis").font(.system(size: 20, weight: .semibold)).frame(width: 36, height: 36) }
-                .accessibilityLabel("Eğitim seçenekleri")
+                .accessibilityLabel(RDLocalization.string("localizable.nova.education.editor.egitim.secenekleri.0f184883", table: .localizable, fallback: "Eğitim seçenekleri"))
             }
         }
     }
@@ -257,7 +257,7 @@ struct NovaEducationEditor: View {
         NovaCard(padding: 12) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    NovaText(text: "Eğitim oluşturuluyor · \(draft.completedCount) / \(NovaEducationStep.allCases.count)", style: .label)
+                    NovaText(text: RDLocalization.format("localizable.nova.education.editor.egitim.olusturuluyor.1.2.2f92bcdd", table: .localizable, fallback: "Eğitim oluşturuluyor · %1$@ / %2$@", arguments: [String(describing: draft.completedCount), String(describing: NovaEducationStep.allCases.count)]), style: .label)
                 }
                 GeometryReader { proxy in
                     ZStack(alignment: .leading) {
@@ -297,9 +297,9 @@ struct NovaEducationEditor: View {
     }
 
     private func stepStatus(_ step: NovaEducationStep) -> String {
-        if validationStep == step && firstMissingField()?.0 == step { return "Eksik bilgi" }
-        if step == .schedule && !selectedCycle.isEmpty && !scheduleEndsInPast { return "Kontrol gerekli" }
-        if draft.isComplete(step) { return "Tamamlandı" }
+        if validationStep == step && firstMissingField()?.0 == step { return RDLocalization.string("localizable.nova.education.editor.eksik.bilgi.12af2fdf", table: .localizable, fallback: "Eksik bilgi") }
+        if step == .schedule && !selectedCycle.isEmpty && !scheduleEndsInPast { return RDLocalization.string("localizable.nova.education.editor.kontrol.gerekli.1baa561e", table: .localizable, fallback: "Kontrol gerekli") }
+        if draft.isComplete(step) { return RDLocalization.string("localizable.nova.education.editor.tamamlandi.f4df7e52", table: .localizable, fallback: "Tamamlandı") }
         return step == .review ? "Kontrol gerekli" : "Eksik bilgi"
     }
 
@@ -322,10 +322,10 @@ struct NovaEducationEditor: View {
         case .companies: companiesStep
         case .info: infoStep
         case .topics:
-            if selectedCycle.isEmpty { NovaHelpHint(text: "Konular, eğitim türünü seçtikten sonra hazırlanır.") }
+            if selectedCycle.isEmpty { NovaHelpHint(text: RDLocalization.string("localizable.nova.education.editor.konular.egitim.turunu.sectikten.sonra.hazirlanir.5b211747", table: .localizable, fallback: "Konular, eğitim türünü seçtikten sonra hazırlanır.")) }
             else { topicsStep }
         case .schedule:
-            if selectedCycle.isEmpty { NovaHelpHint(text: "Gün ve saatler, eğitim türünü seçtikten sonra hazırlanır.") }
+            if selectedCycle.isEmpty { NovaHelpHint(text: RDLocalization.string("localizable.nova.education.editor.gun.ve.saatler.egitim.turunu.sectikten.sonra.haz.1446ce10", table: .localizable, fallback: "Gün ve saatler, eğitim türünü seçtikten sonra hazırlanır.")) }
             else { scheduleStep }
         case .trainers: trainersStep
         case .participants: participantsStep
@@ -375,13 +375,13 @@ struct NovaEducationEditor: View {
 
     private func title(_ step: NovaEducationStep) -> String {
         switch step {
-        case .companies: return "Firmalar ve işyerleri"
+        case .companies: return RDLocalization.string("localizable.nova.education.editor.firmalar.ve.isyerleri.ae9072ef", table: .localizable, fallback: "Firmalar ve işyerleri")
         case .info: return RDLocalization.string("localizable.nova.education.step.info", table: .localizable, fallback: "Eğitim ve düzenleyici")
-        case .topics: return "Konular ve dakikalar"
+        case .topics: return RDLocalization.string("localizable.nova.education.editor.konular.ve.dakikalar.9fb4ca01", table: .localizable, fallback: "Konular ve dakikalar")
         case .schedule: return RDLocalization.string("localizable.nova.education.step.schedule", table: .localizable, fallback: "Tarih, saat ve yer")
         case .trainers: return RDLocalization.string("localizable.nova.education.step.trainers", table: .localizable, fallback: "Eğiticiler")
         case .participants: return RDLocalization.string("localizable.nova.education.step.participants", table: .localizable, fallback: "Katılımcılar")
-        case .review: return "Kontrol ve kaydet"
+        case .review: return RDLocalization.string("localizable.nova.education.editor.kontrol.ve.kaydet.45d52884", table: .localizable, fallback: "Kontrol ve kaydet")
         }
     }
     private func symbol(_ step: NovaEducationStep) -> String {
@@ -401,7 +401,7 @@ struct NovaEducationEditor: View {
 
     private var companiesStep: some View {
         VStack(alignment: .leading, spacing: 10) {
-            NovaText(text: "Birden fazla firma seçebilirsiniz. İşyeri olmayan firma doğrudan eklenir; işyeri varsa ilgili işyerini seçin. Tehlike sınıfları aynı olmalıdır.",
+            NovaText(text: RDLocalization.string("localizable.nova.education.editor.birden.fazla.firma.secebilirsiniz.isyeri.olmayan.549d69e1", table: .localizable, fallback: "Birden fazla firma seçebilirsiniz. İşyeri olmayan firma doğrudan eklenir; işyeri varsa ilgili işyerini seçin. Tehlike sınıfları aynı olmalıdır."),
                 style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
             if let summary = sectionSummary(.companies) { NovaText(text: summary, style: .bodyStrong) }
             ForEach(draft.scopes) { scope in
@@ -412,7 +412,7 @@ struct NovaEducationEditor: View {
                         if let workplace = scope.workplace_name { NovaText(text: workplace, style: .metaQuiet) }
                     }
                     Spacer(minLength: 0)
-                    Button("Kaldır", role: .destructive) { removeScope(scope.id) }
+                    Button(RDLocalization.string("localizable.nova.education.editor.kaldir.6a6109d5", table: .localizable, fallback: "Kaldır"), role: .destructive) { removeScope(scope.id) }
                         .font(NovaFont.font(.meta))
                         .accessibilityIdentifier("education.company.remove.\(scope.id)")
                 }.padding(12)
@@ -430,20 +430,20 @@ struct NovaEducationEditor: View {
         return NovaPageSurface {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    NovaText(text: "Firma ve işyerleri", style: .screenTitle)
+                    NovaText(text: RDLocalization.string("localizable.nova.education.editor.firma.ve.isyerleri.1bd38e71", table: .localizable, fallback: "Firma ve işyerleri"), style: .screenTitle)
                     Spacer()
                     Button("Bitti") { finishCompanySelection() }.font(NovaFont.font(.bodyStrong))
                 }
-                TextField("Firma ara", text: $companySearch).textFieldStyle(.roundedBorder)
+                TextField(RDLocalization.string("localizable.nova.education.editor.firma.ara.7a550e70", table: .localizable, fallback: "Firma ara"), text: $companySearch).textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("education.companies.search")
-                NovaText(text: "\(draft.scopes.count) firma/işyeri seçimi" + (draft.scopes.first.map { " · \(hazardLabel($0.hazard_class ?? ""))" } ?? ""), style: .metaQuiet)
+                NovaText(text: RDLocalization.format("localizable.nova.education.editor.1.firma.isyeri.secimi.d8693b7e", table: .localizable, fallback: "%1$@ firma/işyeri seçimi", arguments: [String(describing: draft.scopes.count)]) + (draft.scopes.first.map { " · \(hazardLabel($0.hazard_class ?? ""))" } ?? ""), style: .metaQuiet)
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
                         ForEach(filtered) { company in companyChoice(company) }
-                        if filtered.isEmpty { NovaText(text: "Eğitim eklenebilecek firma bulunamadı.", style: .metaQuiet) }
+                        if filtered.isEmpty { NovaText(text: RDLocalization.string("localizable.nova.education.editor.egitim.eklenebilecek.firma.bulunamadi.fbe0705e", table: .localizable, fallback: "Eğitim eklenebilecek firma bulunamadı."), style: .metaQuiet) }
                     }
                 }
-                NovaButton(label: "\(draft.scopes.count) seçimi tamamla", symbol: "checkmark", variant: .primary, isEnabled: !draft.scopes.isEmpty) {
+                NovaButton(label: RDLocalization.format("localizable.nova.education.editor.1.secimi.tamamla.4ddfb5ba", table: .localizable, fallback: "%1$@ seçimi tamamla", arguments: [String(describing: draft.scopes.count)]), symbol: "checkmark", variant: .primary, isEnabled: !draft.scopes.isEmpty) {
                     finishCompanySelection()
                 }
             }.padding(20)
@@ -465,7 +465,7 @@ struct NovaEducationEditor: View {
                             Image(systemName: checked ? "checkmark.square.fill" : "square")
                                 .foregroundStyle(checked ? NovaColorToken.accent.color(in: scheme) : NovaFont.secondaryInk)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Firmayı ekle").font(NovaFont.font(.bodyStrong))
+                                Text(RDLocalization.string("localizable.nova.education.editor.firmayi.ekle.8954c091", table: .localizable, fallback: "Firmayı ekle")).font(NovaFont.font(.bodyStrong))
                                 Text(hazardLabel(company.hazard_class))
                                     .font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                             }
@@ -503,8 +503,8 @@ struct NovaEducationEditor: View {
             cyclePicker
             methodQuickToggle
             VStack(alignment: .leading, spacing: 4) {
-                NovaText(text: "Düzenleyici kişi / kurum", style: .meta)
-                TextField("Kişi veya kurum adı", text: $draft.provider_name)
+                NovaText(text: RDLocalization.string("localizable.nova.education.editor.duzenleyici.kisi.kurum.bcdd3e86", table: .localizable, fallback: "Düzenleyici kişi / kurum"), style: .meta)
+                TextField(RDLocalization.string("localizable.nova.education.editor.kisi.veya.kurum.adi.93e5f9ec", table: .localizable, fallback: "Kişi veya kurum adı"), text: $draft.provider_name)
                     .font(NovaFont.font(.body)).padding(.horizontal, 14).frame(minHeight: 52)
                     .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
                     .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
@@ -524,7 +524,7 @@ struct NovaEducationEditor: View {
     /// for, and the record's title is just its cycle's own name.
     private var cyclePicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            NovaText(text: "Eğitim türü ve konusu", style: .label)
+            NovaText(text: RDLocalization.string("localizable.nova.education.editor.egitim.turu.ve.konusu.600c7637", table: .localizable, fallback: "Eğitim türü ve konusu"), style: .label)
             Button { showingCycle = true } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "books.vertical.fill")
@@ -543,7 +543,7 @@ struct NovaEducationEditor: View {
                     .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(NovaColorToken.accent.color(in: scheme), lineWidth: 1.5))
             }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("education.cycle")
-            NovaText(text: "Eğitim türü değişirse konular ve dakikalar seçilen tehlike sınıfına göre yeniden hazırlanır.", style: .metaQuiet)
+            NovaText(text: RDLocalization.string("localizable.nova.education.editor.egitim.turu.degisirse.konular.ve.dakikalar.secil.9c61f5c2", table: .localizable, fallback: "Eğitim türü değişirse konular ve dakikalar seçilen tehlike sınıfına göre yeniden hazırlanır."), style: .metaQuiet)
         }
     }
 
@@ -551,11 +551,11 @@ struct NovaEducationEditor: View {
         NovaPageSurface {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    NovaText(text: "Eğitim türü", style: .screenTitle)
+                    NovaText(text: RDLocalization.string("localizable.nova.education.editor.egitim.turu.eb5a8345", table: .localizable, fallback: "Eğitim türü"), style: .screenTitle)
                     Spacer()
-                    Button("Kapat") { showingCycle = false }.font(NovaFont.font(.bodyStrong))
+                    Button(RDLocalization.string("localizable.nova.education.editor.kapat.d049c352", table: .localizable, fallback: "Kapat")) { showingCycle = false }.font(NovaFont.font(.bodyStrong))
                 }
-                NovaText(text: "Eğitimin amacına uygun türü seçin. Konular ve süreler bu seçime göre hazırlanır.",
+                NovaText(text: RDLocalization.string("localizable.nova.education.editor.egitimin.amacina.uygun.turu.secin.konular.ve.sur.a63c1426", table: .localizable, fallback: "Eğitimin amacına uygun türü seçin. Konular ve süreler bu seçime göre hazırlanır."),
                     style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
@@ -615,7 +615,7 @@ struct NovaEducationEditor: View {
                 Text(RDLocalization.string("localizable.nova.education.method.online", table: .localizable, fallback: "Online")).tag("online")
             }.pickerStyle(.segmented).labelsHidden().accessibilityIdentifier("education.method")
             if template.hazard_class != "low" && methodBinding.wrappedValue == "online" {
-                NovaText(text: "İşyerine özgü konular yüz yüze olarak kalır.", style: .metaQuiet)
+                NovaText(text: RDLocalization.string("localizable.nova.education.editor.isyerine.ozgu.konular.yuz.yuze.olarak.kalir.8161b2ec", table: .localizable, fallback: "İşyerine özgü konular yüz yüze olarak kalır."), style: .metaQuiet)
             }
         }
     }
@@ -632,9 +632,9 @@ struct NovaEducationEditor: View {
 
     private var topicsStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaText(text: "Eğitim konularını seçin", style: .sectionTitle)
+            NovaText(text: RDLocalization.string("localizable.nova.education.editor.egitim.konularini.secin.c8f8acfb", table: .localizable, fallback: "Eğitim konularını seçin"), style: .sectionTitle)
             NovaText(text: "\(hazardLabel(template.hazard_class ?? "")) · \(template.cycleName)", style: .bodyStrong)
-            NovaText(text: "Bir konu grubuna dokunarak konuları ve dakikaları düzenleyin. Süre değişince eğitim günleri yeniden hesaplanır.",
+            NovaText(text: RDLocalization.string("localizable.nova.education.editor.bir.konu.grubuna.dokunarak.konulari.ve.dakikalar.d3ed9a9a", table: .localizable, fallback: "Bir konu grubuna dokunarak konuları ve dakikaları düzenleyin. Süre değişince eğitim günleri yeniden hesaplanır."),
                 style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
             ForEach(["G1", "G2", "G3", "G4"], id: \.self) { group in
                 let items = template.topics.filter { $0.group == group }
@@ -647,7 +647,7 @@ struct NovaEducationEditor: View {
                                 Text("\(group) · \(topicGroupName(group))").font(NovaFont.font(.bodyStrong))
                                 Spacer()
                                 Text(formatDuration(items.reduce(0) { $0 + $1.instruction_minutes })).font(NovaFont.font(.meta))
-                                Text("Düzenle").font(NovaFont.font(.meta))
+                                Text(RDLocalization.string("localizable.nova.education.editor.duzenle.3fe7b48c", table: .localizable, fallback: "Düzenle")).font(NovaFont.font(.meta))
                                     .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                                 Image(systemName: expandedTopicGroup == group ? "chevron.up" : "chevron.down").font(.system(size: 13, weight: .semibold))
                             }
@@ -663,7 +663,7 @@ struct NovaEducationEditor: View {
                                 }
                             }
                             if group == "G4" {
-                                Button("Konu ekle", systemImage: "plus") {
+                                Button(RDLocalization.string("localizable.nova.education.editor.konu.ekle.efcab641", table: .localizable, fallback: "Konu ekle"), systemImage: "plus") {
                                     template.topics.append(.init(code: "G4-" + UUID().uuidString, group: "G4", title: "", instruction_minutes: 0))
                                 }.font(NovaFont.font(.bodyStrong))
                             }
@@ -675,17 +675,17 @@ struct NovaEducationEditor: View {
                 }
             }
             VStack(alignment: .leading, spacing: 3) {
-                NovaText(text: "Toplam öğretim: \(formatDuration(template.net))", style: .bodyStrong)
-                NovaText(text: "Planlanan eğitim: \(scheduleDays.count) gün · \(formatDuration(template.net + template.breakTotal)) (molalar dahil)", style: .metaQuiet)
+                NovaText(text: RDLocalization.format("localizable.nova.education.editor.toplam.ogretim.1.5242fbc1", table: .localizable, fallback: "Toplam öğretim: %1$@", arguments: [String(describing: formatDuration(template.net))]), style: .bodyStrong)
+                NovaText(text: RDLocalization.format("localizable.nova.education.editor.planlanan.egitim.1.gun.2.molalar.dahil.e1ec2d08", table: .localizable, fallback: "Planlanan eğitim: %1$@ gün · %2$@ (molalar dahil)", arguments: [String(describing: scheduleDays.count), String(describing: formatDuration(template.net + template.breakTotal))]), style: .metaQuiet)
             }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
                 .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
             if let preset = context.package.preset(cycle: template.cycle, hazard: template.hazard_class ?? ""),
                template.net < preset.default_instruction_minutes {
-                NovaText(text: "Bu eğitim profili için önerilen öğretim süresi \(formatDuration(preset.default_instruction_minutes)). Konu dakikalarını kontrol edin.",
+                NovaText(text: RDLocalization.format("localizable.nova.education.editor.bu.egitim.profili.icin.onerilen.ogretim.suresi.1.9604cc00", table: .localizable, fallback: "Bu eğitim profili için önerilen öğretim süresi %1$@. Konu dakikalarını kontrol edin.", arguments: [String(describing: formatDuration(preset.default_instruction_minutes))]),
                     style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
             }
             if context.package.preset(cycle: template.cycle, hazard: template.hazard_class ?? "") != nil {
-                NovaText(text: "İşyerine özgü konular sertifikanın arka yüzünde gösterilir.", style: .metaQuiet)
+                NovaText(text: RDLocalization.string("localizable.nova.education.editor.isyerine.ozgu.konular.sertifikanin.arka.yuzunde..0ac6416b", table: .localizable, fallback: "İşyerine özgü konular sertifikanın arka yüzünde gösterilir."), style: .metaQuiet)
             }
         }.disabled(!canWrite)
     }
@@ -711,7 +711,7 @@ struct NovaEducationEditor: View {
         let hours = minutes / 60; let mins = minutes % 60
         if hours == 0 { return "\(mins) dk" }
         if mins == 0 { return "\(hours) sa" }
-        return "\(hours) sa \(mins) dk"
+        return RDLocalization.format("localizable.nova.education.editor.1.sa.2.dk.5284a1b4", table: .localizable, fallback: "%1$@ sa %2$@ dk", arguments: [String(describing: hours), String(describing: mins)])
     }
 
     // MARK: - Schedule step: realized days/hours and location
@@ -722,9 +722,9 @@ struct NovaEducationEditor: View {
     /// The standard 16-unit profile starts as two eight-hour days.
     private var scheduleStep: some View {
         VStack(alignment: .leading, spacing: 10) {
-            NovaText(text: "Önerilen plan: \(neededScheduleDays) gün. Gün, başlangıç saati ve günlük ders süresi değiştirilebilir.", style: .metaQuiet)
+            NovaText(text: RDLocalization.format("localizable.nova.education.editor.onerilen.plan.1.gun.gun.baslangic.saati.ve.gunlu.a04502aa", table: .localizable, fallback: "Önerilen plan: %1$@ gün. Gün, başlangıç saati ve günlük ders süresi değiştirilebilir.", arguments: [String(describing: neededScheduleDays)]), style: .metaQuiet)
             if scheduleDays.count != neededScheduleDays {
-                Button("Önerilen \(neededScheduleDays) güne dön") { resetRecommendedDays() }
+                Button(RDLocalization.format("localizable.nova.education.editor.onerilen.1.gune.don.79e7132d", table: .localizable, fallback: "Önerilen %1$@ güne dön", arguments: [String(describing: neededScheduleDays)])) { resetRecommendedDays() }
                     .font(NovaFont.font(.bodyStrong))
             }
             ForEach($scheduleDays) { $day in
@@ -738,10 +738,10 @@ struct NovaEducationEditor: View {
                             .font(NovaFont.font(.bodyStrong))
                     }
                     if let range = dayRange(day.id) {
-                        NovaText(text: "Hesaplanan saat: \(range) (molalar dahil)", style: .bodyStrong)
+                        NovaText(text: RDLocalization.format("localizable.nova.education.editor.hesaplanan.saat.1.molalar.dahil.3bb3345c", table: .localizable, fallback: "Hesaplanan saat: %1$@ (molalar dahil)", arguments: [String(describing: range)]), style: .bodyStrong)
                     }
                     if scheduleDays.count > neededScheduleDays {
-                        Button("Bu günü kaldır", role: .destructive) {
+                        Button(RDLocalization.string("localizable.nova.education.editor.bu.gunu.kaldir.8d8fb315", table: .localizable, fallback: "Bu günü kaldır"), role: .destructive) {
                             scheduleDays.removeAll { $0.id == day.id }
                             rebalanceScheduleDays()
                         }
@@ -760,14 +760,14 @@ struct NovaEducationEditor: View {
             Text(String(format: RDLocalization.string("localizable.nova.education.schedule.total", table: .localizable, fallback: "Toplam: %@ (mola dahil)"), formatDuration(template.net + requiredLessonUnits * (basicCycle ? 15 : 0))))
                 .font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
             if !scheduleDistributionValid {
-                NovaText(text: "Günlere dağıtılan toplam \(scheduleDays.reduce(0) { $0 + $1.lessonCount }) saat; bu eğitim için \(requiredLessonUnits) saat olmalı. Günlük süreleri veya tarihleri kontrol edin.",
+                NovaText(text: RDLocalization.format("localizable.nova.education.editor.gunlere.dagitilan.toplam.1.saat.bu.egitim.icin.2.58474971", table: .localizable, fallback: "Günlere dağıtılan toplam %1$@ saat; bu eğitim için %2$@ saat olmalı. Günlük süreleri veya tarihleri kontrol edin.", arguments: [String(describing: scheduleDays.reduce(0) { $0 + $1.lessonCount }), String(describing: requiredLessonUnits)]),
                     style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
             }
             if !scheduleEndsInPast {
-                NovaText(text: "Eğitimin bitiş saati henüz gelmemiş görünüyor. Gerçekleşen eğitim kaydı için gün ve başlangıç saatini kontrol edin.",
+                NovaText(text: RDLocalization.string("localizable.nova.education.editor.egitimin.bitis.saati.henuz.gelmemis.gorunuyor.ge.6b80f661", table: .localizable, fallback: "Eğitimin bitiş saati henüz gelmemiş görünüyor. Gerçekleşen eğitim kaydı için gün ve başlangıç saatini kontrol edin."),
                     style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
             }
-            field("Eğitim yeri / online bağlantı (isteğe bağlı)", $template.location, id: "education.location")
+            field(RDLocalization.string("localizable.nova.education.editor.egitim.yeri.online.baglanti.istege.bagli.d3834a00", table: .localizable, fallback: "Eğitim yeri / online bağlantı (isteğe bağlı)"), $template.location, id: "education.location")
         }.disabled(!canWrite)
     }
     /// The visible start–end range for one scheduled day, computed from the
@@ -845,7 +845,7 @@ struct NovaEducationEditor: View {
                     draft.trainers.append(.init(name: me, title: details))
                     advanceIfComplete(.trainers)
                 } label: {
-                    Label("Ben eğiticiyim", systemImage: "person.crop.circle.badge.checkmark")
+                    Label(RDLocalization.string("localizable.nova.education.editor.ben.egiticiyim.a0ff342e", table: .localizable, fallback: "Ben eğiticiyim"), systemImage: "person.crop.circle.badge.checkmark")
                 }.font(NovaFont.font(.bodyStrong))
             }
             ForEach($draft.trainers) { $trainer in
@@ -889,7 +889,7 @@ struct NovaEducationEditor: View {
 
     private var participantsStep: some View {
         VStack(alignment: .leading, spacing: 8) {
-            NovaText(text: "Her firma/işyeri seçiminden en az bir katılımcı seçin. Aynı kişi eğitimde bir kez yer alabilir.", style: .metaQuiet)
+            NovaText(text: RDLocalization.string("localizable.nova.education.editor.her.firma.isyeri.seciminden.en.az.bir.katilimci..7fd3ae65", table: .localizable, fallback: "Her firma/işyeri seçiminden en az bir katılımcı seçin. Aynı kişi eğitimde bir kez yer alabilir."), style: .metaQuiet)
             if let summary = sectionSummary(.participants) { NovaText(text: summary, style: .bodyStrong) }
             if original != nil {
                 ForEach(draft.scopes) { scope in
@@ -903,7 +903,7 @@ struct NovaEducationEditor: View {
                                             .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                                         NovaText(text: person.name ?? "Personel", style: .body)
                                         Spacer(minLength: 4)
-                                        Button("Çıkar", role: .destructive) {
+                                        Button(RDLocalization.string("localizable.nova.education.editor.cikar.1a288610", table: .localizable, fallback: "Çıkar"), role: .destructive) {
                                             removeParticipant(person.id, from: scope.id)
                                         }
                                         .font(NovaFont.font(.meta))
@@ -917,7 +917,7 @@ struct NovaEducationEditor: View {
                     }
                 }
             }
-            NovaButton(label: "Katılımcıları düzenle", symbol: "person.3", variant: .surface) {
+            NovaButton(label: RDLocalization.string("localizable.nova.education.editor.katilimcilari.duzenle.1e0c8de1", table: .localizable, fallback: "Katılımcıları düzenle"), symbol: "person.3", variant: .surface) {
                 participantCompany = nil
                 participantDepartment = ""; participantJob = ""; selectedParticipantsOnly = false
                 showingParticipants = true
@@ -952,13 +952,13 @@ struct NovaEducationEditor: View {
         return NovaPageSurface {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    NovaText(text: "Katılımcılar", style: .screenTitle)
+                    NovaText(text: RDLocalization.string("localizable.nova.education.editor.katilimcilar.ab09c1b7", table: .localizable, fallback: "Katılımcılar"), style: .screenTitle)
                     Spacer()
                     Button("Bitti") { showingParticipants = false; advanceIfComplete(.participants) }
                         .font(NovaFont.font(.bodyStrong))
                         .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                 }
-                NovaText(text: "Eğitimdeki tüm firmaların personeli gösteriliyor. İsterseniz firmaya göre filtreleyin.", style: .metaQuiet)
+                NovaText(text: RDLocalization.string("localizable.nova.education.editor.egitimdeki.tum.firmalarin.personeli.gosteriliyor.9293d21d", table: .localizable, fallback: "Eğitimdeki tüm firmaların personeli gösteriliyor. İsterseniz firmaya göre filtreleyin."), style: .metaQuiet)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         participantCompanyChip("Tüm firmalar", selected: participantCompany == nil) {
@@ -975,12 +975,12 @@ struct NovaEducationEditor: View {
                 NovaCard(padding: 14) {
                     HStack(spacing: 10) {
                         NovaIcon(symbol: "magnifyingglass", size: 18)
-                        TextField("Personel ara", text: $participantSearch)
+                        TextField(RDLocalization.string("localizable.nova.education.editor.personel.ara.bbf4983d", table: .localizable, fallback: "Personel ara"), text: $participantSearch)
                             .font(NovaFont.font(.body))
                             .accessibilityIdentifier("education.participants.search")
                         if !participantSearch.isEmpty {
                             Button { participantSearch = "" } label: { Image(systemName: "xmark.circle.fill") }
-                                .accessibilityLabel("Aramayı temizle")
+                                .accessibilityLabel(RDLocalization.string("localizable.nova.education.editor.aramayi.temizle.f8caa434", table: .localizable, fallback: "Aramayı temizle"))
                         }
                     }
                 }
@@ -992,12 +992,12 @@ struct NovaEducationEditor: View {
                     Button {
                         selectedParticipantsOnly.toggle()
                     } label: {
-                        Label("Yalnız seçilenler", systemImage: selectedParticipantsOnly ? "checkmark.circle.fill" : "circle")
+                        Label(RDLocalization.string("localizable.nova.education.editor.yalniz.secilenler.5fc675c7", table: .localizable, fallback: "Yalnız seçilenler"), systemImage: selectedParticipantsOnly ? "checkmark.circle.fill" : "circle")
                             .font(NovaFont.font(.meta))
                             .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                     }.buttonStyle(NovaRowPressStyle())
                     Spacer()
-                    Button("Görünenlerin tümünü seç") {
+                    Button(RDLocalization.string("localizable.nova.education.editor.gorunenlerin.tumunu.sec.8eaa7422", table: .localizable, fallback: "Görünenlerin tümünü seç")) {
                         for candidate in matches {
                             let person = candidate.person
                             if !draft.scopes.contains(where: { $0.participants.contains { $0.id == person.id } }) {
@@ -1010,13 +1010,13 @@ struct NovaEducationEditor: View {
                 }.padding(.horizontal, 4)
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
-                        if matches.isEmpty { NovaText(text: "Eşleşen personel bulunamadı.", style: .metaQuiet) }
+                        if matches.isEmpty { NovaText(text: RDLocalization.string("localizable.nova.education.editor.eslesen.personel.bulunamadi.05d3f0fe", table: .localizable, fallback: "Eşleşen personel bulunamadı."), style: .metaQuiet) }
                         ForEach(matches) { candidate in
                             participantRow(candidate)
                         }
                     }
                 }
-                NovaButton(label: "\(draft.scopes.reduce(0) { $0 + $1.participants.count }) kişiyi ekle", symbol: "checkmark", variant: .primary) {
+                NovaButton(label: RDLocalization.format("localizable.nova.education.editor.1.kisiyi.ekle.287a7430", table: .localizable, fallback: "%1$@ kişiyi ekle", arguments: [String(describing: draft.scopes.reduce(0) { $0 + $1.participants.count })]), symbol: "checkmark", variant: .primary) {
                     showingParticipants = false
                     advanceIfComplete(.participants)
                 }
@@ -1035,7 +1035,7 @@ struct NovaEducationEditor: View {
 
     private func participantFilter(_ title: String, value: String, values: [String], select: @escaping (String) -> Void) -> some View {
         Menu {
-            Button("Tümü") { select("") }
+            Button(RDLocalization.string("localizable.nova.education.editor.tumu.ff55a009", table: .localizable, fallback: "Tümü")) { select("") }
             ForEach(values, id: \.self) { item in Button(item) { select(item) } }
         } label: {
             HStack(spacing: 6) {
@@ -1080,7 +1080,7 @@ struct NovaEducationEditor: View {
     /// the same place for both new and edited records.
     private var reviewStep: some View {
         VStack(alignment: .leading, spacing: 10) {
-            NovaText(text: "Kaydetmeden önce kontrol edin", style: .sectionTitle)
+            NovaText(text: RDLocalization.string("localizable.nova.education.editor.kaydetmeden.once.kontrol.edin.8575d615", table: .localizable, fallback: "Kaydetmeden önce kontrol edin"), style: .sectionTitle)
             NovaCard(padding: 12) {
                 VStack(alignment: .leading, spacing: 8) {
                     reviewRow("Eğitim", draft.title.isEmpty ? template.cycleName : draft.title, step: .info)
@@ -1091,7 +1091,7 @@ struct NovaEducationEditor: View {
                     reviewRow("Firma / işyeri", draft.scopes.map { [$0.company_name, $0.workplace_name].compactMap { $0 }.joined(separator: " · ") }.joined(separator: ", "), step: .companies)
                 }
             }
-            NovaText(text: "Bu özet onaylandığında eğitim kaydı ve kişi bazlı katılım bilgisi oluşturulur.", style: .metaQuiet)
+            NovaText(text: RDLocalization.string("localizable.nova.education.editor.bu.ozet.onaylandiginda.egitim.kaydi.ve.kisi.bazl.827f994d", table: .localizable, fallback: "Bu özet onaylandığında eğitim kaydı ve kişi bazlı katılım bilgisi oluşturulur."), style: .metaQuiet)
         }
     }
 
@@ -1100,7 +1100,7 @@ struct NovaEducationEditor: View {
             HStack {
                 NovaText(text: label, style: .metaQuiet)
                 Spacer(minLength: 8)
-                Button("Düzenle") { returningToReview = true; currentStep = step }.font(NovaFont.font(.meta))
+                Button(RDLocalization.string("localizable.nova.education.editor.duzenle.e23f67b8", table: .localizable, fallback: "Düzenle")) { returningToReview = true; currentStep = step }.font(NovaFont.font(.meta))
             }
             NovaText(text: value.isEmpty ? "Belirtilmedi" : value, style: .bodyStrong)
         }
@@ -1141,7 +1141,7 @@ struct NovaEducationEditor: View {
                 try? service.preserve(draft); dismiss()
             }.disabled(!canWrite || busy).accessibilityIdentifier("education.savedraft")
             if saved != nil {
-                NovaButton(label: "Eğitimi sil", symbol: "trash", variant: .danger,
+                NovaButton(label: RDLocalization.string("localizable.nova.education.editor.egitimi.sil.918a65b4", table: .localizable, fallback: "Eğitimi sil"), symbol: "trash", variant: .danger,
                     isEnabled: canWrite && !busy && !pending, isLoading: deleting) {
                     deleteConfirmation = true
                 }.accessibilityIdentifier("education.delete")
@@ -1246,11 +1246,11 @@ struct NovaEducationEditor: View {
 
     @ViewBuilder private var certificatesLink: some View {
         if let saved, !changed {
-            NovaButton(label: "Sertifikaları aç", symbol: "doc.text", variant: .surface) {
+            NovaButton(label: RDLocalization.string("localizable.nova.education.editor.sertifikalari.ac.c162a1af", table: .localizable, fallback: "Sertifikaları aç"), symbol: "doc.text", variant: .surface) {
                 certificatePage = .init(session: saved)
             }.accessibilityIdentifier("education.certificates.open")
         } else if saved != nil {
-            NovaText(text: "Sertifikaları görmek için değişiklikleri kaydedin.", style: .metaQuiet)
+            NovaText(text: RDLocalization.string("localizable.nova.education.editor.sertifikalari.gormek.icin.degisiklikleri.kaydedi.f3c3e91e", table: .localizable, fallback: "Sertifikaları görmek için değişiklikleri kaydedin."), style: .metaQuiet)
         }
     }
 
@@ -1263,7 +1263,7 @@ struct NovaEducationEditor: View {
     private func area(_ label: String, _ value: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             NovaText(text: label, style: .meta)
-            TextField("Eklemek istediğiniz notu yazın", text: value, axis: .vertical)
+            TextField(RDLocalization.string("localizable.nova.education.editor.eklemek.istediginiz.notu.yazin.7fed2518", table: .localizable, fallback: "Eklemek istediğiniz notu yazın"), text: value, axis: .vertical)
                 .font(NovaFont.font(.body)).lineLimit(3...6).padding(14)
                 .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
                 .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))

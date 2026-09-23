@@ -20,8 +20,8 @@ private enum HistoryFilterChip: String, CaseIterable, Identifiable {
                 "localizable.history.filter.critical",
                 fallback: "Kritik"
             )
-        case .unassigned: return "Firmasız"
-        case .unreviewed: return "İncelenmemiş"
+        case .unassigned: return RDLocalization.string("localizable.history.view.firmasiz.a7e330f8", table: .localizable, fallback: "Firmasız")
+        case .unreviewed: return RDLocalization.string("localizable.history.view.incelenmemis.994ceab1", table: .localizable, fallback: "İncelenmemiş")
         }
     }
 }
@@ -31,10 +31,10 @@ private enum HistorySort: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .newest: return "En yeni"
-        case .highestRisk: return "En yüksek risk"
-        case .mostFindings: return "En çok bulgu"
-        case .unreviewed: return "İncelenmemiş önce"
+        case .newest: return RDLocalization.string("localizable.history.view.en.yeni.58cb7875", table: .localizable, fallback: "En yeni")
+        case .highestRisk: return RDLocalization.string("localizable.history.view.en.yuksek.risk.605aabd6", table: .localizable, fallback: "En yüksek risk")
+        case .mostFindings: return RDLocalization.string("localizable.history.view.en.cok.bulgu.519986e9", table: .localizable, fallback: "En çok bulgu")
+        case .unreviewed: return RDLocalization.string("localizable.history.view.incelenmemis.once.b0581928", table: .localizable, fallback: "İncelenmemiş önce")
         }
     }
 }
@@ -207,7 +207,7 @@ struct HistoryView: View {
                 .font(RDTypography.font(size: RDFontScale.size(28), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
             HStack(spacing: 0) {
-                overviewMetric(icon: "viewfinder", title: "Analiz", value: "\(items.count)")
+                overviewMetric(icon: "viewfinder", title: RDLocalization.string("localizable.history.view.analiz.dc254cae", table: .localizable, fallback: "Analiz"), value: "\(items.count)")
                 Rectangle().fill(Color.rdLine).frame(width: 1, height: 28)
                 overviewMetric(icon: "exclamationmark.triangle.fill", title: "Kritik", value: "\(criticalCount)")
                 Rectangle().fill(Color.rdLine).frame(width: 1, height: 28)
@@ -334,7 +334,7 @@ struct HistoryView: View {
             }
         } label: {
             compactFilterLabel(symbol: "line.3.horizontal.decrease",
-                title: activeChip == .all ? "Filtre" : "Filtre · 1", active: activeChip != .all)
+                title: activeChip == .all ? "Filtre" : RDLocalization.string("localizable.history.view.filtre.1.510f8ed5", table: .localizable, fallback: "Filtre · 1"), active: activeChip != .all)
         }
         .accessibilityIdentifier("analysis.filter")
     }

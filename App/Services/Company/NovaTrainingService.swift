@@ -147,16 +147,16 @@ struct NovaTrainingDraft: Codable, Equatable {
     static func message(_ error: Error) -> String {
         if let e = error as? PostgrestError {
             switch e.message {
-            case "TRAINING_NOT_ENDED": return "Eğitim henüz bitmedi. Bitiş saatinden sonra tamamlayabilirsiniz."
-            case "ATTENDANCE_REQUIRED": return "Tamamlamak için en az bir katılımcının yoklamasını işaretleyip kaydedin."
-            case "FUTURE_ATTENDANCE": return "Gelecekteki eğitim için katılım işaretlenemez."
-            case "PARTICIPANT_UNAVAILABLE": return "Seçilen personel artık aktif değil. Katılımcı listesini güncelleyin."
-            case "VERSION_CONFLICT", "TRAINING_LOCKED": return "Kayıt değişti veya kapatıldı. Listeyi yenileyip tekrar açın."
-            case "VALIDATION_ERROR": return "Eğitim adı, eğitmen, tarih ve süre bilgilerini kontrol edin."
-            case "FEATURE_UNAVAILABLE", "ACCESS_DENIED", "AUTH_REQUIRED", "PAID_PLAN_REQUIRED": return "Bu firma için eğitim erişimi doğrulanamadı. Oturumunuzu ve pilot erişiminizi kontrol edin."
+            case "TRAINING_NOT_ENDED": return RDLocalization.string("localizable.nova.training.service.egitim.henuz.bitmedi.bitis.saatinden.sonra.tamam.de50b885", table: .localizable, fallback: "Eğitim henüz bitmedi. Bitiş saatinden sonra tamamlayabilirsiniz.")
+            case "ATTENDANCE_REQUIRED": return RDLocalization.string("localizable.nova.training.service.tamamlamak.icin.en.az.bir.katilimcinin.yoklamasi.5efb5b76", table: .localizable, fallback: "Tamamlamak için en az bir katılımcının yoklamasını işaretleyip kaydedin.")
+            case "FUTURE_ATTENDANCE": return RDLocalization.string("localizable.nova.training.service.gelecekteki.egitim.icin.katilim.isaretlenemez.6c2e40ac", table: .localizable, fallback: "Gelecekteki eğitim için katılım işaretlenemez.")
+            case "PARTICIPANT_UNAVAILABLE": return RDLocalization.string("localizable.nova.training.service.secilen.personel.artik.aktif.degil.katilimci.lis.efb97082", table: .localizable, fallback: "Seçilen personel artık aktif değil. Katılımcı listesini güncelleyin.")
+            case "VERSION_CONFLICT", "TRAINING_LOCKED": return RDLocalization.string("localizable.nova.training.service.kayit.degisti.veya.kapatildi.listeyi.yenileyip.t.5c679c89", table: .localizable, fallback: "Kayıt değişti veya kapatıldı. Listeyi yenileyip tekrar açın.")
+            case "VALIDATION_ERROR": return RDLocalization.string("localizable.nova.training.service.egitim.adi.egitmen.tarih.ve.sure.bilgilerini.kon.b7846559", table: .localizable, fallback: "Eğitim adı, eğitmen, tarih ve süre bilgilerini kontrol edin.")
+            case "FEATURE_UNAVAILABLE", "ACCESS_DENIED", "AUTH_REQUIRED", "PAID_PLAN_REQUIRED": return RDLocalization.string("localizable.nova.training.service.bu.firma.icin.egitim.erisimi.dogrulanamadi.oturu.c5729b4b", table: .localizable, fallback: "Bu firma için eğitim erişimi doğrulanamadı. Oturumunuzu ve pilot erişiminizi kontrol edin.")
             default: break
             }
         }
-        return "İşlem doğrulanamadı. Bağlantınızı kontrol edip tekrar deneyin; bekleyen kayıt aynı işlemle sürdürülecek."
+        return RDLocalization.string("localizable.nova.training.service.islem.dogrulanamadi.baglantinizi.kontrol.edip.te.a19d758f", table: .localizable, fallback: "İşlem doğrulanamadı. Bağlantınızı kontrol edip tekrar deneyin; bekleyen kayıt aynı işlemle sürdürülecek.")
     }
 }

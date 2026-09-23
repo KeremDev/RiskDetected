@@ -19,7 +19,7 @@ enum NovaChecklistExport {
 
     @MainActor static func pdf(template: NovaChecklistTemplateDetail) throws -> URL {
         try pdf(title: template.title,
-            subtitle: "Boş kontrol listesi · \(template.catalogTemplateCode ?? template.templateCode)",
+            subtitle: RDLocalization.format("localizable.nova.checklist.export.bos.kontrol.listesi.1.4544ed7e", table: .localizable, fallback: "Boş kontrol listesi · %1$@", arguments: [String(describing: template.catalogTemplateCode ?? template.templateCode)]),
             version: template.version,
             rows: template.items.map { ($0.position, $0.prompt, "", "") },
             identifier: template.templateCode)

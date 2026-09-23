@@ -181,13 +181,13 @@ struct NovaAppointmentSheet: View {
     var body: some View {
         Group {
             if saved {
-                NovaTaskSuccessView(title: "Atama kaydedildi",
-                    message: "Görev, süre ve varsa atama yazısı personel kaydına eklendi.",
+                NovaTaskSuccessView(title: RDLocalization.string("localizable.nova.appointment.sheets.atama.kaydedildi.22d8d89a", table: .localizable, fallback: "Atama kaydedildi"),
+                    message: RDLocalization.string("localizable.nova.appointment.sheets.gorev.sure.ve.varsa.atama.yazisi.personel.kaydin.b2ed734b", table: .localizable, fallback: "Görev, süre ve varsa atama yazısı personel kaydına eklendi."),
                     doneTitle: "Atamalara dön", onDone: onClose)
             } else {
                 NovaPageSurface(onEdgeBack: goBack) {
                     VStack(spacing: 0) {
-                        NovaTaskHeader(title: "Görev ver", step: step + 1, total: 4,
+                        NovaTaskHeader(title: RDLocalization.string("localizable.nova.appointment.sheets.gorev.ver.af77d64e", table: .localizable, fallback: "Görev ver"), step: step + 1, total: 4,
                             stepTitle: ["Personel ve işyeri", "Görev ve dayanak", "Tarih", "Dosya ve kontrol"][step],
                             onClose: goBack)
                             .padding(.horizontal, 18).padding(.top, 10)
@@ -221,14 +221,14 @@ struct NovaAppointmentSheet: View {
 
     private var personAndWorkplace: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaHelpHint(text: "Personel ve işyeri seçimi sonraki adımlara otomatik taşınır.")
+            NovaHelpHint(text: RDLocalization.string("localizable.nova.appointment.sheets.personel.ve.isyeri.secimi.sonraki.adimlara.otoma.97c9f86f", table: .localizable, fallback: "Personel ve işyeri seçimi sonraki adımlara otomatik taşınır."))
             fieldCard("person.2") {
                 NovaFileChooserButton(label: "Personel", value: personTitle,
                     isOpen: openChooser == "person", identifier: "nova.appointment.form.person") {
                     openChooser = openChooser == "person" ? nil : "person"
                 }
                 if openChooser == "person" {
-                    NovaAnalysisSearchField(text: $personSearch, placeholder: "Personel ara",
+                    NovaAnalysisSearchField(text: $personSearch, placeholder: RDLocalization.string("localizable.nova.appointment.sheets.personel.ara.b1eb985f", table: .localizable, fallback: "Personel ara"),
                         identifier: "nova.appointment.form.person.search")
                     if matchingEmployees.isEmpty {
                         NovaText(text: personSearch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -249,7 +249,7 @@ struct NovaAppointmentSheet: View {
                 if count <= 1 {
                     NovaText(text: count == 1 ? placeTitle : "Bu firmada kayıt açılacak bir işyeri yok.", style: .cardTitle)
                 } else {
-                    NovaFileChooserButton(label: "İşyeri", value: placeTitle, isOpen: openChooser == "place",
+                    NovaFileChooserButton(label: RDLocalization.string("localizable.nova.appointment.sheets.isyeri.1c1ca3c4", table: .localizable, fallback: "İşyeri"), value: placeTitle, isOpen: openChooser == "place",
                         identifier: "nova.appointment.form.workplace") { openChooser = openChooser == "place" ? nil : "place" }
                     if openChooser == "place" {
                         NovaFileChooserPanel(options: (catalogue?.workplaces ?? []).map { .init(id: $0.id.uuidString, title: $0.name) },
@@ -266,7 +266,7 @@ struct NovaAppointmentSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             fieldCard("person.badge.shield.checkmark") {
                 VStack(alignment: .leading, spacing: 6) {
-                    NovaText(text: "Görev", style: .label)
+                    NovaText(text: RDLocalization.string("localizable.nova.appointment.sheets.gorev.a860afd9", table: .localizable, fallback: "Görev"), style: .label)
                     ForEach(catalogue?.roles ?? NovaAppointmentKind.allCases.map { .init(kind: $0, usualBasis: .appointed) }) { role in
                         Button { draft.kind = role.kind; draft.basis = role.usualBasis } label: {
                             HStack { Image(systemName: draft.kind == role.kind ? "largecircle.fill.circle" : "circle"); NovaText(text: role.kind.title, style: .body); Spacer() }
@@ -284,7 +284,7 @@ struct NovaAppointmentSheet: View {
                                 .frame(minHeight: 40).contentShape(Rectangle())
                         }.buttonStyle(NovaRowPressStyle())
                     }
-                    TextField("Tutanak veya karar no", text: $draft.basisNote).textFieldStyle(.roundedBorder)
+                    TextField(RDLocalization.string("localizable.nova.appointment.sheets.tutanak.veya.karar.no.2df6343f", table: .localizable, fallback: "Tutanak veya karar no"), text: $draft.basisNote).textFieldStyle(.roundedBorder)
                 }
             }
             NovaWhyDisclosure { NovaText(text: "\(NovaAppointmentWords.noQualificationNote) \(NovaAppointmentWords.noRequiredCountNote)", style: .metaQuiet) }
@@ -294,22 +294,22 @@ struct NovaAppointmentSheet: View {
     private var dates: some View {
         fieldCard("calendar") {
             VStack(alignment: .leading, spacing: 12) {
-                NovaDayField(label: "Başlangıç", value: $draft.startsOn, identifier: "nova.appointment.form.starts")
-                NovaDayField(label: "Bitiş", value: $draft.endsBefore, identifier: "nova.appointment.form.ends", isClearable: true)
+                NovaDayField(label: RDLocalization.string("localizable.nova.appointment.sheets.baslangic.013b86dd", table: .localizable, fallback: "Başlangıç"), value: $draft.startsOn, identifier: "nova.appointment.form.starts")
+                NovaDayField(label: RDLocalization.string("localizable.nova.appointment.sheets.bitis.59d3fd3d", table: .localizable, fallback: "Bitiş"), value: $draft.endsBefore, identifier: "nova.appointment.form.ends", isClearable: true)
             }
         }
     }
 
     private var fileAndReview: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaHelpHint(text: "Atama yazısı isteğe bağlıdır; belgeyi daha sonra da ekleyebilirsiniz. \(NovaAppointmentWords.letterNote)")
+            NovaHelpHint(text: RDLocalization.format("localizable.nova.appointment.sheets.atama.yazisi.istege.baglidir.belgeyi.daha.sonra..9775896a", table: .localizable, fallback: "Atama yazısı isteğe bağlıdır; belgeyi daha sonra da ekleyebilirsiniz. %1$@", arguments: [String(describing: NovaAppointmentWords.letterNote)]))
             fieldCard("paperclip") {
                 NovaInlineFileField(category: "personnel_document", company: fileCompany,
                     fileClient: fileClient, assetID: $draft.letterLocation)
             }
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 8) {
-                    NovaText(text: "Atama özeti", style: .bodyStrong)
+                    NovaText(text: RDLocalization.string("localizable.nova.appointment.sheets.atama.ozeti.9f91d179", table: .localizable, fallback: "Atama özeti"), style: .bodyStrong)
                     NovaText(text: personTitle, style: .body)
                     NovaText(text: "\(placeTitle) · \(draft.kind.title) · \(draft.startsOn)", style: .metaQuiet)
                 }.frame(maxWidth: .infinity, alignment: .leading)

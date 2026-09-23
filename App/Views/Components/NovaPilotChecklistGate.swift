@@ -45,7 +45,7 @@ struct NovaPilotChecklistGate: View {
                 var draft = NovaFileDraft()
                 draft.title = attachment.title
                 draft.category = "inspection_report"
-                draft.tags = "kontrol listesi, kanıt"
+                draft.tags = RDLocalization.string("localizable.nova.pilot.checklist.gate.kontrol.listesi.kanit.e374f84d", table: .localizable, fallback: "kontrol listesi, kanıt")
                 draft.fileName = attachment.filename
                 draft.fileExtension = (attachment.filename as NSString).pathExtension.lowercased()
                 draft.bytes = attachment.data.count

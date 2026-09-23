@@ -19,7 +19,7 @@ struct NovaPilotDrillGate: View {
         } else {
             VStack(spacing: 0) {
                 NovaPilotProcessGate(identity: identity, kind: "completed_drill", initialCompany: initialCompany, canWrite: canWrite, onBack: onBack)
-                Button("Önceki tatbikat kayıtları") { legacy = true }
+                Button(RDLocalization.string("localizable.nova.pilot.drill.gate.onceki.tatbikat.kayitlari.3664c32c", table: .localizable, fallback: "Önceki tatbikat kayıtları")) { legacy = true }
                     .font(NovaFont.font(.meta)).padding(8)
             }
         }

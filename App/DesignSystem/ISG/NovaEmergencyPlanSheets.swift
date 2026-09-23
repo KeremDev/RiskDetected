@@ -139,7 +139,7 @@ struct NovaEmergencyDetailSheet: View {
                 NovaCard(padding: 12) {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
-                            NovaText(text: "v\(version.version) · " + version.scope, style: .cardTitle)
+                            NovaText(text: RDLocalization.format("localizable.nova.emergency.plan.sheets.v.1.3bd7c83c", table: .localizable, fallback: "v%1$@ · ", arguments: [String(describing: version.version)]) + version.scope, style: .cardTitle)
                             Spacer(minLength: 0)
                             NovaStatusPill(label: version.isActive
                                 ? RDLocalization.string("localizable.nova.emergency.version.active",
@@ -268,8 +268,8 @@ struct NovaEmergencyPlanSheet: View {
     var body: some View {
         Group {
             if didSave {
-                NovaTaskSuccessView(title: "Acil durum planı kaydedildi",
-                    message: "Hazırlama: \(draft.preparedOn)\nGeçerlilik: \(draft.validUntil)\nEkip: \(draft.team.count) kişi\n\nSıradaki önerilen işlem: tatbikat kaydı oluştur.",
+                NovaTaskSuccessView(title: RDLocalization.string("localizable.nova.emergency.plan.sheets.acil.durum.plani.kaydedildi.e8f47cc2", table: .localizable, fallback: "Acil durum planı kaydedildi"),
+                    message: RDLocalization.format("localizable.nova.emergency.plan.sheets.hazirlama.1.gecerlilik.2.ekip.3.kisi.siradaki.on.546fa80b", table: .localizable, fallback: "Hazırlama: %1$@\nGeçerlilik: %2$@\nEkip: %3$@ kişi\n\nSıradaki önerilen işlem: tatbikat kaydı oluştur.", arguments: [String(describing: draft.preparedOn), String(describing: draft.validUntil), String(describing: draft.team.count)]),
                     doneTitle: "Planlara dön", onDone: onClose)
             } else {
                 NovaPageSurface(onEdgeBack: onClose) {
@@ -301,11 +301,11 @@ struct NovaEmergencyPlanSheet: View {
         .onChange(of: draft.workplaceID) { _ in fillSuggestedValidity() }
         .onChange(of: draft.preparedOn) { _ in fillSuggestedValidity() }
         .task(id: fileCompany) { await loadPersonnel() }
-        .confirmationDialog("Acil durum planı akışından çıkılsın mı?", isPresented: $confirmingExit,
+        .confirmationDialog(RDLocalization.string("localizable.nova.emergency.plan.sheets.acil.durum.plani.akisindan.cikilsin.mi.8c071740", table: .localizable, fallback: "Acil durum planı akışından çıkılsın mı?"), isPresented: $confirmingExit,
             titleVisibility: .visible) {
-                Button("Çık", role: .destructive, action: onClose)
-                Button("Devam et", role: .cancel) {}
-            } message: { Text("Henüz kaydedilmemiş bilgiler silinir.") }
+                Button(RDLocalization.string("localizable.nova.emergency.plan.sheets.cik.043a3e3c", table: .localizable, fallback: "Çık"), role: .destructive, action: onClose)
+                Button(RDLocalization.string("localizable.nova.emergency.plan.sheets.devam.et.b7ee7f8b", table: .localizable, fallback: "Devam et"), role: .cancel) {}
+            } message: { Text(RDLocalization.string("localizable.nova.emergency.plan.sheets.henuz.kaydedilmemis.bilgiler.silinir.d13139a9", table: .localizable, fallback: "Henüz kaydedilmemiş bilgiler silinir.")) }
     }
 
     @ViewBuilder private func stepContent(_ step: Step) -> some View {
@@ -325,14 +325,14 @@ struct NovaEmergencyPlanSheet: View {
                 fieldIcon("building.2") {
                     if draft.isRenewal || workplaces.count == 1 {
                         VStack(alignment: .leading, spacing: 4) {
-                            NovaText(text: "İşyeri", style: .label)
+                            NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.isyeri.b018b168", table: .localizable, fallback: "İşyeri"), style: .label)
                             NovaText(text: workplaceTitle, style: .cardTitle)
                         }
                     } else if workplaces.isEmpty {
-                        NovaText(text: "Bu firmada kayıt açılacak bir işyeri yok.", style: .metaQuiet)
+                        NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.bu.firmada.kayit.acilacak.bir.isyeri.yok.4d56b127", table: .localizable, fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .metaQuiet)
                     } else {
                         VStack(alignment: .leading, spacing: 4) {
-                            NovaFileChooserButton(label: "İşyeri", value: workplaceTitle,
+                            NovaFileChooserButton(label: RDLocalization.string("localizable.nova.emergency.plan.sheets.isyeri.2cb75cfe", table: .localizable, fallback: "İşyeri"), value: workplaceTitle,
                                 isOpen: choosingWorkplace, identifier: "nova.emergency.form.workplace") {
                                     choosingWorkplace.toggle()
                                 }
@@ -355,10 +355,10 @@ struct NovaEmergencyPlanSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             NovaCard(padding: 12) {
                 VStack(spacing: 4) {
-                    compactDateRow(label: "Hazırlama tarihi", symbol: "calendar",
+                    compactDateRow(label: RDLocalization.string("localizable.nova.emergency.plan.sheets.hazirlama.tarihi.3780ce96", table: .localizable, fallback: "Hazırlama tarihi"), symbol: "calendar",
                         value: $draft.preparedOn, identifier: "nova.emergency.form.prepared")
                     Divider().opacity(0.45)
-                    compactDateRow(label: "Geçerlilik", symbol: "calendar.badge.clock",
+                    compactDateRow(label: RDLocalization.string("localizable.nova.emergency.plan.sheets.gecerlilik.5bf8d450", table: .localizable, fallback: "Geçerlilik"), symbol: "calendar.badge.clock",
                         value: $draft.validUntil, identifier: "nova.emergency.form.until", isClearable: true)
                 }
             }
@@ -372,18 +372,18 @@ struct NovaEmergencyPlanSheet: View {
 
     private var teamStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaText(text: "Acil durum ekibi", style: .sectionTitle)
-            NovaHelpHint(text: "Ekip eklemek isteğe bağlıdır. Şimdi kişi seçebilir veya bu adımı boş geçip ekibi daha sonra tamamlayabilirsiniz.")
+            NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.acil.durum.ekibi.18ad36bc", table: .localizable, fallback: "Acil durum ekibi"), style: .sectionTitle)
+            NovaHelpHint(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.ekip.eklemek.istege.baglidir.simdi.kisi.secebili.b045146f", table: .localizable, fallback: "Ekip eklemek isteğe bağlıdır. Şimdi kişi seçebilir veya bu adımı boş geçip ekibi daha sonra tamamlayabilirsiniz."))
             NovaCard(padding: 12) { fieldIcon("person.2") { teamEditor } }
         }
     }
 
     private var fileStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaText(text: "Plan dosyası", style: .sectionTitle)
+            NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.plan.dosyasi.c0653321", table: .localizable, fallback: "Plan dosyası"), style: .sectionTitle)
             NovaCard(padding: 12) { fieldIcon("paperclip") { fileEditor } }
             DisclosureGroup("Dosya bilgileri") {
-                NovaText(text: "Dosya eklemek zorunlu değil; planı kaydedip belgeyi daha sonra bağlayabilirsiniz.", style: .metaQuiet)
+                NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.dosya.eklemek.zorunlu.degil.plani.kaydedip.belge.d622cd94", table: .localizable, fallback: "Dosya eklemek zorunlu değil; planı kaydedip belgeyi daha sonra bağlayabilirsiniz."), style: .metaQuiet)
                     .padding(.top, 8)
             }.padding(12).novaControlBackground(cornerRadius: 14)
         }
@@ -391,7 +391,7 @@ struct NovaEmergencyPlanSheet: View {
 
     private var reviewStep: some View {
         VStack(alignment: .leading, spacing: 14) {
-            NovaText(text: "Kaydetmeden önce kontrol edin", style: .sectionTitle)
+            NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.kaydetmeden.once.kontrol.edin.ee541d97", table: .localizable, fallback: "Kaydetmeden önce kontrol edin"), style: .sectionTitle)
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 12) {
                     reviewRow("İşyeri", workplaceTitle)
@@ -402,10 +402,10 @@ struct NovaEmergencyPlanSheet: View {
                 }
             }
             if let onSaveDraft {
-                NovaButton(label: "Taslak olarak kaydet", symbol: "tray.and.arrow.down", variant: .surface) {
+                NovaButton(label: RDLocalization.string("localizable.nova.emergency.plan.sheets.taslak.olarak.kaydet.941bd4e0", table: .localizable, fallback: "Taslak olarak kaydet"), symbol: "tray.and.arrow.down", variant: .surface) {
                     onSaveDraft(draft)
                 }.accessibilityIdentifier("nova.emergency.form.save-draft")
-                NovaText(text: "Taslak yayımlanmaz ve plan listesinde görünmez; daha sonra bu bilgilerle devam edebilirsiniz.", style: .metaQuiet)
+                NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.taslak.yayimlanmaz.ve.plan.listesinde.gorunmez.d.1d7f4e9a", table: .localizable, fallback: "Taslak yayımlanmaz ve plan listesinde görünmez; daha sonra bu bilgilerle devam edebilirsiniz."), style: .metaQuiet)
             }
         }
     }
@@ -420,10 +420,10 @@ struct NovaEmergencyPlanSheet: View {
     private func stepTitle(_ step: Step) -> String {
         switch step {
         case .scope: return "Kapsam"
-        case .dates: return "Tarih ve geçerlilik"
-        case .team: return "Acil durum ekibi"
-        case .file: return "Plan dosyası"
-        case .review: return "Kontrol ve kaydet"
+        case .dates: return RDLocalization.string("localizable.nova.emergency.plan.sheets.tarih.ve.gecerlilik.9d2e1c12", table: .localizable, fallback: "Tarih ve geçerlilik")
+        case .team: return RDLocalization.string("localizable.nova.emergency.plan.sheets.acil.durum.ekibi.d4a2c823", table: .localizable, fallback: "Acil durum ekibi")
+        case .file: return RDLocalization.string("localizable.nova.emergency.plan.sheets.plan.dosyasi.e9c3aec5", table: .localizable, fallback: "Plan dosyası")
+        case .review: return RDLocalization.string("localizable.nova.emergency.plan.sheets.kontrol.ve.kaydet.8e64637b", table: .localizable, fallback: "Kontrol ve kaydet")
         }
     }
 
@@ -545,7 +545,7 @@ struct NovaEmergencyPlanSheet: View {
                     table: .localizable, fallback: "En az bir kişi gerekli."), style: .meta,
                     color: NovaColorToken.textSecondary.color(in: scheme))
             }
-            NovaFileChooserButton(label: "Firma personeli",
+            NovaFileChooserButton(label: RDLocalization.string("localizable.nova.emergency.plan.sheets.firma.personeli.a5cb6b09", table: .localizable, fallback: "Firma personeli"),
                 value: personnel.first { $0.id == selectedEmployeeID }?.name ?? "Personel seçin",
                 symbol: "person", isOpen: supportStaffPicker,
                 isAnswered: selectedEmployeeID != nil,

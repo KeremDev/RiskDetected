@@ -126,7 +126,7 @@ struct NovaChecklistScreen: View {
     private var header: some View {
         NovaListHeading(title: headingOverride ?? "Kontroller", onBack: onBack) {
             if canWrite {
-                NovaButton(label: "Yeni kontrol", symbol: "plus", compact: true) {
+                NovaButton(label: RDLocalization.string("localizable.nova.checklist.screens.yeni.kontrol.050e3985", table: .localizable, fallback: "Yeni kontrol"), symbol: "plus", compact: true) {
                     showingStart = true
                 }
                 .accessibilityIdentifier("nova.checklist.start")
@@ -141,8 +141,8 @@ struct NovaChecklistScreen: View {
                     .font(.system(size: 17, weight: .semibold))
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
-                    NovaText(text: "Kontrol Listeleri", style: .label)
-                    NovaText(text: "Hazır listeleri bulun veya kendi listelerinizi yönetin.", style: .meta,
+                    NovaText(text: RDLocalization.string("localizable.nova.checklist.screens.kontrol.listeleri.171e8622", table: .localizable, fallback: "Kontrol Listeleri"), style: .label)
+                    NovaText(text: RDLocalization.string("localizable.nova.checklist.screens.hazir.listeleri.bulun.veya.kendi.listelerinizi.y.6de2e60f", table: .localizable, fallback: "Hazır listeleri bulun veya kendi listelerinizi yönetin."), style: .meta,
                         color: NovaColorToken.textSecondary.color(in: scheme))
                 }
                 Spacer(minLength: 8)
@@ -175,7 +175,7 @@ struct NovaChecklistScreen: View {
     }
 
     private var statePicker: some View {
-        Picker("Kontrol durumu", selection: Binding(get: { selectedState }, set: { state in
+        Picker(RDLocalization.string("localizable.nova.checklist.screens.kontrol.durumu.984c5187", table: .localizable, fallback: "Kontrol durumu"), selection: Binding(get: { selectedState }, set: { state in
             query.state = state.rawValue
             Task { await load(reset: true) }
         })) {
@@ -187,7 +187,7 @@ struct NovaChecklistScreen: View {
 
     private var searchAndFilter: some View {
         HStack(spacing: 10) {
-            NovaAnalysisSearchField(text: $query.search, placeholder: "Kontrol ara",
+            NovaAnalysisSearchField(text: $query.search, placeholder: RDLocalization.string("localizable.nova.checklist.screens.kontrol.ara.bbfad064", table: .localizable, fallback: "Kontrol ara"),
                 identifier: "nova.checklist.search")
             Button { showingFilters = true } label: {
                 ZStack(alignment: .topTrailing) {
@@ -211,10 +211,10 @@ struct NovaChecklistScreen: View {
     @ViewBuilder private var summary: some View {
         if let board {
             HStack(spacing: 5) {
-                NovaText(text: "\(board.count(.open)) devam eden", style: .meta,
+                NovaText(text: RDLocalization.format("localizable.nova.checklist.screens.1.devam.eden.ab38eb6c", table: .localizable, fallback: "%1$@ devam eden", arguments: [String(describing: board.count(.open))]), style: .meta,
                     color: NovaColorToken.textSecondary.color(in: scheme))
                 NovaText(text: "·", style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
-                NovaText(text: "\(board.count(.submitted)) tamamlanan", style: .meta,
+                NovaText(text: RDLocalization.format("localizable.nova.checklist.screens.1.tamamlanan.4d5af19d", table: .localizable, fallback: "%1$@ tamamlanan", arguments: [String(describing: board.count(.submitted))]), style: .meta,
                     color: NovaColorToken.textSecondary.color(in: scheme))
             }
             .accessibilityElement(children: .combine)
@@ -226,7 +226,7 @@ struct NovaChecklistScreen: View {
             NovaChecklistRunSkeleton()
         } else if let failure {
             NovaChecklistMessageState(symbol: "wifi.exclamationmark",
-                title: "Kontrol bilgileri yüklenemedi", message: failure,
+                title: RDLocalization.string("localizable.nova.checklist.screens.kontrol.bilgileri.yuklenemedi.0f01a931", table: .localizable, fallback: "Kontrol bilgileri yüklenemedi"), message: failure,
                 actionTitle: "Yeniden dene") { Task { await load(reset: true) } }
         } else if let board, board.rows.isEmpty {
             NovaChecklistMessageState(symbol: "checklist", title: emptyTitle,
@@ -238,7 +238,7 @@ struct NovaChecklistScreen: View {
                     Divider().overlay(NovaColorToken.hairline.color(in: scheme))
                 }
                 if board.hasMore {
-                    NovaButton(label: "Daha fazla göster", symbol: "chevron.down", variant: .surface) {
+                    NovaButton(label: RDLocalization.string("localizable.nova.checklist.screens.daha.fazla.goster.e860eb49", table: .localizable, fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface) {
                         Task { await load(reset: false) }
                     }
                     .padding(.top, 14)
@@ -249,9 +249,9 @@ struct NovaChecklistScreen: View {
 
     private var emptyTitle: String {
         switch selectedState {
-        case .open: return "Devam eden kontrol yok"
-        case .submitted: return "Tamamlanan kontrol yok"
-        case .cancelled: return "İptal edilen kontrol yok"
+        case .open: return RDLocalization.string("localizable.nova.checklist.screens.devam.eden.kontrol.yok.bd267bc2", table: .localizable, fallback: "Devam eden kontrol yok")
+        case .submitted: return RDLocalization.string("localizable.nova.checklist.screens.tamamlanan.kontrol.yok.f0b16c2b", table: .localizable, fallback: "Tamamlanan kontrol yok")
+        case .cancelled: return RDLocalization.string("localizable.nova.checklist.screens.iptal.edilen.kontrol.yok.b4527e1b", table: .localizable, fallback: "İptal edilen kontrol yok")
         }
     }
 
@@ -314,7 +314,7 @@ struct NovaChecklistScreen: View {
             draft.expectedRevision = current.revision
             if let attachment = draft.attachment {
                 guard let company = current.companyID else {
-                    return "Bağımsız kontrole firma kanıtı eklenemez."
+                    return RDLocalization.string("localizable.nova.checklist.screens.bagimsiz.kontrole.firma.kaniti.eklenemez.a0719608", table: .localizable, fallback: "Bağımsız kontrole firma kanıtı eklenemez.")
                 }
                 draft.evidenceAssetID = try await client.uploadEvidence(company, attachment)
             }
@@ -401,9 +401,9 @@ struct NovaChecklistRunRow: View {
                             .tint(NovaColorToken.accentInk.color(in: scheme))
                     }
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Kontrol ilerlemesi: \(run.expected) sorudan \(run.answered) tamamlandı")
+                    .accessibilityLabel(RDLocalization.format("localizable.nova.checklist.screens.kontrol.ilerlemesi.1.sorudan.2.tamamlandi.908025c8", table: .localizable, fallback: "Kontrol ilerlemesi: %1$@ sorudan %2$@ tamamlandı", arguments: [String(describing: run.expected), String(describing: run.answered)]))
                 } else if run.state == .submitted {
-                    NovaText(text: "\(run.conform) uygun · \(run.nonconform) uygun değil · \(run.notApplicable) uygulanamaz",
+                    NovaText(text: RDLocalization.format("localizable.nova.checklist.screens.1.uygun.2.uygun.degil.3.uygulanamaz.23d4b702", table: .localizable, fallback: "%1$@ uygun · %2$@ uygun değil · %3$@ uygulanamaz", arguments: [String(describing: run.conform), String(describing: run.nonconform), String(describing: run.notApplicable)]),
                         style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
                 }
                 if run.nonconformitiesOpened > 0 {
@@ -434,14 +434,14 @@ struct NovaChecklistRunFilterSheet: View {
                     ForEach(companies) { company in choice(company.name, id: company.id) }
                 }
                 if selectedCompany != nil {
-                    Section { Button("Tüm filtreleri temizle") { selectedCompany = nil } }
+                    Section { Button(RDLocalization.string("localizable.nova.checklist.screens.tum.filtreleri.temizle.21ea37c5", table: .localizable, fallback: "Tüm filtreleri temizle")) { selectedCompany = nil } }
                 }
             }
             .navigationTitle("Filtre")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Vazgeç") { dismiss() }
+                    Button(RDLocalization.string("localizable.nova.checklist.screens.vazgec.58165a8d", table: .localizable, fallback: "Vazgeç")) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Uygula") { onApply(); dismiss() }
@@ -478,7 +478,7 @@ struct NovaChecklistRunSkeleton: View {
         }
         .foregroundStyle(.secondary.opacity(0.22))
         .redacted(reason: .placeholder)
-        .accessibilityLabel("Kontroller yükleniyor")
+        .accessibilityLabel(RDLocalization.string("localizable.nova.checklist.screens.kontroller.yukleniyor.18181086", table: .localizable, fallback: "Kontroller yükleniyor"))
     }
 }
 

@@ -220,7 +220,7 @@ struct NovaChecklistStarter: Identifiable, Equatable {
         case "activity": return "Faaliyet"
         case "equipment": return "Ekipman"
         case "hazard": return "Tehlike"
-        default: return "Genel"
+        default: return RDLocalization.string("localizable.nova.checklists.genel.338fde21", table: .localizable, fallback: "Genel")
         }
     }
 
@@ -397,7 +397,7 @@ enum NovaChecklistFailure: Error, Equatable {
             fallback: "Kontrol listeleri modülü henüz açık değil.")
         case .validation: return RDLocalization.string("localizable.nova.checklist.error.validation", table: .localizable,
             fallback: "Girilen bilgiler eksik veya birbiriyle uyumsuz.")
-        case .explanationRequired: return "Uygun değil ve Uygulanamaz yanıtlarında açıklama zorunludur."
+        case .explanationRequired: return RDLocalization.string("localizable.nova.checklists.uygun.degil.ve.uygulanamaz.yanitlarinda.aciklama.9301e1c9", table: .localizable, fallback: "Uygun değil ve Uygulanamaz yanıtlarında açıklama zorunludur.")
         case .conflict: return RDLocalization.string("localizable.nova.checklist.error.conflict", table: .localizable,
             fallback: "Kayıt bu sırada başka bir yerden değişti. Yenileyip tekrar deneyin.")
         case .runSubmitted: return RDLocalization.string("localizable.nova.checklist.error.submitted", table: .localizable,
@@ -406,8 +406,8 @@ enum NovaChecklistFailure: Error, Equatable {
             fallback: "Yanıtlanmamış soru var. Tamamlamak için hepsini yanıtlayın.")
         case .templatePublished: return RDLocalization.string("localizable.nova.checklist.error.published", table: .localizable,
             fallback: "Yayımlanmış liste değiştirilemez. Değişiklik için yeni sürüm açın.")
-        case .duplicateItem: return "Bu madde aynı kapsam anahtarıyla listede zaten var. Gerçekten farklı bir alan veya ekipman içinse ayrı bir kapsam adı girin."
-        case .companyRequired: return "Kanıt veya uygunsuzluk kaydı için kontrolü bir firmada başlatın."
+        case .duplicateItem: return RDLocalization.string("localizable.nova.checklists.bu.madde.ayni.kapsam.anahtariyla.listede.zaten.v.3df1a4ef", table: .localizable, fallback: "Bu madde aynı kapsam anahtarıyla listede zaten var. Gerçekten farklı bir alan veya ekipman içinse ayrı bir kapsam adı girin.")
+        case .companyRequired: return RDLocalization.string("localizable.nova.checklists.kanit.veya.uygunsuzluk.kaydi.icin.kontrolu.bir.f.e893f7b2", table: .localizable, fallback: "Kanıt veya uygunsuzluk kaydı için kontrolü bir firmada başlatın.")
         case .unavailable: return RDLocalization.string("localizable.nova.checklist.error.unavailable", table: .localizable,
             fallback: "Kayıt alınamadı. Bağlantıyı kontrol edip tekrar deneyin.")
         }

@@ -297,7 +297,7 @@ private struct NovaEmployeeDetail: View {
                     }.accessibilityIdentifier("personnel.detail")
                     NovaEmployeeLearningCard(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID), company: scope.companyID, employee: employeeID)
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                        NovaCompactActionButton(title: "Sertifika ve belgeler", symbol: "doc.text") { certificates = true }
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.nova.personnel.screens.sertifika.ve.belgeler.1a49d308", table: .localizable, fallback: "Sertifika ve belgeler"), symbol: "doc.text") { certificates = true }
                             .accessibilityIdentifier("personnel.certificates")
                         if canWrite {
                             NovaCompactActionButton(title: row.isArchived ? "Etkinleştir" : "Düzenle",
@@ -305,13 +305,13 @@ private struct NovaEmployeeDetail: View {
                                 .accessibilityIdentifier(row.isArchived ? "personnel.restore" : "personnel.edit")
                         }
                         if let onDirectory {
-                            NovaCompactActionButton(title: "Görevlendirmeler", symbol: "clock.arrow.circlepath") { onDirectory(.assignments) }
+                            NovaCompactActionButton(title: RDLocalization.string("localizable.nova.personnel.screens.gorevlendirmeler.62dedb38", table: .localizable, fallback: "Görevlendirmeler"), symbol: "clock.arrow.circlepath") { onDirectory(.assignments) }
                                 .accessibilityIdentifier("personnel.assignments")
-                            NovaCompactActionButton(title: "İşveren ilişkisi", symbol: "building.2") { onDirectory(.employers) }
+                            NovaCompactActionButton(title: RDLocalization.string("localizable.nova.personnel.screens.isveren.iliskisi.dfab5456", table: .localizable, fallback: "İşveren ilişkisi"), symbol: "building.2") { onDirectory(.employers) }
                                 .accessibilityIdentifier("personnel.employers")
                         }
                         if canWrite && !row.isArchived {
-                            NovaCompactActionButton(title: "Arşivle", symbol: "archivebox") { onArchive(row) }
+                            NovaCompactActionButton(title: RDLocalization.string("localizable.nova.personnel.screens.arsivle.b241635e", table: .localizable, fallback: "Arşivle"), symbol: "archivebox") { onArchive(row) }
                                 .accessibilityIdentifier("personnel.detail.archive")
                         }
                     }

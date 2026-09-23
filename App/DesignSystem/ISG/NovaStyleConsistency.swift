@@ -58,7 +58,7 @@ struct NovaStandaloneHeader: View {
                 hasUnread: context.hasUnread, unreadCount: context.unreadCount,
                 canGoBack: false, notificationsAvailable: context.notificationsAvailable, send: context.send)
         } else {
-            NovaText(text: "İSGADA", style: .brand).frame(maxWidth: .infinity).padding(.vertical, 8)
+            NovaText(text: RDLocalization.string("localizable.nova.style.consistency.isgada.be46a6b6", table: .localizable, fallback: "İSGADA"), style: .brand).frame(maxWidth: .infinity).padding(.vertical, 8)
         }
     }
 }

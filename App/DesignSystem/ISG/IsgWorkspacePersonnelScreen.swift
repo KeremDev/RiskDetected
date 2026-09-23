@@ -8,10 +8,10 @@ enum IsgPersonnelSection: String, CaseIterable, Identifiable {
         case .employee: return RDLocalization.string("localizable.nova.workspace.personnel.employees", table: .localizable, fallback: "Personeller")
         case .workplace: return RDLocalization.string("localizable.nova.workspace.personnel.workplaces", table: .localizable, fallback: "İşyerleri")
         case .department: return RDLocalization.string("localizable.nova.workspace.personnel.departments", table: .localizable, fallback: "Departmanlar")
-        case .jobRole: return "Görevler"
-        case .contractor: return "Dış firmalar"
-        case .engagement: return "Sözleşmeler"
-        case .assignment: return "Atama geçmişi"
+        case .jobRole: return RDLocalization.string("localizable.isg.workspace.personnel.screen.gorevler.8c6c8384", table: .localizable, fallback: "Görevler")
+        case .contractor: return RDLocalization.string("localizable.isg.workspace.personnel.screen.dis.firmalar.98d3dbdb", table: .localizable, fallback: "Dış firmalar")
+        case .engagement: return RDLocalization.string("localizable.isg.workspace.personnel.screen.sozlesmeler.45c00a90", table: .localizable, fallback: "Sözleşmeler")
+        case .assignment: return RDLocalization.string("localizable.isg.workspace.personnel.screen.atama.gecmisi.48189d0d", table: .localizable, fallback: "Atama geçmişi")
         }
     }
 }
@@ -382,7 +382,7 @@ private struct IsgWorkspaceEmployeeEditor: View {
                 Toggle(RDLocalization.string("localizable.nova.workspace.personnel.has.end", table: .localizable, fallback: "Bitiş tarihi var"), isOn: $hasEnd).padding(12).novaControlBackground(cornerRadius: 14)
                 if hasEnd { DatePicker(RDLocalization.string("localizable.nova.workspace.personnel.ends", table: .localizable, fallback: "Bitiş tarihi"), selection: $endsBefore, in: hiredOn..., displayedComponents: .date).padding(12).novaControlBackground(cornerRadius: 14) }
                 IsgWorkspaceInlineAttachmentField(
-                    title: "Personel belgesi ekle (isteğe bağlı)",
+                    title: RDLocalization.string("localizable.isg.workspace.personnel.screen.personel.belgesi.ekle.istege.bagli.e4a94473", table: .localizable, fallback: "Personel belgesi ekle (isteğe bağlı)"),
                     attachment: $attachment)
                 if let error { NovaHelpHint(text: error) }
                 NovaCompactActionButton(title: working ? RDLocalization.string("localizable.nova.workspace.saving", table: .localizable, fallback: "Kaydediliyor…") : RDLocalization.string("localizable.nova.editor.kaydet.8f6f32fd", table: .localizable, fallback: "Kaydet"), symbol: "checkmark", prominent: true, enabled: !working && !code.isEmpty && !name.isEmpty) { mutate(route.entry == nil ? "create" : "edit") }
@@ -498,7 +498,7 @@ private struct IsgWorkspacePersonnelAdvancedEditor: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 NovaPopupHeading(text: route.entry == nil ? "\(route.section.title) ekle" : route.section.title,
-                                 symbol: symbol, subtitle: "Kayıt seçili firma kapsamında tutulur; geçmiş satırları korunur.")
+                                 symbol: symbol, subtitle: RDLocalization.string("localizable.isg.workspace.personnel.screen.kayit.secili.firma.kapsaminda.tutulur.gecmis.sat.51db5224", table: .localizable, fallback: "Kayıt seçili firma kapsamında tutulur; geçmiş satırları korunur."))
                 fields
                 if let error { NovaHelpHint(text: error) }
                 if route.entry == nil || [.jobRole, .contractor].contains(route.section) {
@@ -507,14 +507,14 @@ private struct IsgWorkspacePersonnelAdvancedEditor: View {
                 }
                 if let entry = route.entry {
                     if [.jobRole, .contractor].contains(route.section) {
-                        NovaCompactActionButton(title: "Arşivle", symbol: "archivebox", enabled: !working) {
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.isg.workspace.personnel.screen.arsivle.d0f5b9ce", table: .localizable, fallback: "Arşivle"), symbol: "archivebox", enabled: !working) {
                             mutate(action: route.section == .jobRole ? "job_role_archive" : "contractor_archive")
                         }
                     } else if entry.text(route.section == .engagement ? "state" : "effective_before") ==
                                 (route.section == .engagement ? "active" : nil) {
                         DatePicker("Bitiş tarihi", selection: $endsOn, in: minimumEndDate..., displayedComponents: .date)
                             .padding(12).novaControlBackground(cornerRadius: 14)
-                        NovaCompactActionButton(title: "Kaydı sonlandır", symbol: "calendar.badge.minus", enabled: !working) {
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.isg.workspace.personnel.screen.kaydi.sonlandir.1b6c5a02", table: .localizable, fallback: "Kaydı sonlandır"), symbol: "calendar.badge.minus", enabled: !working) {
                             mutate(action: route.section == .engagement ? "engagement_end" : "assignment_end")
                         }
                     }
@@ -526,16 +526,16 @@ private struct IsgWorkspacePersonnelAdvancedEditor: View {
     @ViewBuilder private var fields: some View {
         switch route.section {
         case .jobRole:
-            field("Görev kodu", text: $code); field("Görev adı", text: $name); field("Açıklama", text: $details)
+            field(RDLocalization.string("localizable.isg.workspace.personnel.screen.gorev.kodu.51b0a1e4", table: .localizable, fallback: "Görev kodu"), text: $code); field(RDLocalization.string("localizable.isg.workspace.personnel.screen.gorev.adi.f8a00811", table: .localizable, fallback: "Görev adı"), text: $name); field(RDLocalization.string("localizable.isg.workspace.personnel.screen.aciklama.73b8a51a", table: .localizable, fallback: "Açıklama"), text: $details)
         case .contractor:
-            field("Firma adı", text: $name)
+            field(RDLocalization.string("localizable.isg.workspace.personnel.screen.firma.adi.0a2e3e00", table: .localizable, fallback: "Firma adı"), text: $name)
             picker("İlişki", selection: $relation, values: ["subcontractor", "contractor", "supplier", "other"])
-            field("Vergi / kayıt no", text: $taxIdentifier); field("İletişim kişisi", text: $contactName)
-            field("Telefon veya e-posta", text: $contactValue)
+            field(RDLocalization.string("localizable.isg.workspace.personnel.screen.vergi.kayit.no.be6090f5", table: .localizable, fallback: "Vergi / kayıt no"), text: $taxIdentifier); field(RDLocalization.string("localizable.isg.workspace.personnel.screen.iletisim.kisisi.174025ee", table: .localizable, fallback: "İletişim kişisi"), text: $contactName)
+            field(RDLocalization.string("localizable.isg.workspace.personnel.screen.telefon.veya.e.posta.80c4de49", table: .localizable, fallback: "Telefon veya e-posta"), text: $contactValue)
         case .engagement where route.entry == nil:
             picker("Dış firma", selection: $contractorID, values: contractors)
             picker("İşyeri", selection: $workplaceID, values: workplaces)
-            field("İşin kapsamı", text: $details)
+            field(RDLocalization.string("localizable.isg.workspace.personnel.screen.isin.kapsami.da152f1f", table: .localizable, fallback: "İşin kapsamı"), text: $details)
             DatePicker("Başlangıç", selection: $startsOn, displayedComponents: .date)
                 .padding(12).novaControlBackground(cornerRadius: 14)
         case .assignment where route.entry == nil:
@@ -573,7 +573,7 @@ private struct IsgWorkspacePersonnelAdvancedEditor: View {
     private func picker<T: Identifiable>(_ title: String, selection: Binding<UUID?>, values: [T],
                                          optional: Bool = false) -> some View where T.ID == UUID {
         Picker(title, selection: selection) {
-            if optional { Text("Seçilmedi").tag(UUID?.none) }
+            if optional { Text(RDLocalization.string("localizable.isg.workspace.personnel.screen.secilmedi.57149c4c", table: .localizable, fallback: "Seçilmedi")).tag(UUID?.none) }
             ForEach(values) { value in Text(displayName(value)).tag(Optional(value.id)) }
         }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
     }
@@ -581,7 +581,7 @@ private struct IsgWorkspacePersonnelAdvancedEditor: View {
         if let value = value as? IsgWorkspaceDirectoryEntry { return value.name }
         if let value = value as? IsgWorkspaceEmployeeEntry { return value.name }
         if let value = value as? IsgWorkspaceAdvancedRecord { return value.title }
-        return "Kayıt"
+        return RDLocalization.string("localizable.isg.workspace.personnel.screen.kayit.a5467d32", table: .localizable, fallback: "Kayıt")
     }
     private func save() {
         let action: String

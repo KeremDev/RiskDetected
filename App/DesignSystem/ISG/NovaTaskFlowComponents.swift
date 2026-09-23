@@ -26,7 +26,7 @@ struct NovaTaskHeader: View {
                 }
                 ProgressView(value: Double(step), total: Double(max(1, total)))
                     .tint(NovaColorToken.accent.color(in: scheme))
-                    .accessibilityLabel("İlerleme")
+                    .accessibilityLabel(RDLocalization.string("localizable.nova.task.flow.components.ilerleme.0bba7bd7", table: .localizable, fallback: "İlerleme"))
                     .accessibilityValue("\(step) / \(total), \(stepTitle)")
             }
         }
@@ -43,7 +43,7 @@ struct NovaTaskErrorSummary: View {
                 .foregroundStyle(NovaColorToken.statusDangerInk.color(in: scheme))
                 .frame(width: 22, height: 22)
             VStack(alignment: .leading, spacing: 3) {
-                NovaText(text: "Bu adımı kontrol edin", style: .bodyStrong)
+                NovaText(text: RDLocalization.string("localizable.nova.task.flow.components.bu.adimi.kontrol.edin.40293c9c", table: .localizable, fallback: "Bu adımı kontrol edin"), style: .bodyStrong)
                 NovaText(text: message, style: .meta)
             }
             Spacer(minLength: 0)
@@ -144,7 +144,7 @@ struct NovaTaskSuccessView: View {
                     if let nextTitle, let onNext {
                         NovaCard(padding: 15, tint: NovaColorToken.statusSuccessBg.color(in: scheme)) {
                             VStack(alignment: .leading, spacing: 9) {
-                                NovaText(text: "Sıradaki önerilen işlem", style: .metaQuiet)
+                                NovaText(text: RDLocalization.string("localizable.nova.task.flow.components.siradaki.onerilen.islem.8af1848f", table: .localizable, fallback: "Sıradaki önerilen işlem"), style: .metaQuiet)
                                 NovaText(text: nextTitle, style: .bodyStrong)
                                 NovaCompactActionButton(title: nextTitle, symbol: "arrow.right",
                                                         prominent: true, action: onNext)

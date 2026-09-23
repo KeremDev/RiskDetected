@@ -46,26 +46,26 @@ struct NovaEducationPDFFile: FileDocument {
             .init(text: s.legal_name, size: 15, bold: true, space: 14),
             .init(text: snapshot.is_draft ? "TASLAK · " + snapshot.title : snapshot.title, size: 21, bold: true, space: 18),
             .init(text: snapshot.person.name ?? "", size: 18, bold: true),
-            .init(text: "Unvan: \(snapshot.person.job_title.isEmpty ? "____________________" : snapshot.person.job_title)", size: 11),
-            .init(text: "\(s.workplace_name == nil ? "Firma" : "İşyeri"): \(s.workplace_name ?? s.company_name) · \(hazardName(s.hazard_class))", size: 10),
-            .init(text: "Düzenleyen: \(snapshot.provider_name)", size: 11),
-            .init(text: "Eğitim: \(cycle)", size: 11),
+            .init(text: RDLocalization.format("reports.nova.education.certificate.pdf.job.title", table: .reports, fallback: "Unvan: %1$@", arguments: [String(describing: snapshot.person.job_title.isEmpty ? "____________________" : snapshot.person.job_title)]), size: 11),
+            .init(text: RDLocalization.format("reports.nova.education.certificate.pdf.scope.line", table: .reports, fallback: "%1$@: %2$@ · %3$@", arguments: [String(describing: s.workplace_name == nil ? RDLocalization.string("reports.nova.education.certificate.pdf.scope.company", table: .reports, fallback: "Firma") : RDLocalization.string("reports.nova.education.certificate.pdf.scope.workplace", table: .reports, fallback: "İşyeri")), String(describing: s.workplace_name ?? s.company_name), String(describing: hazardName(s.hazard_class))]), size: 10),
+            .init(text: RDLocalization.format("reports.nova.education.certificate.pdf.duzenleyen.1.1747f25a", table: .reports, fallback: "Düzenleyen: %1$@", arguments: [String(describing: snapshot.provider_name)]), size: 11),
+            .init(text: RDLocalization.format("reports.nova.education.certificate.pdf.egitim.1.ad656618", table: .reports, fallback: "Eğitim: %1$@", arguments: [String(describing: cycle)]), size: 11),
             .init(text: "Gerçekleşen gün ve saatler (Europe/Istanbul)\n" + times.joined(separator: "\n")),
-            .init(text: "Süre: \(s.instruction_minutes) dk öğretim + \(s.break_minutes) dk ara = \(s.instruction_minutes + s.break_minutes) dk", size: 11, bold: true),
-            .init(text: "Yöntem: \(methods.count > 1 ? "Karma" : trainingMethodName(methods.first ?? "face_to_face")) · Konu bazında yöntem arka yüzde gösterilmiştir."),
-            .init(text: "Düzenleme: \(snapshot.issued_on)" + (s.valid_until.map { " · Tekrar tarihi: \($0)" } ?? ""))
+            .init(text: RDLocalization.format("reports.nova.education.certificate.pdf.sure.1.dk.ogretim.2.dk.ara.3.dk.f0ef48f3", table: .reports, fallback: "Süre: %1$@ dk öğretim + %2$@ dk ara = %3$@ dk", arguments: [String(describing: s.instruction_minutes), String(describing: s.break_minutes), String(describing: s.instruction_minutes + s.break_minutes)]), size: 11, bold: true),
+            .init(text: RDLocalization.format("reports.nova.education.certificate.pdf.method.line", table: .reports, fallback: "Yöntem: %1$@ · Konu bazında yöntem arka yüzde gösterilmiştir.", arguments: [String(describing: methods.count > 1 ? RDLocalization.string("reports.nova.education.certificate.pdf.method.blended", table: .reports, fallback: "Karma") : trainingMethodName(methods.first ?? "face_to_face"))])),
+            .init(text: RDLocalization.format("reports.nova.education.certificate.pdf.duzenleme.1.69193cab", table: .reports, fallback: "Düzenleme: %1$@", arguments: [String(describing: snapshot.issued_on)]) + (s.valid_until.map { " · Tekrar tarihi: \($0)" } ?? ""))
         ]
         front.append(.init(text: snapshot.is_draft
             ? "TASLAK — Belge numarası tahsis edilmemiştir. Eğitim ve belge bilgileri tamamlanmadan başarı belgesi olarak kullanılamaz."
             : "Yukarıda bilgileri bulunan çalışan, belirtilen tarihlerde gerçekleştirilen ve içeriği izleyen sayfalarda yer alan eğitimi başarıyla tamamlamıştır.", size: 11, space: 12))
-        front.append(.init(text: "Eğiticiler ve imza alanları", size: 11, bold: true))
+        front.append(.init(text: RDLocalization.string("reports.nova.education.certificate.pdf.egiticiler.ve.imza.alanlari.81d65a5c", table: .reports, fallback: "Eğiticiler ve imza alanları"), size: 11, bold: true))
         for trainer in snapshot.trainers {
             let groups = Set(s.topics.filter { $0.trainer_ids.contains(trainer.id) }.map(\.group)).sorted().joined(separator: ", ")
             front.append(signature("\(trainer.name) · \(trainer.title)\nKonu kapsamı: \(groups)\nİmza:"))
         }
         front.append(signature("İşveren / vekili adı: ____________________\nSıfatı: ____________________\nİmza / kaşe:"))
-        front.append(.init(text: "Belge, düzenleyen uzmanın kaydına ve beyanına dayanır. İmza alanları fiziki imza için boş bırakılmıştır.", size: 8))
-        var back: [Block] = [.init(text: "EĞİTİM KONULARI VE SÜRELERİ", size: 16, bold: true, space: 12)]
+        front.append(.init(text: RDLocalization.string("reports.nova.education.certificate.pdf.belge.duzenleyen.uzmanin.kaydina.ve.beyanina.day.7ba1c7b6", table: .reports, fallback: "Belge, düzenleyen uzmanın kaydına ve beyanına dayanır. İmza alanları fiziki imza için boş bırakılmıştır."), size: 8))
+        var back: [Block] = [.init(text: RDLocalization.string("reports.nova.education.certificate.pdf.egitim.konulari.ve.sureleri.36447382", table: .reports, fallback: "EĞİTİM KONULARI VE SÜRELERİ"), size: 16, bold: true, space: 12)]
         for group in ["G1","G2","G3","G4"] {
             let topics = s.topics.filter { $0.group == group }; guard !topics.isEmpty else { continue }
             back.append(.init(text: "\(group) · \(["G1":"Genel konular","G2":"Sağlık konuları","G3":"Teknik konular","G4":"İşyerine özgü riskler"][group]!) · \(topics.reduce(0) { $0 + $1.instruction_minutes }) dk", size: 11, bold: true, space: 6))
@@ -73,7 +73,7 @@ struct NovaEducationPDFFile: FileDocument {
                 back.append(.init(text: "\(t.parent_code ?? t.code)  \(t.parent_code == nil ? t.title : (t.legal_title ?? "") + ": " + t.title) — \(t.instruction_minutes) dk · \(trainingMethodName(t.method))", size: 9, space: 3))
             }
         }
-        back.append(.init(text: "Öğretim: \(s.instruction_minutes) dk · Ara: \(s.break_minutes) dk · Toplam: \(s.instruction_minutes + s.break_minutes) dk", size: 10, bold: true))
+        back.append(.init(text: RDLocalization.format("reports.nova.education.certificate.pdf.ogretim.1.dk.ara.2.dk.toplam.3.dk.1ab7ecd5", table: .reports, fallback: "Öğretim: %1$@ dk · Ara: %2$@ dk · Toplam: %3$@ dk", arguments: [String(describing: s.instruction_minutes), String(describing: s.break_minutes), String(describing: s.instruction_minutes + s.break_minutes)]), size: 10, bold: true))
         var pages: [[Placed]] = []
         func layout(_ blocks: [Block]) {
             var current: [Placed] = []; var y: CGFloat = 52
@@ -102,7 +102,7 @@ struct NovaEducationPDFFile: FileDocument {
         }
         if logo != nil { front.insert(.init(text: " ", height: 60), at: 0) }
         layout(front); layout(back)
-        if pages.count % 2 != 0 { pages.append([.init(block: .init(text: "Bu sayfa çift taraflı baskı düzeni için boş bırakılmıştır.", size: 11), y: 400, height: 40)]) }
+        if pages.count % 2 != 0 { pages.append([.init(block: .init(text: RDLocalization.string("reports.nova.education.certificate.pdf.bu.sayfa.cift.tarafli.baski.duzeni.icin.bos.bira.34a98749", table: .reports, fallback: "Bu sayfa çift taraflı baskı düzeni için boş bırakılmıştır."), size: 11), y: 400, height: 40)]) }
         let bounds = CGRect(x: 0, y: 0, width: 595, height: 842)
         return UIGraphicsPDFRenderer(bounds: bounds).pdfData { context in
             for (index, page) in pages.enumerated() {
@@ -190,13 +190,13 @@ struct NovaEducationCertificatesPage: View {
                 }.padding(.horizontal, 20).padding(.top, 12)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
-                        NovaText(text: "\(targets.count) kişisel eğitim belgesi", style: .bodyStrong)
+                        NovaText(text: RDLocalization.format("reports.nova.education.certificate.pdf.1.kisisel.egitim.belgesi.865797bc", table: .reports, fallback: "%1$@ kişisel eğitim belgesi", arguments: [String(describing: targets.count)]), style: .bodyStrong)
                         if let pageError {
                             NovaCard(padding: 14) {
                                 VStack(alignment: .leading, spacing: 8) {
                                     NovaText(text: pageError, style: .metaQuiet,
                                         color: NovaColorToken.statusDangerInk.color(in: scheme))
-                                    Button("Yeniden dene") { Task { await load() } }
+                                    Button(RDLocalization.string("reports.nova.education.certificate.pdf.yeniden.dene.293db183", table: .reports, fallback: "Yeniden dene")) { Task { await load() } }
                                         .font(NovaFont.font(.bodyStrong))
                                 }
                             }
@@ -237,7 +237,7 @@ struct NovaEducationCertificatesPage: View {
                     Spacer(minLength: 0)
                 }
                 if let document {
-                    NovaText(text: "Belge no: \(document.number)", style: .metaQuiet)
+                    NovaText(text: RDLocalization.format("reports.nova.education.certificate.pdf.belge.no.1.badee585", table: .reports, fallback: "Belge no: %1$@", arguments: [String(describing: document.number)]), style: .metaQuiet)
                     HStack(spacing: 8) {
                         action("Görüntüle", symbol: "eye") { preview = .init(url: document.url) }
                         action("İndir", symbol: "arrow.down.to.line") { download(document) }
@@ -249,20 +249,20 @@ struct NovaEducationCertificatesPage: View {
                     let versions = known.filter { $0.scope_id == target.scope && $0.person_id == target.person }
                         .sorted { $0.revision > $1.revision }
                     if versions.count > 1 {
-                        Menu("Belge sürümleri") {
+                        Menu(RDLocalization.string("reports.nova.education.certificate.pdf.belge.surumleri.e42320c5", table: .reports, fallback: "Belge sürümleri")) {
                             ForEach(versions) { version in
                                 Button("Revizyon \(version.revision)") { Task { await openVersion(version) } }
                             }
                         }.font(NovaFont.font(.meta))
                     }
                 } else if working.contains(target.id) {
-                    Label("Sertifika hazırlanıyor…", systemImage: "clock")
+                    Label(RDLocalization.string("reports.nova.education.certificate.pdf.sertifika.hazirlaniyor.2eb2a668", table: .reports, fallback: "Sertifika hazırlanıyor…"), systemImage: "clock")
                         .font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                 } else {
                     NovaText(text: failures[target.id] ?? "Sertifika bekleniyor.", style: .metaQuiet,
                         color: NovaColorToken.statusDangerInk.color(in: scheme))
                     if canIssue && certificateEnabled {
-                        Button("Tekrar dene") { Task { await prepare(target) } }
+                        Button(RDLocalization.string("reports.nova.education.certificate.pdf.tekrar.dene.faae7088", table: .reports, fallback: "Tekrar dene")) { Task { await prepare(target) } }
                             .font(NovaFont.font(.bodyStrong))
                     }
                 }
@@ -369,28 +369,28 @@ struct NovaEducationCertificateScreen: View {
     @State private var exportFile: NovaEducationPDFFile?
     var body: some View {
         VStack(spacing: 12) {
-            HStack { Text("Kişisel eğitim belgesi").font(NovaFont.font(.cardTitle)); Spacer(); Button { dismiss() } label: { Image(systemName: "xmark").padding(10) } }
+            HStack { Text(RDLocalization.string("reports.nova.education.certificate.pdf.kisisel.egitim.belgesi.9f507d58", table: .reports, fallback: "Kişisel eğitim belgesi")).font(NovaFont.font(.cardTitle)); Spacer(); Button { dismiss() } label: { Image(systemName: "xmark").padding(10) } }
             if busy { ProgressView() }
             if let error { NovaHelpHint(text: error) }
             if let result {
                 if !result.issues.isEmpty {
                     NovaCard(padding: 16) {
                         VStack(alignment: .leading, spacing: 8) {
-                            NovaText(text: "Sertifika için eğitim içeriğini tamamlayın", style: .cardTitle)
+                            NovaText(text: RDLocalization.string("reports.nova.education.certificate.pdf.sertifika.icin.egitim.icerigini.tamamlayin.52e2a106", table: .reports, fallback: "Sertifika için eğitim içeriğini tamamlayın"), style: .cardTitle)
                             ForEach(result.issues, id: \.self) { code in
                                 Label(NovaEducationService.issue(code), systemImage: "info.circle")
                                     .font(NovaFont.font(.meta))
                             }
-                            NovaText(text: "Eğitimi açıp işaretlenen içeriği düzelttikten sonra sertifika otomatik hazırlanır.", style: .metaQuiet)
-                            NovaCompactActionButton(title: "Eğitim içeriğine dön", symbol: "arrow.left") { dismiss() }
+                            NovaText(text: RDLocalization.string("reports.nova.education.certificate.pdf.egitimi.acip.isaretlenen.icerigi.duzelttikten.so.f5bbe8d0", table: .reports, fallback: "Eğitimi açıp işaretlenen içeriği düzelttikten sonra sertifika otomatik hazırlanır."), style: .metaQuiet)
+                            NovaCompactActionButton(title: RDLocalization.string("reports.nova.education.certificate.pdf.egitim.icerigine.don.17bd42a1", table: .reports, fallback: "Eğitim içeriğine dön"), symbol: "arrow.left") { dismiss() }
                         }
                     }
                 } else if result.snapshot.is_draft {
-                    NovaText(text: "Sertifika hazırlanıyor…", style: .metaQuiet)
+                    NovaText(text: RDLocalization.string("reports.nova.education.certificate.pdf.sertifika.hazirlaniyor.025c29fa", table: .reports, fallback: "Sertifika hazırlanıyor…"), style: .metaQuiet)
                 } else {
                     NovaCard(padding: 16) {
                         VStack(alignment: .leading, spacing: 6) {
-                            NovaText(text: "Sertifika hazır", style: .cardTitle)
+                            NovaText(text: RDLocalization.string("reports.nova.education.certificate.pdf.sertifika.hazir.ec3ec7f3", table: .reports, fallback: "Sertifika hazır"), style: .cardTitle)
                             NovaText(text: result.snapshot.number, style: .metaQuiet)
                         }
                     }
@@ -398,10 +398,10 @@ struct NovaEducationCertificateScreen: View {
                 if !result.snapshot.is_draft {
                 HStack(spacing: 12) {
                     if let url {
-                        Button("Görüntüle") { showingDocument = true }
-                        ShareLink(item: url) { Label("Paylaş", systemImage: "square.and.arrow.up") }
-                        Button("Kaydet") { do { exportFile = .init(data: try Data(contentsOf: url)); exporting = true } catch { self.error = error.localizedDescription } }
-                        Button("Yazdır") {
+                        Button(RDLocalization.string("reports.nova.education.certificate.pdf.goruntule.ccec3f81", table: .reports, fallback: "Görüntüle")) { showingDocument = true }
+                        ShareLink(item: url) { Label(RDLocalization.string("reports.nova.education.certificate.pdf.paylas.a4ec88f8", table: .reports, fallback: "Paylaş"), systemImage: "square.and.arrow.up") }
+                        Button(RDLocalization.string("reports.nova.education.certificate.pdf.kaydet.aa1e2f14", table: .reports, fallback: "Kaydet")) { do { exportFile = .init(data: try Data(contentsOf: url)); exporting = true } catch { self.error = error.localizedDescription } }
+                        Button(RDLocalization.string("reports.nova.education.certificate.pdf.yazdir.c5bd4d42", table: .reports, fallback: "Yazdır")) {
                             let controller = UIPrintInteractionController.shared
                             controller.printingItem = url; let info = UIPrintInfo(dictionary: nil); info.jobName = result.snapshot.title; info.duplex = .longEdge; controller.printInfo = info
                             controller.present(animated: true)
@@ -409,7 +409,7 @@ struct NovaEducationCertificateScreen: View {
                     }
                 }.font(NovaFont.font(.meta)).disabled(busy)
                 }
-            } else if !busy { Button("Tekrar dene") { Task { await load(issue: false) } } }
+            } else if !busy { Button(RDLocalization.string("reports.nova.education.certificate.pdf.tekrar.dene.a36b131e", table: .reports, fallback: "Tekrar dene")) { Task { await load(issue: false) } } }
         }.padding(18).task {
             if documentID == nil, let path = session.education?.scopes.first(where: { $0.id == scopeID })?.logo_path,
                path.lowercased().hasPrefix(identity.userID.uuidString.lowercased() + "/companies/"),

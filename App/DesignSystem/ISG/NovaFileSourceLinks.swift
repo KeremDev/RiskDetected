@@ -11,7 +11,7 @@ struct NovaFileSourceLinks: View {
     @State private var revision = 0
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if failed { Button("Kayıt bağlantılarını yeniden yükle") { revision += 1 }.font(NovaFont.font(.meta)) }
+            if failed { Button(RDLocalization.string("localizable.nova.file.source.links.kayit.baglantilarini.yeniden.yukle.986c83d8", table: .localizable, fallback: "Kayıt bağlantılarını yeniden yükle")) { revision += 1 }.font(NovaFont.font(.meta)) }
             ForEach(rows) { row in
                 Button { selected = row } label: {
                     HStack { Image(systemName: "link"); NovaText(text: row.typeTitle + " · " + row.title, style: .meta); Spacer(); Image(systemName: "chevron.right") }

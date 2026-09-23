@@ -169,24 +169,24 @@ final class ReferralRewardsService {
     static func userMessage(for error: Error) -> String {
         let value = String(describing: error).uppercased()
         if value.contains("SELF_REFERRAL") {
-            return "Kendi davet kodunu kullanamazsın."
+            return RDLocalization.string("localizable.referral.rewards.service.kendi.davet.kodunu.kullanamazsin.b99bc5be", table: .localizable, fallback: "Kendi davet kodunu kullanamazsın.")
         }
         if value.contains("ALREADY_CLAIMED") {
-            return "Bu hesap daha önce bir davet kodu kullandı."
+            return RDLocalization.string("localizable.referral.rewards.service.bu.hesap.daha.once.bir.davet.kodu.kullandi.e591df10", table: .localizable, fallback: "Bu hesap daha önce bir davet kodu kullandı.")
         }
         if value.contains("CYCLE_DETECTED") {
-            return "Karşılıklı davet kullanılamaz."
+            return RDLocalization.string("localizable.referral.rewards.service.karsilikli.davet.kullanilamaz.5c78bff1", table: .localizable, fallback: "Karşılıklı davet kullanılamaz.")
         }
         if value.contains("INVALID_REFERRAL_CODE") || value.contains("ACCESS_DENIED") {
-            return "Davet kodu bulunamadı veya artık geçerli değil."
+            return RDLocalization.string("localizable.referral.rewards.service.davet.kodu.bulunamadi.veya.artik.gecerli.degil.b9232929", table: .localizable, fallback: "Davet kodu bulunamadı veya artık geçerli değil.")
         }
         if value.contains("CAMPAIGN_UNAVAILABLE") || value.contains("FEATURE_UNAVAILABLE") {
-            return "Davet programı şu an kullanılamıyor. Biraz sonra tekrar dene."
+            return RDLocalization.string("localizable.referral.rewards.service.davet.programi.su.an.kullanilamiyor.biraz.sonra..9f4f7d87", table: .localizable, fallback: "Davet programı şu an kullanılamıyor. Biraz sonra tekrar dene.")
         }
         if value.contains("RATE_LIMITED") {
-            return "Çok fazla kod denemesi yapıldı. Bir saat sonra tekrar deneyebilirsin."
+            return RDLocalization.string("localizable.referral.rewards.service.cok.fazla.kod.denemesi.yapildi.bir.saat.sonra.te.dd652f00", table: .localizable, fallback: "Çok fazla kod denemesi yapıldı. Bir saat sonra tekrar deneyebilirsin.")
         }
-        return "İşlem tamamlanamadı. İnternet bağlantını kontrol edip tekrar dene."
+        return RDLocalization.string("localizable.referral.rewards.service.islem.tamamlanamadi.internet.baglantini.kontrol..18afe6a6", table: .localizable, fallback: "İşlem tamamlanamadı. İnternet bağlantını kontrol edip tekrar dene.")
     }
 }
 

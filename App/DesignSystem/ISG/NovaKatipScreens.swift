@@ -130,13 +130,13 @@ struct NovaKatipScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
-                    NovaHelpHint(text: "Firmanın sözleşmesini kaydedin; hizmet süresini ve belgesini takip edin.")
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.katip.screens.firmanin.sozlesmesini.kaydedin.hizmet.suresini.v.8fd89900", table: .localizable, fallback: "Firmanın sözleşmesini kaydedin; hizmet süresini ve belgesini takip edin."))
                     if let board { counters(board) }
                     filters
                     if pending && canWrite {
                         NovaCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 10) {
-                                NovaText(text: "Gönderimi tamamlanmamış bir sözleşme işlemi var.", style: .body)
+                                NovaText(text: RDLocalization.string("localizable.nova.katip.screens.gonderimi.tamamlanmamis.bir.sozlesme.islemi.var.6c3d3e52", table: .localizable, fallback: "Gönderimi tamamlanmamış bir sözleşme işlemi var."), style: .body)
                                 NovaButton(label: resuming ? "Tamamlanıyor…" : "Bekleyen işlemi tamamla",
                                            symbol: "arrow.clockwise", variant: .surface) {
                                     Task { await resumePending() }
@@ -196,7 +196,7 @@ struct NovaKatipScreen: View {
     private var header: some View {
         NovaListHeading(title: headingOverride ?? NovaDestination.katipContracts.title, onBack: onBack) {
             if canWrite, query.company != nil {
-                NovaButton(label: "Sözleşme Ekle", symbol: "plus", compact: true) { drafting = .init(startsOn: NovaDayField.text(Date())) }
+                NovaButton(label: RDLocalization.string("localizable.nova.katip.screens.sozlesme.ekle.130743d1", table: .localizable, fallback: "Sözleşme Ekle"), symbol: "plus", compact: true) { drafting = .init(startsOn: NovaDayField.text(Date())) }
             }
         }
     }
@@ -280,7 +280,7 @@ struct NovaKatipScreen: View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.katip.empty.title",
                 table: .localizable, fallback: "Sözleşme kaydı yok"),
-                message: "İSG hizmeti sözleşmesini ekleyerek başlangıç, bitiş ve bağlı dosya bilgilerini takip edebilirsiniz.")
+                message: RDLocalization.string("localizable.nova.katip.screens.isg.hizmeti.sozlesmesini.ekleyerek.baslangic.bit.0b09375d", table: .localizable, fallback: "İSG hizmeti sözleşmesini ekleyerek başlangıç, bitiş ve bağlı dosya bilgilerini takip edebilirsiniz."))
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { row in

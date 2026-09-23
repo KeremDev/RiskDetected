@@ -43,7 +43,7 @@ struct IsgWorkspaceInlineAttachmentField: View {
 
             if attachment != nil {
                 Button(role: .destructive) { attachment = nil } label: {
-                    Label("Seçimi kaldır", systemImage: "xmark.circle")
+                    Label(RDLocalization.string("localizable.isg.workspace.file.create.editor.secimi.kaldir.cbaf64d6", table: .localizable, fallback: "Seçimi kaldır"), systemImage: "xmark.circle")
                         .font(NovaFont.font(.meta))
                 }.buttonStyle(NovaRowPressStyle())
             }

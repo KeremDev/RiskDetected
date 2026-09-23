@@ -188,7 +188,7 @@ struct NovaPPEScreen: View {
     private var header: some View {
         NovaListHeading(title: headingOverride ?? NovaDestination.ppeHandovers.title, onBack: onBack) {
             if canWrite {
-                NovaButton(label: "Zimmet Ekle", symbol: "plus", compact: true) { startCreate() }
+                NovaButton(label: RDLocalization.string("localizable.nova.ppescreens.zimmet.ekle.77481f38", table: .localizable, fallback: "Zimmet Ekle"), symbol: "plus", compact: true) { startCreate() }
             }
         }
     }
@@ -265,7 +265,7 @@ struct NovaPPEScreen: View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.ppe.empty.title",
                 table: .localizable, fallback: "Zimmet kaydı yok"),
-                message: "Firma personeline verilen kişisel koruyucu donanımı kaydedebilir ve zimmet formunu oluşturabilirsiniz.")
+                message: RDLocalization.string("localizable.nova.ppescreens.firma.personeline.verilen.kisisel.koruyucu.donan.5415814f", table: .localizable, fallback: "Firma personeline verilen kişisel koruyucu donanımı kaydedebilir ve zimmet formunu oluşturabilirsiniz."))
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { row in

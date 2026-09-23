@@ -13,11 +13,11 @@ struct UsageSummary: Decodable {
     let last_active_at: String?
 
     static func duration(_ seconds: Double) -> String {
-        guard seconds.isFinite, seconds > 0 else { return "0 dk" }
+        guard seconds.isFinite, seconds > 0 else { return RDLocalization.string("localizable.expert.activity.service.0.dk.a891fdb7", table: .localizable, fallback: "0 dk") }
         let minutes = Int(min(seconds / 60, Double(Int.max / 60)))
-        if minutes < 1 { return "1 dk'dan az" }
+        if minutes < 1 { return RDLocalization.string("localizable.expert.activity.service.1.dk.dan.az.64d11ab0", table: .localizable, fallback: "1 dk'dan az") }
         if minutes < 60 { return "\(minutes) dk" }
-        return "\(minutes / 60) sa \(minutes % 60) dk"
+        return RDLocalization.format("localizable.expert.activity.service.1.sa.2.dk.7180ba07", table: .localizable, fallback: "%1$@ sa %2$@ dk", arguments: [String(describing: minutes / 60), String(describing: minutes % 60)])
     }
 }
 

@@ -2121,7 +2121,7 @@ struct AnalysisResultHubView: View {
                     VStack(spacing: 1) {
                         Image(systemName: selectionMode ? "xmark" : "chevron.left")
                             .font(RDTypography.font(size: 15, weight: .black))
-                        Text(selectionMode ? "Vazgeç" : copy("analysis.result_hub.v2.geri.don.be8542b6", "Geri Dön", "Go Back"))
+                        Text(selectionMode ? RDLocalization.string("analysis.analysis.result.hub.view.vazgec.a57bfee8", table: .analysis, fallback: "Vazgeç") : copy("analysis.result_hub.v2.geri.don.be8542b6", "Geri Dön", "Go Back"))
                             .font(referenceFont(8.5, .heavy))
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -2166,7 +2166,7 @@ struct AnalysisResultHubView: View {
                         .font(RDTypography.font(size: 18, weight: .regular))
                     Text(activeSection.access == .teaser
                          ? copy("analysis.result_hub.v2.plus.pro.ile.ac.ad2bd639", "Plus / Pro ile Aç", "Unlock with Plus / Pro")
-                         : selectionMode ? "Seçilenlerle devam" : copy("analysis.result_hub.v2.rapor.olustur.e0a43f76", "Rapor Oluştur", "Create Report"))
+                         : selectionMode ? RDLocalization.string("analysis.analysis.result.hub.view.secilenlerle.devam.634dc711", table: .analysis, fallback: "Seçilenlerle devam") : copy("analysis.result_hub.v2.rapor.olustur.e0a43f76", "Rapor Oluştur", "Create Report"))
                         .font(referenceFont(15.5, .heavy))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)

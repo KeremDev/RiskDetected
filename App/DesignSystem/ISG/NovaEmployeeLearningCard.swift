@@ -25,39 +25,39 @@ struct NovaEmployeeLearningCard: View {
         VStack(alignment: .leading, spacing: 12) {
             NovaCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("Eğitim durumu", systemImage: "graduationcap").font(NovaFont.font(.cardTitle))
-                    NovaHelpHint(text: "Gerçekleşen dersler, aynı işyeri ve eğitim kapsamı içinde toplanır. Aralar öğretim süresine eklenmez.")
+                    Label(RDLocalization.string("localizable.nova.employee.learning.card.egitim.durumu.84be1357", table: .localizable, fallback: "Eğitim durumu"), systemImage: "graduationcap").font(NovaFont.font(.cardTitle))
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.employee.learning.card.gerceklesen.dersler.ayni.isyeri.ve.egitim.kapsam.4d150011", table: .localizable, fallback: "Gerçekleşen dersler, aynı işyeri ve eğitim kapsamı içinde toplanır. Aralar öğretim süresine eklenmez."))
                     if let result {
-                        if result.groups.isEmpty { NovaText(text: "Güncel, konu bazlı temel eğitim kaydı yok.", style: .body) }
+                        if result.groups.isEmpty { NovaText(text: RDLocalization.string("localizable.nova.employee.learning.card.guncel.konu.bazli.temel.egitim.kaydi.yok.74c3b0c1", table: .localizable, fallback: "Güncel, konu bazlı temel eğitim kaydı yok."), style: .body) }
                         ForEach(result.groups) { group in
                             VStack(alignment: .leading, spacing: 8) {
                                 NovaText(text: group.profile, style: .label)
                                 NovaText(text: [group.workplace_name, group.group_name].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "), style: .meta)
                                 ProgressView(value: Double(min(group.received_minutes, group.required_minutes)), total: Double(max(1, group.required_minutes))).tint(.primary)
-                                NovaText(text: "\(hours(group.received_minutes)) / \(hours(group.required_minutes)) ders saati · \(hours(group.remaining_minutes)) saat eksik", style: .label)
-                                NovaText(text: "\(group.received_minutes) dk net öğretim. Bir ders saati 45 dk öğretimdir; ara ayrıca tutulur.", style: .meta)
+                                NovaText(text: RDLocalization.format("localizable.nova.employee.learning.card.1.2.ders.saati.3.saat.eksik.4eacf3ad", table: .localizable, fallback: "%1$@ / %2$@ ders saati · %3$@ saat eksik", arguments: [String(describing: hours(group.received_minutes)), String(describing: hours(group.required_minutes)), String(describing: hours(group.remaining_minutes))]), style: .label)
+                                NovaText(text: RDLocalization.format("localizable.nova.employee.learning.card.1.dk.net.ogretim.bir.ders.saati.45.dk.ogretimdir.c12009ce", table: .localizable, fallback: "%1$@ dk net öğretim. Bir ders saati 45 dk öğretimdir; ara ayrıca tutulur.", arguments: [String(describing: group.received_minutes)]), style: .meta)
                                 if group.complete {
                                     NovaText(text: "Süre ve konu kapsamı tamam · takip: \(group.valid_until ?? "—")", style: .meta)
                                 } else {
-                                    if group.group4_remaining_minutes > 0 { NovaText(text: "İşyerine özgü konularda \(group.group4_remaining_minutes) dk eksik", style: .meta) }
-                                    if group.common_remaining_minutes > 0 { NovaText(text: "Genel, sağlık ve teknik konularda \(group.common_remaining_minutes) dk eksik", style: .meta) }
+                                    if group.group4_remaining_minutes > 0 { NovaText(text: RDLocalization.format("localizable.nova.employee.learning.card.isyerine.ozgu.konularda.1.dk.eksik.d3c5115e", table: .localizable, fallback: "İşyerine özgü konularda %1$@ dk eksik", arguments: [String(describing: group.group4_remaining_minutes)]), style: .meta) }
+                                    if group.common_remaining_minutes > 0 { NovaText(text: RDLocalization.format("localizable.nova.employee.learning.card.genel.saglik.ve.teknik.konularda.1.dk.eksik.ff398ff2", table: .localizable, fallback: "Genel, sağlık ve teknik konularda %1$@ dk eksik", arguments: [String(describing: group.common_remaining_minutes)]), style: .meta) }
                                     if !group.missing_topics.isEmpty {
                                         DisclosureGroup("Eksik konular · \(group.missing_topics.count)") {
                                             VStack(alignment: .leading, spacing: 8) { ForEach(group.missing_topics) { topic in NovaText(text: topic.code + " · " + topic.title, style: .meta) } }.padding(.top, 8)
                                         }.font(NovaFont.font(.meta))
                                     }
                                 }
-                                if group.excluded_sessions > 0 { NovaText(text: "\(group.excluded_sessions) kaydın ders dağılımı düzeltilmeli; süreye katılmadı.", style: .meta) }
-                                if group.context_missing { NovaText(text: "İşyerine özgü içerik veya eğitim yöntemi eksik; ilgili G4 dakikaları sayılmadı.", style: .meta) }
+                                if group.excluded_sessions > 0 { NovaText(text: RDLocalization.format("localizable.nova.employee.learning.card.1.kaydin.ders.dagilimi.duzeltilmeli.sureye.katil.03f48bdb", table: .localizable, fallback: "%1$@ kaydın ders dağılımı düzeltilmeli; süreye katılmadı.", arguments: [String(describing: group.excluded_sessions)]), style: .meta) }
+                                if group.context_missing { NovaText(text: RDLocalization.string("localizable.nova.employee.learning.card.isyerine.ozgu.icerik.veya.egitim.yontemi.eksik.i.034fb80a", table: .localizable, fallback: "İşyerine özgü içerik veya eğitim yöntemi eksik; ilgili G4 dakikaları sayılmadı."), style: .meta) }
                             }.padding(.vertical, 6)
                         }
-                        if result.expired_scopes > 0 { NovaText(text: "Süresi dolan \(result.expired_scopes) kapsam güncel süreye dahil edilmedi.", style: .meta) }
-                        if result.legacy_company_records > 0 { NovaText(text: "Firmanın eski kayıtlarında konu dökümü bulunmuyor; bu kayıtlardan süre aktarılmadı.", style: .meta) }
+                        if result.expired_scopes > 0 { NovaText(text: RDLocalization.format("localizable.nova.employee.learning.card.suresi.dolan.1.kapsam.guncel.sureye.dahil.edilme.75a6122c", table: .localizable, fallback: "Süresi dolan %1$@ kapsam güncel süreye dahil edilmedi.", arguments: [String(describing: result.expired_scopes)]), style: .meta) }
+                        if result.legacy_company_records > 0 { NovaText(text: RDLocalization.string("localizable.nova.employee.learning.card.firmanin.eski.kayitlarinda.konu.dokumu.bulunmuyo.d471b845", table: .localizable, fallback: "Firmanın eski kayıtlarında konu dökümü bulunmuyor; bu kayıtlardan süre aktarılmadı."), style: .meta) }
                     } else if failure {
-                        NovaText(text: "Eğitim durumu alınamadı.", style: .meta)
-                        Button("Yeniden dene") { revision += 1 }
+                        NovaText(text: RDLocalization.string("localizable.nova.employee.learning.card.egitim.durumu.alinamadi.6a965119", table: .localizable, fallback: "Eğitim durumu alınamadı."), style: .meta)
+                        Button(RDLocalization.string("localizable.nova.employee.learning.card.yeniden.dene.c9e108f7", table: .localizable, fallback: "Yeniden dene")) { revision += 1 }
                     } else { ProgressView("Eğitim durumu yükleniyor…") }
-                    NovaText(text: "Bu özet sertifika veya sınav sonucu oluşturmaz.", style: .meta)
+                    NovaText(text: RDLocalization.string("localizable.nova.employee.learning.card.bu.ozet.sertifika.veya.sinav.sonucu.olusturmaz.a1653a6e", table: .localizable, fallback: "Bu özet sertifika veya sınav sonucu oluşturmaz."), style: .meta)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -112,15 +112,15 @@ struct NovaEmployeeCertificatesScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    NovaText(text: "Sertifika ve belgeler", style: .screenTitle)
+                    NovaText(text: RDLocalization.string("localizable.nova.employee.learning.card.sertifika.ve.belgeler.bba3b8d8", table: .localizable, fallback: "Sertifika ve belgeler"), style: .screenTitle)
                     Spacer()
                     Button("Bitti", action: onBack)
                 }
                 if loading { ProgressView().frame(maxWidth: .infinity) }
                 if let error { NovaHelpHint(text: error) }
                 if !loading && entries.isEmpty && error == nil {
-                    NovaEmptyState(title: "Eğitim sertifikası yok",
-                        message: "Bu personelin yer aldığı bir eğitim kaydı henüz bulunamadı.")
+                    NovaEmptyState(title: RDLocalization.string("localizable.nova.employee.learning.card.egitim.sertifikasi.yok.4d340270", table: .localizable, fallback: "Eğitim sertifikası yok"),
+                        message: RDLocalization.string("localizable.nova.employee.learning.card.bu.personelin.yer.aldigi.bir.egitim.kaydi.henuz..1ec69f76", table: .localizable, fallback: "Bu personelin yer aldığı bir eğitim kaydı henüz bulunamadı."))
                 }
                 ForEach(entries) { entry in
                     Button { Task { await open(entry) } } label: {
@@ -137,7 +137,7 @@ struct NovaEmployeeCertificatesScreen: View {
                         }
                     }.buttonStyle(NovaRowPressStyle())
                 }
-                NovaCompactActionButton(title: "Diğer belgeler", symbol: "doc.text") { otherDocuments = true }
+                NovaCompactActionButton(title: RDLocalization.string("localizable.nova.employee.learning.card.diger.belgeler.76b9ecf9", table: .localizable, fallback: "Diğer belgeler"), symbol: "doc.text") { otherDocuments = true }
             }.padding(18).novaPopupContentSize()
         }
         .task { await load() }

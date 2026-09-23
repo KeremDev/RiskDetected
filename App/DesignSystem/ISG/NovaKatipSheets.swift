@@ -145,11 +145,11 @@ struct NovaKatipDetailSheet: View {
                 if let title = entry.documentTitle {
                     NovaText(text: title, style: .body)
                     if !entry.contractStored {
-                        NovaText(text: "Bağlı dosya artık kullanılamıyor.", style: .meta)
+                        NovaText(text: RDLocalization.string("localizable.nova.katip.sheets.bagli.dosya.artik.kullanilamiyor.9c5d85b3", table: .localizable, fallback: "Bağlı dosya artık kullanılamıyor."), style: .meta)
                     }
                 }
                 if entry.contractStored {
-                    NovaButton(label: "Dosyayı aç / paylaş", symbol: "square.and.arrow.up", variant: .surface) {
+                    NovaButton(label: RDLocalization.string("localizable.nova.katip.sheets.dosyayi.ac.paylas.66e3cdb4", table: .localizable, fallback: "Dosyayı aç / paylaş"), symbol: "square.and.arrow.up", variant: .surface) {
                         Task {
                             working = true; failure = nil
                             defer { working = false }
@@ -167,7 +167,7 @@ struct NovaKatipDetailSheet: View {
                         if choosingDocument { Task { await loadDocuments(reset: true) } }
                     }.disabled(working)
                     if entry.fileEntryID != nil {
-                        NovaButton(label: "Dosya bağlantısını kaldır", symbol: "link", variant: .muted) {
+                        NovaButton(label: RDLocalization.string("localizable.nova.katip.sheets.dosya.baglantisini.kaldir.3c224eb4", table: .localizable, fallback: "Dosya bağlantısını kaldır"), symbol: "link", variant: .muted) {
                             Task { await link(nil) }
                         }.disabled(working)
                     }
@@ -179,12 +179,12 @@ struct NovaKatipDetailSheet: View {
                         }.disabled(working)
                     }
                     if moreDocuments {
-                        NovaButton(label: "Daha fazla dosya", symbol: "chevron.down", variant: .muted) {
+                        NovaButton(label: RDLocalization.string("localizable.nova.katip.sheets.daha.fazla.dosya.17d9386e", table: .localizable, fallback: "Daha fazla dosya"), symbol: "chevron.down", variant: .muted) {
                             Task { await loadDocuments(reset: false) }
                         }.disabled(working)
                     }
                     if availableDocuments.isEmpty && !working {
-                        NovaText(text: "Bu firmaya ait hazır dosya bulunamadı. Evraklar bölümünden dosya yükleyebilirsiniz.", style: .meta)
+                        NovaText(text: RDLocalization.string("localizable.nova.katip.sheets.bu.firmaya.ait.hazir.dosya.bulunamadi.evraklar.b.172bad53", table: .localizable, fallback: "Bu firmaya ait hazır dosya bulunamadı. Evraklar bölümünden dosya yükleyebilirsiniz."), style: .meta)
                     }
                 }
             }
@@ -233,7 +233,7 @@ struct NovaKatipContractSheet: View {
     private enum Step: CaseIterable {
         case scope, period, review
         var title: String {
-            switch self { case .scope: return "Taraflar ve kapsam"; case .period: return "Dönem ve hizmet"; case .review: return "Kontrol ve kaydet" }
+            switch self { case .scope: return RDLocalization.string("localizable.nova.katip.sheets.taraflar.ve.kapsam.07fb0bc8", table: .localizable, fallback: "Taraflar ve kapsam"); case .period: return RDLocalization.string("localizable.nova.katip.sheets.donem.ve.hizmet.5bbdd633", table: .localizable, fallback: "Dönem ve hizmet"); case .review: return RDLocalization.string("localizable.nova.katip.sheets.kontrol.ve.kaydet.18639766", table: .localizable, fallback: "Kontrol ve kaydet") }
         }
     }
     @State var draft: NovaKatipDraft
@@ -264,14 +264,14 @@ struct NovaKatipContractSheet: View {
     var body: some View {
         Group {
             if didSave {
-                NovaTaskSuccessView(title: "Sözleşme kaydedildi",
-                    message: "Sözleşme kaydı seçili firmanın İSG-KATİP arşivine eklendi.",
+                NovaTaskSuccessView(title: RDLocalization.string("localizable.nova.katip.sheets.sozlesme.kaydedildi.6868bfca", table: .localizable, fallback: "Sözleşme kaydedildi"),
+                    message: RDLocalization.string("localizable.nova.katip.sheets.sozlesme.kaydi.secili.firmanin.isg.katip.arsivin.56fb16fc", table: .localizable, fallback: "Sözleşme kaydı seçili firmanın İSG-KATİP arşivine eklendi."),
                     doneTitle: "Sözleşmelere dön", onDone: onClose)
             } else {
                 NovaPageSurface {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
-                            NovaTaskHeader(title: "Sözleşme ekle", step: stepNumber,
+                            NovaTaskHeader(title: RDLocalization.string("localizable.nova.katip.sheets.sozlesme.ekle.3604eb3d", table: .localizable, fallback: "Sözleşme ekle"), step: stepNumber,
                                            total: Step.allCases.count, stepTitle: step.title) { confirmingExit = true }
                             NovaHelpHint(text: NovaKatipWords.noIntegrationNote)
                             if let failure { NovaTaskErrorSummary(message: failure) }
@@ -302,17 +302,17 @@ struct NovaKatipContractSheet: View {
 
     private var scopeStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaText(text: "Firma bağlamı akış boyunca korunur.", style: .body)
+            NovaText(text: RDLocalization.string("localizable.nova.katip.sheets.firma.baglami.akis.boyunca.korunur.bd3cbecf", table: .localizable, fallback: "Firma bağlamı akış boyunca korunur."), style: .body)
             let workplaces = catalogue?.workplaces ?? []
             if workplaces.count <= 1 {
                 NovaCard(padding: 13) {
                     VStack(alignment: .leading, spacing: 3) {
-                        NovaText(text: "İşyeri", style: .label)
+                        NovaText(text: RDLocalization.string("localizable.nova.katip.sheets.isyeri.9f919aca", table: .localizable, fallback: "İşyeri"), style: .label)
                         NovaText(text: workplaces.isEmpty ? "Bu firmada kayıt açılacak bir işyeri yok." : placeTitle, style: .bodyStrong)
                     }
                 }
             } else {
-                NovaFileChooserButton(label: "İşyeri", value: placeTitle, isOpen: openChooser,
+                NovaFileChooserButton(label: RDLocalization.string("localizable.nova.katip.sheets.isyeri.75ca2ad2", table: .localizable, fallback: "İşyeri"), value: placeTitle, isOpen: openChooser,
                     identifier: "nova.katip.form.workplace") { openChooser.toggle() }
                 if openChooser {
                     NovaFileChooserPanel(options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name) },
@@ -321,23 +321,23 @@ struct NovaKatipContractSheet: View {
                         }
                 }
             }
-            field("Karşı taraf (OSGB veya işveren)", $draft.counterparty, "nova.katip.form.counterparty")
-            field("Uzman / hekim", $draft.expertContact, "nova.katip.form.expert")
+            field(RDLocalization.string("localizable.nova.katip.sheets.karsi.taraf.osgb.veya.isveren.b656892a", table: .localizable, fallback: "Karşı taraf (OSGB veya işveren)"), $draft.counterparty, "nova.katip.form.counterparty")
+            field(RDLocalization.string("localizable.nova.katip.sheets.uzman.hekim.c9e457ef", table: .localizable, fallback: "Uzman / hekim"), $draft.expertContact, "nova.katip.form.expert")
             field("Kapsam", $draft.scope, "nova.katip.form.scope")
         }
     }
 
     private var periodStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaDayField(label: "Başlangıç", value: $draft.startsOn, identifier: "nova.katip.form.starts")
-            NovaDayField(label: "Bitiş", value: $draft.endsBefore, identifier: "nova.katip.form.ends", isClearable: true)
-            NovaText(text: "Bitiş tarihi boş bırakılırsa sözleşme süresiz kaydedilir.", style: .metaQuiet)
+            NovaDayField(label: RDLocalization.string("localizable.nova.katip.sheets.baslangic.cd829cb0", table: .localizable, fallback: "Başlangıç"), value: $draft.startsOn, identifier: "nova.katip.form.starts")
+            NovaDayField(label: RDLocalization.string("localizable.nova.katip.sheets.bitis.8d2216d1", table: .localizable, fallback: "Bitiş"), value: $draft.endsBefore, identifier: "nova.katip.form.ends", isClearable: true)
+            NovaText(text: RDLocalization.string("localizable.nova.katip.sheets.bitis.tarihi.bos.birakilirsa.sozlesme.suresiz.ka.4b10a818", table: .localizable, fallback: "Bitiş tarihi boş bırakılırsa sözleşme süresiz kaydedilir."), style: .metaQuiet)
             VStack(alignment: .leading, spacing: 6) {
-                NovaText(text: "Beyan edilen aylık süre (dakika)", style: .label)
+                NovaText(text: RDLocalization.string("localizable.nova.katip.sheets.beyan.edilen.aylik.sure.dakika.c9845624", table: .localizable, fallback: "Beyan edilen aylık süre (dakika)"), style: .label)
                 TextField("Dakika", text: $draft.declaredMonthlyMinutes).keyboardType(.numberPad)
                     .font(NovaFont.font(.body)).frame(minHeight: 38).novaControlBackground(cornerRadius: 12)
                     .accessibilityIdentifier("nova.katip.form.minutes")
-                TextField("Süreye dair not (isteğe bağlı)", text: $draft.declaredNote)
+                TextField(RDLocalization.string("localizable.nova.katip.sheets.sureye.dair.not.istege.bagli.eeb28ec0", table: .localizable, fallback: "Süreye dair not (isteğe bağlı)"), text: $draft.declaredNote)
                     .font(NovaFont.font(.body)).frame(minHeight: 38).novaControlBackground(cornerRadius: 12)
                     .accessibilityIdentifier("nova.katip.form.declarednote")
                 NovaText(text: NovaKatipWords.declaredNote, style: .metaQuiet)
@@ -351,12 +351,12 @@ struct NovaKatipContractSheet: View {
                 VStack(alignment: .leading, spacing: 6) {
                     NovaText(text: draft.counterparty.isEmpty ? "Karşı taraf belirtilmedi" : draft.counterparty, style: .cardTitle)
                     NovaText(text: [placeTitle, draft.scope].filter { !$0.isEmpty }.joined(separator: " · "), style: .meta)
-                    NovaText(text: "\(draft.startsOn) → \(draft.endsBefore.isEmpty ? "Süresiz" : draft.endsBefore)", style: .body)
+                    NovaText(text: RDLocalization.format("localizable.nova.katip.sheets.period.range", table: .localizable, fallback: "%1$@ → %2$@", arguments: [String(describing: draft.startsOn), String(describing: draft.endsBefore.isEmpty ? RDLocalization.string("localizable.nova.katip.sheets.open.ended", table: .localizable, fallback: "Süresiz") : draft.endsBefore)]), style: .body)
                 }
             }
             VStack(alignment: .leading, spacing: 6) {
-                NovaText(text: "Sözleşme aslı nerede?", style: .label)
-                TextField("Örn. şirket arşivi / klasör", text: $draft.contractLocation)
+                NovaText(text: RDLocalization.string("localizable.nova.katip.sheets.sozlesme.asli.nerede.bcd5f0a1", table: .localizable, fallback: "Sözleşme aslı nerede?"), style: .label)
+                TextField(RDLocalization.string("localizable.nova.katip.sheets.orn.sirket.arsivi.klasor.23d336b0", table: .localizable, fallback: "Örn. şirket arşivi / klasör"), text: $draft.contractLocation)
                     .font(NovaFont.font(.body)).frame(minHeight: 38).novaControlBackground(cornerRadius: 12)
                     .accessibilityIdentifier("nova.katip.form.location")
                 NovaText(text: NovaKatipWords.documentNote, style: .metaQuiet)

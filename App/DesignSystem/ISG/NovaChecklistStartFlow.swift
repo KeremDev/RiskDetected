@@ -76,16 +76,16 @@ struct NovaChecklistStartFlowScreen: View {
             header("Yeni kontrol", backTitle: "Vazgeç", back: onClose)
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    NovaText(text: "Kontrol nerede yapılacak?", style: .screenTitle)
+                    NovaText(text: RDLocalization.string("localizable.nova.checklist.start.flow.kontrol.nerede.yapilacak.05a798e3", table: .localizable, fallback: "Kontrol nerede yapılacak?"), style: .screenTitle)
                     if loading {
                         NovaChecklistRunSkeleton()
                     } else if let failure {
                         NovaChecklistMessageState(symbol: "wifi.exclamationmark",
-                            title: "Kontrol kapsamı yüklenemedi", message: failure,
+                            title: RDLocalization.string("localizable.nova.checklist.start.flow.kontrol.kapsami.yuklenemedi.07fd930d", table: .localizable, fallback: "Kontrol kapsamı yüklenemedi"), message: failure,
                             actionTitle: "Yeniden dene") { Task { await loadCompanies() } }
                     } else {
                         if initialCompany == nil {
-                            scopeRow(title: "Bağımsız kontrol", subtitle: "Firma seçmeden kontrol yapın",
+                            scopeRow(title: RDLocalization.string("localizable.nova.checklist.start.flow.bagimsiz.kontrol.36e5494f", table: .localizable, fallback: "Bağımsız kontrol"), subtitle: RDLocalization.string("localizable.nova.checklist.start.flow.firma.secmeden.kontrol.yapin.6b493058", table: .localizable, fallback: "Firma seçmeden kontrol yapın"),
                                 symbol: "person.crop.square") { Task { await selectCompany(nil) } }
                             Divider()
                         }
@@ -110,30 +110,30 @@ struct NovaChecklistStartFlowScreen: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             NovaText(text: selectedCompany?.name ?? "Bağımsız kontrol", style: .label)
-                            NovaText(text: "Kontrol kapsamı", style: .meta,
+                            NovaText(text: RDLocalization.string("localizable.nova.checklist.start.flow.kontrol.kapsami.69fdc8a2", table: .localizable, fallback: "Kontrol kapsamı"), style: .meta,
                                 color: NovaColorToken.textSecondary.color(in: scheme))
                         }
                         Spacer()
-                        Button("Değiştir") { step = .scope }.buttonStyle(NovaRowPressStyle())
+                        Button(RDLocalization.string("localizable.nova.checklist.start.flow.degistir.0607729b", table: .localizable, fallback: "Değiştir")) { step = .scope }.buttonStyle(NovaRowPressStyle())
                     }
                     .padding(.bottom, 18)
 
-                    NovaHelpHint(text: "Sektör, ekipman, faaliyet veya tehlikeye göre arayın; yalnızca işinize uygun listeyi seçin.")
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.checklist.start.flow.sektor.ekipman.faaliyet.veya.tehlikeye.gore.aray.969bfb6c", table: .localizable, fallback: "Sektör, ekipman, faaliyet veya tehlikeye göre arayın; yalnızca işinize uygun listeyi seçin."))
                         .padding(.bottom, 12)
 
-                    NovaAnalysisSearchField(text: $search, placeholder: "Sektör, ekipman veya iş ara",
+                    NovaAnalysisSearchField(text: $search, placeholder: RDLocalization.string("localizable.nova.checklist.start.flow.sektor.ekipman.veya.is.ara.44e12788", table: .localizable, fallback: "Sektör, ekipman veya iş ara"),
                         identifier: "nova.checklist.start.search")
                         .padding(.bottom, 10)
 
                     HStack(spacing: 8) {
-                        NovaFilterField(label: "Sektör",
-                            options: [.init(id: nil, title: "Tüm sektörler")] + sectors.map {
+                        NovaFilterField(label: RDLocalization.string("localizable.nova.checklist.start.flow.sektor.53969f5c", table: .localizable, fallback: "Sektör"),
+                            options: [.init(id: nil, title: RDLocalization.string("localizable.nova.checklist.start.flow.tum.sektorler.d14d0386", table: .localizable, fallback: "Tüm sektörler"))] + sectors.map {
                                 .init(id: $0, title: sectorTitle($0))
                             }, selected: sector, identifier: "nova.checklist.start.sector") {
                                 sector = $0
                             }
-                        NovaFilterField(label: "Liste türü",
-                            options: [.init(id: nil, title: "Tüm türler")] + kinds.map {
+                        NovaFilterField(label: RDLocalization.string("localizable.nova.checklist.start.flow.liste.turu.0e9858ea", table: .localizable, fallback: "Liste türü"),
+                            options: [.init(id: nil, title: RDLocalization.string("localizable.nova.checklist.start.flow.tum.turler.7e9303c9", table: .localizable, fallback: "Tüm türler"))] + kinds.map {
                                 .init(id: $0, title: kindTitle($0) ?? "Genel")
                             }, selected: kind, identifier: "nova.checklist.start.kind") {
                                 kind = $0
@@ -145,10 +145,10 @@ struct NovaChecklistStartFlowScreen: View {
                         NovaChecklistRunSkeleton()
                     } else if let failure {
                         NovaChecklistMessageState(symbol: "wifi.exclamationmark",
-                            title: "Kontrol listeleri yüklenemedi", message: failure,
+                            title: RDLocalization.string("localizable.nova.checklist.start.flow.kontrol.listeleri.yuklenemedi.eb0476ce", table: .localizable, fallback: "Kontrol listeleri yüklenemedi"), message: failure,
                             actionTitle: "Yeniden dene") { Task { await loadCatalogue(company) } }
                     } else if filteredStarters.isEmpty {
-                        NovaChecklistMessageState(symbol: "magnifyingglass", title: "Liste bulunamadı",
+                        NovaChecklistMessageState(symbol: "magnifyingglass", title: RDLocalization.string("localizable.nova.checklist.start.flow.liste.bulunamadi.ed8e052e", table: .localizable, fallback: "Liste bulunamadı"),
                             message: search.isEmpty
                                 ? "Yayımlanmış bir kontrol listesi bulunmuyor."
                                 : "Başka bir liste adı veya konu yazmayı deneyin.",
@@ -188,7 +188,7 @@ struct NovaChecklistStartFlowScreen: View {
                         .padding(.top, 12)
                     } label: {
                         VStack(alignment: .leading, spacing: 3) {
-                            NovaText(text: "Saha ayrıntıları", style: .label)
+                            NovaText(text: RDLocalization.string("localizable.nova.checklist.start.flow.saha.ayrintilari.7928ccef", table: .localizable, fallback: "Saha ayrıntıları"), style: .label)
                             NovaText(text: [area, equipment, document].allSatisfy(\.isEmpty)
                                 ? "İsteğe bağlı" : "Ayrıntılar eklendi", style: .meta,
                                 color: NovaColorToken.textSecondary.color(in: scheme))
@@ -196,7 +196,7 @@ struct NovaChecklistStartFlowScreen: View {
                     }
                     .padding(.vertical, 6)
                     if company == nil {
-                        NovaText(text: "Bağımsız kontrolde firma uygunsuzluğu veya firma kanıtı oluşturulmaz.",
+                        NovaText(text: RDLocalization.string("localizable.nova.checklist.start.flow.bagimsiz.kontrolde.firma.uygunsuzlugu.veya.firma.944bc7f2", table: .localizable, fallback: "Bağımsız kontrolde firma uygunsuzluğu veya firma kanıtı oluşturulmaz."),
                             style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
                     }
                     if let failure {
@@ -246,7 +246,7 @@ struct NovaChecklistStartFlowScreen: View {
                     .padding(20).padding(.bottom, 100)
                 }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    NovaButton(label: "Bu listeyi seç", symbol: "checkmark", variant: .primary) {
+                    NovaButton(label: RDLocalization.string("localizable.nova.checklist.start.flow.bu.listeyi.sec.7b4134ec", table: .localizable, fallback: "Bu listeyi seç"), symbol: "checkmark", variant: .primary) {
                         selectedTemplate = templateDetail.templateCode
                         step = .details
                     }
@@ -254,7 +254,7 @@ struct NovaChecklistStartFlowScreen: View {
                     .background(NovaColorToken.surface.color(in: scheme))
                 }
             } else if let failure {
-                NovaChecklistMessageState(symbol: "wifi.exclamationmark", title: "Liste yüklenemedi",
+                NovaChecklistMessageState(symbol: "wifi.exclamationmark", title: RDLocalization.string("localizable.nova.checklist.start.flow.liste.yuklenemedi.edc55360", table: .localizable, fallback: "Liste yüklenemedi"),
                     message: failure, actionTitle: nil, action: {}).padding(20)
             }
         }
@@ -317,7 +317,7 @@ struct NovaChecklistStartFlowScreen: View {
                     .font(.system(size: 18, weight: .regular)).frame(width: 44, height: 44)
             }
             .buttonStyle(NovaRowPressStyle())
-            .accessibilityLabel("Liste bilgilerini aç")
+            .accessibilityLabel(RDLocalization.string("localizable.nova.checklist.start.flow.liste.bilgilerini.ac.68d1aad4", table: .localizable, fallback: "Liste bilgilerini aç"))
         }
     }
 
@@ -331,10 +331,10 @@ struct NovaChecklistStartFlowScreen: View {
 
     private func workplaceField(_ catalogue: NovaChecklistCatalogue) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            NovaText(text: "İşyeri", style: .meta,
+            NovaText(text: RDLocalization.string("localizable.nova.checklist.start.flow.isyeri.a1d04ce5", table: .localizable, fallback: "İşyeri"), style: .meta,
                 color: NovaColorToken.textSecondary.color(in: scheme))
-            Picker("İşyeri", selection: $workplace) {
-                Text("İşyeri seçin").tag(Optional<UUID>.none)
+            Picker(RDLocalization.string("localizable.nova.checklist.start.flow.isyeri.eb2fcef7", table: .localizable, fallback: "İşyeri"), selection: $workplace) {
+                Text(RDLocalization.string("localizable.nova.checklist.start.flow.isyeri.secin.2e94e039", table: .localizable, fallback: "İşyeri seçin")).tag(Optional<UUID>.none)
                 ForEach(catalogue.workplaces) { item in Text(item.name).tag(Optional(item.id)) }
             }
             .pickerStyle(.menu)
@@ -430,11 +430,11 @@ struct NovaChecklistStartFlowScreen: View {
 
     private func kindTitle(_ value: String?) -> String? {
         switch value {
-        case "sector": return "Sektör"
+        case "sector": return RDLocalization.string("localizable.nova.checklist.start.flow.sektor.8c15ab52", table: .localizable, fallback: "Sektör")
         case "activity": return "Faaliyet"
         case "equipment": return "Ekipman"
         case "hazard": return "Tehlike"
-        case .some: return "Genel"
+        case .some: return RDLocalization.string("localizable.nova.checklist.start.flow.genel.6c810c6f", table: .localizable, fallback: "Genel")
         case nil: return nil
         }
     }

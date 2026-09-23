@@ -339,7 +339,7 @@ struct NovaAnalysisFindingCard: View {
                     HStack(spacing: 7) {
                         NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band), showsDot: true)
                         if let value = item.value(method) {
-                            NovaText(text: "\(NovaNonconformityWords.score(value)) puan", style: .meta,
+                            NovaText(text: RDLocalization.format("analysis.nova.analysis.section.views.1.puan.6c6d4a95", table: .analysis, fallback: "%1$@ puan", arguments: [String(describing: NovaNonconformityWords.score(value))]), style: .meta,
                                 color: NovaColorToken.textSecondary.color(in: scheme))
                         }
                     }

@@ -13,7 +13,7 @@ private struct IsgParityProgress: View {
         NovaCard(padding: 12) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    NovaText(text: "\(completed)/\(total) başlık tamamlandı", style: .label)
+                    NovaText(text: RDLocalization.format("localizable.isg.workspace.parity.editors.1.2.baslik.tamamlandi.9b1ab325", table: .localizable, fallback: "%1$@/%2$@ başlık tamamlandı", arguments: [String(describing: completed), String(describing: total)]), style: .label)
                     Spacer(minLength: 0)
                     NovaStatusPill(label: completed == total ? "Kaydedilebilir" : "Bilgi bekliyor",
                                    status: completed == total ? .success : .warning)
@@ -85,11 +85,11 @@ struct IsgWorkspaceTrainingCreateEditor: View {
     }
     private var statutoryPresets: [StatutoryPreset] {
         [
-            .init(id: "legal-low", title: "Temel İSG Eğitimi · Az Tehlikeli", hazardClass: "low",
+            .init(id: "legal-low", title: RDLocalization.string("localizable.isg.workspace.parity.editors.temel.isg.egitimi.az.tehlikeli.0daf587c", table: .localizable, fallback: "Temel İSG Eğitimi · Az Tehlikeli"), hazardClass: "low",
                   validityYears: 3, topics: Self.topicPlan(total: 480, workSpecific: 120)),
-            .init(id: "legal-medium", title: "Temel İSG Eğitimi · Tehlikeli", hazardClass: "medium",
+            .init(id: "legal-medium", title: RDLocalization.string("localizable.isg.workspace.parity.editors.temel.isg.egitimi.tehlikeli.1fc0e906", table: .localizable, fallback: "Temel İSG Eğitimi · Tehlikeli"), hazardClass: "medium",
                   validityYears: 2, topics: Self.topicPlan(total: 720, workSpecific: 180)),
-            .init(id: "legal-high", title: "Temel İSG Eğitimi · Çok Tehlikeli", hazardClass: "high",
+            .init(id: "legal-high", title: RDLocalization.string("localizable.isg.workspace.parity.editors.temel.isg.egitimi.cok.tehlikeli.4355baa2", table: .localizable, fallback: "Temel İSG Eğitimi · Çok Tehlikeli"), hazardClass: "high",
                   validityYears: 1, topics: Self.topicPlan(total: 960, workSpecific: 240))
         ]
     }
@@ -106,22 +106,22 @@ struct IsgWorkspaceTrainingCreateEditor: View {
         Group {
             if didSave {
                 NovaTaskSuccessView(
-                    title: "Eğitim kaydedildi",
-                    message: "\(selectedEmployees.count) katılımcı için \(minutes) dakikalık gerçekleşen eğitim kaydı oluşturuldu.",
+                    title: RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.kaydedildi.2474cb1e", table: .localizable, fallback: "Eğitim kaydedildi"),
+                    message: RDLocalization.format("localizable.isg.workspace.parity.editors.1.katilimci.icin.2.dakikalik.gerceklesen.egitim..e5496154", table: .localizable, fallback: "%1$@ katılımcı için %2$@ dakikalık gerçekleşen eğitim kaydı oluşturuldu.", arguments: [String(describing: selectedEmployees.count), String(describing: minutes)]),
                     doneTitle: "Eğitimlere dön",
                     onDone: onDone)
             } else {
                 NovaPageSurface {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 18) {
-                            NovaTaskHeader(title: "Eğitim ekle", step: stepNumber,
+                            NovaTaskHeader(title: RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.ekle.a5530cb3", table: .localizable, fallback: "Eğitim ekle"), step: stepNumber,
                                 total: Step.allCases.count, stepTitle: stepTitle(currentStep)) {
                                     confirmingExit = true
                                 }
                             if loading {
-                                NovaLoadingView(message: "Eğitim kataloğu ve personel hazırlanıyor…")
+                                NovaLoadingView(message: RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.katalogu.ve.personel.hazirlaniyor.05ad2a3a", table: .localizable, fallback: "Eğitim kataloğu ve personel hazırlanıyor…"))
                             } else {
-                                NovaText(text: "Bilgiler akış boyunca korunur.", style: .micro)
+                                NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.bilgiler.akis.boyunca.korunur.16866812", table: .localizable, fallback: "Bilgiler akış boyunca korunur."), style: .micro)
                                 if let validationError { NovaTaskErrorSummary(message: validationError) }
                                 stepContent(currentStep)
                                 if let error { NovaTaskErrorSummary(message: error) }
@@ -148,12 +148,12 @@ struct IsgWorkspaceTrainingCreateEditor: View {
         .onChange(of: heldOn) { _ in if hasValidity { refreshSuggestedValidity() } }
         .onChange(of: topics) { _ in syncMinutes() }
         .novaFullScreenCover(isPresented: $showingTopics) { topicEditor }
-        .confirmationDialog("Eğitim akışından çıkılsın mı?", isPresented: $confirmingExit,
+        .confirmationDialog(RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.akisindan.cikilsin.mi.220bf131", table: .localizable, fallback: "Eğitim akışından çıkılsın mı?"), isPresented: $confirmingExit,
             titleVisibility: .visible) {
-                Button("Çık", role: .destructive, action: onDone)
-                Button("Devam et", role: .cancel) {}
+                Button(RDLocalization.string("localizable.isg.workspace.parity.editors.cik.0ce35e6d", table: .localizable, fallback: "Çık"), role: .destructive, action: onDone)
+                Button(RDLocalization.string("localizable.isg.workspace.parity.editors.devam.et.08ec2d46", table: .localizable, fallback: "Devam et"), role: .cancel) {}
             } message: {
-                Text("Henüz kaydedilmemiş bilgiler silinir.")
+                Text(RDLocalization.string("localizable.isg.workspace.parity.editors.henuz.kaydedilmemis.bilgiler.silinir.705968d8", table: .localizable, fallback: "Henüz kaydedilmemiş bilgiler silinir."))
             }
     }
 
@@ -169,30 +169,30 @@ struct IsgWorkspaceTrainingCreateEditor: View {
 
     private var infoStep: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker("Kayıtlı eğitim", selection: $templateKey) {
-                Text("Özel eğitim").tag("custom")
-                Section("Zorunlu temel eğitim şablonları") {
+            Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.kayitli.egitim.39f1eb4d", table: .localizable, fallback: "Kayıtlı eğitim"), selection: $templateKey) {
+                Text(RDLocalization.string("localizable.isg.workspace.parity.editors.ozel.egitim.3289bc89", table: .localizable, fallback: "Özel eğitim")).tag("custom")
+                Section(RDLocalization.string("localizable.isg.workspace.parity.editors.zorunlu.temel.egitim.sablonlari.cc56aaed", table: .localizable, fallback: "Zorunlu temel eğitim şablonları")) {
                     ForEach(statutoryPresets) { preset in
-                        Text("\(preset.title) · \(preset.minutes) dk").tag(preset.id)
+                        Text(RDLocalization.format("localizable.isg.workspace.parity.editors.1.2.dk.0bc864e3", table: .localizable, fallback: "%1$@ · %2$@ dk", arguments: [String(describing: preset.title), String(describing: preset.minutes)])).tag(preset.id)
                     }
                 }
                 if !usableCurricula.isEmpty {
-                    Section("OSGB eğitim kataloğu") {
+                    Section(RDLocalization.string("localizable.isg.workspace.parity.editors.osgb.egitim.katalogu.a9df621d", table: .localizable, fallback: "OSGB eğitim kataloğu")) {
                         ForEach(usableCurricula) { row in
-                            Text("\(row.title) · \(row.text("total_minutes") ?? "0") dk")
+                            Text(RDLocalization.format("localizable.isg.workspace.parity.editors.title.minutes", table: .localizable, fallback: "%1$@ · %2$@ dk", arguments: [String(describing: row.title), String(describing: row.text("total_minutes") ?? "0")]))
                                 .tag("curriculum:\(row.id.uuidString)")
                         }
                     }
                 }
             }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
-            field("Eğitim başlığı", text: $title, symbol: "text.book.closed")
+            field(RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.basligi.a92e4c87", table: .localizable, fallback: "Eğitim başlığı"), text: $title, symbol: "text.book.closed")
             if !topics.isEmpty {
                 Button { showingTopics = true } label: {
                     HStack(spacing: 11) {
                         Image(systemName: "list.bullet.rectangle").frame(width: 24)
                         VStack(alignment: .leading, spacing: 3) {
-                            NovaText(text: "Konular ve süre", style: .bodyStrong)
-                            NovaText(text: "\(topics.count) konu · \(minutes) dakika", style: .metaQuiet)
+                            NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.konular.ve.sure.d1092a49", table: .localizable, fallback: "Konular ve süre"), style: .bodyStrong)
+                            NovaText(text: RDLocalization.format("localizable.isg.workspace.parity.editors.1.konu.2.dakika.564cd962", table: .localizable, fallback: "%1$@ konu · %2$@ dakika", arguments: [String(describing: topics.count), String(describing: minutes)]), style: .metaQuiet)
                         }
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.right")
@@ -203,7 +203,7 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                     .padding(12).novaControlBackground(cornerRadius: 14)
             }
             DisclosureGroup("Ek bilgiler") {
-                field("Eğitim notu (isteğe bağlı)", text: $notes, symbol: "note.text")
+                field(RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.notu.istege.bagli.ebc72534", table: .localizable, fallback: "Eğitim notu (isteğe bağlı)"), text: $notes, symbol: "note.text")
                     .padding(.top, 8)
             }.font(NovaFont.font(.bodyStrong)).padding(12).novaControlBackground(cornerRadius: 14)
         }
@@ -212,33 +212,33 @@ struct IsgWorkspaceTrainingCreateEditor: View {
     private var scheduleStep: some View {
         VStack(alignment: .leading, spacing: 10) {
             compactDate("Tamamlandığı tarih", selection: $heldOn)
-            Picker("Eğitim yöntemi", selection: $method) {
+            Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.yontemi.7fd5418d", table: .localizable, fallback: "Eğitim yöntemi"), selection: $method) {
                 ForEach(["face_to_face", "online", "mixed"], id: \.self) {
                     Text(IsgWorkspaceDisplayText.value($0)).tag($0)
                 }
             }.pickerStyle(.segmented)
-            field("Konum / toplantı bağlantısı", text: $location, symbol: "mappin.and.ellipse")
-            Toggle("Geçerlilik tarihi ekle", isOn: $hasValidity)
+            field(RDLocalization.string("localizable.isg.workspace.parity.editors.konum.toplanti.baglantisi.ea35e7ad", table: .localizable, fallback: "Konum / toplantı bağlantısı"), text: $location, symbol: "mappin.and.ellipse")
+            Toggle(RDLocalization.string("localizable.isg.workspace.parity.editors.gecerlilik.tarihi.ekle.fde3c214", table: .localizable, fallback: "Geçerlilik tarihi ekle"), isOn: $hasValidity)
                 .padding(12).novaControlBackground(cornerRadius: 14)
             if hasValidity {
                 compactDate("Geçerlilik tarihi", selection: $validUntil)
-                NovaHelpHint(text: "Tarih tehlike sınıfına göre \(suggestedValidityYears) yıl sonrası olarak önerildi; gerekirse değiştirebilirsiniz.")
+                NovaHelpHint(text: RDLocalization.format("localizable.isg.workspace.parity.editors.tarih.tehlike.sinifina.gore.1.yil.sonrasi.olarak.4177b4b8", table: .localizable, fallback: "Tarih tehlike sınıfına göre %1$@ yıl sonrası olarak önerildi; gerekirse değiştirebilirsiniz.", arguments: [String(describing: suggestedValidityYears)]))
             }
         }
     }
 
     private var trainerStep: some View {
         VStack(alignment: .leading, spacing: 10) {
-            field("Eğitici ad soyad / kurum", text: $trainer, symbol: "person.crop.rectangle")
-            NovaHelpHint(text: "Eğitici bu gerçekleşen eğitim kaydının tamamı için kullanılır.")
+            field(RDLocalization.string("localizable.isg.workspace.parity.editors.egitici.ad.soyad.kurum.002be65f", table: .localizable, fallback: "Eğitici ad soyad / kurum"), text: $trainer, symbol: "person.crop.rectangle")
+            NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.parity.editors.egitici.bu.gerceklesen.egitim.kaydinin.tamami.ic.984e5754", table: .localizable, fallback: "Eğitici bu gerçekleşen eğitim kaydının tamamı için kullanılır."))
         }
     }
 
     private var participantStep: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                NovaText(text: "Firma personeli", style: .bodyStrong)
-                Spacer(); NovaText(text: "\(selectedEmployees.count) seçili", style: .metaQuiet)
+                NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.firma.personeli.63c50ee6", table: .localizable, fallback: "Firma personeli"), style: .bodyStrong)
+                Spacer(); NovaText(text: RDLocalization.format("localizable.isg.workspace.parity.editors.1.secili.f7c94956", table: .localizable, fallback: "%1$@ seçili", arguments: [String(describing: selectedEmployees.count)]), style: .metaQuiet)
             }
             searchField
             if !employees.isEmpty {
@@ -249,9 +249,9 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                     }
             }
             if employees.isEmpty {
-                NovaHelpHint(text: "Eğitim kaydetmek için önce firma personeli ekleyin.")
+                NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.kaydetmek.icin.once.firma.personeli.ekley.aa92889f", table: .localizable, fallback: "Eğitim kaydetmek için önce firma personeli ekleyin."))
             } else if filteredEmployees.isEmpty {
-                NovaHelpHint(text: "Aramanızla eşleşen personel bulunamadı.")
+                NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.parity.editors.aramanizla.eslesen.personel.bulunamadi.111e7ae8", table: .localizable, fallback: "Aramanızla eşleşen personel bulunamadı."))
             }
             ForEach(filteredEmployees) { employee in
                 Button {
@@ -265,13 +265,13 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                     }.frame(minHeight: 42).contentShape(Rectangle())
                 }.buttonStyle(NovaRowPressStyle())
             }
-            NovaHelpHint(text: "Kaydettiğinizde seçilen personelin eğitime katıldığını beyan etmiş olursunuz.")
+            NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.parity.editors.kaydettiginizde.secilen.personelin.egitime.katil.19423f25", table: .localizable, fallback: "Kaydettiğinizde seçilen personelin eğitime katıldığını beyan etmiş olursunuz."))
         }
     }
 
     private var reviewStep: some View {
         VStack(alignment: .leading, spacing: 14) {
-            NovaText(text: "Kaydetmeden önce kontrol edin", style: .sectionTitle)
+            NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.kaydetmeden.once.kontrol.edin.48f348ad", table: .localizable, fallback: "Kaydetmeden önce kontrol edin"), style: .sectionTitle)
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 12) {
                     reviewRow("Eğitim", title)
@@ -285,9 +285,9 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                 }
             }
             IsgWorkspaceInlineAttachmentField(
-                title: "Eğitim belgesi veya yoklama ekle (isteğe bağlı)",
+                title: RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.belgesi.veya.yoklama.ekle.istege.bagli.3fa4963b", table: .localizable, fallback: "Eğitim belgesi veya yoklama ekle (isteğe bağlı)"),
                 attachment: $attachment)
-            NovaHelpHint(text: "Bir bilgiyi değiştirmek için Geri ile ilgili adıma dönebilirsiniz.")
+            NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.parity.editors.bir.bilgiyi.degistirmek.icin.geri.ile.ilgili.adi.26bc4d66", table: .localizable, fallback: "Bir bilgiyi değiştirmek için Geri ile ilgili adıma dönebilirsiniz."))
         }
     }
 
@@ -295,9 +295,9 @@ struct IsgWorkspaceTrainingCreateEditor: View {
         NovaPageSurface {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    NovaPageHeading(title: "Konular ve süre", onBack: { showingTopics = false })
+                    NovaPageHeading(title: RDLocalization.string("localizable.isg.workspace.parity.editors.konular.ve.sure.44bd3b88", table: .localizable, fallback: "Konular ve süre"), onBack: { showingTopics = false })
                     HStack {
-                        NovaText(text: "Toplam süre", style: .metaQuiet)
+                        NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.toplam.sure.24521c98", table: .localizable, fallback: "Toplam süre"), style: .metaQuiet)
                         Spacer()
                         NovaText(text: "\(minutes) dakika", style: .sectionTitle)
                     }
@@ -310,12 +310,12 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                                     Stepper("\(topic.minutes) dakika", value: $topic.minutes, in: 5...2_000, step: 5)
                                     Button { topics.removeAll { $0.id == topic.id }; syncMinutes() } label: {
                                         Image(systemName: "trash").frame(width: 44, height: 44)
-                                    }.buttonStyle(NovaRowPressStyle()).accessibilityLabel("Konuyu sil")
+                                    }.buttonStyle(NovaRowPressStyle()).accessibilityLabel(RDLocalization.string("localizable.isg.workspace.parity.editors.konuyu.sil.0731b586", table: .localizable, fallback: "Konuyu sil"))
                                 }
                             }
                         }
                     }
-                    NovaCompactActionButton(title: "İşyerine özgü konu ekle", symbol: "plus") {
+                    NovaCompactActionButton(title: RDLocalization.string("localizable.isg.workspace.parity.editors.isyerine.ozgu.konu.ekle.8dcabb5e", table: .localizable, fallback: "İşyerine özgü konu ekle"), symbol: "plus") {
                         topics.append(.init(title: "", minutes: 30)); syncMinutes()
                     }
                 }.padding(18).padding(.bottom, 80)
@@ -338,7 +338,7 @@ struct IsgWorkspaceTrainingCreateEditor: View {
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-            TextField("Personel ara", text: $employeeQuery)
+            TextField(RDLocalization.string("localizable.isg.workspace.parity.editors.personel.ara.5e81b479", table: .localizable, fallback: "Personel ara"), text: $employeeQuery)
             if !employeeQuery.isEmpty {
                 Button { employeeQuery = "" } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(NovaRowPressStyle())
             }
@@ -357,9 +357,9 @@ struct IsgWorkspaceTrainingCreateEditor: View {
         }
     }
     private func stepTitle(_ step: Step) -> String {
-        switch step { case .info: return "Eğitim ve konular"; case .schedule: return "Tarih, yöntem ve yer"
-        case .trainers: return "Eğiticiler"; case .participants: return "Katılımcılar"
-        case .review: return "Kontrol ve kaydet" }
+        switch step { case .info: return RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.ve.konular.a9b73055", table: .localizable, fallback: "Eğitim ve konular"); case .schedule: return RDLocalization.string("localizable.isg.workspace.parity.editors.tarih.yontem.ve.yer.bc975333", table: .localizable, fallback: "Tarih, yöntem ve yer")
+        case .trainers: return RDLocalization.string("localizable.isg.workspace.parity.editors.egiticiler.9490389a", table: .localizable, fallback: "Eğiticiler"); case .participants: return RDLocalization.string("localizable.isg.workspace.parity.editors.katilimcilar.f91011ae", table: .localizable, fallback: "Katılımcılar")
+        case .review: return RDLocalization.string("localizable.isg.workspace.parity.editors.kontrol.ve.kaydet.f56bce0d", table: .localizable, fallback: "Kontrol ve kaydet") }
     }
     private func stepSymbol(_ step: Step) -> String {
         switch step { case .info: return "text.book.closed"; case .schedule: return "calendar.badge.clock"
@@ -386,11 +386,11 @@ struct IsgWorkspaceTrainingCreateEditor: View {
 
     private func validationMessage(_ step: Step) -> String {
         switch step {
-        case .info: return "Eğitim başlığını ve toplam süreyi kontrol edin."
-        case .schedule: return "Eğitim tarihi ve geçerlilik bilgisini kontrol edin."
-        case .trainers: return "En az bir eğitici adı veya kurum bilgisi girin."
-        case .participants: return "En az bir katılımcı seçin."
-        case .review: return "Önceki adımlarda tamamlanmamış bilgi var."
+        case .info: return RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.basligini.ve.toplam.sureyi.kontrol.edin.18cf4b79", table: .localizable, fallback: "Eğitim başlığını ve toplam süreyi kontrol edin.")
+        case .schedule: return RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.tarihi.ve.gecerlilik.bilgisini.kontrol.ed.690db01c", table: .localizable, fallback: "Eğitim tarihi ve geçerlilik bilgisini kontrol edin.")
+        case .trainers: return RDLocalization.string("localizable.isg.workspace.parity.editors.en.az.bir.egitici.adi.veya.kurum.bilgisi.girin.4ac701f6", table: .localizable, fallback: "En az bir eğitici adı veya kurum bilgisi girin.")
+        case .participants: return RDLocalization.string("localizable.isg.workspace.parity.editors.en.az.bir.katilimci.secin.11a1c872", table: .localizable, fallback: "En az bir katılımcı seçin.")
+        case .review: return RDLocalization.string("localizable.isg.workspace.parity.editors.onceki.adimlarda.tamamlanmamis.bilgi.var.0b00526a", table: .localizable, fallback: "Önceki adımlarda tamamlanmamış bilgi var.")
         }
     }
 
@@ -522,10 +522,10 @@ struct IsgWorkspaceTrainingCreateEditor: View {
         let health = remaining / 3
         let technical = remaining - general - health
         return [
-            .init(title: "Genel konular", minutes: general),
-            .init(title: "Sağlık konuları", minutes: health),
-            .init(title: "Teknik konular", minutes: technical),
-            .init(title: "İşe özgü riskler", minutes: workSpecific)
+            .init(title: RDLocalization.string("localizable.isg.workspace.parity.editors.genel.konular.244caa98", table: .localizable, fallback: "Genel konular"), minutes: general),
+            .init(title: RDLocalization.string("localizable.isg.workspace.parity.editors.saglik.konulari.eaf80b61", table: .localizable, fallback: "Sağlık konuları"), minutes: health),
+            .init(title: RDLocalization.string("localizable.isg.workspace.parity.editors.teknik.konular.54e14cbc", table: .localizable, fallback: "Teknik konular"), minutes: technical),
+            .init(title: RDLocalization.string("localizable.isg.workspace.parity.editors.ise.ozgu.riskler.60840291", table: .localizable, fallback: "İşe özgü riskler"), minutes: workSpecific)
         ]
     }
     private func uploadAttachmentIfNeeded() async throws -> IsgWorkspaceFileUploadResult? {
@@ -593,10 +593,10 @@ struct IsgWorkspaceManualNonconformityEditor: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                NovaPopupHeading(text: "Elle Uygunsuzluk", symbol: "exclamationmark.triangle",
-                    subtitle: "Normal uzman paneliyle aynı alanlar ve adımlı kayıt akışı")
+                NovaPopupHeading(text: RDLocalization.string("localizable.isg.workspace.parity.editors.elle.uygunsuzluk.652f5b2f", table: .localizable, fallback: "Elle Uygunsuzluk"), symbol: "exclamationmark.triangle",
+                    subtitle: RDLocalization.string("localizable.isg.workspace.parity.editors.normal.uzman.paneliyle.ayni.alanlar.ve.adimli.ka.c22d6931", table: .localizable, fallback: "Normal uzman paneliyle aynı alanlar ve adımlı kayıt akışı"))
                 if loading {
-                    NovaLoadingView(message: "İşyerleri hazırlanıyor…")
+                    NovaLoadingView(message: RDLocalization.string("localizable.isg.workspace.parity.editors.isyerleri.hazirlaniyor.17a812d7", table: .localizable, fallback: "İşyerleri hazırlanıyor…"))
                 } else {
                     IsgParityProgress(completed: completed, total: Step.allCases.count)
                     ForEach(Step.allCases, id: \.self) { step in accordion(step) }
@@ -620,13 +620,13 @@ struct IsgWorkspaceManualNonconformityEditor: View {
                 switch step {
                 case .attachment:
                     IsgWorkspaceInlineAttachmentField(
-                        title: "Fotoğraf veya kanıt ekle (isteğe bağlı)", attachment: $attachment)
+                        title: RDLocalization.string("localizable.isg.workspace.parity.editors.fotograf.veya.kanit.ekle.istege.bagli.8d857ece", table: .localizable, fallback: "Fotoğraf veya kanıt ekle (isteğe bağlı)"), attachment: $attachment)
                 case .workplace:
                     if workplaces.isEmpty {
-                        NovaEmptyState(title: "İşyeri bulunamadı",
-                            message: "Uygunsuzluk eklemek için önce firmaya bir işyeri ekleyin.")
+                        NovaEmptyState(title: RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.bulunamadi.6e665de2", table: .localizable, fallback: "İşyeri bulunamadı"),
+                            message: RDLocalization.string("localizable.isg.workspace.parity.editors.uygunsuzluk.eklemek.icin.once.firmaya.bir.isyeri.aed96996", table: .localizable, fallback: "Uygunsuzluk eklemek için önce firmaya bir işyeri ekleyin."))
                     } else {
-                        Picker("İşyeri", selection: $workplaceID) {
+                        Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.e1bb9871", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
                             ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
                         }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
                         HStack(spacing: 10) {
@@ -635,12 +635,12 @@ struct IsgWorkspaceManualNonconformityEditor: View {
                         }
                     }
                 case .hazard:
-                    field("Tehlike başlığı", text: $title, symbol: "text.cursor")
+                    field(RDLocalization.string("localizable.isg.workspace.parity.editors.tehlike.basligi.15c51da5", table: .localizable, fallback: "Tehlike başlığı"), text: $title, symbol: "text.cursor")
                     area("Açıklama", text: $hazard)
                     area("Önlem", text: $control)
                     VStack(alignment: .leading, spacing: 5) {
-                        NovaText(text: "Önem derecesi", style: .label)
-                        Picker("Önem derecesi", selection: $severity) {
+                        NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.onem.derecesi.a3d22561", table: .localizable, fallback: "Önem derecesi"), style: .label)
+                        Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.onem.derecesi.6496b6e8", table: .localizable, fallback: "Önem derecesi"), selection: $severity) {
                             ForEach(NovaNonconformitySeverity.allCases) { value in
                                 Text(NovaNonconformityWords.severity(value)).tag(value)
                             }
@@ -651,12 +651,12 @@ struct IsgWorkspaceManualNonconformityEditor: View {
                 case .legislation:
                     area("İlgili madde, yönetmelik veya standart (isteğe bağlı)", text: $legislation)
                 case .responsible:
-                    field("Firmadaki sorumlu kişi (isteğe bağlı)", text: $responsible,
+                    field(RDLocalization.string("localizable.isg.workspace.parity.editors.firmadaki.sorumlu.kisi.istege.bagli.c392bc09", table: .localizable, fallback: "Firmadaki sorumlu kişi (isteğe bağlı)"), text: $responsible,
                           symbol: "person.crop.circle")
-                    NovaHelpHint(text: "Bu kişi uygulama kullanıcısı olmak zorunda değildir; kaydın takip bilgisinde görünür.")
+                    NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.parity.editors.bu.kisi.uygulama.kullanicisi.olmak.zorunda.degil.a845837f", table: .localizable, fallback: "Bu kişi uygulama kullanıcısı olmak zorunda değildir; kaydın takip bilgisinde görünür."))
                 }
                 if isComplete(step), let next = nextIncomplete(after: step) {
-                    NovaButton(label: "Sıradaki: \(stepTitle(next))", symbol: "chevron.down", variant: .surface) {
+                    NovaButton(label: RDLocalization.format("localizable.isg.workspace.parity.editors.siradaki.1.93529ebc", table: .localizable, fallback: "Sıradaki: %1$@", arguments: [String(describing: stepTitle(next))]), symbol: "chevron.down", variant: .surface) {
                         withAnimation { open = next }
                     }
                 }
@@ -683,12 +683,12 @@ struct IsgWorkspaceManualNonconformityEditor: View {
 
     private func stepTitle(_ step: Step) -> String {
         switch step {
-        case .attachment: return "Fotoğraf ve kanıt"
-        case .workplace: return "İşyeri ve tarihler"
-        case .hazard: return "Tehlike ve önlem"
-        case .scoring: return "Risk skoru · isteğe bağlı"
-        case .legislation: return "Mevzuat · isteğe bağlı"
-        case .responsible: return "Sorumlu · isteğe bağlı"
+        case .attachment: return RDLocalization.string("localizable.isg.workspace.parity.editors.fotograf.ve.kanit.59a95cb5", table: .localizable, fallback: "Fotoğraf ve kanıt")
+        case .workplace: return RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.ve.tarihler.54badb59", table: .localizable, fallback: "İşyeri ve tarihler")
+        case .hazard: return RDLocalization.string("localizable.isg.workspace.parity.editors.tehlike.ve.onlem.a5da5898", table: .localizable, fallback: "Tehlike ve önlem")
+        case .scoring: return RDLocalization.string("localizable.isg.workspace.parity.editors.risk.skoru.istege.bagli.b9196343", table: .localizable, fallback: "Risk skoru · isteğe bağlı")
+        case .legislation: return RDLocalization.string("localizable.isg.workspace.parity.editors.mevzuat.istege.bagli.d88486b2", table: .localizable, fallback: "Mevzuat · isteğe bağlı")
+        case .responsible: return RDLocalization.string("localizable.isg.workspace.parity.editors.sorumlu.istege.bagli.dcd33d84", table: .localizable, fallback: "Sorumlu · isteğe bağlı")
         }
     }
 
@@ -854,8 +854,8 @@ struct IsgWorkspaceRiskCreateEditor: View {
     var body: some View {
         Group {
             if didSave {
-                NovaTaskSuccessView(title: "Risk değerlendirmesi taslağı oluşturuldu",
-                    message: "Değerlendirme sürümü kaydedildi. Ayrıntı ekranından kontrol edip kesinleştirebilirsiniz.",
+                NovaTaskSuccessView(title: RDLocalization.string("localizable.isg.workspace.parity.editors.risk.degerlendirmesi.taslagi.olusturuldu.690cc2fd", table: .localizable, fallback: "Risk değerlendirmesi taslağı oluşturuldu"),
+                    message: RDLocalization.string("localizable.isg.workspace.parity.editors.degerlendirme.surumu.kaydedildi.ayrinti.ekranind.46c05e13", table: .localizable, fallback: "Değerlendirme sürümü kaydedildi. Ayrıntı ekranından kontrol edip kesinleştirebilirsiniz."),
                     doneTitle: "Risk değerlendirmelerine dön", onDone: onDone)
             } else {
                 NovaPageSurface {
@@ -865,7 +865,7 @@ struct IsgWorkspaceRiskCreateEditor: View {
                                 step: stepNumber, total: Step.allCases.count, stepTitle: stepTitle(currentStep)) {
                                     confirmingExit = true
                                 }
-                            if loading { NovaLoadingView(message: "İşyeri ve sürüm bilgileri hazırlanıyor…") }
+                            if loading { NovaLoadingView(message: RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.ve.surum.bilgileri.hazirlaniyor.bf497412", table: .localizable, fallback: "İşyeri ve sürüm bilgileri hazırlanıyor…")) }
                             else {
                                 if let validationError { NovaTaskErrorSummary(message: validationError) }
                                 stepContent(currentStep)
@@ -888,11 +888,11 @@ struct IsgWorkspaceRiskCreateEditor: View {
         }
         .task { await prepare() }
         .onChange(of: workplaceID) { _ in configureKind() }
-        .confirmationDialog("Risk değerlendirmesi akışından çıkılsın mı?", isPresented: $confirmingExit,
+        .confirmationDialog(RDLocalization.string("localizable.isg.workspace.parity.editors.risk.degerlendirmesi.akisindan.cikilsin.mi.1b4537a3", table: .localizable, fallback: "Risk değerlendirmesi akışından çıkılsın mı?"), isPresented: $confirmingExit,
             titleVisibility: .visible) {
-                Button("Çık", role: .destructive, action: onDone)
-                Button("Devam et", role: .cancel) {}
-            } message: { Text("Henüz kaydedilmemiş bilgiler silinir.") }
+                Button(RDLocalization.string("localizable.isg.workspace.parity.editors.cik.b4b07a39", table: .localizable, fallback: "Çık"), role: .destructive, action: onDone)
+                Button(RDLocalization.string("localizable.isg.workspace.parity.editors.devam.et.dac2a7e2", table: .localizable, fallback: "Devam et"), role: .cancel) {}
+            } message: { Text(RDLocalization.string("localizable.isg.workspace.parity.editors.henuz.kaydedilmemis.bilgiler.silinir.5388eab8", table: .localizable, fallback: "Henüz kaydedilmemiş bilgiler silinir.")) }
     }
 
     @ViewBuilder private func stepContent(_ step: Step) -> some View {
@@ -900,10 +900,10 @@ struct IsgWorkspaceRiskCreateEditor: View {
         case .details: detailsStep
         case .file:
             VStack(alignment: .leading, spacing: 12) {
-                NovaText(text: "Risk değerlendirmesi dosyası", style: .sectionTitle)
+                NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.risk.degerlendirmesi.dosyasi.1b6c7773", table: .localizable, fallback: "Risk değerlendirmesi dosyası"), style: .sectionTitle)
                 IsgWorkspaceInlineAttachmentField(
-                    title: "PDF veya belge ekle (isteğe bağlı)", attachment: $attachment)
-                NovaHelpHint(text: "Dosya eklemeden de taslak oluşturabilir, daha sonra kayıt ayrıntısından belge bağlayabilirsiniz.")
+                    title: RDLocalization.string("localizable.isg.workspace.parity.editors.pdf.veya.belge.ekle.istege.bagli.217ef093", table: .localizable, fallback: "PDF veya belge ekle (isteğe bağlı)"), attachment: $attachment)
+                NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.parity.editors.dosya.eklemeden.de.taslak.olusturabilir.daha.son.c0e6319d", table: .localizable, fallback: "Dosya eklemeden de taslak oluşturabilir, daha sonra kayıt ayrıntısından belge bağlayabilirsiniz."))
             }
         case .review: reviewStep
         }
@@ -911,29 +911,29 @@ struct IsgWorkspaceRiskCreateEditor: View {
 
     private var detailsStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("İşyeri", selection: $workplaceID) {
+            Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.2cdb4091", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
                 ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
             }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
             if assessment == nil {
-                NovaFormValueRow(label: "Sürüm türü", symbol: "square.stack.3d.up") {
-                    NovaText(text: "Tam değerlendirme", style: .bodyStrong)
+                NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.parity.editors.surum.turu.b94a9c4c", table: .localizable, fallback: "Sürüm türü"), symbol: "square.stack.3d.up") {
+                    NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.tam.degerlendirme.d82127f4", table: .localizable, fallback: "Tam değerlendirme"), style: .bodyStrong)
                 }
-                NovaHelpHint(text: "Bu işyerindeki ilk kayıt tam değerlendirme olarak açılır.")
+                NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.parity.editors.bu.isyerindeki.ilk.kayit.tam.degerlendirme.olara.9126893c", table: .localizable, fallback: "Bu işyerindeki ilk kayıt tam değerlendirme olarak açılır."))
             } else {
-                Picker("Sürüm türü", selection: $kind) {
-                    Text("Tam yenileme").tag("full")
-                    Text("Kısmi revizyon").tag("partial")
-                    Text("Bilgi düzeltmesi").tag("metadata")
+                Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.surum.turu.02bc0d22", table: .localizable, fallback: "Sürüm türü"), selection: $kind) {
+                    Text(RDLocalization.string("localizable.isg.workspace.parity.editors.tam.yenileme.15f34960", table: .localizable, fallback: "Tam yenileme")).tag("full")
+                    Text(RDLocalization.string("localizable.isg.workspace.parity.editors.kismi.revizyon.d6f8471f", table: .localizable, fallback: "Kısmi revizyon")).tag("partial")
+                    Text(RDLocalization.string("localizable.isg.workspace.parity.editors.bilgi.duzeltmesi.76ebbf64", table: .localizable, fallback: "Bilgi düzeltmesi")).tag("metadata")
                 }.pickerStyle(.segmented)
             }
             compactDate(kind == "full" ? "Değerlendirme tarihi" : "Revizyon tarihi", selection: $date)
             if kind != "full", let base = assessment.flatMap({ fact("base_assessment_on", in: $0) }) {
-                NovaFormValueRow(label: "İlk değerlendirme", symbol: "calendar") {
+                NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.parity.editors.ilk.degerlendirme.04503735", table: .localizable, fallback: "İlk değerlendirme"), symbol: "calendar") {
                     NovaText(text: base, style: .bodyStrong)
                 }
             }
-            if needsScope { field("Kapsam özeti", text: $scope, symbol: "square.dashed") }
-            if needsReason { field("Değişiklik gerekçesi · en az 10 karakter", text: $reason, symbol: "text.quote") }
+            if needsScope { field(RDLocalization.string("localizable.isg.workspace.parity.editors.kapsam.ozeti.02f25063", table: .localizable, fallback: "Kapsam özeti"), text: $scope, symbol: "square.dashed") }
+            if needsReason { field(RDLocalization.string("localizable.isg.workspace.parity.editors.degisiklik.gerekcesi.en.az.10.karakter.d0d7a4fe", table: .localizable, fallback: "Değişiklik gerekçesi · en az 10 karakter"), text: $reason, symbol: "text.quote") }
             NovaHelpHint(text: kind == "full"
                 ? "Geçerlilik, taslak kesinleştirilirken işyeri tehlike sınıfına göre hesaplanır."
                 : "İlk değerlendirme tarihi korunur; yalnız bu sürümün değişiklikleri kaydedilir.")
@@ -942,7 +942,7 @@ struct IsgWorkspaceRiskCreateEditor: View {
 
     private var reviewStep: some View {
         VStack(alignment: .leading, spacing: 14) {
-            NovaText(text: "Kaydetmeden önce kontrol edin", style: .sectionTitle)
+            NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.kaydetmeden.once.kontrol.edin.627f8ada", table: .localizable, fallback: "Kaydetmeden önce kontrol edin"), style: .sectionTitle)
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 12) {
                     reviewRow("İşyeri", workplaces.first(where: { $0.id == workplaceID })?.name ?? "Belirtilmedi")
@@ -973,7 +973,7 @@ struct IsgWorkspaceRiskCreateEditor: View {
         }
     }
     private func stepTitle(_ step: Step) -> String {
-        switch step { case .details: return "Tarih ve kapsam"; case .file: return "Dosya"; case .review: return "Kontrol ve kaydet" }
+        switch step { case .details: return RDLocalization.string("localizable.isg.workspace.parity.editors.tarih.ve.kapsam.948bbbf4", table: .localizable, fallback: "Tarih ve kapsam"); case .file: return "Dosya"; case .review: return RDLocalization.string("localizable.isg.workspace.parity.editors.kontrol.ve.kaydet.9d3aacc3", table: .localizable, fallback: "Kontrol ve kaydet") }
     }
     private func stepSymbol(_ step: Step) -> String {
         switch step { case .details: return "calendar"; case .file: return "doc.badge.plus"; case .review: return "checkmark.circle" }
@@ -1095,9 +1095,9 @@ struct IsgWorkspaceEquipmentCreateEditor: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                NovaPopupHeading(text: "Ekipman Ekle", symbol: "shippingbox",
-                    subtitle: "Ekipman envantere eklenir; kontrol raporu ekipman ayrıntısından kaydedilir")
-                if loading { NovaLoadingView(message: "Ekipman türleri ve süreler hazırlanıyor…") }
+                NovaPopupHeading(text: RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.ekle.211d7420", table: .localizable, fallback: "Ekipman Ekle"), symbol: "shippingbox",
+                    subtitle: RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.envantere.eklenir.kontrol.raporu.ekipman.7a8c2ae6", table: .localizable, fallback: "Ekipman envantere eklenir; kontrol raporu ekipman ayrıntısından kaydedilir"))
+                if loading { NovaLoadingView(message: RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.turleri.ve.sureler.hazirlaniyor.33dee515", table: .localizable, fallback: "Ekipman türleri ve süreler hazırlanıyor…")) }
                 else {
                     IsgParityProgress(completed: completed, total: Step.allCases.count)
                     ForEach(Step.allCases, id: \.self) { step in accordion(step) }
@@ -1118,32 +1118,32 @@ struct IsgWorkspaceEquipmentCreateEditor: View {
             VStack(alignment: .leading, spacing: 10) {
                 switch step {
                 case .type:
-                    Picker("Ekipman türü", selection: $typeCode) {
+                    Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.turu.4b3f9668", table: .localizable, fallback: "Ekipman türü"), selection: $typeCode) {
                         ForEach(catalog.suggestions) { suggestion in
                             Text(IsgWorkspaceDisplayText.value(suggestion.code)).tag(suggestion.code)
                         }
                     }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
-                    if typeCode == "other_equipment" { field("Ekipman türü", text: $customType, symbol: "shippingbox") }
+                    if typeCode == "other_equipment" { field(RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.turu.acf583e3", table: .localizable, fallback: "Ekipman türü"), text: $customType, symbol: "shippingbox") }
                 case .identity:
-                    Picker("İşyeri", selection: $workplaceID) {
+                    Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.f1e6629d", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
                         ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
                     }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
-                    field("Seri / kod (isteğe bağlı)", text: $serial, symbol: "number")
-                    field("Konum (isteğe bağlı)", text: $location, symbol: "mappin.and.ellipse")
+                    field(RDLocalization.string("localizable.isg.workspace.parity.editors.seri.kod.istege.bagli.9f07a640", table: .localizable, fallback: "Seri / kod (isteğe bağlı)"), text: $serial, symbol: "number")
+                    field(RDLocalization.string("localizable.isg.workspace.parity.editors.konum.istege.bagli.7814e4d4", table: .localizable, fallback: "Konum (isteğe bağlı)"), text: $location, symbol: "mappin.and.ellipse")
                 case .period:
                     compactDate("Edinme tarihi", selection: $acquiredOn)
                     if let months = catalog.period(for: typeCode) {
-                        NovaFormValueRow(label: "Başlangıç kontrol süresi", symbol: "hourglass") {
+                        NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.parity.editors.baslangic.kontrol.suresi.b5810a4a", table: .localizable, fallback: "Başlangıç kontrol süresi"), symbol: "hourglass") {
                             NovaText(text: "\(months) ay", style: .bodyStrong)
                         }
                         NovaHelpHint(text: catalog.suggestions.first(where: { $0.code == typeCode })?.defaultBasisNote
                             ?? "Süre firma kuralından gelir; uzman ekipman ayrıntısından değiştirebilir.")
                     } else {
-                        NovaHelpHint(text: "Bu tür için henüz süre tanımlı değil. Ekipmanı ekledikten sonra kontrol süresini belirleyin.")
+                        NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.parity.editors.bu.tur.icin.henuz.sure.tanimli.degil.ekipmani.ek.965e6a55", table: .localizable, fallback: "Bu tür için henüz süre tanımlı değil. Ekipmanı ekledikten sonra kontrol süresini belirleyin."))
                     }
                 case .attachment:
                     IsgWorkspaceInlineAttachmentField(
-                        title: "Ekipman belgesi ekle (isteğe bağlı)",
+                        title: RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.belgesi.ekle.istege.bagli.f3fbc6e7", table: .localizable, fallback: "Ekipman belgesi ekle (isteğe bağlı)"),
                         attachment: $attachment)
                 }
             }
@@ -1158,7 +1158,7 @@ struct IsgWorkspaceEquipmentCreateEditor: View {
         }
     }
     private func stepTitle(_ step: Step) -> String {
-        switch step { case .type: return "Ekipman türü"; case .identity: return "İşyeri ve kimlik"; case .period: return "Tarih ve kontrol süresi"; case .attachment: return "Dosya ve kanıt" }
+        switch step { case .type: return RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.turu.038b87e6", table: .localizable, fallback: "Ekipman türü"); case .identity: return RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.ve.kimlik.4594126e", table: .localizable, fallback: "İşyeri ve kimlik"); case .period: return RDLocalization.string("localizable.isg.workspace.parity.editors.tarih.ve.kontrol.suresi.5c7d7008", table: .localizable, fallback: "Tarih ve kontrol süresi"); case .attachment: return RDLocalization.string("localizable.isg.workspace.parity.editors.dosya.ve.kanit.e45fdb14", table: .localizable, fallback: "Dosya ve kanıt") }
     }
     private func stepSymbol(_ step: Step) -> String {
         switch step { case .type: return "shippingbox"; case .identity: return "number"; case .period: return "calendar.badge.clock"; case .attachment: return "doc.badge.plus" }

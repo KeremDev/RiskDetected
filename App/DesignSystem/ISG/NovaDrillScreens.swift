@@ -173,7 +173,7 @@ struct NovaDrillScreen: View {
                 }
         }
         .novaFullScreenCover(item: $planning) { draft in
-            NovaCompanyCreateFlow(title: "Tatbikat planla", companies: client.companies,
+            NovaCompanyCreateFlow(title: RDLocalization.string("localizable.nova.drill.screens.tatbikat.planla.6ac77564", table: .localizable, fallback: "Tatbikat planla"), companies: client.companies,
                 catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany,
                 fullScreenTask: true, onClose: { planning = nil }) { selectedCatalogue, _ in
                 NovaDrillPlanSheet(draft: draft, catalogue: selectedCatalogue,
@@ -189,7 +189,7 @@ struct NovaDrillScreen: View {
     private var header: some View {
         NovaListHeading(title: headingOverride ?? NovaDestination.drills.title, onBack: onBack) {
             if canWrite {
-                NovaButton(label: "Tatbikat Ekle", symbol: "plus", compact: true) { startCreate() }
+                NovaButton(label: RDLocalization.string("localizable.nova.drill.screens.tatbikat.ekle.82b38112", table: .localizable, fallback: "Tatbikat Ekle"), symbol: "plus", compact: true) { startCreate() }
             }
         }
     }
@@ -273,7 +273,7 @@ struct NovaDrillScreen: View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.drill.empty.title",
                 table: .localizable, fallback: "Tatbikat kaydı yok"),
-                message: "Gerçekleşen tatbikatı fotoğraf, dosya, süre ve senaryo bilgileriyle kaydedip takip edebilirsiniz.")
+                message: RDLocalization.string("localizable.nova.drill.screens.gerceklesen.tatbikati.fotograf.dosya.sure.ve.sen.e668a930", table: .localizable, fallback: "Gerçekleşen tatbikatı fotoğraf, dosya, süre ve senaryo bilgileriyle kaydedip takip edebilirsiniz."))
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { drill in

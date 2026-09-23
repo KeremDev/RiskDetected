@@ -10,14 +10,14 @@ struct NovaVisitPeriodCard: View {
     var body: some View {
         NovaCard(padding: 14) {
             VStack(alignment: .leading, spacing: 9) {
-                Label("Dönemdeki ziyaretler", systemImage: "figure.walk").font(NovaFont.font(.cardTitle))
+                Label(RDLocalization.string("localizable.nova.visit.period.card.donemdeki.ziyaretler.707cc442", table: .localizable, fallback: "Dönemdeki ziyaretler"), systemImage: "figure.walk").font(NovaFont.font(.cardTitle))
                 if let summary {
                     HStack(spacing: 18) {
                         NovaText(text: "\(summary.visits) ziyaret", style: .label)
                         NovaText(text: summary.recorded_minutes.map { "\($0 / 60) sa \($0 % 60) dk" } ?? "Süre belirtilmedi", style: .label)
                     }
-                    NovaText(text: "\(summary.timed_visits) ziyaretin süresi kayıtlı. Tarih aralığı üstteki dönem seçimine göre hesaplanır.", style: .meta)
-                } else if failed { Button("Ziyaret özetini yeniden yükle") { revision += 1 }.font(NovaFont.font(.meta)) }
+                    NovaText(text: RDLocalization.format("localizable.nova.visit.period.card.1.ziyaretin.suresi.kayitli.tarih.araligi.ustteki.084e9d85", table: .localizable, fallback: "%1$@ ziyaretin süresi kayıtlı. Tarih aralığı üstteki dönem seçimine göre hesaplanır.", arguments: [String(describing: summary.timed_visits)]), style: .meta)
+                } else if failed { Button(RDLocalization.string("localizable.nova.visit.period.card.ziyaret.ozetini.yeniden.yukle.af59be6b", table: .localizable, fallback: "Ziyaret özetini yeniden yükle")) { revision += 1 }.font(NovaFont.font(.meta)) }
                 else { ProgressView() }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }

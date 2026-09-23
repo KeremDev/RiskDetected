@@ -46,7 +46,7 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
     var body: some View {
         Group {
             if didSave {
-                NovaTaskSuccessView(title: "Acil durum planı kaydedildi",
+                NovaTaskSuccessView(title: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.acil.durum.plani.kaydedildi.3711fc40", table: .localizable, fallback: "Acil durum planı kaydedildi"),
                     message: selectedEmployees.isEmpty
                         ? "Plan ve geçerlilik tarihi firma kaydına eklendi. Acil durum ekibini daha sonra ekleyebilirsiniz."
                         : "Plan, geçerlilik tarihi ve \(selectedEmployees.count) kişilik ekip firma kaydına eklendi. Sıradaki mantıklı işlem bir tatbikat planlamaktır.",
@@ -55,12 +55,12 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
                 NovaPageSurface {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 18) {
-                            NovaTaskHeader(title: "Acil durum planı ekle", step: stepNumber,
+                            NovaTaskHeader(title: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.acil.durum.plani.ekle.45f5d8ae", table: .localizable, fallback: "Acil durum planı ekle"), step: stepNumber,
                                 total: Step.allCases.count, stepTitle: stepTitle(currentStep)) {
                                     confirmingExit = true
                                 }
                             if loading {
-                                NovaLoadingView(message: "İşyeri ve personel bilgileri hazırlanıyor…")
+                                NovaLoadingView(message: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.ve.personel.bilgileri.hazirlaniyor.a169e632", table: .localizable, fallback: "İşyeri ve personel bilgileri hazırlanıyor…"))
                             } else {
                                 if let validationError { NovaTaskErrorSummary(message: validationError) }
                                 stepContent(currentStep)
@@ -84,11 +84,11 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
         .task { await prepare() }
         .onChange(of: preparedOn) { _ in refreshAutomaticValidity() }
         .onChange(of: overridesValidity) { enabled in if !enabled { refreshAutomaticValidity() } }
-        .confirmationDialog("Plan akışından çıkılsın mı?", isPresented: $confirmingExit,
+        .confirmationDialog(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.plan.akisindan.cikilsin.mi.339a2fbf", table: .localizable, fallback: "Plan akışından çıkılsın mı?"), isPresented: $confirmingExit,
             titleVisibility: .visible) {
-                Button("Çık", role: .destructive, action: onDone)
-                Button("Devam et", role: .cancel) {}
-            } message: { Text("Henüz kaydedilmemiş bilgiler silinir.") }
+                Button(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.cik.7492713d", table: .localizable, fallback: "Çık"), role: .destructive, action: onDone)
+                Button(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.devam.et.95d7829e", table: .localizable, fallback: "Devam et"), role: .cancel) {}
+            } message: { Text(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.henuz.kaydedilmemis.bilgiler.silinir.2ee5441a", table: .localizable, fallback: "Henüz kaydedilmemiş bilgiler silinir.")) }
     }
 
     @ViewBuilder private func stepContent(_ step: Step) -> some View {
@@ -107,14 +107,14 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
                 NovaText(text: companyName, style: .bodyStrong)
             }
             if workplaces.count == 1 {
-                NovaFormValueRow(label: "İşyeri", symbol: "mappin.and.ellipse") {
+                NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.8ddd8799", table: .localizable, fallback: "İşyeri"), symbol: "mappin.and.ellipse") {
                     NovaText(text: workplaces[0].name, style: .bodyStrong)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    NovaText(text: "İşyeri", style: .metaQuiet)
-                    Picker("İşyeri", selection: $workplaceID) {
-                        Text("İşyeri seçin").tag(Optional<UUID>.none)
+                    NovaText(text: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.d1df23d9", table: .localizable, fallback: "İşyeri"), style: .metaQuiet)
+                    Picker(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.49ac6bb7", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
+                        Text(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.secin.835bc845", table: .localizable, fallback: "İşyeri seçin")).tag(Optional<UUID>.none)
                         ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
                     }.pickerStyle(.menu)
                 }.padding(12).novaControlBackground(cornerRadius: 14)
@@ -129,17 +129,17 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
             if overridesValidity {
                 dateField("Geçerlilik tarihi", selection: $validUntil)
             } else {
-                NovaFormValueRow(label: "Geçerlilik", symbol: "calendar.badge.clock") {
+                NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.gecerlilik.737d3300", table: .localizable, fallback: "Geçerlilik"), symbol: "calendar.badge.clock") {
                     VStack(alignment: .trailing, spacing: 2) {
                         NovaText(text: Self.day(validUntil), style: .bodyStrong)
-                        NovaText(text: "Otomatik hesaplandı", style: .micro)
+                        NovaText(text: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.otomatik.hesaplandi.327d2947", table: .localizable, fallback: "Otomatik hesaplandı"), style: .micro)
                     }
                 }
             }
-            Toggle("Geçerlilik tarihini değiştir", isOn: $overridesValidity)
+            Toggle(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.gecerlilik.tarihini.degistir.799b137e", table: .localizable, fallback: "Geçerlilik tarihini değiştir"), isOn: $overridesValidity)
                 .padding(12).novaControlBackground(cornerRadius: 14)
             NovaWhyDisclosure {
-                NovaText(text: "Varsayılan tarih hazırlanma tarihinden bir yıl sonrası olarak hesaplanır. Yalnız istisna varsa değiştirin.", style: .metaQuiet)
+                NovaText(text: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.varsayilan.tarih.hazirlanma.tarihinden.bir.yil.s.a03b99f8", table: .localizable, fallback: "Varsayılan tarih hazırlanma tarihinden bir yıl sonrası olarak hesaplanır. Yalnız istisna varsa değiştirin."), style: .metaQuiet)
             }
         }
     }
@@ -147,11 +147,11 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
     private var teamStep: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                NovaText(text: "Acil durum ekibi", style: .sectionTitle)
+                NovaText(text: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.acil.durum.ekibi.7f141c95", table: .localizable, fallback: "Acil durum ekibi"), style: .sectionTitle)
                 Spacer()
-                NovaText(text: "\(selectedEmployees.count) seçili", style: .metaQuiet)
+                NovaText(text: RDLocalization.format("localizable.isg.workspace.emergency.plan.create.flow.1.secili.dbaff34b", table: .localizable, fallback: "%1$@ seçili", arguments: [String(describing: selectedEmployees.count)]), style: .metaQuiet)
             }
-            NovaHelpHint(text: "Ekip eklemek isteğe bağlıdır. Şimdi kişi seçebilir veya bu adımı boş geçip ekibi daha sonra tamamlayabilirsiniz.")
+            NovaHelpHint(text: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.ekip.eklemek.istege.baglidir.simdi.kisi.secebili.3addc178", table: .localizable, fallback: "Ekip eklemek isteğe bağlıdır. Şimdi kişi seçebilir veya bu adımı boş geçip ekibi daha sonra tamamlayabilirsiniz."))
             searchField
             if !employees.isEmpty {
                 NovaCompactActionButton(title: selectedEmployees.count == employees.count ? "Seçimi temizle" : "Tümünü seç",
@@ -178,7 +178,7 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
                         }.frame(minHeight: 44).contentShape(Rectangle())
                     }.buttonStyle(NovaRowPressStyle())
                     if selectedEmployees.contains(employee.id) {
-                        Picker("Ekip görevi", selection: roleBinding(employee.id)) {
+                        Picker(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.ekip.gorevi.67882540", table: .localizable, fallback: "Ekip görevi"), selection: roleBinding(employee.id)) {
                             ForEach(["coordinator", "fire", "first_aid", "evacuation", "other"], id: \.self) {
                                 Text(IsgWorkspaceDisplayText.value($0)).tag($0)
                             }
@@ -191,8 +191,8 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
 
     private var fileStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaText(text: "Plan dosyası", style: .sectionTitle)
-            IsgWorkspaceInlineAttachmentField(title: "PDF veya fotoğraf ekle (isteğe bağlı)", attachment: $attachment)
+            NovaText(text: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.plan.dosyasi.c13020d8", table: .localizable, fallback: "Plan dosyası"), style: .sectionTitle)
+            IsgWorkspaceInlineAttachmentField(title: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.pdf.veya.fotograf.ekle.istege.bagli.f39a3842", table: .localizable, fallback: "PDF veya fotoğraf ekle (isteğe bağlı)"), attachment: $attachment)
             DisclosureGroup("Ek bilgiler") {
                 labeledField("Plan notu (isteğe bağlı)", text: $note).padding(.top, 8)
             }.font(NovaFont.font(.bodyStrong)).padding(12).novaControlBackground(cornerRadius: 14)
@@ -201,7 +201,7 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
 
     private var reviewStep: some View {
         VStack(alignment: .leading, spacing: 14) {
-            NovaText(text: "Kaydetmeden önce kontrol edin", style: .sectionTitle)
+            NovaText(text: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.kaydetmeden.once.kontrol.edin.64747ebe", table: .localizable, fallback: "Kaydetmeden önce kontrol edin"), style: .sectionTitle)
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 12) {
                     reviewRow("Firma", companyName)
@@ -222,17 +222,17 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
                     saveDraft()
                     validationError = nil
                 }.accessibilityIdentifier("osgb.emergency.form.save-draft")
-            NovaText(text: "Taslak yayımlanmaz; yayımlamak için aşağıdaki ana aksiyonu kullanın.", style: .metaQuiet)
+            NovaText(text: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.taslak.yayimlanmaz.yayimlamak.icin.asagidaki.ana.f6004915", table: .localizable, fallback: "Taslak yayımlanmaz; yayımlamak için aşağıdaki ana aksiyonu kullanın."), style: .metaQuiet)
         }
     }
 
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-            TextField("Personel ara", text: $employeeQuery)
+            TextField(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.personel.ara.3b481069", table: .localizable, fallback: "Personel ara"), text: $employeeQuery)
             if !employeeQuery.isEmpty {
                 Button { employeeQuery = "" } label: { Image(systemName: "xmark.circle.fill").frame(width: 44, height: 44) }
-                    .buttonStyle(NovaRowPressStyle()).accessibilityLabel("Aramayı temizle")
+                    .buttonStyle(NovaRowPressStyle()).accessibilityLabel(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.aramayi.temizle.1ba1cd59", table: .localizable, fallback: "Aramayı temizle"))
             }
         }.padding(.horizontal, 12).frame(minHeight: 48).novaControlBackground(cornerRadius: 14)
     }
@@ -263,10 +263,10 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
     private func stepTitle(_ step: Step) -> String {
         switch step {
         case .scope: return "Kapsam"
-        case .dates: return "Tarih ve geçerlilik"
-        case .team: return "Acil durum ekibi"
-        case .file: return "Plan dosyası"
-        case .review: return "Kontrol ve kaydet"
+        case .dates: return RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.tarih.ve.gecerlilik.17271c68", table: .localizable, fallback: "Tarih ve geçerlilik")
+        case .team: return RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.acil.durum.ekibi.79ee5700", table: .localizable, fallback: "Acil durum ekibi")
+        case .file: return RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.plan.dosyasi.4b66b4c8", table: .localizable, fallback: "Plan dosyası")
+        case .review: return RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.kontrol.ve.kaydet.04debac8", table: .localizable, fallback: "Kontrol ve kaydet")
         }
     }
 
@@ -282,11 +282,11 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
 
     private func validationMessage(_ step: Step) -> String {
         switch step {
-        case .scope: return "İşyeri ve plan kapsamını belirtin."
-        case .dates: return "Geçerlilik tarihi hazırlama tarihinden sonra olmalı."
-        case .team: return "Ekip seçimi isteğe bağlıdır; devam edebilirsiniz."
-        case .file: return "Dosya adımını kontrol edin."
-        case .review: return "Önceki adımlarda tamamlanmamış bilgi var."
+        case .scope: return RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.ve.plan.kapsamini.belirtin.5e37fff3", table: .localizable, fallback: "İşyeri ve plan kapsamını belirtin.")
+        case .dates: return RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.gecerlilik.tarihi.hazirlama.tarihinden.sonra.olm.74fc4a6b", table: .localizable, fallback: "Geçerlilik tarihi hazırlama tarihinden sonra olmalı.")
+        case .team: return RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.ekip.secimi.istege.baglidir.devam.edebilirsiniz.d5ab75e6", table: .localizable, fallback: "Ekip seçimi isteğe bağlıdır; devam edebilirsiniz.")
+        case .file: return RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.dosya.adimini.kontrol.edin.48354575", table: .localizable, fallback: "Dosya adımını kontrol edin.")
+        case .review: return RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.onceki.adimlarda.tamamlanmamis.bilgi.var.39a22db4", table: .localizable, fallback: "Önceki adımlarda tamamlanmamış bilgi var.")
         }
     }
 

@@ -60,11 +60,11 @@ struct NovaChecklistRunTaskScreen: View {
         .onChange(of: run.state) { state in
             if state == .submitted || state == .cancelled { page = .result }
         }
-        .alert("Kontrolden çıkmak istiyor musunuz?", isPresented: $showingExitConfirmation) {
-            Button("Kontrolde kal", role: .cancel) {}
-            Button("Kontrolden çık") { onClose() }
+        .alert(RDLocalization.string("localizable.nova.checklist.run.flow.kontrolden.cikmak.istiyor.musunuz.5cc055e0", table: .localizable, fallback: "Kontrolden çıkmak istiyor musunuz?"), isPresented: $showingExitConfirmation) {
+            Button(RDLocalization.string("localizable.nova.checklist.run.flow.kontrolde.kal.c4057787", table: .localizable, fallback: "Kontrolde kal"), role: .cancel) {}
+            Button(RDLocalization.string("localizable.nova.checklist.run.flow.kontrolden.cik.4fe28282", table: .localizable, fallback: "Kontrolden çık")) { onClose() }
         } message: {
-            Text("Cevaplarınız kaydedildi. Daha sonra kaldığınız yerden devam edebilirsiniz.")
+            Text(RDLocalization.string("localizable.nova.checklist.run.flow.cevaplariniz.kaydedildi.daha.sonra.kaldiginiz.ye.c26131a7", table: .localizable, fallback: "Cevaplarınız kaydedildi. Daha sonra kaldığınız yerden devam edebilirsiniz."))
         }
         .sheet(item: $exportURL) { NovaFileShareSheet(url: $0) }
     }
@@ -77,11 +77,11 @@ struct NovaChecklistRunTaskScreen: View {
         VStack(spacing: 0) {
             taskHeader(title: run.templateTitle ?? run.templateCode, backTitle: "Kontrolden çık", back: requestExit) {
                 Button { page = .answers } label: {
-                    NovaText(text: "Yanıtlar \(run.answered)", style: .buttonSm)
+                    NovaText(text: RDLocalization.format("localizable.nova.checklist.run.flow.yanitlar.1.61b22c64", table: .localizable, fallback: "Yanıtlar %1$@", arguments: [String(describing: run.answered)]), style: .buttonSm)
                         .frame(minWidth: 44, minHeight: 44)
                 }
                 .buttonStyle(NovaRowPressStyle())
-                .accessibilityLabel("Yanıtlar, \(run.answered) tamamlandı")
+                .accessibilityLabel(RDLocalization.format("localizable.nova.checklist.run.flow.yanitlar.1.tamamlandi.f4ffef30", table: .localizable, fallback: "Yanıtlar, %1$@ tamamlandı", arguments: [String(describing: run.answered)]))
             }
             if let answer = currentAnswer {
                 ScrollView {
@@ -95,7 +95,7 @@ struct NovaChecklistRunTaskScreen: View {
                             }
                             ProgressView(value: Double(run.answered), total: Double(max(run.expected, 1)))
                                 .tint(NovaColorToken.accentInk.color(in: scheme))
-                                .accessibilityLabel("Kontrol ilerlemesi: \(run.expected) sorudan \(run.answered) tamamlandı")
+                                .accessibilityLabel(RDLocalization.format("localizable.nova.checklist.run.flow.kontrol.ilerlemesi.1.sorudan.2.tamamlandi.1f498606", table: .localizable, fallback: "Kontrol ilerlemesi: %1$@ sorudan %2$@ tamamlandı", arguments: [String(describing: run.expected), String(describing: run.answered)]))
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
@@ -110,7 +110,7 @@ struct NovaChecklistRunTaskScreen: View {
                                     color: NovaColorToken.textSecondary.color(in: scheme))
                                     .padding(.top, 8)
                             } label: {
-                                Label("Neye bakmalıyım?", systemImage: "info.circle")
+                                Label(RDLocalization.string("localizable.nova.checklist.run.flow.neye.bakmaliyim.f808507c", table: .localizable, fallback: "Neye bakmalıyım?"), systemImage: "info.circle")
                                     .font(NovaFont.font(.label))
                             }
                             .padding(.vertical, 6)
@@ -123,7 +123,7 @@ struct NovaChecklistRunTaskScreen: View {
                                 Image(systemName: result.symbol)
                                 NovaText(text: result.title, style: .label)
                                 if answer.nonconformityID != nil {
-                                    NovaText(text: "· Uygunsuzluk", style: .meta,
+                                    NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.uygunsuzluk.e5ad8f83", table: .localizable, fallback: "· Uygunsuzluk"), style: .meta,
                                         color: NovaColorToken.statusWarningInk.color(in: scheme))
                                 }
                             }
@@ -140,8 +140,8 @@ struct NovaChecklistRunTaskScreen: View {
                 }
                 .safeAreaInset(edge: .bottom, spacing: 0) { answerBar(answer) }
             } else {
-                NovaChecklistMessageState(symbol: "checklist", title: "Bu kontrolde soru yok",
-                    message: "Kontrol listesi içeriği bulunamadı.", actionTitle: nil, action: {})
+                NovaChecklistMessageState(symbol: "checklist", title: RDLocalization.string("localizable.nova.checklist.run.flow.bu.kontrolde.soru.yok.30911f8d", table: .localizable, fallback: "Bu kontrolde soru yok"),
+                    message: RDLocalization.string("localizable.nova.checklist.run.flow.kontrol.listesi.icerigi.bulunamadi.3aa590bc", table: .localizable, fallback: "Kontrol listesi içeriği bulunamadı."), actionTitle: nil, action: {})
             }
         }
     }
@@ -189,7 +189,7 @@ struct NovaChecklistRunTaskScreen: View {
             }
             HStack {
                 Button { currentIndex = max(0, currentIndex - 1) } label: {
-                    Label("Önceki", systemImage: "chevron.left").frame(minHeight: 44)
+                    Label(RDLocalization.string("localizable.nova.checklist.run.flow.onceki.29aeea44", table: .localizable, fallback: "Önceki"), systemImage: "chevron.left").frame(minHeight: 44)
                 }
                 .buttonStyle(NovaRowPressStyle()).disabled(currentIndex == 0 || working)
                 Spacer()
@@ -207,7 +207,7 @@ struct NovaChecklistRunTaskScreen: View {
 
     private var answersPage: some View {
         VStack(spacing: 0) {
-            taskHeader(title: "Yanıtlar", backTitle: "Kontrole dön", back: { page = .question }) { EmptyView() }
+            taskHeader(title: RDLocalization.string("localizable.nova.checklist.run.flow.yanitlar.ccad1860", table: .localizable, fallback: "Yanıtlar"), backTitle: "Kontrole dön", back: { page = .question }) { EmptyView() }
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(orderedAnswers.enumerated()), id: \.element.id) { index, answer in
@@ -244,13 +244,13 @@ struct NovaChecklistRunTaskScreen: View {
 
     private var summaryPage: some View {
         VStack(spacing: 0) {
-            taskHeader(title: "Kontrol özeti", backTitle: "Kontrole dön", back: { page = .question }) { EmptyView() }
+            taskHeader(title: RDLocalization.string("localizable.nova.checklist.run.flow.kontrol.ozeti.8ab76220", table: .localizable, fallback: "Kontrol özeti"), backTitle: "Kontrole dön", back: { page = .question }) { EmptyView() }
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     VStack(alignment: .leading, spacing: 6) {
                         NovaText(text: run.remaining == 0 ? "Kontrol tamamlanmaya hazır" : "Kontrol henüz tamamlanmadı",
                             style: .screenTitle)
-                        NovaText(text: "\(run.answered) / \(run.expected) soru yanıtlandı", style: .body,
+                        NovaText(text: RDLocalization.format("localizable.nova.checklist.run.flow.1.2.soru.yanitlandi.8a9188f2", table: .localizable, fallback: "%1$@ / %2$@ soru yanıtlandı", arguments: [String(describing: run.answered), String(describing: run.expected)]), style: .body,
                             color: NovaColorToken.textSecondary.color(in: scheme))
                     }
                     VStack(spacing: 0) {
@@ -265,7 +265,7 @@ struct NovaChecklistRunTaskScreen: View {
                     }
                     Button { page = .answers } label: {
                         HStack {
-                            NovaText(text: "Yanıtları gözden geçir", style: .label)
+                            NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.yanitlari.gozden.gecir.af3aa195", table: .localizable, fallback: "Yanıtları gözden geçir"), style: .label)
                             Spacer()
                             Image(systemName: "chevron.right")
                         }
@@ -323,7 +323,7 @@ struct NovaChecklistRunTaskScreen: View {
                             Divider()
                             summaryRow("Uygulanamaz", value: run.notApplicable, symbol: "minus.circle")
                         }
-                        NovaButton(label: "Raporu görüntüle", symbol: "doc.richtext", variant: .primary) {
+                        NovaButton(label: RDLocalization.string("localizable.nova.checklist.run.flow.raporu.goruntule.34ca2856", table: .localizable, fallback: "Raporu görüntüle"), symbol: "doc.richtext", variant: .primary) {
                             do { exportURL = try NovaChecklistExport.pdf(run: run) }
                             catch { failure = "Rapor oluşturulamadı." }
                         }
@@ -333,7 +333,7 @@ struct NovaChecklistRunTaskScreen: View {
                                 catch { failure = "Excel dosyası oluşturulamadı." }
                             }
                             if canWrite {
-                                NovaButton(label: "Yeni doğrulama", symbol: "arrow.triangle.2.circlepath",
+                                NovaButton(label: RDLocalization.string("localizable.nova.checklist.run.flow.yeni.dogrulama.55027e7b", table: .localizable, fallback: "Yeni doğrulama"), symbol: "arrow.triangle.2.circlepath",
                                     variant: .surface) {
                                     Task {
                                         working = true; failure = await onRevise(); working = false
@@ -344,7 +344,7 @@ struct NovaChecklistRunTaskScreen: View {
                         }
                     }
                     if let failure { errorText(failure) }
-                    NovaButton(label: "Kontrollerime dön", symbol: "chevron.left", variant: .surface,
+                    NovaButton(label: RDLocalization.string("localizable.nova.checklist.run.flow.kontrollerime.don.89c164ab", table: .localizable, fallback: "Kontrollerime dön"), symbol: "chevron.left", variant: .surface,
                         action: onClose)
                 }
                 .padding(20).padding(.bottom, 30)
@@ -354,7 +354,7 @@ struct NovaChecklistRunTaskScreen: View {
 
     private var informationPage: some View {
         VStack(spacing: 0) {
-            taskHeader(title: "Kontrol bilgileri", backTitle: "Kontrole dön", back: { page = .question }) { EmptyView() }
+            taskHeader(title: RDLocalization.string("localizable.nova.checklist.run.flow.kontrol.bilgileri.b3e75f78", table: .localizable, fallback: "Kontrol bilgileri"), backTitle: "Kontrole dön", back: { page = .question }) { EmptyView() }
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     informationRow("Liste", run.templateTitle ?? run.templateCode)
@@ -366,7 +366,7 @@ struct NovaChecklistRunTaskScreen: View {
                     if !run.sourceIDs.isEmpty {
                         informationRow("Kaynaklar", run.sourceIDs.joined(separator: " · "))
                     }
-                    NovaText(text: "Bu kontrol, başladığı andaki soru sürümünü saklar. Sonraki liste değişiklikleri bu kaydı değiştirmez.",
+                    NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.bu.kontrol.basladigi.andaki.soru.surumunu.saklar.48fa0dd3", table: .localizable, fallback: "Bu kontrol, başladığı andaki soru sürümünü saklar. Sonraki liste değişiklikleri bu kaydı değiştirmez."),
                         style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
                 }
                 .padding(20)
@@ -401,19 +401,19 @@ struct NovaChecklistRunTaskScreen: View {
 
     private var cancelPage: some View {
         VStack(spacing: 0) {
-            taskHeader(title: "Kontrolü iptal et", backTitle: "Kontrole dön", back: { page = .question }) { EmptyView() }
+            taskHeader(title: RDLocalization.string("localizable.nova.checklist.run.flow.kontrolu.iptal.et.bbcaed9f", table: .localizable, fallback: "Kontrolü iptal et"), backTitle: "Kontrole dön", back: { page = .question }) { EmptyView() }
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    NovaText(text: "Bu kontrol tamamlanmış sayılmayacak. Kaydedilmiş yanıtlar geçmişte kalacak.",
+                    NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.bu.kontrol.tamamlanmis.sayilmayacak.kaydedilmis..fea2bbc3", table: .localizable, fallback: "Bu kontrol tamamlanmış sayılmayacak. Kaydedilmiş yanıtlar geçmişte kalacak."),
                         style: .body, color: NovaColorToken.textSecondary.color(in: scheme))
                     VStack(alignment: .leading, spacing: 8) {
-                        NovaText(text: "İptal nedeni *", style: .label)
-                        Picker("İptal nedeni", selection: $cancellationReason) {
-                            Text("Seçin").tag("")
-                            Text("Kontrol artık gerekli değil").tag("not_required")
-                            Text("Yanlış kapsam veya liste seçildi").tag("wrong_scope")
-                            Text("Saha koşulları uygun değil").tag("site_unavailable")
-                            Text("Diğer").tag("other")
+                        NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.iptal.nedeni.25e30c32", table: .localizable, fallback: "İptal nedeni *"), style: .label)
+                        Picker(RDLocalization.string("localizable.nova.checklist.run.flow.iptal.nedeni.beec9285", table: .localizable, fallback: "İptal nedeni"), selection: $cancellationReason) {
+                            Text(RDLocalization.string("localizable.nova.checklist.run.flow.secin.d682b3f3", table: .localizable, fallback: "Seçin")).tag("")
+                            Text(RDLocalization.string("localizable.nova.checklist.run.flow.kontrol.artik.gerekli.degil.fe5f8097", table: .localizable, fallback: "Kontrol artık gerekli değil")).tag("not_required")
+                            Text(RDLocalization.string("localizable.nova.checklist.run.flow.yanlis.kapsam.veya.liste.secildi.9509766b", table: .localizable, fallback: "Yanlış kapsam veya liste seçildi")).tag("wrong_scope")
+                            Text(RDLocalization.string("localizable.nova.checklist.run.flow.saha.kosullari.uygun.degil.4a3a6143", table: .localizable, fallback: "Saha koşulları uygun değil")).tag("site_unavailable")
+                            Text(RDLocalization.string("localizable.nova.checklist.run.flow.diger.c31d7e85", table: .localizable, fallback: "Diğer")).tag("other")
                         }
                         .pickerStyle(.menu)
                         .padding(12).novaControlBackground(cornerRadius: 12)
@@ -605,7 +605,7 @@ private struct NovaChecklistAnswerButton: View {
         }
         .buttonStyle(NovaRowPressStyle())
         .disabled(working)
-        .accessibilityLabel("Bu soruyu \(result.title.lowercased()) olarak işaretle")
+        .accessibilityLabel(RDLocalization.format("localizable.nova.checklist.run.flow.bu.soruyu.1.olarak.isaretle.3e7f6459", table: .localizable, fallback: "Bu soruyu %1$@ olarak işaretle", arguments: [String(describing: result.title.lowercased())]))
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
@@ -632,17 +632,17 @@ private struct NovaChecklistQuestionExtrasScreen: View {
                                 in: RoundedRectangle(cornerRadius: 12))
                             .focused($focused)
                     }
-                    IsgWorkspaceInlineAttachmentField(title: "Fotoğraf veya belge ekle",
+                    IsgWorkspaceInlineAttachmentField(title: RDLocalization.string("localizable.nova.checklist.run.flow.fotograf.veya.belge.ekle.b1ceb55d", table: .localizable, fallback: "Fotoğraf veya belge ekle"),
                         help: "Görsel, PDF veya Office belgesi · en fazla 50 MB",
                         attachment: $draft.attachment)
-                    NovaText(text: "Not ve kanıt, soruyu yanıtladığınızda kaydedilir.", style: .meta,
+                    NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.not.ve.kanit.soruyu.yanitladiginizda.kaydedilir.fd84deec", table: .localizable, fallback: "Not ve kanıt, soruyu yanıtladığınızda kaydedilir."), style: .meta,
                         color: NovaColorToken.textSecondary.color(in: scheme))
                 }
                 .padding(20).padding(.bottom, 90)
             }
             .scrollDismissesKeyboard(.interactively)
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                NovaButton(label: "Kaydet", symbol: "checkmark", variant: .primary) { onSave(draft) }
+                NovaButton(label: RDLocalization.string("localizable.nova.checklist.run.flow.kaydet.e1429b8e", table: .localizable, fallback: "Kaydet"), symbol: "checkmark", variant: .primary) { onSave(draft) }
                     .padding(.horizontal, 20).padding(.vertical, 12)
                     .background(NovaColorToken.surface.color(in: scheme))
             }
@@ -676,7 +676,7 @@ private struct NovaChecklistNotApplicableScreen: View {
                 VStack(alignment: .leading, spacing: 18) {
                     NovaText(text: draft.prompt, style: .bodyStrong)
                     VStack(alignment: .leading, spacing: 8) {
-                        NovaText(text: "Neden uygulanamaz? *", style: .label)
+                        NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.neden.uygulanamaz.b49a6217", table: .localizable, fallback: "Neden uygulanamaz? *"), style: .label)
                         TextEditor(text: $draft.note)
                             .frame(minHeight: 150).padding(8)
                             .scrollContentBackground(.hidden)
@@ -741,7 +741,7 @@ private struct NovaChecklistNonconformityScreen: View {
                             color: NovaColorToken.textSecondary.color(in: scheme))
                         NovaText(text: draft.prompt, style: .bodyStrong)
                     }
-                    editor(title: "Açıklama *", placeholder: "Tespit edilen durumu yazın…",
+                    editor(title: RDLocalization.string("localizable.nova.checklist.run.flow.aciklama.bcdb9738", table: .localizable, fallback: "Açıklama *"), placeholder: RDLocalization.string("localizable.nova.checklist.run.flow.tespit.edilen.durumu.yazin.c2ce044f", table: .localizable, fallback: "Tespit edilen durumu yazın…"),
                         text: $description, field: .description)
                     IsgWorkspaceInlineAttachmentField(
                         title: draft.photoRequired ? "Fotoğraf ekle *" : "Fotoğraf ekle",
@@ -749,7 +749,7 @@ private struct NovaChecklistNonconformityScreen: View {
                         attachment: $draft.attachment)
                     if companyName != nil {
                         VStack(alignment: .leading, spacing: 10) {
-                            NovaText(text: "Önem *", style: .label)
+                            NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.onem.b3873a61", table: .localizable, fallback: "Önem *"), style: .label)
                             ForEach(NovaChecklistSeverity.allCases) { value in
                                 Button { severity = value } label: {
                                     HStack {
@@ -762,16 +762,16 @@ private struct NovaChecklistNonconformityScreen: View {
                                 .buttonStyle(NovaRowPressStyle())
                             }
                         }
-                        NovaDayField(label: "Düzeltme tarihi", value: $draft.dueOn,
+                        NovaDayField(label: RDLocalization.string("localizable.nova.checklist.run.flow.duzeltme.tarihi.6adfe3d6", table: .localizable, fallback: "Düzeltme tarihi"), value: $draft.dueOn,
                             identifier: "nova.checklist.issue.due", isClearable: true)
                     }
-                    editor(title: "Düzeltme önerisi", placeholder: "İsteğe bağlı açıklama ekleyin…",
+                    editor(title: RDLocalization.string("localizable.nova.checklist.run.flow.duzeltme.onerisi.1f81d6e3", table: .localizable, fallback: "Düzeltme önerisi"), placeholder: RDLocalization.string("localizable.nova.checklist.run.flow.istege.bagli.aciklama.ekleyin.2d15404a", table: .localizable, fallback: "İsteğe bağlı açıklama ekleyin…"),
                         text: $recommendation, field: .recommendation)
                     if let companyName {
-                        NovaText(text: "Uygunsuzluk kaydı · \(companyName)", style: .meta,
+                        NovaText(text: RDLocalization.format("localizable.nova.checklist.run.flow.uygunsuzluk.kaydi.1.65921b3e", table: .localizable, fallback: "Uygunsuzluk kaydı · %1$@", arguments: [String(describing: companyName)]), style: .meta,
                             color: NovaColorToken.textSecondary.color(in: scheme))
                     } else {
-                        NovaText(text: "Bağımsız kontrolde firma uygunsuzluğu açılmaz; olumsuz gözlem yalnız bu kontrolde saklanır.",
+                        NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.bagimsiz.kontrolde.firma.uygunsuzlugu.acilmaz.ol.4316653b", table: .localizable, fallback: "Bağımsız kontrolde firma uygunsuzluğu açılmaz; olumsuz gözlem yalnız bu kontrolde saklanır."),
                             style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
                     }
                     if let failure { NovaText(text: failure, style: .meta,

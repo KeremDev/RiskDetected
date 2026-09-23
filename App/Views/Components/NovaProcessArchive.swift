@@ -18,10 +18,10 @@ struct NovaProcessArchive: View {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .process: return "Süreç belgeleri"
-            case .analysis: return "Analiz raporları"
-            case .nonconformity: return "Uygunsuzluk raporları"
-            case .custom: return "Özel raporlarım"
+            case .process: return RDLocalization.string("localizable.nova.process.archive.surec.belgeleri.8d76be8b", table: .localizable, fallback: "Süreç belgeleri")
+            case .analysis: return RDLocalization.string("localizable.nova.process.archive.analiz.raporlari.6eb7e42f", table: .localizable, fallback: "Analiz raporları")
+            case .nonconformity: return RDLocalization.string("localizable.nova.process.archive.uygunsuzluk.raporlari.87b4f5f7", table: .localizable, fallback: "Uygunsuzluk raporları")
+            case .custom: return RDLocalization.string("localizable.nova.process.archive.ozel.raporlarim.e3846778", table: .localizable, fallback: "Özel raporlarım")
             }
         }
     }
@@ -47,7 +47,7 @@ struct NovaProcessArchive: View {
     var body: some View {
         NovaPageSurface(onEdgeBack: onBack) {
             VStack(spacing: 12) {
-                NovaPageHeading(title: "Rapor Arşivi", onBack: onBack).padding(.horizontal, 16)
+                NovaPageHeading(title: RDLocalization.string("localizable.nova.process.archive.rapor.arsivi.0fcb13bb", table: .localizable, fallback: "Rapor Arşivi"), onBack: onBack).padding(.horizontal, 16)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(Section.allCases) { item in
@@ -74,10 +74,10 @@ struct NovaProcessArchive: View {
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    if busy { ProgressView("Yükleniyor…").frame(maxWidth: .infinity) }
+                    if busy { ProgressView(RDLocalization.string("localizable.nova.process.archive.yukleniyor.ed86a44f", table: .localizable, fallback: "Yükleniyor…")).frame(maxWidth: .infinity) }
                     if let failure {
                         NovaTaskErrorSummary(message: failure)
-                        NovaButton(label: "Yeniden dene", symbol: "arrow.clockwise", variant: .surface) {
+                        NovaButton(label: RDLocalization.string("localizable.nova.process.archive.yeniden.dene.28faa389", table: .localizable, fallback: "Yeniden dene"), symbol: "arrow.clockwise", variant: .surface) {
                             Task { await load() }
                         }
                     }
@@ -90,33 +90,33 @@ struct NovaProcessArchive: View {
 
     @ViewBuilder private var serverContent: some View {
         if visibleEntries.isEmpty && !busy && failure == nil {
-            NovaEmptyState(title: section == .nonconformity ? "Henüz uygunsuzluk raporu yok" : "Henüz süreç belgesi yok",
+            NovaEmptyState(title: section == .nonconformity ? RDLocalization.string("localizable.nova.process.archive.henuz.uygunsuzluk.raporu.yok.5b0d7252", table: .localizable, fallback: "Henüz uygunsuzluk raporu yok") : RDLocalization.string("localizable.nova.process.archive.henuz.surec.belgesi.yok.54561246", table: .localizable, fallback: "Henüz süreç belgesi yok"),
                 message: section == .nonconformity
-                    ? "Uygunsuzluk raporları oluşturulduğunda firma ve sürüm bilgileriyle burada görünür."
-                    : "Hazırladığınız süreç belgeleri ve önceki sürümleri burada görünür.")
+                    ? RDLocalization.string("localizable.nova.process.archive.uygunsuzluk.raporlari.olusturuldugunda.firma.ve..46d517ba", table: .localizable, fallback: "Uygunsuzluk raporları oluşturulduğunda firma ve sürüm bilgileriyle burada görünür.")
+                    : RDLocalization.string("localizable.nova.process.archive.hazirladiginiz.surec.belgeleri.ve.onceki.surumle.d775aa5d", table: .localizable, fallback: "Hazırladığınız süreç belgeleri ve önceki sürümleri burada görünür."))
         }
         ForEach(visibleEntries, id: \.key) { entry in
             NovaCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     NovaText(text: archiveTitle(entry), style: .cardTitle)
                     NovaText(text: entry.company_name, style: .meta)
-                    NovaText(text: "\(entry.document_no) · Sürüm \(entry.version)", style: .metaQuiet)
+                    NovaText(text: RDLocalization.format("localizable.nova.process.archive.1.surum.2.fdcf2fec", table: .localizable, fallback: "%1$@ · Sürüm %2$@", arguments: [String(describing: entry.document_no), String(describing: entry.version)]), style: .metaQuiet)
                     HStack {
-                        Button("PDF indir") { Task { await open(entry, excel: false) } }
-                        Button("Excel indir") { Task { await open(entry, excel: true) } }
+                        Button(RDLocalization.string("localizable.nova.process.archive.pdf.indir.90a56d15", table: .localizable, fallback: "PDF indir")) { Task { await open(entry, excel: false) } }
+                        Button(RDLocalization.string("localizable.nova.process.archive.excel.indir.e60d1fb5", table: .localizable, fallback: "Excel indir")) { Task { await open(entry, excel: true) } }
                     }.disabled(busy)
                 }
             }
         }
         if more && section == .process {
-            Button("Daha fazla") { Task { await load(append: true) } }.disabled(busy)
+            Button(RDLocalization.string("localizable.nova.process.archive.daha.fazla.0adf0b8c", table: .localizable, fallback: "Daha fazla")) { Task { await load(append: true) } }.disabled(busy)
         }
     }
 
     @ViewBuilder private var customContent: some View {
         if custom.isEmpty {
-            NovaEmptyState(title: "Henüz özel rapor yok",
-                message: "Rapor Merkezi'nde oluşturduğunuz firma, eğitim, iş ve ziyaret raporları burada saklanır.")
+            NovaEmptyState(title: RDLocalization.string("localizable.nova.process.archive.henuz.ozel.rapor.yok.a0d2f8e9", table: .localizable, fallback: "Henüz özel rapor yok"),
+                message: RDLocalization.string("localizable.nova.process.archive.rapor.merkezi.nde.olusturdugunuz.firma.egitim.is.7b3e3b2e", table: .localizable, fallback: "Rapor Merkezi'nde oluşturduğunuz firma, eğitim, iş ve ziyaret raporları burada saklanır."))
         }
         ForEach(custom) { report in
             Button { file = NovaGeneratedReportArchive.url(for: report) } label: {
@@ -137,7 +137,7 @@ struct NovaProcessArchive: View {
 
     private func archiveTitle(_ entry: Entry) -> String {
         if entry.kind.localizedCaseInsensitiveContains("nonconform") || entry.kind.localizedCaseInsensitiveContains("finding") {
-            return "Uygunsuzluk Raporu"
+            return RDLocalization.string("localizable.nova.process.archive.uygunsuzluk.raporu.b89832b3", table: .localizable, fallback: "Uygunsuzluk Raporu")
         }
         return NovaProcessKind.get(entry.kind).title
     }

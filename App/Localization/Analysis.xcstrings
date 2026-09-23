@@ -577,6 +577,8 @@
         }
       }
     },
+    "analysis.analysis.result.hub.view.secilenlerle.devam.634dc711": {"comment":"swift_user_copy; App/Views/Result/AnalysisResultHubView.swift:2169; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Continue with selected"}},"tr":{"stringUnit":{"state":"translated","value":"Seçilenlerle devam"}}}},
+    "analysis.analysis.result.hub.view.vazgec.a57bfee8": {"comment":"swift_user_copy; App/Views/Result/AnalysisResultHubView.swift:2124; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Cancel"}},"tr":{"stringUnit":{"state":"translated","value":"Vazgeç"}}}},
     "analysis.analysis.sector.agriculture.livestock.and.outdoor.work.5f9ba368": {
       "comment": "computed_ui_copy; App/Models/AnalysisSector.swift:90; placeholders: none; review: machine_draft",
       "extractionState": "manual",
@@ -6235,6 +6237,8 @@
         }
       }
     },
+    "analysis.nova.analysis.section.views.1.puan.6c6d4a95": {"comment":"custom_ui_copy; App/DesignSystem/ISG/NovaAnalysisSectionViews.swift:342; placeholders: %1$@; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"%1$@ points"}},"tr":{"stringUnit":{"state":"translated","value":"%1$@ puan"}}}},
+    "analysis.nova.analysis.sheets.firmaya.uygunsuzluk.olarak.ekle.0127c621": {"comment":"custom_ui_copy; App/DesignSystem/ISG/NovaAnalysisSheets.swift:50; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Add to Company as Nonconformity"}},"tr":{"stringUnit":{"state":"translated","value":"Firmaya Uygunsuzluk Olarak Ekle"}}}},
     "analysis.photo_tray.add_photo": {
       "comment": "Analysis UI product-copy contract; placeholders: none; review: machine_draft",
       "extractionState": "manual",
@@ -13778,6 +13782,11 @@
         }
       }
     },
+    "analysis.risk.detail.view.bu.bulgu.faydali.miydi.c27c027f": {"comment":"swiftui_text; App/Views/Result/RiskDetailView.swift:369; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Was this finding helpful?"}},"tr":{"stringUnit":{"state":"translated","value":"Bu bulgu faydalı mıydı?"}}}},
+    "analysis.risk.detail.view.bulgu.islemleri.5b06133a": {"comment":"swiftui_modifier; App/Views/Result/RiskDetailView.swift:203; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Finding actions"}},"tr":{"stringUnit":{"state":"translated","value":"Bulgu işlemleri"}}}},
+    "analysis.risk.detail.view.duzenle.82146ffa": {"comment":"swiftui_text; App/Views/Result/RiskDetailView.swift:192; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Edit"}},"tr":{"stringUnit":{"state":"translated","value":"Düzenle"}}}},
+    "analysis.risk.detail.view.faydali.484e0d91": {"comment":"custom_ui_copy; App/Views/Result/RiskDetailView.swift:373; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Helpful"}},"tr":{"stringUnit":{"state":"translated","value":"Faydalı"}}}},
+    "analysis.risk.detail.view.faydali.degil.4b1c65d2": {"comment":"custom_ui_copy; App/Views/Result/RiskDetailView.swift:374; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Not helpful"}},"tr":{"stringUnit":{"state":"translated","value":"Faydalı değil"}}}},
     "analysis.risk.detail.view.fine.kinney.dd5a1c46": {
       "comment": "custom_ui_copy; App/Views/Result/RiskDetailView.swift:245; placeholders: none; review: machine_draft",
       "extractionState": "manual",
@@ -13814,6 +13823,7 @@
         }
       }
     },
+    "analysis.risk.detail.view.fotograf.1.cef4e007": {"comment":"swiftui_text; App/Views/Result/RiskDetailView.swift:216; placeholders: %1$@; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Photo %1$@"}},"tr":{"stringUnit":{"state":"translated","value":"Fotoğraf %1$@"}}}},
     "analysis.risk.detail.view.ilgili.kanun.yonetmelik.ve.standart.karsiliklari.8b679e34": {
       "comment": "swiftui_text; App/Views/Result/RiskDetailView.swift:400; placeholders: none; review: machine_draft",
       "extractionState": "manual",
@@ -13994,6 +14004,7 @@
         }
       }
     },
+    "analysis.risk.detail.view.paylas.9fcb7d68": {"comment":"swiftui_text; App/Views/Result/RiskDetailView.swift:193; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Share"}},"tr":{"stringUnit":{"state":"translated","value":"Paylaş"}}}},
     "analysis.risk.detail.view.pencereyi.kapat.cde23dc0": {
       "comment": "swiftui_modifier; App/Views/Result/RiskDetailView.swift:89; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
       "extractionState": "manual",
@@ -14012,6 +14023,7 @@
         }
       }
     },
+    "analysis.risk.detail.view.plus.pro.ile.goruntule.0d40d1ff": {"comment":"swiftui_text; App/Views/Result/RiskDetailView.swift:352; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"View with Plus / Pro"}},"tr":{"stringUnit":{"state":"translated","value":"Plus / Pro ile görüntüle"}}}},
     "analysis.risk.detail.view.r.1.957c43b4": {
       "comment": "swiftui_text; App/Views/Result/RiskDetailView.swift:278; placeholders: %1$@; review: machine_draft",
       "extractionState": "manual",
@@ -14048,6 +14060,8 @@
         }
       }
     },
+    "analysis.risk.detail.view.risk.yontemi.eaa4f4ba": {"comment":"swiftui_text; App/Views/Result/RiskDetailView.swift:299; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Risk method"}},"tr":{"stringUnit":{"state":"translated","value":"Risk yöntemi"}}}},
+    "analysis.risk.detail.view.skor.nasil.olustu.8a08b396": {"comment":"swiftui_text; App/Views/Result/RiskDetailView.swift:315; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"How was the score calculated?"}},"tr":{"stringUnit":{"state":"translated","value":"Skor nasıl oluştu?"}}}},
     "analysis.risk.detail.view.tehlike.aciklamasi.31eca15b": {
       "comment": "swift_user_copy; App/Views/Result/RiskDetailView.swift:46; placeholders: none; review: machine_draft",
       "extractionState": "manual",

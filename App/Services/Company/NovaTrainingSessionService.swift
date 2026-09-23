@@ -161,13 +161,13 @@ struct NovaTrainingSessionDraft: Codable, Equatable {
     static func message(_ error: Error) -> String {
         if let e = error as? PostgrestError {
             switch e.message {
-            case "FACE_TO_FACE_REQUIRED": return "İşe başlama eğitimi yüz yüze verilmelidir."
-            case "WORKPLACE_FACE_TO_FACE_REQUIRED": return "Tehlikeli/çok tehlikeli işyerlerinde işe özgü bölüm yüz yüze olmalı. Karma veya yüz yüze yöntemi seçin."
-            case "PARTICIPANT_REQUIRED": return "Seçilen her firmadan en az bir katılımcı seçin."
-            case "CATALOG_REQUIRED": return "Kayıtlı bir eğitim seçin veya yeni eğitim başlığı oluşturun."
-            case "RULE_DATE_UNSUPPORTED": return "Hazır katalog 2 Nisan 2026 sonrası eğitimler içindir. Daha eski kayıt için tarihli kural incelemesi gerekir."
-            case "VALIDATION_ERROR": return "Geçmiş/bugünkü eğitim tarihini, eğitmeni ve katılımcıları kontrol edin."
-            case "UPGRADE_REQUIRED": return "Yeni eğitim akışı için uygulamayı güncelleyin."
+            case "FACE_TO_FACE_REQUIRED": return RDLocalization.string("localizable.nova.training.session.service.ise.baslama.egitimi.yuz.yuze.verilmelidir.461e7dd4", table: .localizable, fallback: "İşe başlama eğitimi yüz yüze verilmelidir.")
+            case "WORKPLACE_FACE_TO_FACE_REQUIRED": return RDLocalization.string("localizable.nova.training.session.service.tehlikeli.cok.tehlikeli.isyerlerinde.ise.ozgu.bo.6ae30522", table: .localizable, fallback: "Tehlikeli/çok tehlikeli işyerlerinde işe özgü bölüm yüz yüze olmalı. Karma veya yüz yüze yöntemi seçin.")
+            case "PARTICIPANT_REQUIRED": return RDLocalization.string("localizable.nova.training.session.service.secilen.her.firmadan.en.az.bir.katilimci.secin.ed15d058", table: .localizable, fallback: "Seçilen her firmadan en az bir katılımcı seçin.")
+            case "CATALOG_REQUIRED": return RDLocalization.string("localizable.nova.training.session.service.kayitli.bir.egitim.secin.veya.yeni.egitim.baslig.411d5c98", table: .localizable, fallback: "Kayıtlı bir eğitim seçin veya yeni eğitim başlığı oluşturun.")
+            case "RULE_DATE_UNSUPPORTED": return RDLocalization.string("localizable.nova.training.session.service.hazir.katalog.2.nisan.2026.sonrasi.egitimler.ici.25653209", table: .localizable, fallback: "Hazır katalog 2 Nisan 2026 sonrası eğitimler içindir. Daha eski kayıt için tarihli kural incelemesi gerekir.")
+            case "VALIDATION_ERROR": return RDLocalization.string("localizable.nova.training.session.service.gecmis.bugunku.egitim.tarihini.egitmeni.ve.katil.731f5520", table: .localizable, fallback: "Geçmiş/bugünkü eğitim tarihini, eğitmeni ve katılımcıları kontrol edin.")
+            case "UPGRADE_REQUIRED": return RDLocalization.string("localizable.nova.training.session.service.yeni.egitim.akisi.icin.uygulamayi.guncelleyin.d45d0072", table: .localizable, fallback: "Yeni eğitim akışı için uygulamayı güncelleyin.")
             default: break
             }
         }

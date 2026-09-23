@@ -4,8 +4,8 @@ private enum IsgTrainingAdvancedSection: String, CaseIterable, Identifiable {
     case curriculum, plan, assessment, certificate
     var id: String { rawValue }
     var title: String {
-        switch self { case .curriculum: return "Müfredat"; case .plan: return "Yıllık plan"
-        case .assessment: return "Sınavlar"; case .certificate: return "Belgeler" }
+        switch self { case .curriculum: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.dd1f3af0", table: .localizable, fallback: "Müfredat"); case .plan: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.yillik.plan.344d3bf9", table: .localizable, fallback: "Yıllık plan")
+        case .assessment: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.sinavlar.f5fad819", table: .localizable, fallback: "Sınavlar"); case .certificate: return "Belgeler" }
     }
     var symbol: String {
         switch self { case .curriculum: return "books.vertical"; case .plan: return "calendar"
@@ -48,8 +48,8 @@ struct IsgWorkspaceTrainingAdvancedScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                NovaPopupHeading(text: "Eğitim yönetimi", symbol: "books.vertical",
-                                 subtitle: "Müfredat sürümleri, yıllık plan, sınav ve belgeler aynı firma kapsamında tutulur.")
+                NovaPopupHeading(text: RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitim.yonetimi.4384e31e", table: .localizable, fallback: "Eğitim yönetimi"), symbol: "books.vertical",
+                                 subtitle: RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.surumleri.yillik.plan.sinav.ve.belgeler.2b6874c2", table: .localizable, fallback: "Müfredat sürümleri, yıllık plan, sınav ve belgeler aynı firma kapsamında tutulur."))
                 Picker("", selection: $section) {
                     ForEach(IsgTrainingAdvancedSection.allCases) { Text($0.title).tag($0) }
                 }.pickerStyle(.segmented)
@@ -59,18 +59,18 @@ struct IsgWorkspaceTrainingAdvancedScreen: View {
                     }
                     if section == .curriculum, !publishedCurricula.isEmpty,
                        trainings.contains(where: { $0.status == "planned" }) {
-                        NovaCompactActionButton(title: "Eğitime müfredat bağla", symbol: "link") {
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitime.mufredat.bagla.ad09bbe1", table: .localizable, fallback: "Eğitime müfredat bağla"), symbol: "link") {
                             route = .init(kind: .linkCurriculum)
                         }
                     }
                 }
-                if loading { NovaLoadingView(message: "Eğitim yapısı yükleniyor…") }
+                if loading { NovaLoadingView(message: RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitim.yapisi.yukleniyor.9bc58004", table: .localizable, fallback: "Eğitim yapısı yükleniyor…")) }
                 else if let error {
-                    NovaEmptyState(title: "Eğitim yönetimi yüklenemedi", message: error)
-                    NovaCompactActionButton(title: "Tekrar dene", symbol: "arrow.clockwise") { revision = UUID() }
+                    NovaEmptyState(title: RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitim.yonetimi.yuklenemedi.379d3762", table: .localizable, fallback: "Eğitim yönetimi yüklenemedi"), message: error)
+                    NovaCompactActionButton(title: RDLocalization.string("localizable.isg.workspace.training.advanced.screen.tekrar.dene.b3a8783c", table: .localizable, fallback: "Tekrar dene"), symbol: "arrow.clockwise") { revision = UUID() }
                 } else if records.isEmpty {
-                    NovaEmptyState(title: "Henüz \(section.title.lowercased()) kaydı yok.",
-                                   message: "İlk kaydı ekleyerek bu firmadaki eğitim sürecini planlayabilirsiniz.")
+                    NovaEmptyState(title: RDLocalization.format("localizable.isg.workspace.training.advanced.screen.henuz.1.kaydi.yok.4a9a5d04", table: .localizable, fallback: "Henüz %1$@ kaydı yok.", arguments: [String(describing: section.title.lowercased())]),
+                                   message: RDLocalization.string("localizable.isg.workspace.training.advanced.screen.ilk.kaydi.ekleyerek.bu.firmadaki.egitim.surecini.f2a11c17", table: .localizable, fallback: "İlk kaydı ekleyerek bu firmadaki eğitim sürecini planlayabilirsiniz."))
                 } else { ForEach(records) { recordRow($0) } }
             }.padding(18).novaPopupContentSize(extra: 120)
                 .novaAsyncContent(isLoading: loading)
@@ -222,14 +222,14 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
     @ViewBuilder private var fields: some View {
         switch route.kind {
         case .curriculumCreate:
-            field("Müfredat adı", text: $title); stringPicker("Döngü", selection: $option,
+            field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.adi.8b54a1ce", table: .localizable, fallback: "Müfredat adı"), text: $title); stringPicker("Döngü", selection: $option,
                 values: ["initial", "periodic_repeat", "onboarding", "task_specific", "other"])
             stringPicker("Tehlike sınıfı", selection: $hazard, values: ["low", "medium", "high"])
-            field("Hedef grup", text: $secondary); Toggle("Sınav gerekli", isOn: $assessmentRequired)
+            field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.hedef.grup.cf6bc8a1", table: .localizable, fallback: "Hedef grup"), text: $secondary); Toggle(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.sinav.gerekli.8cdcfd3a", table: .localizable, fallback: "Sınav gerekli"), isOn: $assessmentRequired)
                 .padding(12).novaControlBackground(cornerRadius: 14)
             if assessmentRequired { Stepper("Geçme puanı: \(score)", value: $score, in: 0...100) }
         case .curriculum(let row) where row.status == "draft":
-            NovaHelpHint(text: "\(row.title) · \(row.text("topic_count") ?? "0") konu · \(row.text("total_minutes") ?? "0") dakika")
+            NovaHelpHint(text: RDLocalization.format("localizable.isg.workspace.training.advanced.topics.minutes", table: .localizable, fallback: "%1$@ · %2$@ konu · %3$@ dakika", arguments: [String(describing: row.title), String(describing: row.text("topic_count") ?? "0"), String(describing: row.text("total_minutes") ?? "0")]))
             ForEach(row.topics) { topic in
                 Button { nestedRoute = .init(kind: .curriculumTopic(row, topic)) } label: {
                     HStack {
@@ -239,25 +239,25 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
                     }.padding(12).novaControlBackground(cornerRadius: 14).contentShape(Rectangle())
                 }.buttonStyle(NovaRowPressStyle())
             }
-            field("Konu başlığı", text: $title); field("Konu açıklaması", text: $notes)
+            field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.konu.basligi.bd32509e", table: .localizable, fallback: "Konu başlığı"), text: $title); field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.konu.aciklamasi.eb12c368", table: .localizable, fallback: "Konu açıklaması"), text: $notes)
             Stepper("Sıra: \(number)", value: $number, in: 1...999)
             Stepper("Süre: \(score) dakika", value: $score, in: 1...1000)
         case .curriculumTopic:
-            field("Konu başlığı", text: $title); field("Konu açıklaması", text: $notes)
+            field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.konu.basligi.1704979d", table: .localizable, fallback: "Konu başlığı"), text: $title); field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.konu.aciklamasi.34383aeb", table: .localizable, fallback: "Konu açıklaması"), text: $notes)
             Stepper("Sıra: \(number)", value: $number, in: 1...999)
             Stepper("Süre: \(score) dakika", value: $score, in: 1...1000)
         case .linkCurriculum:
             trainingPicker(plannedOnly: true); curriculumPicker
         case .planCreate:
-            field("Plan adı", text: $title); workplacePicker
+            field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.plan.adi.1752444f", table: .localizable, fallback: "Plan adı"), text: $title); workplacePicker
             Stepper("Plan yılı: \(number)", value: $number, in: 2000...2200)
         case .planItemCreate:
-            field("Faaliyet adı", text: $title); field("Hedef grup", text: $secondary)
+            field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.faaliyet.adi.79713109", table: .localizable, fallback: "Faaliyet adı"), text: $title); field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.hedef.grup.8771f71b", table: .localizable, fallback: "Hedef grup"), text: $secondary)
             curriculumPicker; DatePicker("Planlanan tarih", selection: $firstDate, displayedComponents: .date)
                 .padding(12).novaControlBackground(cornerRadius: 14)
             Stepper("Süre: \(score) dakika", value: $score, in: 1...1000); field("Sorumlu", text: $notes)
         case .planItem:
-            field("Faaliyet adı", text: $title); field("Hedef grup", text: $secondary)
+            field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.faaliyet.adi.d183c55b", table: .localizable, fallback: "Faaliyet adı"), text: $title); field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.hedef.grup.fafebc77", table: .localizable, fallback: "Hedef grup"), text: $secondary)
             curriculumPicker; DatePicker("Planlanan tarih", selection: $firstDate, displayedComponents: .date)
                 .padding(12).novaControlBackground(cornerRadius: 14)
             Stepper("Süre: \(score) dakika", value: $score, in: 1...1000); field("Sorumlu", text: $notes)
@@ -271,11 +271,11 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
         case .certificateCreate:
             employeePicker; trainingPicker(plannedOnly: false, optional: true)
             stringPicker("Belge türü", selection: $option, values: ["internal_training", "external_training", "qualification"])
-            field("Belge no", text: $title); field("Düzenleyen", text: $secondary)
+            field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.belge.no.452741f8", table: .localizable, fallback: "Belge no"), text: $title); field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.duzenleyen.67da62d1", table: .localizable, fallback: "Düzenleyen"), text: $secondary)
             filePicker
             DatePicker("Düzenlenme", selection: $firstDate, displayedComponents: .date)
                 .padding(12).novaControlBackground(cornerRadius: 14)
-            Toggle("Geçerlilik sonu var", isOn: $hasExpiry).padding(12).novaControlBackground(cornerRadius: 14)
+            Toggle(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.gecerlilik.sonu.var.7eb7a249", table: .localizable, fallback: "Geçerlilik sonu var"), isOn: $hasExpiry).padding(12).novaControlBackground(cornerRadius: 14)
             if hasExpiry { DatePicker("Geçerlilik sonu", selection: $secondDate, in: firstDate..., displayedComponents: .date)
                 .padding(12).novaControlBackground(cornerRadius: 14) }
         default: EmptyView()
@@ -295,7 +295,7 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
             actionButton("Konuyu sil", action: "curriculum_topic_delete")
         case .plan(let row) where row.status == "draft": actionButton("Planı etkinleştir", action: "plan_activate", prominent: true)
         case .plan(let row) where row.status == "active":
-            NovaCompactActionButton(title: "Faaliyet ekle", symbol: "plus", prominent: true) {
+            NovaCompactActionButton(title: RDLocalization.string("localizable.isg.workspace.training.advanced.screen.faaliyet.ekle.535807b5", table: .localizable, fallback: "Faaliyet ekle"), symbol: "plus", prominent: true) {
                 // Replace this detail popup with the item editor while retaining the parent plan.
                 nestedRoute = .init(kind: .planItemCreate(row))
             }
@@ -318,12 +318,12 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
 
     @State private var nestedRoute: IsgTrainingAdvancedRoute?
     private var heading: String {
-        switch route.kind { case .curriculumCreate: return "Müfredat oluştur"; case .curriculum: return "Müfredat yönetimi"
-        case .curriculumTopic: return "Müfredat konusu"
-        case .linkCurriculum: return "Eğitime müfredat bağla"; case .planCreate: return "Yıllık eğitim planı"
-        case .plan: return "Plan yönetimi"; case .planItemCreate: return "Plan faaliyeti"
-        case .planItem: return "Faaliyet sonucu"; case .attemptCreate: return "Sınav sonucu"
-        case .certificateCreate: return "Belge ekle"; case .certificate: return "Belge yönetimi" }
+        switch route.kind { case .curriculumCreate: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.olustur.2c1c0d0d", table: .localizable, fallback: "Müfredat oluştur"); case .curriculum: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.yonetimi.73408794", table: .localizable, fallback: "Müfredat yönetimi")
+        case .curriculumTopic: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.konusu.01963e0d", table: .localizable, fallback: "Müfredat konusu")
+        case .linkCurriculum: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitime.mufredat.bagla.3efdf566", table: .localizable, fallback: "Eğitime müfredat bağla"); case .planCreate: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.yillik.egitim.plani.c4ad8d07", table: .localizable, fallback: "Yıllık eğitim planı")
+        case .plan: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.plan.yonetimi.647a4195", table: .localizable, fallback: "Plan yönetimi"); case .planItemCreate: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.plan.faaliyeti.f79419fb", table: .localizable, fallback: "Plan faaliyeti")
+        case .planItem: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.faaliyet.sonucu.c3b6e989", table: .localizable, fallback: "Faaliyet sonucu"); case .attemptCreate: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.sinav.sonucu.fb311cf9", table: .localizable, fallback: "Sınav sonucu")
+        case .certificateCreate: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.belge.ekle.f1ba3177", table: .localizable, fallback: "Belge ekle"); case .certificate: return RDLocalization.string("localizable.isg.workspace.training.advanced.screen.belge.yonetimi.26d50f8d", table: .localizable, fallback: "Belge yönetimi") }
     }
     private var hint: String { "Değişiklikler sürümlenir; yayımlanmış müfredat ve geçmiş kayıtlar geriye dönük değiştirilmez." }
     private var publishedCurricula: [IsgWorkspaceAdvancedRecord] { curricula.filter { $0.status == "published" } }
@@ -340,7 +340,7 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
             .pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
     }
     private var workplacePicker: some View {
-        Picker("İşyeri", selection: $workplaceID) { ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) } }
+        Picker(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.isyeri.71690301", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) { ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) } }
             .pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
     }
     private var employeePicker: some View {
@@ -355,22 +355,22 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
         return employees.filter { enrolled.contains($0.id) }
     }
     private var curriculumPicker: some View {
-        Picker("Müfredat", selection: $curriculumID) {
-            Text("Müfredat yok").tag(UUID?.none)
+        Picker(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.f0b8ea0a", table: .localizable, fallback: "Müfredat"), selection: $curriculumID) {
+            Text(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.yok.533272b3", table: .localizable, fallback: "Müfredat yok")).tag(UUID?.none)
             ForEach(publishedCurricula) { Text($0.title).tag(Optional($0.id)) }
         }
             .pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
     }
     private var filePicker: some View {
-        Picker("Belge dosyası", selection: $fileID) {
-            Text("Dosya bağlama").tag(UUID?.none)
+        Picker(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.belge.dosyasi.b4f6d871", table: .localizable, fallback: "Belge dosyası"), selection: $fileID) {
+            Text(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.dosya.baglama.34455d56", table: .localizable, fallback: "Dosya bağlama")).tag(UUID?.none)
             ForEach(files) { Text($0.title).tag(Optional($0.id)) }
         }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
     }
     private func trainingPicker(plannedOnly: Bool, optional: Bool = false) -> some View {
         let values = plannedOnly ? plannedTrainings : completedTrainings
-        return Picker("Eğitim", selection: $trainingID) {
-            if optional { Text("Eğitime bağlı değil").tag(UUID?.none) }
+        return Picker(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitim.a6877931", table: .localizable, fallback: "Eğitim"), selection: $trainingID) {
+            if optional { Text(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitime.bagli.degil.a39132e7", table: .localizable, fallback: "Eğitime bağlı değil")).tag(UUID?.none) }
             ForEach(values) { Text($0.title).tag(Optional($0.id)) }
         }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
             .onChange(of: trainingID) { _ in

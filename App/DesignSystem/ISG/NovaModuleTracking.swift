@@ -27,11 +27,11 @@ struct NovaModuleTrackingSnapshot: Decodable {
         let nextOn: String?
         var title: String {
             switch id {
-            case "emergency_plan": return "Acil Durum Planları"
+            case "emergency_plan": return RDLocalization.string("localizable.nova.module.tracking.acil.durum.planlari.e355c69a", table: .localizable, fallback: "Acil Durum Planları")
             case "drill": return "Tatbikatlar"
             case "appointment": return "Atamalar"
-            case "ppe": return "KKD Zimmetleri"
-            case "checklist_run": return "Kontrol Listeleri"
+            case "ppe": return RDLocalization.string("localizable.nova.module.tracking.kkd.zimmetleri.2cc30fdf", table: .localizable, fallback: "KKD Zimmetleri")
+            case "checklist_run": return RDLocalization.string("localizable.nova.module.tracking.kontrol.listeleri.bda6b79b", table: .localizable, fallback: "Kontrol Listeleri")
             default: return NovaProcessKind.get(id).title
             }
         }
@@ -105,17 +105,17 @@ struct NovaModuleTrackingCard: View {
         NovaCard(padding: 16) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    NovaText(text: "Süreçler ve Takip", style: .cardTitle)
+                    NovaText(text: RDLocalization.string("localizable.nova.module.tracking.surecler.ve.takip.f6752fa6", table: .localizable, fallback: "Süreçler ve Takip"), style: .cardTitle)
                     Spacer()
                     Button { revision += 1 } label: {
                         Image(systemName: "arrow.clockwise").frame(width: 44, height: 44)
-                    }.accessibilityLabel("Süreç özetini yenile")
+                    }.accessibilityLabel(RDLocalization.string("localizable.nova.module.tracking.surec.ozetini.yenile.c9b1389c", table: .localizable, fallback: "Süreç özetini yenile"))
                 }
                 if failed {
-                    NovaText(text: "Süreç özeti alınamadı. Yenileyerek tekrar deneyin.", style: .body)
+                    NovaText(text: RDLocalization.string("localizable.nova.module.tracking.surec.ozeti.alinamadi.yenileyerek.tekrar.deneyin.33adde01", table: .localizable, fallback: "Süreç özeti alınamadı. Yenileyerek tekrar deneyin."), style: .body)
                 } else if let snapshot {
                     if snapshot.rows.isEmpty {
-                        NovaText(text: "Takip için önce firma ekleyin.", style: .body)
+                        NovaText(text: RDLocalization.string("localizable.nova.module.tracking.takip.icin.once.firma.ekleyin.9497aff4", table: .localizable, fallback: "Takip için önce firma ekleyin."), style: .body)
                     } else {
                         // KKD zimmet henüz ayrı bir Formlar modülüne taşınıyor; o
                         // hazır olana kadar burada gösterilmiyor.
@@ -131,10 +131,10 @@ struct NovaModuleTrackingCard: View {
                                                 NovaText(text: summary, style: .meta)
                                             }
                                             if let day = row.nextOn {
-                                                NovaText(text: "Sonraki tarih: " + NovaStatisticsSnapshot.dayLabel(day), style: .meta)
+                                                NovaText(text: RDLocalization.string("localizable.nova.module.tracking.sonraki.tarih.fb1a7d91", table: .localizable, fallback: "Sonraki tarih: ") + NovaStatisticsSnapshot.dayLabel(day), style: .meta)
                                             }
                                         } else {
-                                            NovaText(text: "Bu modül şu anda kullanılamıyor", style: .meta)
+                                            NovaText(text: RDLocalization.string("localizable.nova.module.tracking.bu.modul.su.anda.kullanilamiyor.a7007cc8", table: .localizable, fallback: "Bu modül şu anda kullanılamıyor"), style: .meta)
                                         }
                                     }
                                     Spacer(minLength: 0)
@@ -149,7 +149,7 @@ struct NovaModuleTrackingCard: View {
                             NovaText(text: expanded ? "Daha az göster" : "Tüm süreçleri göster", style: .buttonSm)
                                 .frame(maxWidth: .infinity, minHeight: 44)
                         }
-                        NovaText(text: "Kayıt sayıları · Yaklaşan: 30 gün · " + NovaStatisticsSnapshot.dayLabel(snapshot.today), style: .micro)
+                        NovaText(text: RDLocalization.string("localizable.nova.module.tracking.kayit.sayilari.yaklasan.30.gun.46cb39f6", table: .localizable, fallback: "Kayıt sayıları · Yaklaşan: 30 gün · ") + NovaStatisticsSnapshot.dayLabel(snapshot.today), style: .micro)
                     }
                 } else {
                     ProgressView("Süreçler yükleniyor…").frame(maxWidth: .infinity)

@@ -47,7 +47,7 @@ struct NovaAnalysisItemSheet: View {
                 hero
                 if isEditable { controls }
                 if canWrite, canFile, section.isFileable, let onFile {
-                    NovaButton(label: "Firmaya Uygunsuzluk Olarak Ekle", symbol: "building.2", variant: .surface, action: onFile)
+                    NovaButton(label: RDLocalization.string("analysis.nova.analysis.sheets.firmaya.uygunsuzluk.olarak.ekle.0127c621", table: .analysis, fallback: "Firmaya Uygunsuzluk Olarak Ekle"), symbol: "building.2", variant: .surface, action: onFile)
                         .accessibilityIdentifier("analysis.finding.file")
                 }
                 scoreCard

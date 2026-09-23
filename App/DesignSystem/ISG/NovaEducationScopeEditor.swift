@@ -103,7 +103,7 @@ struct NovaEducationTopicsPopup: View {
     }
     private func groupSummary(_ group: String) -> String {
         let minutes = scope.topics.filter { $0.group == group }.reduce(0) { $0 + $1.instruction_minutes }
-        return "\(group) · \(groupName(group)) · \(minutes) dk"
+        return RDLocalization.format("localizable.nova.education.scope.editor.1.2.3.dk.ffd5515e", table: .localizable, fallback: "%1$@ · %2$@ · %3$@ dk", arguments: [String(describing: group), String(describing: groupName(group)), String(describing: minutes)])
     }
     private func groupName(_ group: String) -> String {
         [
@@ -171,15 +171,15 @@ struct NovaEducationTopicEditor: View {
             HStack(spacing: 10) {
                 Button { topic.instruction_minutes = max(0, topic.instruction_minutes - 10) } label: {
                     Image(systemName: "minus.circle").font(.system(size: 22))
-                }.accessibilityLabel("10 dakika azalt")
+                }.accessibilityLabel(RDLocalization.string("localizable.nova.education.scope.editor.10.dakika.azalt.614dc4c4", table: .localizable, fallback: "10 dakika azalt"))
                 TextField(RDLocalization.string("localizable.nova.education.topics.minutes", table: .localizable, fallback: "Dakika"), value: $topic.instruction_minutes, format: .number)
                     .keyboardType(.numberPad).multilineTextAlignment(.center).frame(width: 52)
                 Text("dk").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                 Button { topic.instruction_minutes += 10 } label: {
                     Image(systemName: "plus.circle").font(.system(size: 22))
-                }.accessibilityLabel("10 dakika artır")
+                }.accessibilityLabel(RDLocalization.string("localizable.nova.education.scope.editor.10.dakika.artir.366b6fd4", table: .localizable, fallback: "10 dakika artır"))
                 Spacer(minLength: 0)
-                Menu("Hızlı seç") {
+                Menu(RDLocalization.string("localizable.nova.education.scope.editor.hizli.sec.13697dbb", table: .localizable, fallback: "Hızlı seç")) {
                     ForEach([10, 20, 30, 40, 60], id: \.self) { minutes in
                         Button("\(minutes) dk") { topic.instruction_minutes = minutes }
                     }

@@ -839,7 +839,7 @@ struct ProfileView: View {
                         .buttonStyle(.plain).accessibilityIdentifier("profile.row.notebook")
                 }
                 Button { showActivity = true } label: {
-                    ProfileRow(icon: "clock.arrow.circlepath", title: "Aktivitem", detail: "Kullanım ve işlemler")
+                    ProfileRow(icon: "clock.arrow.circlepath", title: "Aktivitem", detail: RDLocalization.string("localizable.profile.view.kullanim.ve.islemler.de3c7eb1", table: .localizable, fallback: "Kullanım ve işlemler"))
                 }.buttonStyle(.plain).accessibilityIdentifier("profile.row.activity")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
@@ -848,8 +848,8 @@ struct ProfileView: View {
                 } label: {
                     ProfileRow(
                         icon: "gift",
-                        title: "Arkadaşını davet et",
-                        detail: "İkiniz de 7 gün Plus"
+                        title: RDLocalization.string("localizable.profile.view.arkadasini.davet.et.0084e0aa", table: .localizable, fallback: "Arkadaşını davet et"),
+                        detail: RDLocalization.string("localizable.profile.view.ikiniz.de.7.gun.plus.33b19c0e", table: .localizable, fallback: "İkiniz de 7 gün Plus")
                     )
                 }
                 .buttonStyle(.plain)

@@ -51,10 +51,10 @@ struct NovaCompanyLiveEditor: View {
                             fallback: "Tehlike sınıfı"), selection: $draft.hazardClass) {
                             ForEach(CompanyHazardClass.allCases) { value in Text(value.title).tag(value) }
                         }.font(NovaFont.font(.body))
-                        field("Adres", text: $draft.address, symbol: "mappin")
+                        field(RDLocalization.string("localizable.nova.company.visual.forms.adres.55c44314", table: .localizable, fallback: "Adres"), text: $draft.address, symbol: "mappin")
                         field(RDLocalization.string("localizable.company.picker.sheet.ilgili.kisi.c54dd4c6", table: .localizable,
                             fallback: "İlgili kişi"), text: $draft.contactPerson, symbol: "person")
-                        field("Departman / ekip", text: $draft.department, symbol: "person.3")
+                        field(RDLocalization.string("localizable.nova.company.visual.forms.departman.ekip.54e71d5f", table: .localizable, fallback: "Departman / ekip"), text: $draft.department, symbol: "person.3")
                     }
                 }
                 if let error { NovaHelpHint(text: error) }

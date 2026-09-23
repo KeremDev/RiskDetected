@@ -398,7 +398,7 @@ private struct NotebookContent: View {
         }
         .buttonStyle(.plain).disabled(blocked)
         .contextMenu {
-            Button { Task { await openOrganization(note.note_id) } } label: { Label("Checklist ve Etiketler", systemImage: "checklist") }
+            Button { Task { await openOrganization(note.note_id) } } label: { Label(RDLocalization.string("localizable.notebook.destination.checklist.ve.etiketler.c1c57e08", table: .localizable, fallback: "Checklist ve Etiketler"), systemImage: "checklist") }
             Button { reminderEditor = NotebookReminderEditor(title: note.title ?? "", note: note.note_id) } label: {
                 Label(RDLocalization.string("localizable.notebook.add.reminder", table: .localizable, fallback: "Hatırlatıcı Ekle"), systemImage: "bell.badge")
             }
@@ -446,7 +446,7 @@ private struct NotebookContent: View {
             if let occurrence = reminder.next_occurrence {
                 HStack(spacing: 8) {
                     Button { Task { await settleReminder("complete", reminder: reminder, occurrence: occurrence) } } label: { Label("Tamamla", systemImage: "checkmark") }
-                    Button { Task { await settleReminder("snooze", reminder: reminder, occurrence: occurrence) } } label: { Label("10 dk ertele", systemImage: "clock.arrow.circlepath") }
+                    Button { Task { await settleReminder("snooze", reminder: reminder, occurrence: occurrence) } } label: { Label(RDLocalization.string("localizable.notebook.destination.10.dk.ertele.b321119b", table: .localizable, fallback: "10 dk ertele"), systemImage: "clock.arrow.circlepath") }
                 }.font(.caption.bold()).buttonStyle(.bordered)
             }
         }
@@ -497,7 +497,7 @@ private struct NotebookContent: View {
                         }.pickerStyle(.menu).labelsHidden()
                     }.padding(16)
                     Divider().padding(.leading, 16)
-                    DatePicker("Tarih ve saat", selection: Binding(get: { reminderEditor?.dueAt ?? Date() }, set: { reminderEditor?.dueAt = $0 }),
+                    DatePicker(RDLocalization.string("localizable.notebook.destination.tarih.ve.saat.336c28ac", table: .localizable, fallback: "Tarih ve saat"), selection: Binding(get: { reminderEditor?.dueAt ?? Date() }, set: { reminderEditor?.dueAt = $0 }),
                                in: Date()..., displayedComponents: [.date, .hourAndMinute]).padding(16)
                 }
                 .background(RoundedRectangle(cornerRadius: 20).fill(NovaColorToken.surface.color(in: colorScheme)))
@@ -570,9 +570,9 @@ private struct NotebookContent: View {
                 } label: { Label(RDLocalization.string("localizable.notebook.remind", table: .localizable, fallback: "Hatırlat"), systemImage: "bell.badge") }
                     .disabled((editor?.version ?? 0) == 0)
                 Spacer()
-                Text("\((editor?.body ?? "").count) karakter").font(.caption2).foregroundStyle(NovaColorToken.textTertiary.color(in: colorScheme))
+                Text(RDLocalization.format("localizable.notebook.destination.character.count", table: .localizable, fallback: "%1$@ karakter", arguments: [String(describing: (editor?.body ?? "").count)])).font(.caption2).foregroundStyle(NovaColorToken.textTertiary.color(in: colorScheme))
                 if editor?.version ?? 0 > 0 && editor?.pending == nil {
-                    Button(role: .destructive) { confirmDelete = true } label: { Image(systemName: "trash") }.accessibilityLabel("Notu sil")
+                    Button(role: .destructive) { confirmDelete = true } label: { Image(systemName: "trash") }.accessibilityLabel(RDLocalization.string("localizable.notebook.destination.notu.sil.747d1fbd", table: .localizable, fallback: "Notu sil"))
                 }
             }
             .font(.system(size: 13, weight: .semibold)).buttonStyle(.borderless)

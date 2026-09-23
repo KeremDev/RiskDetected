@@ -118,13 +118,13 @@ import Supabase
     static func message(_ error: Error) -> String {
         if let e = error as? PostgrestError {
             switch e.message {
-            case "FEATURE_UNAVAILABLE": return "Yeni eğitim modülü bu hesap için henüz açılmadı."
-            case "VERSION_CONFLICT": return "Kayıt başka bir cihazda değişti. Kapatıp güncel kaydı açın; form taslağınız korunur."
-            case "TRAINING_DATE_INVALID", "LESSON_OVERLAP_OR_FUTURE": return "Ders saatleri çakışmamalı ve eğitimin tamamı geçmişte olmalı."
-            case "TRAINING_HAZARD_MISMATCH": return "Farklı tehlike sınıfındaki firmalar aynı eğitim dosyasında yer alamaz. Ayrı kayıt oluşturun."
-            case "PARTICIPANT_DUPLICATE": return "Bir personeli yalnız bir eğitim kapsamına ekleyin."
-            case "WORKPLACE_REQUIRED": return "Firmaya ait işyeri seçin."
-            case "TRAINER_INVALID": return "En az bir eğitici adı girin ve konu dağılımlarını kontrol edin."
+            case "FEATURE_UNAVAILABLE": return RDLocalization.string("localizable.nova.education.service.yeni.egitim.modulu.bu.hesap.icin.henuz.acilmadi.00350591", table: .localizable, fallback: "Yeni eğitim modülü bu hesap için henüz açılmadı.")
+            case "VERSION_CONFLICT": return RDLocalization.string("localizable.nova.education.service.kayit.baska.bir.cihazda.degisti.kapatip.guncel.k.58098051", table: .localizable, fallback: "Kayıt başka bir cihazda değişti. Kapatıp güncel kaydı açın; form taslağınız korunur.")
+            case "TRAINING_DATE_INVALID", "LESSON_OVERLAP_OR_FUTURE": return RDLocalization.string("localizable.nova.education.service.ders.saatleri.cakismamali.ve.egitimin.tamami.gec.d52bf5b0", table: .localizable, fallback: "Ders saatleri çakışmamalı ve eğitimin tamamı geçmişte olmalı.")
+            case "TRAINING_HAZARD_MISMATCH": return RDLocalization.string("localizable.nova.education.service.farkli.tehlike.sinifindaki.firmalar.ayni.egitim..88be15a2", table: .localizable, fallback: "Farklı tehlike sınıfındaki firmalar aynı eğitim dosyasında yer alamaz. Ayrı kayıt oluşturun.")
+            case "PARTICIPANT_DUPLICATE": return RDLocalization.string("localizable.nova.education.service.bir.personeli.yalniz.bir.egitim.kapsamina.ekleyi.d3ae9417", table: .localizable, fallback: "Bir personeli yalnız bir eğitim kapsamına ekleyin.")
+            case "WORKPLACE_REQUIRED": return RDLocalization.string("localizable.nova.education.service.firmaya.ait.isyeri.secin.39f044db", table: .localizable, fallback: "Firmaya ait işyeri seçin.")
+            case "TRAINER_INVALID": return RDLocalization.string("localizable.nova.education.service.en.az.bir.egitici.adi.girin.ve.konu.dagilimlarin.a0656fdb", table: .localizable, fallback: "En az bir eğitici adı girin ve konu dağılımlarını kontrol edin.")
             default: break
             }
         }

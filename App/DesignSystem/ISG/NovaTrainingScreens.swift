@@ -13,10 +13,10 @@ struct NovaTrainingHub: View {
         VStack(spacing: 8) {
             HStack {
                 NovaBackButton(action: onBack)
-                NovaText(text: "Eğitimler", style: .screenTitle)
+                NovaText(text: RDLocalization.string("localizable.nova.training.screens.egitimler.b7f2e2e3", table: .localizable, fallback: "Eğitimler"), style: .screenTitle)
                 Spacer()
                 if canWrite {
-                    NovaButton(label: "Eğitim Ekle", symbol: "plus", compact: true) {
+                    NovaButton(label: RDLocalization.string("localizable.nova.training.screens.egitim.ekle.a755e696", table: .localizable, fallback: "Eğitim Ekle"), symbol: "plus", compact: true) {
                         createRequest += 1
                     }
                     .accessibilityIdentifier("training.add.header")
@@ -105,30 +105,30 @@ struct NovaTrainingRegister: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 8) {
-                    NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
+                    NovaFilterField(label: "Firma", options: [.init(id: nil, title: RDLocalization.string("localizable.nova.training.screens.tum.firmalar.5b83def5", table: .localizable, fallback: "Tüm firmalar"))] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
                         selected: company?.uuidString, identifier: "training.company") { company = $0.flatMap(UUID.init(uuidString:)) }
                 }
-                NovaHelpHint(text: "Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz.")
+                NovaHelpHint(text: RDLocalization.string("localizable.nova.training.screens.gerceklesen.egitimi.ve.katilimcilarini.kaydedin..d89372f5", table: .localizable, fallback: "Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz."))
                 if let createMessage { NovaHelpHint(text: createMessage) }
                 trainingStats
                 NovaCard(padding: 12) {
-                    HStack { Image(systemName: "magnifyingglass"); TextField("Eğitim veya eğitmen ara…", text: $query) }
+                    HStack { Image(systemName: "magnifyingglass"); TextField(RDLocalization.string("localizable.nova.training.screens.egitim.veya.egitmen.ara.e5972c31", table: .localizable, fallback: "Eğitim veya eğitmen ara…"), text: $query) }
                 }
-                NovaFilterField(label: "Eğitim türü", options: [.init(id: nil, title: "Tüm eğitim türleri")] + NovaEducationScope.cycles.map { .init(id: $0.0, title: $0.1) },
+                NovaFilterField(label: RDLocalization.string("localizable.nova.training.screens.egitim.turu.1d83c7fd", table: .localizable, fallback: "Eğitim türü"), options: [.init(id: nil, title: RDLocalization.string("localizable.nova.training.screens.tum.egitim.turleri.eed447b6", table: .localizable, fallback: "Tüm eğitim türleri"))] + NovaEducationScope.cycles.map { .init(id: $0.0, title: $0.1) },
                     selected: cycleFilter.isEmpty ? nil : cycleFilter, identifier: "training.cycle") { cycleFilter = $0 ?? "" }
-                TextField("Tarih (YYYY-AA-GG)", text: $dateFilter).font(NovaFont.font(.meta))
-                Text("\(visible.count) eğitim").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+                TextField(RDLocalization.string("localizable.nova.training.screens.tarih.yyyy.aa.gg.d01f7dc7", table: .localizable, fallback: "Tarih (YYYY-AA-GG)"), text: $dateFilter).font(NovaFont.font(.meta))
+                Text(RDLocalization.format("localizable.nova.training.screens.1.egitim.07b9d9c8", table: .localizable, fallback: "%1$@ eğitim", arguments: [String(describing: visible.count)])).font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                 if pending {
-                    NovaHelpHint(text: "Önceki işlemin sonucu bekleniyor. Aynı kaydı güvenle tamamlayın.")
-                    NovaButton(label: "Bekleyen işlemi tamamla", symbol: "arrow.clockwise", isEnabled: canWrite && !loading) {
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.training.screens.onceki.islemin.sonucu.bekleniyor.ayni.kaydi.guve.840d8402", table: .localizable, fallback: "Önceki işlemin sonucu bekleniyor. Aynı kaydı güvenle tamamlayın."))
+                    NovaButton(label: RDLocalization.string("localizable.nova.training.screens.bekleyen.islemi.tamamla.8e8fc724", table: .localizable, fallback: "Bekleyen işlemi tamamla"), symbol: "arrow.clockwise", isEnabled: canWrite && !loading) {
                         Task { await retry() }
                     }
                 }
                 if let error { NovaHelpHint(text: error); Button("Yenile") { revision = UUID() } }
                 if loading { ProgressView().frame(maxWidth: .infinity) }
                 if !loading && error == nil && visible.isEmpty {
-                    NovaEmptyState(title: "Henüz eğitim kaydı yok",
-                        message: "Gerçekleşen eğitimi ekleyerek katılımcıları, süreleri ve eksik eğitim konularını personel bazında takip edebilirsiniz.")
+                    NovaEmptyState(title: RDLocalization.string("localizable.nova.training.screens.henuz.egitim.kaydi.yok.0cf4c592", table: .localizable, fallback: "Henüz eğitim kaydı yok"),
+                        message: RDLocalization.string("localizable.nova.training.screens.gerceklesen.egitimi.ekleyerek.katilimcilari.sure.26d67c9e", table: .localizable, fallback: "Gerçekleşen eğitimi ekleyerek katılımcıları, süreleri ve eksik eğitim konularını personel bazında takip edebilirsiniz."))
                 }
                 ForEach(visible) { session in
                     Button { editor = Editor(session: session) } label: {
@@ -149,9 +149,9 @@ struct NovaTrainingRegister: View {
                                 }.font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                                 Text(session.companies.map(\.company_name).joined(separator: " · ")).font(NovaFont.font(.meta)).lineLimit(2)
                                 if session.isLegacyPlan {
-                                    Text("Önceki plan · gerçekleştiği henüz doğrulanmadı").font(NovaFont.font(.meta)).foregroundStyle(.orange)
+                                    Text(RDLocalization.string("localizable.nova.training.screens.onceki.plan.gerceklestigi.henuz.dogrulanmadi.41c251b8", table: .localizable, fallback: "Önceki plan · gerçekleştiği henüz doğrulanmadı")).font(NovaFont.font(.meta)).foregroundStyle(.orange)
                                 } else if session.companies.allSatisfy({ $0.state == "cancelled" }) {
-                                    Text("Önceki iptal kaydı").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+                                    Text(RDLocalization.string("localizable.nova.training.screens.onceki.iptal.kaydi.c652154a", table: .localizable, fallback: "Önceki iptal kaydı")).font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                                 }
                             }.frame(maxWidth: .infinity, alignment: .leading)
                         }
@@ -190,10 +190,10 @@ struct NovaTrainingRegister: View {
     }
     private var trainingStats: some View {
         NovaMetricStrip(items: [
-            .init(id: "minutes", value: hours(trainingMinutes), label: "Eğitim saati", symbol: "clock", status: .neutral),
-            .init(id: "people", value: "\(trainedPeople.count)", label: "Eğitim alan", symbol: "person.2", status: .success),
-            .init(id: "person-minutes", value: hours(personMinutes), label: "Adam × saat", symbol: "person.badge.clock", status: .neutral),
-            .init(id: "missing", value: employeeTotal.map { String(max(0, $0 - trainedPeople.count)) } ?? "—", label: "Eğitimi eksik", symbol: "person.crop.circle.badge.exclamationmark", status: .warning)
+            .init(id: "minutes", value: hours(trainingMinutes), label: RDLocalization.string("localizable.nova.training.screens.egitim.saati.e609ca65", table: .localizable, fallback: "Eğitim saati"), symbol: "clock", status: .neutral),
+            .init(id: "people", value: "\(trainedPeople.count)", label: RDLocalization.string("localizable.nova.training.screens.egitim.alan.9b6e442b", table: .localizable, fallback: "Eğitim alan"), symbol: "person.2", status: .success),
+            .init(id: "person-minutes", value: hours(personMinutes), label: RDLocalization.string("localizable.nova.training.screens.adam.saat.5bf33e14", table: .localizable, fallback: "Adam × saat"), symbol: "person.badge.clock", status: .neutral),
+            .init(id: "missing", value: employeeTotal.map { String(max(0, $0 - trainedPeople.count)) } ?? "—", label: RDLocalization.string("localizable.nova.training.screens.egitimi.eksik.b6d8ae8f", table: .localizable, fallback: "Eğitimi eksik"), symbol: "person.crop.circle.badge.exclamationmark", status: .warning)
         ]).accessibilityIdentifier("training.stats")
     }
     @MainActor private func loadEmployeeTotal() async {
