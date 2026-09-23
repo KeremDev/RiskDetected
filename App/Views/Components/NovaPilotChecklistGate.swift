@@ -17,6 +17,21 @@ struct NovaPilotChecklistGate: View {
             initialCompany: initialCompany, headingOverride: headingOverride)
     }
 
+    /// The run detail and write replies leave the company name out. Without it
+    /// a company run reads as a standalone one and a failing answer cannot
+    /// open the company's nonconformity record, so fill it in here.
+    private func named(_ run: NovaChecklistRun) async -> NovaChecklistRun {
+        guard let company = run.companyID, run.companyName?.isEmpty ?? true else { return run }
+        var named = run
+        named.companyName = await NovaChecklistCompanyNames.shared.name(of: company, identity: identity)
+        return named
+    }
+
+    private func named(_ run: NovaChecklistRun?) async -> NovaChecklistRun? {
+        guard let run else { return nil }
+        return await named(run)
+    }
+
     private var client: NovaChecklistClient {
         .init(
             catalogue: { company in try await service.catalogue(identity, company: company) },
@@ -28,14 +43,14 @@ struct NovaPilotChecklistGate: View {
             assignments: { company in try await service.assignments(identity, company: company) },
             board: { request in try await service.board(identity, query: request) },
             companies: { try await NovaAnalysisWorkspace.companyOptions(identity: identity) },
-            detail: { run in try await service.detail(identity, run: run) },
+            detail: { run in try await named(service.detail(identity, run: run)) },
             startRun: { company, workplace, template, day, area, equipment, document in
-                try await service.startRun(identity, company: company, workplace: workplace,
+                try await named(service.startRun(identity, company: company, workplace: workplace,
                     template: template, startedOn: day, areaLabel: area,
-                    equipmentLabel: equipment, documentNumber: document)
+                    equipmentLabel: equipment, documentNumber: document))
             },
             answer: { company, draft in
-                do { return try await service.recordAnswer(identity, company: company, draft: draft) }
+                do { return try await named(service.recordAnswer(identity, company: company, draft: draft)) }
                 catch NovaChecklistFailure.unavailable {
                     try NovaChecklistOfflineQueue.shared.enqueue(identity, company: company, draft: draft)
                     return nil
@@ -59,14 +74,14 @@ struct NovaPilotChecklistGate: View {
                 return asset
             },
             submit: { company, run, revision in
-                try await service.submitRun(identity, company: company, run: run, expectedRevision: revision)
+                try await named(service.submitRun(identity, company: company, run: run, expectedRevision: revision))
             },
             cancel: { company, run, revision in
-                try await service.cancelRun(identity, company: company, run: run, expectedRevision: revision)
+                try await named(service.cancelRun(identity, company: company, run: run, expectedRevision: revision))
             },
             revise: { company, run, revision, day in
-                try await service.reviseRun(identity, company: company, run: run,
-                                            expectedRevision: revision, startedOn: day)
+                try await named(service.reviseRun(identity, company: company, run: run,
+                                                  expectedRevision: revision, startedOn: day))
             },
             draftTemplate: { company, title in
                 try await service.draftTemplate(identity, company: company, title: title)
@@ -115,5 +130,22 @@ struct NovaPilotChecklistGate: View {
                 return (NovaChecklistOfflineQueue.shared.count(identity),
                         NovaChecklistOfflineQueue.shared.conflictCount(identity))
             })
+    }
+}
+
+/// Company names for checklist runs, loaded once per account and reloaded when
+/// a run points at a company not seen yet.
+private actor NovaChecklistCompanyNames {
+    static let shared = NovaChecklistCompanyNames()
+    private var names: [UUID: String] = [:]
+    private var owner: NovaSessionIdentity?
+
+    func name(of company: UUID, identity: NovaSessionIdentity) async -> String? {
+        if owner != identity { names = [:]; owner = identity }
+        if let name = names[company] { return name }
+        guard let options = try? await NovaAnalysisWorkspace.companyOptions(identity: identity) else { return nil }
+        guard owner == identity else { return nil }
+        for option in options { names[option.id] = option.name }
+        return names[company]
     }
 }

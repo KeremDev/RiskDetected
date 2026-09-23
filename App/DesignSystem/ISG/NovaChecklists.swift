@@ -109,7 +109,9 @@ struct NovaChecklistAnswer: Identifiable, Equatable {
 struct NovaChecklistRun: Identifiable, Equatable {
     let id: UUID
     let companyID: UUID?
-    let companyName: String?
+    /// The run detail and write replies carry no company name; the gate fills
+    /// it in from the expert's companies.
+    var companyName: String?
     let workplaceID: UUID?
     let workplaceName: String?
     let templateCode: String
