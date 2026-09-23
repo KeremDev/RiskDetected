@@ -75,6 +75,9 @@ struct NovaTrainingRegister: View {
         let created: Bool
     }
     private var service: NovaTrainingSessionService { .init(identity: identity) }
+    private func editable(_ session: NovaTrainingSession) -> Bool {
+        canWrite && session.companies.allSatisfy { writableCompanies.contains($0.company_id) }
+    }
     private var visible: [NovaTrainingSession] {
         sessions.filter { (company == nil || $0.companies.contains { $0.company_id == company }) &&
             (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) || $0.trainer.localizedCaseInsensitiveContains(query)) &&
@@ -135,7 +138,9 @@ struct NovaTrainingRegister: View {
                                     Image(systemName: "graduationcap")
                                     Text(session.title).font(NovaFont.font(.cardTitle))
                                     Spacer()
-                                    Image(systemName: "chevron.right").font(NovaFont.font(.meta))
+                                    Label(editable(session) ? "Düzenle" : "Aç", systemImage: editable(session) ? "pencil" : "chevron.right")
+                                        .font(NovaFont.font(.meta))
+                                        .foregroundStyle(NovaFont.secondaryInk)
                                 }
                                 HStack {
                                     Label(session.held_on, systemImage: "calendar")
@@ -171,12 +176,12 @@ struct NovaTrainingRegister: View {
                 // five-step editor and its own back/accordion chrome.
                 NovaEducationEntry(identity: identity, companies: companies,
                     initialCompany: company, original: value.session,
-                    canWrite: canWrite && (value.session?.companies.allSatisfy { writableCompanies.contains($0.company_id) } ?? !writableCompanies.isEmpty),
+                    canWrite: value.session.map(editable) ?? (canWrite && !writableCompanies.isEmpty),
                     writableCompanies: writableCompanies,
                     onSaved: { session in
                         certificatePageAfterEditor = .init(session: session, created: value.session == nil)
                         editor = nil
-                    })
+                    }, onDeleted: { editor = nil })
             }
             .novaFullScreenCover(item: $certificatePage, onDismiss: { revision = UUID() }) { page in
                 NovaEducationCertificatesPage(identity: identity, session: page.session,

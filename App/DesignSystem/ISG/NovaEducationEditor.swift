@@ -11,6 +11,7 @@ struct NovaEducationEntry: View {
     let canWrite: Bool
     let writableCompanies: Set<UUID>
     let onSaved: (NovaTrainingSession) -> Void
+    var onDeleted: (() -> Void)? = nil
     @State private var context: NovaEducationContext?
     @State private var error: String?
     @Environment(\.dismiss) private var dismiss
@@ -29,7 +30,7 @@ struct NovaEducationEntry: View {
                 // guided editor and remain explicitly marked as migrated.
                 NovaEducationEditor(identity: identity, companies: companies, initialCompany: initialCompany,
                     original: context.row ?? original, context: context, canWrite: canWrite, writableCompanies: writableCompanies,
-                    onSaved: onSaved)
+                    onSaved: onSaved, onDeleted: onDeleted)
             } else {
                 NovaPageSurface {
                     VStack(spacing: 16) {
@@ -69,6 +70,7 @@ struct NovaEducationEditor: View {
     let canWrite: Bool
     let writableCompanies: Set<UUID>
     let onSaved: (NovaTrainingSession) -> Void
+    var onDeleted: (() -> Void)? = nil
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
@@ -79,6 +81,8 @@ struct NovaEducationEditor: View {
     @State private var people: [UUID: [NovaEmployeeRow]] = [:]
     @State private var ready = false
     @State private var busy = false
+    @State private var deleting = false
+    @State private var deleteConfirmation = false
     @State private var hasCompletedSave = false
     @State private var error: String?
     @State private var notice: String?
@@ -219,6 +223,12 @@ struct NovaEducationEditor: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
+        .alert("Eğitim silinsin mi?", isPresented: $deleteConfirmation) {
+            Button("Eğitimi sil", role: .destructive) { Task { await deleteTraining() } }
+            Button("Vazgeç", role: .cancel) {}
+        } message: {
+            Text("Eğitim tüm seçili firmaların ve katılımcıların güncel kayıtlarından kaldırılır. Önceki sürümler geçmişte korunur.")
+        }
     }
 
     private var header: some View {
@@ -227,7 +237,7 @@ struct NovaEducationEditor: View {
             VStack(alignment: .leading, spacing: 2) {
                 NovaText(text: original == nil
                     ? RDLocalization.string("localizable.nova.education.title.new", table: .localizable, fallback: "Eğitim Ekle")
-                    : RDLocalization.string("localizable.nova.education.title.edit", table: .localizable, fallback: "Eğitim Ayrıntısı"),
+                    : canWrite ? "Eğitimi Düzenle" : "Eğitim Ayrıntısı",
                     style: .screenTitle)
                 NovaText(text: RDLocalization.string("localizable.nova.education.subtitle", table: .localizable,
                     fallback: "Gerçekleşen eğitim · kişi bazlı belge"), style: .metaQuiet)
@@ -877,12 +887,45 @@ struct NovaEducationEditor: View {
         VStack(alignment: .leading, spacing: 8) {
             NovaText(text: "Her firma/işyeri seçiminden en az bir katılımcı seçin. Aynı kişi eğitimde bir kez yer alabilir.", style: .metaQuiet)
             if let summary = sectionSummary(.participants) { NovaText(text: summary, style: .bodyStrong) }
+            if original != nil {
+                ForEach(draft.scopes) { scope in
+                    if !scope.participants.isEmpty {
+                        NovaCard(padding: 12) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                NovaText(text: scope.workplace_name ?? scope.company_name ?? "Firma", style: .bodyStrong)
+                                ForEach(scope.participants) { person in
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "person.crop.circle")
+                                            .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                                        NovaText(text: person.name ?? "Personel", style: .body)
+                                        Spacer(minLength: 4)
+                                        Button("Çıkar", role: .destructive) {
+                                            removeParticipant(person.id, from: scope.id)
+                                        }
+                                        .font(NovaFont.font(.meta))
+                                        .accessibilityIdentifier("education.participant.remove.\(person.id)")
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        NovaHelpHint(text: "\(scope.workplace_name ?? scope.company_name ?? "Firma") için katılımcı kalmadı. Yeni bir kişi seçin veya bu firma/işyerini eğitimden kaldırın.")
+                    }
+                }
+            }
             NovaButton(label: "Katılımcıları düzenle", symbol: "person.3", variant: .surface) {
                 participantCompany = nil
                 participantDepartment = ""; participantJob = ""; selectedParticipantsOnly = false
                 showingParticipants = true
             }
         }.disabled(!canWrite)
+    }
+
+    private func removeParticipant(_ personID: UUID, from scopeID: UUID) {
+        guard let index = draft.scopes.firstIndex(where: { $0.id == scopeID }) else { return }
+        draft.scopes[index].participants.removeAll { $0.id == personID }
+        validationStep = nil
+        validationMessage = nil
     }
 
     private var participantsPicker: some View {
@@ -1081,8 +1124,8 @@ struct NovaEducationEditor: View {
 
     private var saveButton: some View {
         VStack(spacing: 8) {
-            NovaButton(label: RDLocalization.string("localizable.nova.education.save", table: .localizable, fallback: "Gerçekleşen eğitimi kaydet"),
-                symbol: "checkmark", variant: .primary, isLoading: busy) { submitEducation() }
+            NovaButton(label: original == nil ? "Gerçekleşen eğitimi kaydet" : "Değişiklikleri kaydet",
+                symbol: "checkmark", variant: .primary, isLoading: busy && !deleting) { submitEducation() }
                 .disabled(!canWrite || busy || pending || !ready)
                 .accessibilityIdentifier("education.save")
             // The draft is already autosaved on every edit — this button
@@ -1093,6 +1136,12 @@ struct NovaEducationEditor: View {
                 symbol: "tray.and.arrow.down", variant: .surface) {
                 try? service.preserve(draft); dismiss()
             }.disabled(!canWrite || busy).accessibilityIdentifier("education.savedraft")
+            if saved != nil {
+                NovaButton(label: "Eğitimi sil", symbol: "trash", variant: .danger,
+                    isEnabled: canWrite && !busy && !pending, isLoading: deleting) {
+                    deleteConfirmation = true
+                }.accessibilityIdentifier("education.delete")
+            }
         }
     }
 
@@ -1248,6 +1297,7 @@ struct NovaEducationEditor: View {
             syncTemplateFromScopes()
             selectedCycle = (original != nil || restoredDraft || pending) ? (draft.scopes.first?.cycle ?? (draft.title.isEmpty ? "" : template.cycle)) : ""
             ready = true
+            if original != nil { currentStep = .review }
             if original == nil, !restoredDraft, !pending, draft.scopes.isEmpty,
                let initialCompany, context.workplaces.contains(where: { $0.company_id == initialCompany }) {
                 showingCompanies = true
@@ -1453,9 +1503,30 @@ struct NovaEducationEditor: View {
                     busy = true; defer { busy = false }
                     _ = try await service.save(pendingDraft); pending = false
                     notice = RDLocalization.string("localizable.nova.education.notice.curriculumsaved", table: .localizable, fallback: "Firma müfredatı kaydedildi.")
+                } else if pendingDraft.action == "delete" {
+                    await deleteTraining(pendingDraft)
                 } else { draft = pendingDraft; pending = false; await save() }
             }
         }
         catch { self.error = NovaEducationService.message(error) }
+    }
+
+    private func deleteTraining(_ pendingDraft: NovaEducationDraft? = nil) async {
+        guard let saved, canWrite, !busy else { return }
+        var removal = NovaEducationDraft()
+        removal.action = "delete"
+        removal.id = saved.id
+        removal.expected_version = saved.version
+        busy = true; deleting = true; error = nil
+        defer { busy = false; deleting = false }
+        do {
+            _ = try await service.save(pendingDraft ?? removal)
+            hasCompletedSave = true
+            pending = false
+            if let onDeleted { onDeleted() } else { dismiss() }
+        } catch {
+            self.error = NovaEducationService.message(error)
+            pending = (try? service.pending()) != nil
+        }
     }
 }
