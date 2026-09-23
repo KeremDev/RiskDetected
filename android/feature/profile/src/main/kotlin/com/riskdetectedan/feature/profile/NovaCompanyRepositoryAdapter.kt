@@ -17,8 +17,12 @@ internal suspend fun CompanyRepository.loadNovaOwnedCompanies(includeArchived: B
 internal fun Company.toNovaOwnedCompany(): NovaOwnedCompany {
     // Do not use Company's legacy unknown-to-medium fallback for this new projection.
     val hazard = CompanyHazardClass.entries.firstOrNull { it.id == hazardClassId } ?: throw NovaCompanyReadFailure()
+    // Filled profile fields out of eight, as the iOS list shows them.
+    val progress = listOf(address, city, phone, naceCode, workplaceRegistryNo, department, contactPerson, defaultResponsible)
+        .count { !it.isNullOrBlank() }
     return NovaOwnedCompany(canonicalCompanyUUID(id), canonicalCompanyUUID(userId), name,
-        listOfNotNull(address?.trim()?.takeIf { it.isNotEmpty() }, hazard.title).joinToString(" · "), isArchived)
+        listOfNotNull(address?.trim()?.takeIf { it.isNotEmpty() }, hazard.title).joinToString(" · "), isArchived,
+        progressCompleted = progress, progressTotal = 8, logoPath = logoPath)
 }
 
 private fun canonicalCompanyUUID(raw: String): UUID {

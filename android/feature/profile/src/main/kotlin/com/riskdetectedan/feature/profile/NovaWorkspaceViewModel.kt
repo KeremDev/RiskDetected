@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.data.company.*
 import com.riskdetectedan.core.designsystem.isg.*
+import androidx.compose.ui.graphics.asImageBitmap
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -45,6 +46,13 @@ internal class NovaWorkspaceViewModel @Inject constructor(private val repository
         if (state.value.scope != scope || !state.value.canWrite) throw NovaPersonnelFailure(NovaPersonnelFailure.Kind.denied)
     }
     suspend fun loadCompanies(archived: Boolean) = companies.loadNovaOwnedCompanies(archived)
+    /** A company's stored logo for its list row; an unreadable one keeps the initials. */
+    suspend fun loadLogo(path: String?): androidx.compose.ui.graphics.ImageBitmap? {
+        val bytes = (companies.downloadLogo(path ?: return null) as? com.riskdetectedan.core.common.RdResult.Success)?.value ?: return null
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+        }
+    }
     fun start() {
         if (observer != null) return
         adopt(repository.workspaceIdentityNow())

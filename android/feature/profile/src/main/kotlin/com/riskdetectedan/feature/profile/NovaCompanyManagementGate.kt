@@ -48,7 +48,8 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
             } ?: NovaPageSurface {
                 Column {
                     Box(Modifier.weight(1f)) {
-                        NovaCompanyDestination(state.host, workspace::loadCompanies, includeArchived = true, onSelect = workspace::select, onBack = close)
+                        NovaCompanyDestination(state.host, workspace::loadCompanies, includeArchived = true, onSelect = workspace::select, onBack = close,
+                            loadLogo = { _, path -> workspace.loadLogo(path) })
                     }
                     Box(Modifier.padding(18.dp)) { WorkspaceAction("Firma ekle / düzenle", Icons.Outlined.Business) { legacy = true } }
                 }

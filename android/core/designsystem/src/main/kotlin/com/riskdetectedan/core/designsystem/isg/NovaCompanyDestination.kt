@@ -9,7 +9,8 @@ import java.util.UUID
 /** The caller injects the existing repository adapter; this module knows no SDK or endpoint. */
 @Composable
 fun NovaCompanyDestination(host: NovaSessionHost, loadCompanies: suspend (Boolean) -> List<NovaOwnedCompany>,
-                           includeArchived: Boolean = false, onSelect: (UUID) -> Unit, onBack: () -> Unit) {
+                           includeArchived: Boolean = false, onSelect: (UUID) -> Unit, onBack: () -> Unit,
+                           loadLogo: NovaCompanyLogoLoader? = null) {
     var state by remember { mutableStateOf(NovaCompanyListState()) }
     var refresh by remember { mutableStateOf(UUID.randomUUID()) }
     val currentHost by rememberUpdatedState(host)
@@ -33,7 +34,9 @@ fun NovaCompanyDestination(host: NovaSessionHost, loadCompanies: suspend (Boolea
         }
     }
     key(epoch) { // Reset rememberSaveable search/focus when the account/permission scope changes.
-    NovaCompaniesScreen(companies = content.rows.map { NovaCompanyItem(it.id.toString(), it.name, it.detail) },
+    NovaCompaniesScreen(companies = content.rows.map {
+            NovaCompanyItem(it.id.toString(), it.name, it.detail, it.progressCompleted, it.progressTotal, it.logoPath)
+        }, loadLogo = loadLogo,
         isLoading = content.phase == NovaCompanyListPhase.loading || content.phase == NovaCompanyListPhase.idle,
         error = if (content.phase == NovaCompanyListPhase.failed) "Firmalar yüklenemedi. Lütfen tekrar deneyin." else null,
         isOwnedList = true,

@@ -3,7 +3,8 @@ package com.riskdetectedan.core.designsystem.isg
 import java.util.UUID
 
 /** Service-authorized display data; defensive ownership checks are not backend authorization. */
-data class NovaOwnedCompany(val id: UUID, val ownerID: UUID, val name: String, val detail: String, val isArchived: Boolean)
+data class NovaOwnedCompany(val id: UUID, val ownerID: UUID, val name: String, val detail: String, val isArchived: Boolean,
+                            val progressCompleted: Int = 0, val progressTotal: Int = 8, val logoPath: String? = null)
 enum class NovaCompanyListPhase { idle, loading, loaded, failed }
 data class NovaCompanyListContent(val phase: NovaCompanyListPhase, val requestID: UUID?, val rows: List<NovaOwnedCompany>, val includeArchived: Boolean = false) {
     companion object { val Idle = NovaCompanyListContent(NovaCompanyListPhase.idle, null, emptyList()) }
