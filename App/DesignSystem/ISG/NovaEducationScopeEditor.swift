@@ -127,6 +127,7 @@ struct NovaEducationTopicsPopup: View {
 struct NovaEducationTopicEditor: View {
     @Binding var topic: NovaEducationTopic
     let removable: Bool
+    @Environment(\.colorScheme) private var scheme
     /// Restored when the checkbox is switched back on after being switched
     /// off — switching it off just zeroes the minutes rather than deleting
     /// the topic, so a session that only covered part of the curriculum
@@ -142,26 +143,30 @@ struct NovaEducationTopicEditor: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-            // A compact checkbox, not a full-size iOS switch — this row
-            // repeats up to ~20 times on screen, so the control needs to
-            // read as a small "seçim kutusu", not a row of pill switches.
-            Button { includedBinding.wrappedValue.toggle() } label: {
-                Image(systemName: includedBinding.wrappedValue ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 18)).foregroundStyle(includedBinding.wrappedValue ? Color.accentColor : NovaFont.secondaryInk)
-            }.buttonStyle(NovaRowPressStyle()).accessibilityLabel(
-                RDLocalization.string("localizable.nova.education.topics.included", table: .localizable, fallback: "Bu konu bu eğitimde işlendi"))
+            HStack(spacing: 10) {
+                Button { includedBinding.wrappedValue.toggle() } label: {
+                    Label(includedBinding.wrappedValue ? "Seçildi" : "Eğitime ekle",
+                        systemImage: includedBinding.wrappedValue ? "checkmark.square.fill" : "square")
+                        .font(NovaFont.font(.bodyStrong))
+                        .foregroundStyle(includedBinding.wrappedValue ? NovaColorToken.accentInk.color(in: scheme) : NovaFont.secondaryInk)
+                        .frame(minHeight: 40)
+                }.buttonStyle(NovaRowPressStyle())
+                    .accessibilityLabel(RDLocalization.string("localizable.nova.education.topics.included",
+                        table: .localizable, fallback: "Bu konu bu eğitimde işlendi"))
+                    .accessibilityValue(includedBinding.wrappedValue ? "Seçildi" : "Seçilmedi")
+                Spacer(minLength: 0)
+                if removable {
+                    Button { remove() } label: { Image(systemName: "trash").font(.system(size: 15)).frame(width: 40, height: 40) }
+                        .foregroundStyle(NovaColorToken.statusDangerInk.color(in: scheme))
+                        .accessibilityLabel(RDLocalization.string("localizable.nova.education.topics.removetopic", table: .localizable, fallback: "Kaldır"))
+                }
+            }
             if topic.group == "G4" || topic.parent_code != nil || topic.code.hasPrefix("CUSTOM") {
                 TextField(RDLocalization.string("localizable.nova.education.topics.topictitle", table: .localizable, fallback: "Konu başlığı"), text: $topic.title, axis: .vertical)
                     .lineLimit(2...3)
             } else {
                 Text(topic.title).font(NovaFont.font(.body)).fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            if removable {
-                Button { remove() } label: { Image(systemName: "trash").font(.system(size: 13)) }.foregroundStyle(.red)
-                    .accessibilityLabel(RDLocalization.string("localizable.nova.education.topics.removetopic", table: .localizable, fallback: "Kaldır"))
-            }
             }
             HStack(spacing: 10) {
                 Button { topic.instruction_minutes = max(0, topic.instruction_minutes - 10) } label: {
@@ -179,7 +184,10 @@ struct NovaEducationTopicEditor: View {
                         Button("\(minutes) dk") { topic.instruction_minutes = minutes }
                     }
                 }.font(NovaFont.font(.meta))
-            }.padding(.leading, 26)
-        }.padding(.vertical, 8)
+            }
+        }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(
+                includedBinding.wrappedValue ? NovaColorToken.accent.color(in: scheme) : NovaColorToken.border.color(in: scheme), lineWidth: 1))
     }
 }

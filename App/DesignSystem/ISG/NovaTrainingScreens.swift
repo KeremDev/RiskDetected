@@ -66,7 +66,14 @@ struct NovaTrainingRegister: View {
     @State private var initializedFilter = false
     @State private var employeeTotal: Int?
     @State private var editor: Editor?
+    @State private var certificatePage: CertificatePage?
+    @State private var certificatePageAfterEditor: CertificatePage?
     private struct Editor: Identifiable { let id = UUID(); let session: NovaTrainingSession? }
+    private struct CertificatePage: Identifiable {
+        let id = UUID()
+        let session: NovaTrainingSession
+        let created: Bool
+    }
     private var service: NovaTrainingSessionService { .init(identity: identity) }
     private var visible: [NovaTrainingSession] {
         sessions.filter { (company == nil || $0.companies.contains { $0.company_id == company }) &&
@@ -153,13 +160,27 @@ struct NovaTrainingRegister: View {
                 requestCreate()
             }
             .refreshable { revision = UUID() }
-            .novaFullScreenCover(item: $editor, onDismiss: { revision = UUID() }) { value in
+            .novaFullScreenCover(item: $editor, onDismiss: {
+                revision = UUID()
+                if let next = certificatePageAfterEditor {
+                    certificatePageAfterEditor = nil
+                    certificatePage = next
+                }
+            }) { value in
                 // A full page, not a popup: every role receives the same
                 // five-step editor and its own back/accordion chrome.
                 NovaEducationEntry(identity: identity, companies: companies,
                     initialCompany: company, original: value.session,
                     canWrite: canWrite && (value.session?.companies.allSatisfy { writableCompanies.contains($0.company_id) } ?? !writableCompanies.isEmpty),
-                    writableCompanies: writableCompanies)
+                    writableCompanies: writableCompanies,
+                    onSaved: { session in
+                        certificatePageAfterEditor = .init(session: session, created: value.session == nil)
+                        editor = nil
+                    })
+            }
+            .novaFullScreenCover(item: $certificatePage, onDismiss: { revision = UUID() }) { page in
+                NovaEducationCertificatesPage(identity: identity, session: page.session,
+                    canIssue: canWrite, showSavedCelebration: true, created: page.created)
             }
     }
     private var trainingStats: some View {

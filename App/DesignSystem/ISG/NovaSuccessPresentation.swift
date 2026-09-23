@@ -8,6 +8,7 @@ enum NovaSuccessMessage {
     static let personnelUpdated = "Personel bilgileri başarıyla güncellendi!"
     static let personnelArchived = "Personel başarıyla arşivlendi!"
     static let findingCreated = "Uygunsuzluk başarıyla eklendi!"
+    static let trainingCreated = "Eğitim başarıyla eklendi!"
     static let trainingSaved = "Eğitim başarıyla kaydedildi!"
     static let emergencyPlanSaved = "Acil durum planı başarıyla kaydedildi!"
     static let periodicInspectionSaved = "Periyodik kontrol başarıyla kaydedildi!"

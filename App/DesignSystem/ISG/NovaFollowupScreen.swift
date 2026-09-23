@@ -148,12 +148,22 @@ struct NovaFollowupSummaryCard: View {
 private struct NovaFollowupEducation: View {
     let identity: NovaSessionIdentity; let session: UUID?; let company: UUID; let canWrite: Bool
     @State private var context: NovaEducationContext?
+    @State private var savedCertificate: NovaTrainingSession?
     @State private var companies: [NovaPilotCompanySummary] = []
     @State private var writableCompanies: Set<UUID> = []
     @State private var failed = false
     var body: some View {
         Group {
-            if let context { NovaEducationEditor(identity: identity, companies: companies, initialCompany: company, original: context.row, context: context, canWrite: canWrite && (context.row?.companies.allSatisfy { writableCompanies.contains($0.company_id) } ?? false), writableCompanies: writableCompanies) }
+            if let savedCertificate {
+                NovaEducationCertificatesPage(identity: identity, session: savedCertificate,
+                    canIssue: canWrite, showSavedCelebration: true)
+            } else if let context {
+                NovaEducationEditor(identity: identity, companies: companies, initialCompany: company,
+                    original: context.row, context: context,
+                    canWrite: canWrite && (context.row?.companies.allSatisfy { writableCompanies.contains($0.company_id) } ?? false),
+                    writableCompanies: writableCompanies,
+                    onSaved: { savedCertificate = $0 })
+            }
             else if failed { NovaText(text: "Eğitim açılamadı. Eğitimler listesinden yeniden deneyin.") }
             else { ProgressView("Eğitim yükleniyor…") }
         }.task {

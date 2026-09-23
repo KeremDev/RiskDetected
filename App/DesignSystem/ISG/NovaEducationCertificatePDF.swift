@@ -135,6 +135,220 @@ struct NovaEducationPDFFile: FileDocument {
 }
 
 #if !EDUCATION_RENDER_TEST
+/// The destination after saving a training. Each participant has one card;
+/// certificates are issued and rendered here without keeping the editor open.
+struct NovaEducationCertificatesPage: View {
+    let identity: NovaSessionIdentity
+    let session: NovaTrainingSession
+    let canIssue: Bool
+    var showSavedCelebration = false
+    var created = false
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var scheme
+    @StateObject private var successStore = NovaSuccessStore()
+    @State private var didCelebrate = false
+    @State private var known: [NovaEducationContext.Certificate] = []
+    @State private var certificateEnabled = false
+    @State private var ready: [String: Prepared] = [:]
+    @State private var working = Set<String>()
+    @State private var failures: [String: String] = [:]
+    @State private var loading = false
+    @State private var pageError: String?
+    @State private var preview: Preview?
+    @State private var exportFile: NovaEducationPDFFile?
+    @State private var exportName = "Eğitim sertifikası"
+    @State private var exporting = false
+
+    private struct Target: Identifiable {
+        let scope: UUID
+        let person: UUID
+        let name: String
+        let company: String
+        var id: String { "\(scope.uuidString):\(person.uuidString)" }
+    }
+    private struct Prepared { let url: URL; let number: String; let revision: Int }
+    private struct Preview: Identifiable { let id = UUID(); let url: URL }
+    private var targets: [Target] {
+        (session.education?.scopes ?? []).flatMap { scope in
+            scope.participants.map { person in
+                Target(scope: scope.id, person: person.id, name: person.name ?? "Personel",
+                    company: scope.workplace_name ?? scope.company_name ?? "Firma")
+            }
+        }
+    }
+
+    var body: some View {
+        NovaPageSurface {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    NovaBackButton { dismiss() }
+                    VStack(alignment: .leading, spacing: 2) {
+                        NovaText(text: "Sertifikalar", style: .screenTitle)
+                        NovaText(text: session.title, style: .metaQuiet)
+                    }
+                    Spacer(minLength: 0)
+                }.padding(.horizontal, 20).padding(.top, 12)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        NovaText(text: "\(targets.count) kişisel eğitim belgesi", style: .bodyStrong)
+                        if let pageError {
+                            NovaCard(padding: 14) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    NovaText(text: pageError, style: .metaQuiet,
+                                        color: NovaColorToken.statusDangerInk.color(in: scheme))
+                                    Button("Yeniden dene") { Task { await load() } }
+                                        .font(NovaFont.font(.bodyStrong))
+                                }
+                            }
+                        }
+                        if loading && known.isEmpty { ProgressView("Sertifikalar hazırlanıyor…") }
+                        ForEach(targets) { target in certificateCard(target) }
+                    }.padding(.horizontal, 20).padding(.bottom, novaTabBarInset)
+                }
+            }
+        }
+        .task {
+            if showSavedCelebration && !didCelebrate {
+                didCelebrate = true
+                successStore.show(created ? NovaSuccessMessage.trainingCreated : NovaSuccessMessage.trainingSaved)
+            }
+            await load()
+        }
+        .overlay { NovaSuccessOverlay(store: successStore) }
+        .sheet(item: $preview) { NovaEducationPDFPreview(url: $0.url) }
+        .fileExporter(isPresented: $exporting, document: exportFile, contentType: .pdf,
+            defaultFilename: exportName) { outcome in
+            if case .failure(let error) = outcome { pageError = error.localizedDescription }
+        }
+        .accessibilityIdentifier("education.certificates.page")
+    }
+
+    private func certificateCard(_ target: Target) -> some View {
+        let document = ready[target.id]
+        return NovaCard(padding: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "doc.text").font(.system(size: 22))
+                        .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                    VStack(alignment: .leading, spacing: 3) {
+                        NovaText(text: target.name, style: .cardTitle)
+                        NovaText(text: target.company, style: .metaQuiet)
+                    }
+                    Spacer(minLength: 0)
+                }
+                if let document {
+                    NovaText(text: "Belge no: \(document.number)", style: .metaQuiet)
+                    HStack(spacing: 8) {
+                        action("Görüntüle", symbol: "eye") { preview = .init(url: document.url) }
+                        action("İndir", symbol: "arrow.down.to.line") { download(document) }
+                        ShareLink(item: document.url) {
+                            actionLabel("Paylaş", symbol: "square.and.arrow.up")
+                        }.buttonStyle(NovaRowPressStyle())
+                            .accessibilityIdentifier("education.certificate.share.\(target.id)")
+                    }
+                    let versions = known.filter { $0.scope_id == target.scope && $0.person_id == target.person }
+                        .sorted { $0.revision > $1.revision }
+                    if versions.count > 1 {
+                        Menu("Belge sürümleri") {
+                            ForEach(versions) { version in
+                                Button("Revizyon \(version.revision)") { Task { await openVersion(version) } }
+                            }
+                        }.font(NovaFont.font(.meta))
+                    }
+                } else if working.contains(target.id) {
+                    Label("Sertifika hazırlanıyor…", systemImage: "clock")
+                        .font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+                } else {
+                    NovaText(text: failures[target.id] ?? "Sertifika bekleniyor.", style: .metaQuiet,
+                        color: NovaColorToken.statusDangerInk.color(in: scheme))
+                    if canIssue && certificateEnabled {
+                        Button("Tekrar dene") { Task { await prepare(target) } }
+                            .font(NovaFont.font(.bodyStrong))
+                    }
+                }
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }.accessibilityIdentifier("education.certificate.\(target.id)")
+    }
+
+    private func action(_ title: String, symbol: String, perform: @escaping () -> Void) -> some View {
+        Button(action: perform) { actionLabel(title, symbol: symbol) }
+            .buttonStyle(NovaRowPressStyle())
+    }
+    private func actionLabel(_ title: String, symbol: String) -> some View {
+        VStack(spacing: 5) {
+            Image(systemName: symbol).font(.system(size: 20, weight: .medium))
+            Text(title).font(NovaFont.font(.meta))
+        }.frame(maxWidth: .infinity).frame(minHeight: 58)
+            .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
+            .accessibilityLabel(title)
+    }
+    private func download(_ document: Prepared) {
+        do {
+            exportFile = .init(data: try Data(contentsOf: document.url))
+            exportName = document.number
+            exporting = true
+        } catch { pageError = error.localizedDescription }
+    }
+    private func load() async {
+        guard !loading else { return }
+        loading = true; pageError = nil
+        do {
+            let context = try await NovaEducationService(identity: identity).context(id: session.id)
+            known = context.certificates
+            certificateEnabled = context.certificate_enabled
+        } catch {
+            pageError = NovaEducationService.message(error)
+            loading = false
+            return
+        }
+        loading = false
+        for target in targets where ready[target.id] == nil { await prepare(target) }
+    }
+    private func prepare(_ target: Target) async {
+        guard !working.contains(target.id) else { return }
+        working.insert(target.id); failures[target.id] = nil
+        defer { working.remove(target.id) }
+        do {
+            let service = NovaEducationService(identity: identity)
+            let existing = known.filter {
+                $0.scope_id == target.scope && $0.person_id == target.person &&
+                    $0.source_session_revision == session.version
+            }.max { $0.revision < $1.revision }
+            let certificate: NovaEducationCertificate
+            if let existing {
+                certificate = try await service.certificate(.init(action: "read",
+                    document_id: existing.document_id, revision: existing.revision))
+            } else if canIssue && certificateEnabled {
+                certificate = try await service.certificate(.init(action: "issue", session_id: session.id,
+                    scope_id: target.scope, person_id: target.person, expected_version: session.version,
+                    issued_on: NovaEducationClock.day(Date())))
+            } else {
+                failures[target.id] = "Bu belge henüz hazırlanmamış."
+                return
+            }
+            guard certificate.ready, !certificate.snapshot.is_draft,
+                  let documentID = certificate.document_id else {
+                failures[target.id] = certificate.issues.first.map(NovaEducationService.issue) ?? "Sertifika hazırlanamadı."
+                return
+            }
+            let url = try NovaEducationCertificatePDF.file(certificate)
+            ready[target.id] = .init(url: url, number: certificate.snapshot.number,
+                revision: certificate.revision ?? 1)
+            if !known.contains(where: { $0.document_id == documentID && $0.revision == certificate.revision }) {
+                known.append(.init(document_id: documentID, revision: certificate.revision ?? 1,
+                    scope_id: target.scope, person_id: target.person, source_session_revision: session.version))
+            }
+        } catch { failures[target.id] = NovaEducationService.message(error) }
+    }
+    private func openVersion(_ version: NovaEducationContext.Certificate) async {
+        do {
+            let certificate = try await NovaEducationService(identity: identity).certificate(
+                .init(action: "read", document_id: version.document_id, revision: version.revision))
+            preview = .init(url: try NovaEducationCertificatePDF.file(certificate))
+        } catch { pageError = NovaEducationService.message(error) }
+    }
+}
+
 struct NovaEducationCertificateScreen: View {
     let identity: NovaSessionIdentity
     let session: NovaTrainingSession
