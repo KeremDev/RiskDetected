@@ -73,8 +73,11 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             }
         }.getOrDefault(emptyList())
     }
+    // The notebook is offered only when the server's personal_notes rollout says so (iOS NotebookUIRelease).
+    var notebookAvailable by remember { mutableStateOf(false) }
+    LaunchedEffect(identity) { notebookAvailable = services.notebook.enabled() }
     NovaExpertShell(state.navigation, state.userName, viewModel::apply,
-        profileAvatar = state.avatar, menuRoleTitle = "İSG Uzmanı",
+        profileAvatar = state.avatar, menuRoleTitle = "İSG Uzmanı", notebookAvailable = notebookAvailable,
         menuStats = menuStats(state), menuNextAction = nextAction(state),
         hasUnread = notices.unread > 0, unreadCount = notices.unread,
         notices = notices.rows.map(::noticeItem),
@@ -527,6 +530,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val statistics: NovaStatisticsService,
     private val activity: NovaActivityService,
     val presence: NovaUsagePresence,
+    val notebook: com.riskdetectedan.core.data.notebook.NotebookRollout,
     private val personnel: com.riskdetectedan.core.data.company.PersonnelRepository,
     private val overview: NovaOverviewService,
     private val companyRecords: com.riskdetectedan.core.data.company.CompanyRepository,
