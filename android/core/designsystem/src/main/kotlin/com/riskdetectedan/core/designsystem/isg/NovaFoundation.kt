@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Info
@@ -196,6 +197,8 @@ object NovaSymbols {
             "exclamationmark.shield" to Icons.Outlined.GppMaybe,
             "exclamationmark.triangle" to Icons.Outlined.WarningAmber,
             "exclamationmark.triangle.fill" to Icons.Filled.Warning,
+            "camera.fill" to Icons.Filled.PhotoCamera,
+            "arrow.left.and.right" to Icons.Outlined.SwapHoriz,
             "externaldrive" to Icons.Outlined.Storage,
             "eye" to Icons.Outlined.Visibility,
             "eyeglasses" to Icons.Outlined.Visibility,

@@ -45,7 +45,7 @@ class DesignPreviewActivity : ComponentActivity() {
                     onEvent = { event, epoch -> host = host.apply(event, epoch) }) { destination ->
                     when (destination) {
                         NovaDestination.home -> NovaDashboardScreen(dashboard, onNavigate = navigate,
-                            onPhoto = { navigate(NovaDestination.newFinding) }, onAssistant = { navigate(NovaDestination.newFinding) })
+                            onPhoto = { navigate(NovaDestination.newFinding) })
                         NovaDestination.findings -> PreviewFindings(board = true, navigate)
                         NovaDestination.newFinding -> PreviewFindings(board = false, navigate)
                         NovaDestination.riskAssessments -> com.riskdetectedan.feature.nova.NovaRiskScreen(PreviewRiskClient, true,

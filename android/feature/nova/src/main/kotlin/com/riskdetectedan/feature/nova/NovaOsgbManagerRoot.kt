@@ -268,7 +268,7 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
                 showingSearch -> search { showingSearch = false }
                 dashboardDomain != null -> domain(dashboardDomain!!, onBack = { dashboardDomain = null })
                 else -> NovaDashboardScreen(managerDashboardData(state.userName, context, selected, board), onNavigate = navigate,
-                    onPhoto = { navigate(NovaDestination.newAnalysis) }, onAssistant = {}, showsAssistant = false) {
+                    onPhoto = { navigate(NovaDestination.newAnalysis) }) {
                     ManagerHomeFooter(workspace, selected, canManage, context.canManageMembers, store, onSearch = { showingSearch = true },
                         onEdit = { editor = ManagerEditor(it) }, onMembers = { showingMembers = true },
                         onDomain = { dashboardDomain = it }, onAnalyses = { navigate(NovaDestination.analyses) })

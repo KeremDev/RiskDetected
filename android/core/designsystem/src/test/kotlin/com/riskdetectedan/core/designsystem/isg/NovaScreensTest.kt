@@ -23,7 +23,7 @@ class NovaScreensTest {
         var route: NovaDestination? = null
         compose.setContent { NovaTheme(false) {
             NovaDashboardScreen(NovaDashboardData("Kerem", 0, emptyList(), null, "Uyarı yok"),
-                onNavigate = { route = it }, onPhoto = { photos++ }, onAssistant = {})
+                onNavigate = { route = it }, onPhoto = { photos++ })
         } }
         compose.onNodeWithTag("nova.home.photo").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(1, photos); assertNull(route) }

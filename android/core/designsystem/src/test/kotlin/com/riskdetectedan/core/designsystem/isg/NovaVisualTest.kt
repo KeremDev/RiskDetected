@@ -40,7 +40,7 @@ class NovaVisualTest {
                 actions = NovaShellActions(onReadAll = {}, onClearNotifications = {}, onLogout = {}),
                 onEvent = { event, epoch -> state = state.apply(event, epoch) }) { destination ->
                 if (destination == NovaDestination.companies) NovaCompaniesScreen(listOf(NovaCompanyItem("fixture", "Koza Altın A.Ş", "Kaymaz Mah. · Maden · Çok tehlikeli")), onSelect = {}, onBack = {}, onRetry = {})
-                else NovaDashboardScreen(data, onNavigate = {}, onPhoto = {}, onAssistant = {})
+                else NovaDashboardScreen(data, onNavigate = {}, onPhoto = {})
             }
         } }
         capture("home")

@@ -96,10 +96,6 @@ class NovaPilotViewModel @Inject constructor(
         apply(NovaNavigationEvent.Navigate(destination), current.navigation.epoch)
     }
 
-    fun showUnavailable() {
-        mutable.value = state.value.copy(message = "Bu modül hazırlanıyor. Bu build’de henüz canlı işlem yapmıyor.")
-    }
-
     fun showMessage(text: String) { mutable.value = state.value.copy(message = text) }
     fun dismissMessage() { mutable.value = state.value.copy(message = null) }
 

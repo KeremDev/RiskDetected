@@ -17,6 +17,7 @@ import com.riskdetectedan.core.data.nova.*
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -120,7 +121,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
         )) { destination ->
         when (destination) {
             NovaDestination.home -> NovaDashboardScreen(dashboardData(state, equipmentBoard).copy(recentAnalyses = recentAnalyses), onNavigate = navigate,
-                onPhoto = { navigate(NovaDestination.newAnalysis) }, onAssistant = viewModel::showUnavailable,
+                onPhoto = { navigate(NovaDestination.newAnalysis) },
                 analysisThumbnail = { id ->
                     services.analysis.thumbnail(id, workspace?.selection)?.let { bytes ->
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
@@ -341,7 +342,8 @@ private fun CompaniesDestination(services: NovaRootServices, identity: IsgWorksp
         isLoading = state.overview == null && !state.overviewFailed && workspace == null,
         error = if (state.overviewFailed && workspace == null) "Firmalar yüklenemedi. Lütfen tekrar deneyin." else null,
         isOwnedList = workspace == null, onSelect = { selected = it },
-        onBack = { navigate(NovaDestination.home) }, onRetry = reload, onCreate = if (canCreate) ({ creating = true }) else null)
+        onBack = { navigate(NovaDestination.home) }, onRetry = reload, onCreate = if (canCreate) ({ creating = true }) else null,
+        loadLogo = if (workspace == null) remember(identity) { services.ownedCompanyLogos() } else null)
 }
 
 /** One module page opened from a company, already narrowed to that company. */
@@ -575,6 +577,25 @@ class NovaRootServices @javax.inject.Inject constructor(
     private fun companies(identity: IsgWorkspaceIdentity): suspend () -> List<NovaCompanyOption> =
         { runCatching { findings.companyOptions(identity) }.getOrDefault(emptyList()) }
     fun fileClient(identity: IsgWorkspaceIdentity) = NovaFileClient(files, identity)
+
+    /** A personal account's company logos for the list rows (iOS `CompanyService.logoImage`); one company read per list. */
+    fun ownedCompanyLogos(): NovaCompanyLogoLoader {
+        var paths: Map<String, String?>? = null
+        val lock = kotlinx.coroutines.sync.Mutex()
+        return { id, _ ->
+            val known = lock.withLock {
+                paths ?: (companyRecords.listCompanies(includeArchived = true) as? com.riskdetectedan.core.common.RdResult.Success)
+                    ?.value?.associate { it.id.lowercase() to it.logoPath }?.also { paths = it }
+            }
+            known?.get(id.lowercase())?.let { path ->
+                (companyRecords.downloadLogo(path) as? com.riskdetectedan.core.common.RdResult.Success)?.value?.let { bytes ->
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+                    }
+                }
+            }
+        }
+    }
     fun documentClient(identity: IsgWorkspaceIdentity) =
         NovaDocumentTrackingClient(portfolio = { documents.portfolio(identity, it) }, companies = companies(identity))
     val analysis: NovaAnalysisService get() = analyses
