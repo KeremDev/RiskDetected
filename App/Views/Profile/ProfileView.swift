@@ -5,6 +5,10 @@ import UIKit
 import UserNotifications
 
 struct ProfileView: View {
+    private enum PilotRoute: Hashable {
+        case details, notifications, support
+    }
+
     private let pilotOnBack: (() -> Void)?
     private let pilotNavigate: ((NovaDestination) -> Void)?
     @EnvironmentObject var app: AppState
@@ -25,6 +29,7 @@ struct ProfileView: View {
     @State private var showPreferences = false
     @State private var showLegalInfo = false
     @State private var showSupport = false
+    @State private var pilotPath: [PilotRoute] = []
     @State private var showProfessionalTitlesFromHeader = false
     @State private var showMoreProfileActions = false
     @State private var profileBadgesSheet: ProfileBadgesSheetItem?
@@ -65,6 +70,24 @@ struct ProfileView: View {
     }
 
     var body: some View {
+        Group {
+            if pilotOnBack != nil {
+                NavigationStack(path: $pilotPath) {
+                    profileRoot
+                        .navigationDestination(for: PilotRoute.self) { route in
+                            pilotDestination(route)
+                                .navigationBarBackButtonHidden(true)
+                                .toolbar(.hidden, for: .navigationBar)
+                        }
+                }
+                .toolbar(.hidden, for: .navigationBar)
+            } else {
+                profileRoot
+            }
+        }
+    }
+
+    private var profileRoot: some View {
         VStack(spacing: 0) {
             if let pilotOnBack { pilotNavigationHeader(onBack: pilotOnBack) }
             ScrollView(showsIndicators: false) {
@@ -147,13 +170,14 @@ struct ProfileView: View {
                 stats: stats,
                 actionInProgress: dataActionInProgress,
                 exportedFile: $exportedDataFile,
+                pilot: pilotOnBack != nil,
                 onExport: { runDataAction(.exportData) },
                 onDeleteReports: { pendingDataAction = .deleteReports },
                 onDeleteAnalyses: { pendingDataAction = .deleteAnalyses },
                 onRequestAccountDeletion: { pendingDataAction = .requestAccountDeletion },
                 onClose: { showDataControls = false }
             )
-            .presentationDetents([.large])
+            .presentationDetents(pilotOnBack == nil ? [.large] : [.medium, .large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -162,6 +186,7 @@ struct ProfileView: View {
                 profile: app.profile,
                 auth: app.auth,
                 appLanguage: app.languagePreference,
+                pilot: false,
                 onSaved: {
                     showProfileEditor = false
                 },
@@ -200,6 +225,7 @@ struct ProfileView: View {
         .sheet(isPresented: $showNotificationSettings) {
             NotificationSettingsSheet(
                 notificationService: notifications,
+                pilot: false,
                 onClose: { showNotificationSettings = false }
             )
             .presentationDetents([.medium, .large])
@@ -211,10 +237,11 @@ struct ProfileView: View {
                 themePreference: app.themePreference,
                 languagePreference: app.languagePreference,
                 safetyProfileID: app.safetyProfileID,
+                pilot: pilotOnBack != nil,
                 onThemeChange: { app.setThemePreference($0) },
                 onSafetyProfileChange: { app.setSafetyProfile($0) }
             )
-            .presentationDetents([.large])
+            .presentationDetents(pilotOnBack == nil ? [.large] : [.medium, .large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -233,6 +260,7 @@ struct ProfileView: View {
                     ?? (app.languagePreference == .turkish
                         ? .turkishTurkey
                         : .englishInternational),
+                pilot: false,
                 onClose: { showSupport = false }
             )
             .presentationDetents([.large])
@@ -306,6 +334,42 @@ struct ProfileView: View {
         }
     }
 
+    @ViewBuilder
+    private func pilotDestination(_ route: PilotRoute) -> some View {
+        switch route {
+        case .details:
+            ProfileEditSheet(
+                profile: app.profile,
+                auth: app.auth,
+                appLanguage: app.languagePreference,
+                pilot: true,
+                onSaved: popPilotRoute,
+                onClose: popPilotRoute
+            )
+        case .notifications:
+            NotificationSettingsSheet(
+                notificationService: notifications,
+                pilot: true,
+                onClose: popPilotRoute
+            )
+        case .support:
+            SupportContactSheet(
+                profile: app.profile,
+                tier: app.currentTier,
+                appLanguage: app.languagePreference.appLanguage,
+                contentLocale: app.activeSafetyProfile?.contentLocale
+                    ?? (app.languagePreference == .turkish ? .turkishTurkey : .englishInternational),
+                pilot: true,
+                onClose: popPilotRoute
+            )
+        }
+    }
+
+    private func popPilotRoute() {
+        guard !pilotPath.isEmpty else { return }
+        pilotPath.removeLast()
+    }
+
     // MARK: - İSGADA profile
 
     private func pilotNavigationHeader(onBack: @escaping () -> Void) -> some View {
@@ -338,10 +402,10 @@ struct ProfileView: View {
 
             pilotGroup {
                 pilotAction("Profil bilgileri", icon: "person.crop.circle", tint: .gray,
-                    id: "profile.row.info") { showProfileEditor = true }
+                    id: "profile.row.info") { pilotPath.append(.details) }
                 pilotSeparator
                 pilotAction("Bildirimler", icon: "bell", tint: .gray,
-                    id: "profile.row.notifications") { showNotificationSettings = true }
+                    id: "profile.row.notifications") { pilotPath.append(.notifications) }
                 pilotSeparator
                 pilotAction("Firmalarım", icon: "building.2", tint: .gray,
                     id: "profile.row.companies") { showCompanyPicker = true }
@@ -361,7 +425,7 @@ struct ProfileView: View {
                     id: "profile.row.data") { showDataControls = true }
                 pilotSeparator
                 pilotAction("Yardım ve destek", icon: "questionmark.circle", tint: Color(hex: "#22A7DA"),
-                    id: "profile.row.support") { showSupport = true }
+                    id: "profile.row.support") { pilotPath.append(.support) }
             }
 
             pilotGroup {
@@ -1670,12 +1734,72 @@ private enum ProfileDataAction: Identifiable, Equatable {
     }
 }
 
+struct PilotProfilePageHeader: View {
+    let title: String
+    let onBack: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.novaCanvasStyle) private var canvasStyle
+
+    var body: some View {
+        ZStack {
+            Text(title)
+                .font(NovaFont.font(.screenTitle))
+                .foregroundStyle(Color.rdBlack)
+            HStack {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 19, weight: .medium))
+                        .foregroundStyle(Color.rdCharcoal)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Geri")
+                Spacer()
+            }
+        }
+        .frame(height: 54)
+        .padding(.horizontal, 20)
+        .background(canvasStyle.color(in: colorScheme))
+    }
+}
+
+private struct PilotProfilePopupHeader: View {
+    let title: String
+    let onClose: () -> Void
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(NovaFont.font(.screenTitle))
+                .foregroundStyle(Color.rdBlack)
+            Spacer()
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.rdCharcoal)
+                    .frame(width: 36, height: 36)
+                    .background(Color.rdFog, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Kapat")
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 10)
+    }
+}
+
 private struct ProfileEditSheet: View {
     let profile: UserProfile?
     let auth: AuthService
     let appLanguage: RDLanguage
+    let pilot: Bool
     let onSaved: () -> Void
     let onClose: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.novaCanvasStyle) private var canvasStyle
 
     @State private var fullName = ""
     @State private var title = ""
@@ -1690,45 +1814,33 @@ private struct ProfileEditSheet: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 16) {
-                    logoSection
-                    identitySection
-                    methodSection
-
-                    RDButton(
-                        title: isSaving ? RDLocalization.string("localizable.profile.view.kaydediliyor.7948588e", table: .localizable, fallback: "Kaydediliyor...") : RDLocalization.string("localizable.profile.view.profili.kaydet.d6a55caf", table: .localizable, fallback: "Profili kaydet"),
-                        style: .detect,
-                        icon: isSaving ? "hourglass" : "checkmark.circle.fill",
-                        height: 54
-                    ) {
-                        save()
-                    }
-                    .disabled(isSaving)
-                    .opacity(isSaving ? 0.72 : 1)
+        Group {
+            if pilot {
+                VStack(spacing: 0) {
+                    PilotProfilePageHeader(title: "Profil bilgilerim", onBack: onClose)
+                    editorContent
                 }
-                .padding(20)
-                .padding(.bottom, 24)
-                .keyboardAdaptivePadding(extra: 16)
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .background(Color.rdPaper)
-            .navigationTitle(RDLocalization.string("localizable.profile.view.profil.bilgileri.54c967ae", table: .localizable, fallback: "Profil Bilgileri"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    RDModalCloseButton(action: onClose)
+                .background(canvasStyle.color(in: colorScheme).ignoresSafeArea())
+            } else {
+                NavigationStack {
+                    editorContent
+                        .navigationTitle(RDLocalization.string("localizable.profile.view.profil.bilgileri.54c967ae", table: .localizable, fallback: "Profil Bilgileri"))
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                RDModalCloseButton(action: onClose)
+                            }
+                        }
                 }
             }
-            .alert(RDLocalization.string("localizable.profile.view.profil.kaydedilemedi.496d7643", table: .localizable, fallback: "Profil kaydedilemedi"), isPresented: Binding(
-                get: { errorMessage != nil },
-                set: { if !$0 { errorMessage = nil } }
-            )) {
-                Button(RDLocalization.string("localizable.profile.view.tamam.fff8c2ae", table: .localizable, fallback: "Tamam"), role: .cancel) { errorMessage = nil }
-            } message: {
-                Text(errorMessage ?? "")
-            }
+        }
+        .alert(RDLocalization.string("localizable.profile.view.profil.kaydedilemedi.496d7643", table: .localizable, fallback: "Profil kaydedilemedi"), isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button(RDLocalization.string("localizable.profile.view.tamam.fff8c2ae", table: .localizable, fallback: "Tamam"), role: .cancel) { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "")
         }
         .onAppear(perform: populate)
         .onChange(of: selectedLogoItem) { newItem in
@@ -1740,6 +1852,30 @@ private struct ProfileEditSheet: View {
                 }
             }
         }
+    }
+
+    private var editorContent: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 18) {
+                logoSection
+                identitySection
+                methodSection
+
+                RDButton(
+                    title: isSaving ? RDLocalization.string("localizable.profile.view.kaydediliyor.7948588e", table: .localizable, fallback: "Kaydediliyor...") : RDLocalization.string("localizable.profile.view.profili.kaydet.d6a55caf", table: .localizable, fallback: "Profili kaydet"),
+                    style: .detect,
+                    icon: isSaving ? "hourglass" : "checkmark.circle.fill",
+                    height: 54
+                ) { save() }
+                .disabled(isSaving)
+                .opacity(isSaving ? 0.72 : 1)
+            }
+            .padding(20)
+            .padding(.bottom, 24)
+            .keyboardAdaptivePadding(extra: 16)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(pilot ? canvasStyle.color(in: colorScheme) : Color.rdPaper)
     }
 
     private var logoSection: some View {
@@ -1793,7 +1929,7 @@ private struct ProfileEditSheet: View {
             .background(Color.rdWhite)
             .overlay(
                 RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.rdLine, lineWidth: 1)
+                    .stroke(pilot ? Color.clear : Color.rdLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
@@ -1838,7 +1974,7 @@ private struct ProfileEditSheet: View {
             .background(Color.rdWhite)
             .overlay(
                 RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.rdLine, lineWidth: 1)
+                    .stroke(pilot ? Color.clear : Color.rdLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
@@ -1855,7 +1991,7 @@ private struct ProfileEditSheet: View {
             .background(Color.rdWhite)
             .overlay(
                 RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.rdLine, lineWidth: 1)
+                    .stroke(pilot ? Color.clear : Color.rdLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
@@ -1930,10 +2066,10 @@ private struct ProfileEditSheet: View {
         }
         .padding(.horizontal, 12)
         .frame(height: 58)
-        .background(Color.rdCloud.opacity(0.55))
+        .background(pilot ? Color.rdFog : Color.rdCloud.opacity(0.55))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.rdLine, lineWidth: 1)
+                .stroke(pilot ? Color.clear : Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
@@ -1993,12 +2129,38 @@ private struct ProfileEditSheet: View {
 
 private struct NotificationSettingsSheet: View {
     @ObservedObject var notificationService: NotificationService
+    let pilot: Bool
     let onClose: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.novaCanvasStyle) private var canvasStyle
 
     var body: some View {
-        NavigationStack {
+        Group {
+            if pilot {
+                VStack(spacing: 0) {
+                    PilotProfilePageHeader(title: "Bildirimler", onBack: onClose)
+                    ScrollView(showsIndicators: false) { settingsContent }
+                }
+                .background(canvasStyle.color(in: colorScheme).ignoresSafeArea())
+            } else {
+                NavigationStack {
+                    settingsContent
+                        .navigationTitle(RDLocalization.string("localizable.profile.view.bildirimler.120feec2", table: .localizable, fallback: "Bildirimler"))
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                RDModalCloseButton(action: onClose)
+                            }
+                        }
+                }
+            }
+        }
+        .task { await notificationService.refreshSettings() }
+    }
+
+    private var settingsContent: some View {
             VStack(alignment: .leading, spacing: 16) {
-                RDCard {
+                settingsCard {
                     HStack(alignment: .top, spacing: 10) {
                         statusIndicator
 
@@ -2078,26 +2240,22 @@ private struct NotificationSettingsSheet: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 14)
-            .padding(.bottom, 18)
-            .background(Color.rdPaper)
-            .navigationTitle(RDLocalization.string("localizable.profile.view.bildirimler.120feec2", table: .localizable, fallback: "Bildirimler"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    RDModalCloseButton(action: onClose)
-                }
-            }
-            .task {
-                await notificationService.refreshSettings()
-            }
+            .padding(.top, pilot ? 20 : 14)
+            .padding(.bottom, pilot ? 36 : 18)
+            .background(pilot ? canvasStyle.color(in: colorScheme) : Color.rdPaper)
+    }
+
+    @ViewBuilder
+    private func settingsCard<Content: View>(@ViewBuilder content: @escaping () -> Content) -> some View {
+        if pilot {
+            NovaCard(padding: 20, content: content)
+        } else {
+            RDCard(content: content)
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
     }
 
     private var notificationTypesCard: some View {
-        RDCard {
+        settingsCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text(RDLocalization.string("localizable.profile.view.aktif.bildirimler.c876e6f6", table: .localizable, fallback: "Aktif bildirimler"))
                     .font(NovaFont.font(.body))
@@ -2121,7 +2279,7 @@ private struct NotificationSettingsSheet: View {
     }
 
     private var progressPreferencesCard: some View {
-        RDCard {
+        settingsCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text(RDLocalization.string("localizable.profile.view.mesleki.ilerleme.43c5ddd9", table: .localizable, fallback: "Mesleki ilerleme"))
                     .font(NovaFont.font(.body))
@@ -2320,15 +2478,45 @@ private struct ProfileDataControlsSheet: View {
     let stats: ProfileStats?
     let actionInProgress: ProfileDataAction?
     @Binding var exportedFile: ShareItem?
+    let pilot: Bool
     let onExport: () -> Void
     let onDeleteReports: () -> Void
     let onDeleteAnalyses: () -> Void
     let onRequestAccountDeletion: () -> Void
     let onClose: () -> Void
     @State private var presentedExportURL: URL?
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        NavigationStack {
+        Group {
+            if pilot {
+                VStack(spacing: 0) {
+                    PilotProfilePopupHeader(title: "Verilerim", onClose: onClose)
+                    dataContent
+                }
+                .background(NovaPopupStyle.background(in: colorScheme).ignoresSafeArea())
+            } else {
+                NavigationStack {
+                    dataContent
+                        .navigationTitle(RDLocalization.string("localizable.profile.view.verilerim.5155c570", table: .localizable, fallback: "Verilerim"))
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                RDModalCloseButton(action: onClose)
+                            }
+                        }
+                }
+            }
+        }
+        .onChange(of: exportedFile?.url) { url in
+            if let url { presentedExportURL = url }
+        }
+        .sheet(item: $exportedFile, onDismiss: cleanupPresentedExport) { item in
+            DocumentPreview(url: item.url)
+        }
+    }
+
+    private var dataContent: some View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 14) {
                     summaryCard
@@ -2379,23 +2567,7 @@ private struct ProfileDataControlsSheet: View {
                 }
                 .padding(20)
             }
-            .background(Color.rdPaper)
-            .navigationTitle(RDLocalization.string("localizable.profile.view.verilerim.5155c570", table: .localizable, fallback: "Verilerim"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    RDModalCloseButton(action: onClose)
-                }
-            }
-        }
-        .onChange(of: exportedFile?.url) { url in
-            if let url {
-                presentedExportURL = url
-            }
-        }
-        .sheet(item: $exportedFile, onDismiss: cleanupPresentedExport) { item in
-            DocumentPreview(url: item.url)
-        }
+            .background(pilot ? NovaPopupStyle.background(in: colorScheme) : Color.rdPaper)
     }
 
     private func cleanupPresentedExport() {
@@ -2424,10 +2596,10 @@ private struct ProfileDataControlsSheet: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(Color.rdWhite)
+        .background(pilot ? Color.rdFog : Color.rdWhite)
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.rdLine, lineWidth: 1)
+                .stroke(pilot ? Color.clear : Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
@@ -2470,10 +2642,10 @@ private struct ProfileDataControlsSheet: View {
                 }
             }
             .padding(14)
-            .background(Color.rdWhite)
+            .background(pilot ? Color.rdFog : Color.rdWhite)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(danger ? Color.rdCritical.opacity(0.22) : Color.rdLine, lineWidth: 1)
+                    .stroke(pilot ? Color.clear : (danger ? Color.rdCritical.opacity(0.22) : Color.rdLine), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
@@ -2590,14 +2762,39 @@ struct ProfileRow: View {
 
 private struct ProfilePreferencesSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     let themePreference: RDThemePreference
     let languagePreference: RDLanguagePreference
     let safetyProfileID: RDSafetyProfileID?
+    let pilot: Bool
     let onThemeChange: (RDThemePreference) -> Void
     let onSafetyProfileChange: (RDSafetyProfileID) -> Void
 
     var body: some View {
-        NavigationStack {
+        Group {
+            if pilot {
+                VStack(spacing: 0) {
+                    PilotProfilePopupHeader(title: "Görünüm ve tercihler", onClose: { dismiss() })
+                    preferencesContent
+                }
+                .background(NovaPopupStyle.background(in: colorScheme).ignoresSafeArea())
+            } else {
+                NavigationStack {
+                    preferencesContent
+                        .navigationTitle(RDLocalization.string("localizable.profile.view.tercihler.5764236d", table: .localizable, fallback: "Tercihler"))
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                RDModalCloseButton { dismiss() }
+                            }
+                        }
+                }
+            }
+        }
+        .preferredColorScheme(themePreference.colorScheme)
+    }
+
+    private var preferencesContent: some View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
                     preferenceSection(
@@ -2610,7 +2807,8 @@ private struct ProfilePreferencesSheet: View {
                                     icon: preference.icon,
                                     title: preference.title,
                                     subtitle: preference.subtitle,
-                                    isSelected: themePreference == preference
+                                    isSelected: themePreference == preference,
+                                    pilot: pilot
                                 ) {
                                     onThemeChange(preference)
                                     UISelectionFeedbackGenerator().selectionChanged()
@@ -2621,13 +2819,16 @@ private struct ProfilePreferencesSheet: View {
 
                     preferenceSection(
                         title: RDLocalization.string("localizable.profile.view.dil.5398169b", table: .localizable, fallback: "Dil"),
-                        subtitle: RDLocalization.string("localizable.profile.view.uygulama.dili.ios.ayarlari.ndaki.riskdetected.bo.0f4db4b6", table: .localizable, fallback: "Uygulama dili iOS Ayarları'ndaki RiskDetected bölümünden değiştirilir.")
+                        subtitle: pilot
+                            ? "Uygulama dilini iPhone Ayarları'ndaki İSGADA bölümünden değiştirebilirsiniz."
+                            : RDLocalization.string("localizable.profile.view.uygulama.dili.ios.ayarlari.ndaki.riskdetected.bo.0f4db4b6", table: .localizable, fallback: "Uygulama dili iOS Ayarları'ndaki RiskDetected bölümünden değiştirilir.")
                     ) {
                         PreferenceOptionRow(
                             icon: "gearshape.fill",
                             title: languagePreference.title,
                             subtitle: RDLocalization.string("localizable.profile.view.ios.ayarlari.nda.uygulama.dilini.ac.10562d1d", table: .localizable, fallback: "iOS Ayarları'nda uygulama dilini aç"),
-                            isSelected: true
+                            isSelected: true,
+                            pilot: pilot
                         ) {
                             openApplicationSettings()
                         }
@@ -2652,7 +2853,8 @@ private struct ProfilePreferencesSheet: View {
                                         icon: profileID.icon,
                                         title: profileID.localizedTitle,
                                         subtitle: profileID.localizedSubtitle,
-                                        isSelected: safetyProfileID == profileID
+                                        isSelected: safetyProfileID == profileID,
+                                        pilot: pilot
                                     ) {
                                         onSafetyProfileChange(profileID)
                                         UISelectionFeedbackGenerator().selectionChanged()
@@ -2677,18 +2879,7 @@ private struct ProfilePreferencesSheet: View {
                 .padding(.top, 18)
                 .padding(.bottom, 28)
             }
-            .background(Color.rdPaper)
-            .navigationTitle(RDLocalization.string("localizable.profile.view.tercihler.5764236d", table: .localizable, fallback: "Tercihler"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    RDModalCloseButton {
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .preferredColorScheme(themePreference.colorScheme)
+            .background(pilot ? NovaPopupStyle.background(in: colorScheme) : Color.rdPaper)
     }
 
     private func openApplicationSettings() {
@@ -2724,6 +2915,7 @@ private struct PreferenceOptionRow: View {
     let title: String
     let subtitle: String
     let isSelected: Bool
+    let pilot: Bool
     let action: () -> Void
 
     var body: some View {
@@ -2752,10 +2944,10 @@ private struct PreferenceOptionRow: View {
                     .foregroundStyle(isSelected ? Color.rdGreen : Color.rdSlate.opacity(0.55))
             }
             .padding(14)
-            .background(Color.rdWhite)
+            .background(pilot ? Color.rdFog : Color.rdWhite)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color.rdGreen.opacity(0.55) : Color.rdLine, lineWidth: isSelected ? 1.5 : 1)
+                    .stroke(pilot ? Color.clear : (isSelected ? Color.rdGreen.opacity(0.55) : Color.rdLine), lineWidth: isSelected ? 1.5 : 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .contentShape(Rectangle())

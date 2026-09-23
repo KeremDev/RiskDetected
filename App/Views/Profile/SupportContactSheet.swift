@@ -8,9 +8,12 @@ struct SupportContactSheet: View {
     let tier: SubscriptionTier
     let appLanguage: RDAppLanguage
     let contentLocale: RDContentLocale
+    var pilot = false
     let onClose: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.novaCanvasStyle) private var canvasStyle
     @FocusState private var focusedField: Field?
 
     @State private var subject = ""
@@ -34,7 +37,43 @@ struct SupportContactSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        Group {
+            if pilot {
+                VStack(spacing: 0) {
+                    PilotProfilePageHeader(title: "Yardım ve destek", onBack: onClose)
+                    supportContent
+                }
+                .background(canvasStyle.color(in: colorScheme).ignoresSafeArea())
+            } else {
+                NavigationStack {
+                    supportContent
+                        .navigationTitle(RDLocalization.string("localizable.support.contact.sheet.destek.05e6a313", table: .localizable, fallback: "Destek"))
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                RDModalCloseButton {
+                                    dismiss()
+                                    onClose()
+                                }
+                            }
+                        }
+                }
+            }
+        }
+        .fileImporter(
+            isPresented: $showFileImporter,
+            allowedContentTypes: [.jpeg, .png, .pdf],
+            allowsMultipleSelection: false
+        ) { result in
+            Task { await handleImportedFile(result) }
+        }
+        .onChange(of: selectedPhotoItem) { item in
+            guard let item else { return }
+            Task { await handlePhoto(item) }
+        }
+    }
+
+    private var supportContent: some View {
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 14) {
@@ -55,37 +94,17 @@ struct SupportContactSheet: View {
                     }
                     .padding(20)
                     .padding(.bottom, 24)
+                    .keyboardAdaptivePadding(extra: 16)
                 }
-                .background(Color.rdPaper)
+                .background(pilot ? canvasStyle.color(in: colorScheme) : Color.rdPaper)
+                .scrollDismissesKeyboard(.interactively)
                 .onChange(of: focusedField) { field in
-                    guard field != nil else { return }
+                    guard !pilot, field != nil else { return }
                     withAnimation(.easeInOut(duration: 0.2)) {
                         proxy.scrollTo("sendButton", anchor: .bottom)
                     }
                 }
             }
-            .navigationTitle(RDLocalization.string("localizable.support.contact.sheet.destek.05e6a313", table: .localizable, fallback: "Destek"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    RDModalCloseButton {
-                        dismiss()
-                        onClose()
-                    }
-                }
-            }
-        }
-        .fileImporter(
-            isPresented: $showFileImporter,
-            allowedContentTypes: [.jpeg, .png, .pdf],
-            allowsMultipleSelection: false
-        ) { result in
-            Task { await handleImportedFile(result) }
-        }
-        .onChange(of: selectedPhotoItem) { item in
-            guard let item else { return }
-            Task { await handlePhoto(item) }
-        }
     }
 
     private var heroCard: some View {
@@ -99,7 +118,7 @@ struct SupportContactSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(RDLocalization.string("localizable.support.contact.sheet.riskdetected.destek.e11a7270", table: .localizable, fallback: "RiskDetected destek"))
+                    Text(pilot ? "İSGADA destek" : RDLocalization.string("localizable.support.contact.sheet.riskdetected.destek.e11a7270", table: .localizable, fallback: "RiskDetected destek"))
                         .font(NovaFont.font(.screenTitle))
                         .foregroundStyle(Color.rdBlack)
                     Text(RDLocalization.string("localizable.support.contact.sheet.konu.mesaj.ve.gerekirse.ekran.goruntusu.ekleyere.4dd76367", table: .localizable, fallback: "Konu, mesaj ve gerekirse ekran görüntüsü ekleyerek bize ulaş."))
@@ -113,7 +132,7 @@ struct SupportContactSheet: View {
         .background(Color.rdWhite)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.rdLine, lineWidth: 1)
+                .stroke(pilot ? Color.clear : Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
@@ -130,7 +149,7 @@ struct SupportContactSheet: View {
         .background(Color.rdWhite)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.rdLine, lineWidth: 1)
+                .stroke(pilot ? Color.clear : Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
@@ -179,7 +198,7 @@ struct SupportContactSheet: View {
         .background(Color.rdWhite)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.rdLine, lineWidth: 1)
+                .stroke(pilot ? Color.clear : Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
@@ -214,7 +233,7 @@ struct SupportContactSheet: View {
         .background(Color.rdWhite)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.rdLine, lineWidth: 1)
+                .stroke(pilot ? Color.clear : Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
@@ -272,7 +291,7 @@ struct SupportContactSheet: View {
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .frame(height: 58)
-            .background(canSend ? Color.rdOnyx : Color.rdSlate.opacity(0.45))
+            .background(canSend ? (pilot ? Color.rdGreen : Color.rdOnyx) : Color.rdSlate.opacity(0.45))
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
