@@ -5,6 +5,8 @@ import UIKit
 import UserNotifications
 
 struct ProfileView: View {
+    private let pilotOnBack: (() -> Void)?
+    private let pilotNavigate: ((NovaDestination) -> Void)?
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openURL) private var openURL
@@ -23,6 +25,7 @@ struct ProfileView: View {
     @State private var showLegalInfo = false
     @State private var showSupport = false
     @State private var showProfessionalTitlesFromHeader = false
+    @State private var showMoreProfileActions = false
     @State private var profileBadgesSheet: ProfileBadgesSheetItem?
     @State private var isRestoringPurchases = false
     @State private var restoreMessage: String?
@@ -52,34 +55,45 @@ struct ProfileView: View {
         colorScheme == .dark ? Color.white.opacity(0.08) : Color.rdLine
     }
 
+    init(pilotOnBack: (() -> Void)? = nil, pilotNavigate: ((NovaDestination) -> Void)? = nil) {
+        self.pilotOnBack = pilotOnBack
+        self.pilotNavigate = pilotNavigate
+    }
+
     var body: some View {
         VStack(spacing: 0) {
+            if let pilotOnBack { pilotNavigationHeader(onBack: pilotOnBack) }
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 14) {
-                    profileHeader
-                    if RDConfig.Features.professionalProgressEnabled,
-                       RDProfessionalProgressLocalizationReview.isAvailable,
-                       let professionalProgressSummary {
-                        ProfessionalProgressProfileSection(
-                            summary: professionalProgressSummary,
-                            onRefresh: { await loadProfessionalProgress() }
-                        )
+                Group {
+                    if pilotOnBack != nil {
+                        pilotProfileContent
+                    } else {
+                        VStack(spacing: 14) {
+                            profileHeader
+                            if RDConfig.Features.professionalProgressEnabled,
+                               RDProfessionalProgressLocalizationReview.isAvailable,
+                               let professionalProgressSummary {
+                                ProfessionalProgressProfileSection(
+                                    summary: professionalProgressSummary,
+                                    onRefresh: { await loadProfessionalProgress() }
+                                )
+                            }
+                            if app.currentTier.isPaid { proCard } else { upsellCard }
+                            accountList
+                            settingsList
+                            if deviceIntegrity.isWarning {
+                                deviceIntegrityWarningCard
+                            }
+                            deleteAccountCard
+                            signOutCard
+                        }
+                        .padding(.horizontal, layoutProfile.horizontalPadding)
+                        .padding(.bottom, 24)
                     }
-                    if app.currentTier.isPaid { proCard } else { upsellCard }
-                    accountList
-                    settingsList
-                    if deviceIntegrity.isWarning {
-                        deviceIntegrityWarningCard
-                    }
-                    deleteAccountCard
-                    signOutCard
                 }
-                .padding(.horizontal, layoutProfile.horizontalPadding)
-                .padding(.top, 0)
-                .padding(.bottom, 24)
             }
         }
-        .background(Color.rdPaper)
+        .background(Color.rdPaper.ignoresSafeArea())
         .accessibilityIdentifier("profile.root")
         .fullScreenCover(isPresented: $showNotebook) { NotebookDestination(onClose: { showNotebook = false }) }
         .fullScreenCover(isPresented: $showActivity) { ExpertActivityDestination(onClose: { showActivity = false }) }
@@ -285,6 +299,218 @@ struct ProfileView: View {
             Button(RDLocalization.string("localizable.profile.view.tamam.dd979b9f", table: .localizable, fallback: "Tamam")) { restoreMessage = nil }
         } message: {
             Text(restoreMessage ?? "")
+        }
+    }
+
+    // MARK: - İSGADA profile
+
+    private func pilotNavigationHeader(onBack: @escaping () -> Void) -> some View {
+        ZStack {
+            Text("Profil")
+                .font(NovaFont.font(.screenTitle))
+                .foregroundStyle(Color.rdBlack)
+            HStack {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 19, weight: .medium))
+                        .foregroundStyle(Color.rdCharcoal)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Geri")
+                Spacer()
+            }
+        }
+        .frame(height: 54)
+        .padding(.horizontal, 20)
+        .background(Color.rdPaper)
+    }
+
+    private var pilotProfileContent: some View {
+        VStack(spacing: 20) {
+            pilotIdentity
+                .padding(.bottom, 6)
+
+            pilotGroup {
+                pilotAction("Profil bilgileri", icon: "person.crop.circle", tint: .gray,
+                    id: "profile.row.info") { showProfileEditor = true }
+                pilotSeparator
+                pilotAction("Bildirimler", icon: "bell", tint: .gray,
+                    id: "profile.row.notifications") { showNotificationSettings = true }
+                pilotSeparator
+                pilotAction("Firmalarım", icon: "building.2", tint: .gray,
+                    id: "profile.row.companies") { showCompanyPicker = true }
+            }
+
+            pilotGroup {
+                pilotAction("Güvenlik ve gizlilik", icon: "shield.lefthalf.filled", tint: Color(hex: "#2679E8"),
+                    id: "profile.row.security") { showLegalInfo = true }
+                pilotSeparator
+                pilotAction("Abonelik ve ödeme", icon: "creditcard", tint: Color(hex: "#2679E8"),
+                    id: "profile.row.subscription") { openPilotSubscription() }
+                pilotSeparator
+                pilotAction("Görünüm ve tercihler", icon: "slider.horizontal.3", tint: Color(hex: "#22B94F"),
+                    id: "profile.row.preferences") { showPreferences = true }
+                pilotSeparator
+                pilotAction("Verilerim", icon: "externaldrive", tint: Color(hex: "#73777D"),
+                    id: "profile.row.data") { showDataControls = true }
+                pilotSeparator
+                pilotAction("Yardım ve destek", icon: "questionmark.circle", tint: Color(hex: "#22A7DA"),
+                    id: "profile.row.support") { showSupport = true }
+            }
+
+            pilotGroup {
+                pilotAction("Başarılarım", icon: "rosette", tint: Color(hex: "#DDA830"),
+                    id: "profile.row.badges") {
+                    let summary = professionalProgressSummary
+                        ?? ProfessionalProgressSummary.empty(userID: app.auth.session?.user.id ?? UUID())
+                    showProfileBadges(summary)
+                }
+                pilotSeparator
+                pilotAction("Aktivitem", icon: "bolt", tint: Color(hex: "#DDA830"),
+                    id: "profile.row.activity") { showActivity = true }
+            }
+
+            pilotGroup {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { showMoreProfileActions.toggle() }
+                } label: {
+                    PilotProfileRow(icon: "ellipsis", title: "Diğer hesap seçenekleri",
+                        tint: Color(hex: "#73777D"), trailingSymbol: showMoreProfileActions ? "chevron.up" : "chevron.down")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile.row.more")
+
+                if showMoreProfileActions {
+                    pilotSeparator
+                    if notebookRelease.enabled {
+                        pilotAction("Kişisel notlar", icon: "note.text", tint: Color(hex: "#22B94F"),
+                            id: "profile.row.notebook") { showNotebook = true }
+                        pilotSeparator
+                    }
+                    pilotAction("Arkadaşını davet et", icon: "gift", tint: Color(hex: "#DDA830"),
+                        id: "profile.row.referral") { showReferrals = true }
+                    pilotSeparator
+                    pilotAction("Satın alımları geri yükle", icon: "arrow.clockwise", tint: Color(hex: "#2679E8"),
+                        id: "profile.row.restore_purchases") { restorePurchasesFromProfile() }
+                        .disabled(isRestoringPurchases)
+                    pilotSeparator
+                    pilotAction("Geçmiş analizler", icon: "doc.text.magnifyingglass", tint: Color(hex: "#73777D"),
+                        id: "profile.row.history") {
+                        if let pilotNavigate { pilotNavigate(.analyses) }
+                        else { app.activeTab = .analyses }
+                    }
+                    pilotSeparator
+                    pilotAction("Raporlarım", icon: "doc.text", tint: Color(hex: "#73777D"),
+                        id: "profile.row.reports") {
+                        if let pilotNavigate { pilotNavigate(.reports) }
+                        else { app.activeTab = .reports }
+                    }
+                }
+            }
+
+            if deviceIntegrity.isWarning { deviceIntegrityWarningCard }
+
+            Button {
+                pendingDataAction = .requestAccountDeletion
+            } label: {
+                PilotProfileRow(icon: "trash", title: "Hesabımı sil", tint: Color(hex: "#D64B4B"),
+                    titleColor: Color(hex: "#C9393B"))
+                    .background(profileCardFill, in: RoundedRectangle(cornerRadius: 20))
+                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(profileLine, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("profile.row.delete_account")
+
+            Button { app.signOut() } label: {
+                Text("Çıkış yap")
+                    .font(NovaFont.font(.bodyStrong))
+                    .foregroundStyle(Color(hex: "#C9393B"))
+                    .frame(maxWidth: .infinity, minHeight: 54)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("profile.row.sign_out")
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 34)
+    }
+
+    private var pilotIdentity: some View {
+        VStack(spacing: 8) {
+            PhotosPicker(selection: $selectedProfileAvatarItem, matching: .images) {
+                ZStack {
+                    Circle().fill(Color(hex: "#D2FFD9"))
+                    if let profileAvatarImage {
+                        Image(uiImage: profileAvatarImage)
+                            .resizable().scaledToFill().frame(width: 100, height: 100).clipShape(Circle())
+                    } else {
+                        Text(app.profile?.displayInitials ?? "—")
+                            .font(.system(size: 32, weight: .semibold, design: .rounded))
+                            .foregroundStyle(Color.rdGreenDark)
+                    }
+                    if isUpdatingProfileAvatar { ProgressView().tint(Color.rdGreenDark) }
+                }
+                .frame(width: 100, height: 100)
+                .overlay(alignment: .bottomTrailing) {
+                    Image(systemName: "camera")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.rdSlate)
+                        .frame(width: 28, height: 28)
+                        .background(profileCardFill, in: Circle())
+                        .overlay(Circle().stroke(profileLine, lineWidth: 1))
+                        .offset(x: 1, y: 1)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(isUpdatingProfileAvatar)
+            .accessibilityLabel("Profil fotoğrafını değiştir")
+
+            Text(profileDisplayName)
+                .font(NovaFont.font(.screenTitle))
+                .foregroundStyle(Color.rdBlack)
+                .multilineTextAlignment(.center)
+                .padding(.top, 4)
+            Text(pilotHandle)
+                .font(NovaFont.font(.body))
+                .foregroundStyle(Color.rdSlate)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var pilotHandle: String {
+        guard let localPart = app.profile?.email?.split(separator: "@").first,
+              !localPart.isEmpty else { return profileExpertiseLabel }
+        return "@\(localPart)"
+    }
+
+    private func pilotGroup<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(spacing: 0, content: content)
+            .background(profileCardFill, in: RoundedRectangle(cornerRadius: 20))
+    }
+
+    private var pilotSeparator: some View {
+        Rectangle().fill(profileLine).frame(height: 1).padding(.leading, 62).padding(.trailing, 16)
+    }
+
+    private func pilotAction(_ title: String, icon: String, tint: Color, id: String,
+                             action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            PilotProfileRow(icon: icon, title: title, tint: tint)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(id)
+    }
+
+    private func openPilotSubscription() {
+        if app.currentTier.isPaid {
+            openURL(subscriptionManagementURL)
+        } else {
+            PaywallEventService.shared.beginEntry(at: .profileUpsellCard,
+                currentTier: app.currentTier, targetTier: .plus)
+            showPaywall = true
         }
     }
 
@@ -1329,6 +1555,43 @@ struct ProfileView: View {
         guard let item = exportedDataFile else { return }
         AnalysisService.shared.removeUserDataExport(at: item.url)
         exportedDataFile = nil
+    }
+}
+
+private struct PilotProfileRow: View {
+    let icon: String
+    let title: String
+    let tint: Color
+    var trailingSymbol = "chevron.right"
+    var titleColor: Color? = nil
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(titleColor == nil ? Color.white : tint)
+                .frame(width: 34, height: 34)
+                .background {
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(titleColor == nil
+                            ? LinearGradient(colors: [tint.opacity(0.72), tint], startPoint: .top, endPoint: .bottom)
+                            : LinearGradient(colors: [tint.opacity(0.12), tint.opacity(0.12)], startPoint: .top, endPoint: .bottom))
+                }
+
+            Text(title)
+                .font(NovaFont.font(.body))
+                .foregroundStyle(titleColor ?? (colorScheme == .dark ? Color.rdWhite : Color.rdCharcoal))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
+
+            Image(systemName: trailingSymbol)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color.rdSlate)
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 56)
+        .contentShape(Rectangle())
     }
 }
 

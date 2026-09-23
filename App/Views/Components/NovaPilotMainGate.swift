@@ -420,11 +420,7 @@ private struct IsgOSGBWorkspaceRoot: View {
             case .notifications: changes
             case .profile:
                 NovaPageSurface(onEdgeBack: { navigate(.home) }) {
-                    VStack(spacing: 0) {
-                        NovaPageHeading(title: RDLocalization.string("localizable.nova.navigation.profile", table: .localizable,
-                            fallback: "Profil"), onBack: { navigate(.home) }).padding(.horizontal, 20)
-                        ProfileView()
-                    }
+                    ProfileView(pilotOnBack: { navigate(.home) }, pilotNavigate: navigate)
                 }
             }
         }
@@ -2386,10 +2382,7 @@ struct NovaPilotRoot: View {
                 NotebookDestination(startWithNewNote: destination == .newNote, onClose: { navigate(.home) })
             case .profile:
                 NovaPageSurface(onEdgeBack: { navigate(.home) }) {
-                    VStack(spacing: 0) {
-                        NovaPageHeading(title: "Profil", onBack: { navigate(.home) }).padding(.horizontal, 20)
-                        ProfileView()
-                    }
+                    ProfileView(pilotOnBack: { navigate(.home) }, pilotNavigate: navigate)
                 }
             }
         }

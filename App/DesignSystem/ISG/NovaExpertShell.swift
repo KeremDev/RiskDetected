@@ -49,10 +49,12 @@ struct NovaExpertShell<Content: View>: View {
             ZStack {
                 ZStack(alignment: .bottom) {
                     VStack(spacing: 0) {
-                    NovaShellTopBar(current: navigation.current, userName: userName, hasUnread: hasUnread,
-                        unreadCount: unreadCount,
-                        canGoBack: !(navigation.paths[navigation.selected] ?? []).isEmpty,
-                        notificationsAvailable: navigation.canOpen(.notifications), send: send)
+                    if navigation.current != .profile {
+                        NovaShellTopBar(current: navigation.current, userName: userName, hasUnread: hasUnread,
+                            unreadCount: unreadCount,
+                            canGoBack: !(navigation.paths[navigation.selected] ?? []).isEmpty,
+                            notificationsAvailable: navigation.canOpen(.notifications), send: send)
+                    }
                     TabView(selection: Binding(get: { navigation.selected }, set: { send(.select($0)) })) {
                         ForEach(NovaTab.allCases, id: \.self) { tab in
                             NavigationStack(path: Binding(
@@ -69,7 +71,7 @@ struct NovaExpertShell<Content: View>: View {
                         }
                     }
                     }
-                    if keyboard.height == 0 {
+                    if keyboard.height == 0 && navigation.current != .profile {
                         NovaShellTabBar(selected: navigation.selected, current: navigation.current,
                             canOpen: navigation.canOpen, send: send,
                             onDestination: guardedDestination(onDestination, epoch: epoch))
