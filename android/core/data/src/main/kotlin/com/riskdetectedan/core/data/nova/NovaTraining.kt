@@ -19,6 +19,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.UUID
+import kotlin.math.ceil
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.roundToLong
@@ -80,7 +81,7 @@ fun String.sameId(other: String?) = other != null && equals(other, ignoreCase = 
 }
 
 @Serializable data class NovaEducationScope(
-    val id: String = UUID.randomUUID().toString(), @SerialName("company_id") val companyId: String, @SerialName("workplace_id") val workplaceId: String,
+    val id: String = UUID.randomUUID().toString(), @SerialName("company_id") val companyId: String, @SerialName("workplace_id") val workplaceId: String? = null,
     @SerialName("logo_path") val logoPath: String? = null, @SerialName("company_name") val companyName: String? = null,
     @SerialName("workplace_name") val workplaceName: String? = null, @SerialName("hazard_class") val hazardClass: String? = null,
     @SerialName("group_name") val groupName: String = "Genel", val cycle: String = "initial", @SerialName("context_note") val contextNote: String = "",
@@ -96,6 +97,7 @@ fun String.sameId(other: String?) = other != null && equals(other, ignoreCase = 
     val issues: List<String>? = null,
 ) {
     val net get() = topics.sumOf { it.instructionMinutes }
+    val group4 get() = topics.filter { it.group == "G4" }.sumOf { it.instructionMinutes }
     val breakTotal get() = lessons.sumOf { it.breakMinutes }
     val cycleName get() = cycleName(cycle)
     companion object {
@@ -118,11 +120,14 @@ fun String.sameId(other: String?) = other != null && equals(other, ignoreCase = 
     val title: String = "", @SerialName("provider_name") val providerName: String = "", val notes: String = "",
     val trainers: List<NovaEducationTrainer> = emptyList(), val scopes: List<NovaEducationScope> = emptyList(),
 ) {
+    /** One record carries one hazard class, and every company/workplace in it needs its own minutes, lessons and people. */
     fun isComplete(step: NovaEducationStep): Boolean = when (step) {
-        NovaEducationStep.info -> title.isNotBlank()
-        NovaEducationStep.schedule -> scopes.any { it.lessons.isNotEmpty() }
+        NovaEducationStep.companies -> scopes.firstOrNull()?.hazardClass?.let { hazard -> scopes.all { it.hazardClass == hazard } } ?: false
+        NovaEducationStep.info -> title.isNotBlank() && providerName.isNotBlank()
+        NovaEducationStep.topics -> scopes.isNotEmpty() && scopes.all { it.net > 0 }
+        NovaEducationStep.schedule -> scopes.isNotEmpty() && scopes.all { it.lessons.isNotEmpty() }
         NovaEducationStep.trainers -> trainers.any { it.name.isNotBlank() }
-        NovaEducationStep.participants -> scopes.any { it.participants.isNotEmpty() }
+        NovaEducationStep.participants -> scopes.isNotEmpty() && scopes.all { it.participants.isNotEmpty() }
         NovaEducationStep.review -> NovaEducationStep.entries.dropLast(1).all(::isComplete)
     }
     val completedCount get() = NovaEducationStep.entries.count(::isComplete)
@@ -136,7 +141,8 @@ fun String.sameId(other: String?) = other != null && equals(other, ignoreCase = 
 
 /** The guided editor's steps, in the order they are asked; the last one is an explicit review checkpoint. */
 enum class NovaEducationStep(val title: String, val symbol: String) {
-    info("Eğitim ve düzenleyici", "text.book.closed"), schedule("Tarih, saat ve yer", "calendar.badge.clock"),
+    companies("Firmalar ve işyerleri", "building.2"), info("Eğitim ve düzenleyici", "text.book.closed"),
+    topics("Konular ve dakikalar", "list.bullet.clipboard"), schedule("Tarih, saat ve yer", "calendar.badge.clock"),
     trainers("Eğiticiler", "person.crop.rectangle"), participants("Katılımcılar", "person.3"), review("Kontrol ve kaydet", "checkmark.circle"),
 }
 
@@ -150,8 +156,10 @@ enum class NovaEducationStep(val title: String, val symbol: String) {
     @Serializable data class Preset(
         val code: String, val label: String, val cycle: String, @SerialName("hazard_class") val hazardClass: String,
         @SerialName("topic_instruction_minutes") val topicInstructionMinutes: Map<String, Int> = emptyMap(), val group4: G4,
+        @SerialName("default_instruction_minutes") val defaultInstructionMinutes: Int = 0,
     ) {
-        @Serializable data class G4(val topics: List<G4Topic> = emptyList())
+        @Serializable data class G4(val topics: List<G4Topic> = emptyList(),
+                                    @SerialName("budget_instruction_minutes") val budgetInstructionMinutes: Int = 0)
         @Serializable data class G4Topic(@SerialName("local_key") val localKey: String, val title: String,
                                          @SerialName("instruction_minutes") val instructionMinutes: Int)
     }
@@ -180,12 +188,12 @@ enum class NovaEducationStep(val title: String, val symbol: String) {
                                          @SerialName("source_session_revision") val sourceSessionRevision: Long)
     @Serializable data class Workplace(val id: String, @SerialName("company_id") val companyId: String, val name: String,
                                        @SerialName("hazard_class") val hazardClass: String)
-    @Serializable data class Curriculum(val id: String, @SerialName("company_id") val companyId: String, @SerialName("workplace_id") val workplaceId: String,
+    @Serializable data class Curriculum(val id: String, @SerialName("company_id") val companyId: String, @SerialName("workplace_id") val workplaceId: String? = null,
                                         val education: NovaEducationCurriculum)
 
     /** The company's saved default for this workplace, cycle and hazard class, if any. */
     fun curriculum(scope: NovaEducationScope, cycle: String, hazard: String?, group: String? = null) = curricula.firstOrNull {
-        it.companyId.sameId(scope.companyId) && it.workplaceId.sameId(scope.workplaceId) && it.education.cycle == cycle &&
+        it.companyId.sameId(scope.companyId) && (it.workplaceId?.sameId(scope.workplaceId) ?: (scope.workplaceId == null)) && it.education.cycle == cycle &&
             it.education.hazardClass == hazard && (group == null || it.education.groupName == group)
     }
 }
@@ -206,7 +214,7 @@ enum class NovaEducationStep(val title: String, val symbol: String) {
     )
     @Serializable data class Scope(
         val id: String, @SerialName("legal_name") val legalName: String, @SerialName("company_name") val companyName: String = "",
-        @SerialName("workplace_name") val workplaceName: String, @SerialName("hazard_class") val hazardClass: String, val cycle: String,
+        @SerialName("workplace_name") val workplaceName: String? = null, @SerialName("hazard_class") val hazardClass: String, val cycle: String,
         @SerialName("context_note") val contextNote: String = "", val topics: List<NovaEducationTopic>, val lessons: List<NovaEducationLesson>,
         @SerialName("employer_name") val employerName: String = "", @SerialName("employer_capacity") val employerCapacity: String = "",
         @SerialName("instruction_minutes") val instructionMinutes: Int, @SerialName("break_minutes") val breakMinutes: Int,
@@ -229,6 +237,19 @@ object NovaEducationClock {
     fun iso(value: Instant): String = DateTimeFormatter.ISO_INSTANT.format(value.truncatedTo(ChronoUnit.SECONDS))
     fun date(value: String): Instant? = runCatching { OffsetDateTime.parse(value).toInstant() }.getOrNull()
     fun day(value: Instant): String = value.atZone(zone).toLocalDate().toString()
+
+    /** Basic units round up (a 50-minute lesson is two units); eight units fill a day, ending yesterday at the latest. */
+    fun units(minutes: Int, basic: Boolean) = if (basic) maxOf(1, ceil(minutes / 45.0).toInt()) else 1
+
+    /** The recommended days for [minutes], back-dated so a fresh record describes a training that already happened. */
+    fun initialDays(minutes: Int, basic: Boolean): List<NovaEducationDay> {
+        val count = units(minutes, basic)
+        val dayCount = maxOf(1, (count + 7) / 8)
+        val first = java.time.LocalDate.now(zone).minusDays(dayCount.toLong())
+        return (0 until dayCount).map { n ->
+            NovaEducationDay.of(first.plusDays(n.toLong()).atTime(9, 0).atZone(zone).toInstant(), minOf(8, count - n * 8))
+        }
+    }
 
     fun days(lessons: List<NovaEducationLesson>): List<NovaEducationDay> =
         lessons.groupBy { day(date(it.startsAt) ?: Instant.now()) }.toSortedMap().values.mapNotNull { list ->
@@ -288,6 +309,7 @@ object NovaTrainingWords {
         "VERSION_CONFLICT" -> "Kayıt başka bir cihazda değişti. Kapatıp güncel kaydı açın; form taslağınız korunur."
         "TRAINING_DATE_INVALID", "LESSON_OVERLAP_OR_FUTURE" -> "Ders saatleri çakışmamalı ve eğitimin tamamı geçmişte olmalı."
         "PARTICIPANT_DUPLICATE" -> "Bir personeli yalnız bir eğitim kapsamına ekleyin."
+        "TRAINING_HAZARD_MISMATCH" -> "Farklı tehlike sınıfındaki firmalar aynı eğitim dosyasında yer alamaz. Ayrı kayıt oluşturun."
         "WORKPLACE_REQUIRED" -> "Firmaya ait işyeri seçin."
         "TRAINER_INVALID" -> "En az bir eğitici adı girin ve konu dağılımlarını kontrol edin."
         "FACE_TO_FACE_REQUIRED" -> "İşe başlama eğitimi yüz yüze verilmelidir."

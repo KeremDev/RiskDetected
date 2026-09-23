@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -634,7 +635,9 @@ class NovaRootServices @javax.inject.Inject constructor(
             val page = personnel.read(identity.userId, identity.sessionId, company, "employees", cursor = cursor)
             page["rows"]?.jsonArray?.forEach { row ->
                 val entry = row.jsonObject
-                rows += NovaPersonOption(entry.getValue("id").jsonPrimitive.content, entry.getValue("name").jsonPrimitive.content)
+                fun text(key: String) = (entry[key] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }
+                rows += NovaPersonOption(entry.getValue("id").jsonPrimitive.content, entry.getValue("name").jsonPrimitive.content,
+                    text("department_name"), text("job_title"))
             }
             cursor = page["next"]?.jsonPrimitive?.contentOrNull
         } while (cursor != null && rows.size < 1_000)

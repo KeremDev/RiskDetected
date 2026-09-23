@@ -169,6 +169,7 @@ object NovaSymbols {
             "largecircle.fill.circle" to Icons.Filled.RadioButtonChecked,
             "square" to Icons.Outlined.CheckBoxOutlineBlank,
             "chevron.left" to Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
+            "arrow.left" to Icons.AutoMirrored.Outlined.ArrowBack,
             "chevron.right" to Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             "chevron.up.chevron.down" to Icons.Outlined.UnfoldMore,
             "clock" to Icons.Outlined.Schedule,

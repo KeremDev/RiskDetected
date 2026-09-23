@@ -42,8 +42,9 @@ import java.time.format.DateTimeFormatter
 
 /** The personal education certificate as A4 pages (iOS `NovaEducationCertificatePDF`), padded to an even count for duplex printing. */
 internal object NovaEducationCertificatePDF {
-    private const val RENDERER_VERSION = 1
+    private const val RENDERER_VERSION = 2
     private const val WIDTH = 527
+    private const val BLANK = "____________________"
     private data class Block(val text: String, val size: Float = 10f, val bold: Boolean = false, val space: Int = 6, val reserved: Int = 0)
     private data class Placed(val layout: StaticLayout, val y: Int)
 
@@ -94,8 +95,8 @@ internal object NovaEducationCertificatePDF {
             Block(scope.legalName, 15f, true, 14),
             Block((if (snapshot.isDraft) "TASLAK · " else "") + snapshot.title, 21f, true, 18),
             Block(snapshot.person.name.orEmpty(), 18f, true),
-            Block("Unvan: " + snapshot.person.jobTitle.ifEmpty { "Eksik" }, 11f),
-            Block("İşyeri: ${scope.workplaceName} · ${hazard(scope.hazardClass)}"),
+            Block("Unvan: " + snapshot.person.jobTitle.ifEmpty { BLANK }, 11f),
+            Block((if (scope.workplaceName == null) "Firma" else "İşyeri") + ": ${scope.workplaceName ?: scope.companyName} · ${hazard(scope.hazardClass)}"),
             Block("Düzenleyen: ${snapshot.providerName}", 11f),
             Block("Eğitim: ${NovaEducationScope.cycleName(scope.cycle)}", 11f),
             Block("Gerçekleşen gün ve saatler (Europe/Istanbul)\n" + times.joinToString("\n")),
@@ -112,7 +113,8 @@ internal object NovaEducationCertificatePDF {
             val groups = scope.topics.filter { topic -> topic.trainerIds.any { it.sameId(trainer.id) } }.map { it.group }.distinct().sorted()
             front += signature("${trainer.name} · ${trainer.title}\nKonu kapsamı: ${groups.joinToString(", ")}\nİmza:")
         }
-        front += signature((if (scope.employerCapacity == "employer") "İşveren" else "İşveren vekili") + ": ${scope.employerName}\nİmza / kaşe:")
+        val employer = scope.employerName.takeUnless { it.isEmpty() || it == "İşveren vekili" } ?: BLANK
+        front += signature((if (scope.employerCapacity == "employer") "İşveren" else "İşveren vekili") + ": $employer\nİmza / kaşe:")
         front += Block("Belge, düzenleyen uzmanın kaydına ve beyanına dayanır. İmza alanları fiziki imza için boş bırakılmıştır.", 8f)
         val back = mutableListOf(Block("EĞİTİM KONULARI VE SÜRELERİ", 16f, true, 12))
         listOf("G1" to "Genel konular", "G2" to "Sağlık konuları", "G3" to "Teknik konular", "G4" to "İşyerine özgü riskler").forEach { (group, title) ->
@@ -199,8 +201,8 @@ private class NovaPdfPrint(private val file: File) : PrintDocumentAdapter() {
 }
 
 /**
- * One participant's certificate (iOS `NovaEducationCertificateScreen`): a numberless draft
- * preview until every field is complete, then one issue that allocates the number.
+ * One participant's certificate (iOS `NovaEducationCertificateScreen`). Missing content sends the
+ * expert back to the education; a complete draft is issued at once, so only numbered PDFs are shown.
  */
 @Composable
 internal fun NovaEducationCertificateScreen(client: NovaTrainingClient, session: NovaTrainingSession, scopeId: String, personId: String,
@@ -208,25 +210,23 @@ internal fun NovaEducationCertificateScreen(client: NovaTrainingClient, session:
     BackHandler(onBack = onClose)
     val context = LocalContext.current
     val coroutines = rememberCoroutineScope()
-    var current by remember { mutableStateOf(session) }
-    var editable by remember { mutableStateOf(session.education?.let { NovaEducationDraft.of(session, it) }) }
-    var issued by remember { mutableStateOf(NovaDay.today()) }
+    val issued = remember { NovaDay.today() }
     var logo by remember { mutableStateOf<String?>(null) }
     var result by remember { mutableStateOf<NovaEducationCertificate?>(null) }
     var file by remember { mutableStateOf<File?>(null) }
     var pages by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
+    var showingDocument by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var fieldsOpen by remember { mutableStateOf(false) }
-    val fieldsChanged = editable?.let { value -> current.education?.let { value.scopes != it.scopes || value.trainers != it.trainers || value.providerName != it.providerName } } ?: false
     suspend fun load(issue: Boolean) {
         busy = true; error = null
         try {
             val request = if (!issue && documentId != null) NovaEducationCertificateRequest("read", documentId = documentId, revision = documentRevision)
-                else NovaEducationCertificateRequest(if (issue) "issue" else "preview", session.id, scopeId, personId, current.version, issued, logoPngBase64 = logo)
+                else NovaEducationCertificateRequest(if (issue) "issue" else "preview", session.id, scopeId, personId, session.version, issued, logoPngBase64 = logo)
             val certificate = client.certificate(request)
-            val rendered = withContext(Dispatchers.IO) { NovaEducationCertificatePDF.file(context, certificate).let { it to NovaEducationCertificatePDF.pages(it) } }
-            file = rendered.first; pages = rendered.second; result = certificate
+            val rendered = if (certificate.snapshot.isDraft) null
+                else withContext(Dispatchers.IO) { NovaEducationCertificatePDF.file(context, certificate).let { it to NovaEducationCertificatePDF.pages(it) } }
+            file = rendered?.first; pages = rendered?.second.orEmpty(); result = certificate
         } catch (failure: Exception) { error = NovaTrainingWords.message(failure) }
         busy = false
     }
@@ -239,77 +239,62 @@ internal fun NovaEducationCertificateScreen(client: NovaTrainingClient, session:
     LaunchedEffect(Unit) {
         if (documentId == null) logo = runCatching { client.logo(session.education?.scopes?.firstOrNull { it.id.sameId(scopeId) }?.logoPath) }.getOrNull()
         load(false)
+        val loaded = result
+        if (canIssue && loaded != null && loaded.snapshot.isDraft && loaded.issues.isEmpty()) load(true)
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         NovaPageHeading("Kişisel eğitim belgesi", backEnabled = !busy, onBack = onClose)
         if (busy) Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { NovaSpinner(NovaColorToken.text.color(), size = 24.dp) }
-        error?.let { NovaText(it, style = NovaTypeToken.meta, color = NovaColorToken.statusDangerInk.color()) }
+        error?.let { NovaHelpHint(it) }
         val shown = result
         if (shown == null) {
             if (!busy) NovaButton("Tekrar dene", { coroutines.launch { load(false) } }, variant = NovaButtonVariant.Surface, symbol = "arrow.clockwise")
             return@Column
         }
-        shown.issues.forEach { NovaText(NovaTrainingWords.issue(it), style = NovaTypeToken.meta, color = NovaColorToken.statusWarningInk.color()) }
-        val edit = editable
-        if (edit != null && shown.snapshot.isDraft) {
-            NovaCard(Modifier.fillMaxWidth(), padding = 14) {
-                Row(Modifier.fillMaxWidth().novaRowPress { fieldsOpen = !fieldsOpen }.testTag("education.certificate.fields"),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    NovaText("Eksik belge bilgilerini tamamla", Modifier.weight(1f), NovaTypeToken.bodyStrong)
-                    NovaIcon(if (fieldsOpen) "chevron.up" else "chevron.down", 12.dp)
-                }
-                if (fieldsOpen) Column(Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NovaTextField("Düzenleyici kişi / kurum", edit.providerName, { editable = edit.copy(providerName = it) }, enabled = canIssue)
-                    edit.trainers.forEachIndexed { index, trainer ->
-                        fun update(value: NovaEducationTrainer) { editable = edit.copy(trainers = edit.trainers.toMutableList().also { it[index] = value }) }
-                        NovaTextField("Eğitici adı", trainer.name, { update(trainer.copy(name = it)) }, enabled = canIssue)
-                        NovaTextField("Eğitici unvanı", trainer.title, { update(trainer.copy(title = it)) }, enabled = canIssue)
-                    }
-                    edit.scopes.forEachIndexed { index, scope ->
-                        if (!scope.id.sameId(scopeId)) return@forEachIndexed
-                        fun update(value: NovaEducationScope) { editable = edit.copy(scopes = edit.scopes.toMutableList().also { it[index] = value }) }
-                        NovaTextField("İşveren / vekili", scope.employerName, { update(scope.copy(employerName = it)) }, enabled = canIssue)
-                        NovaTextField("İşyeri tam unvanı", scope.legalName, { update(scope.copy(legalName = it)) }, enabled = canIssue)
-                        scope.participants.forEachIndexed { personIndex, person ->
-                            if (person.id.sameId(personId)) NovaTextField("Belgeye özel personel unvanı", person.jobTitle, { title ->
-                                update(scope.copy(participants = scope.participants.toMutableList().also { it[personIndex] = person.copy(jobTitle = title) }))
-                            }, enabled = canIssue)
+        when {
+            shown.issues.isNotEmpty() -> NovaCard(Modifier.fillMaxWidth().testTag("education.certificate.issues"), padding = 16) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NovaText("Sertifika için eğitim içeriğini tamamlayın", style = NovaTypeToken.cardTitle)
+                    shown.issues.forEach { code ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            NovaIcon("info.circle", 12.dp)
+                            NovaText(NovaTrainingWords.issue(code), style = NovaTypeToken.meta)
                         }
                     }
+                    NovaText("Eğitimi açıp ilgili konuları düzenledikten sonra sertifikayı buradan hazırlayabilirsiniz.", style = NovaTypeToken.metaQuiet)
+                    NovaCompactActionButton("Eğitim içeriğine dön", "arrow.left", identifier = "education.certificate.back", onClick = onClose)
                 }
             }
-            NovaDayField("Düzenleme tarihi", issued, { picked -> if (picked <= NovaDay.today()) issued = picked }, "education.certificate.issued")
-            NovaButton("Belge bilgilerini kaydet ve önizlemeyi yenile", {
-                coroutines.launch {
-                    busy = true; error = null
-                    try {
-                        val row = client.save(edit).row
-                        val education = row?.education ?: throw NovaTrainingException("UNAVAILABLE")
-                        current = row; editable = NovaEducationDraft.of(row, education)
-                        load(false)
-                    } catch (failure: Exception) { error = NovaTrainingWords.message(failure); busy = false }
+            shown.snapshot.isDraft -> NovaText("Sertifika hazırlanıyor…", style = NovaTypeToken.metaQuiet)
+            else -> NovaCard(Modifier.fillMaxWidth(), padding = 16) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    NovaText("Sertifika hazır", style = NovaTypeToken.cardTitle)
+                    NovaText(shown.snapshot.number, style = NovaTypeToken.metaQuiet)
                 }
-            }, variant = NovaButtonVariant.Surface, enabled = !busy && canIssue, symbol = "arrow.clockwise")
+            }
         }
-        if (shown.issues.isNotEmpty()) NovaText("Alanları eğitim formunda tamamlayıp kaydedin. Aşağıdaki çıktı numarasız taslaktır.", style = NovaTypeToken.meta)
-        pages.forEachIndexed { index, page ->
-            Image(page.asImageBitmap(), "Belge sayfası ${index + 1}", Modifier.fillMaxWidth())
-        }
-        if (shown.snapshot.isDraft) NovaButton("Belge numarasını al ve sertifika hazırla", { coroutines.launch { load(true) } },
-            Modifier.testTag("education.certificate.issue"), enabled = !busy && !fieldsChanged && shown.issues.isEmpty() && canIssue, symbol = "checkmark.seal")
         val ready = file
-        if (ready != null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NovaButton("Paylaş", { novaShareFile(context, ready.readBytes(), ready.name, "application/pdf") }, Modifier.weight(1f),
-                variant = NovaButtonVariant.Surface, enabled = !busy, symbol = "square.and.arrow.up", compact = true)
-            NovaButton("Kaydet", { saveLauncher.launch(if (shown.snapshot.isDraft) "TASLAK eğitim belgesi.pdf" else shown.snapshot.number.ifEmpty { "Eğitim belgesi" } + ".pdf") },
-                Modifier.weight(1f), variant = NovaButtonVariant.Surface, enabled = !busy, symbol = "square.and.arrow.down", compact = true)
-            NovaButton("Yazdır", {
-                runCatching {
-                    (context.getSystemService(Context.PRINT_SERVICE) as PrintManager).print(shown.snapshot.title, NovaPdfPrint(ready),
-                        PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).setDuplexMode(PrintAttributes.DUPLEX_MODE_LONG_EDGE).build())
-                }.onFailure { error = "Yazdırma açılamadı." }
-            }, Modifier.weight(1f), variant = NovaButtonVariant.Surface, enabled = !busy, symbol = "printer", compact = true)
+        if (!shown.snapshot.isDraft && ready != null) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            NovaButton("Görüntüle", { showingDocument = true }, Modifier.testTag("education.certificate.view"), enabled = !busy, symbol = "doc.text")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NovaButton("Paylaş", { novaShareFile(context, ready.readBytes(), ready.name, "application/pdf") }, Modifier.weight(1f),
+                    variant = NovaButtonVariant.Surface, enabled = !busy, symbol = "square.and.arrow.up", compact = true)
+                NovaButton("Kaydet", { saveLauncher.launch(shown.snapshot.number.ifEmpty { "Eğitim belgesi" } + ".pdf") },
+                    Modifier.weight(1f), variant = NovaButtonVariant.Surface, enabled = !busy, symbol = "square.and.arrow.down", compact = true)
+                NovaButton("Yazdır", {
+                    runCatching {
+                        (context.getSystemService(Context.PRINT_SERVICE) as PrintManager).print(shown.snapshot.title, NovaPdfPrint(ready),
+                            PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).setDuplexMode(PrintAttributes.DUPLEX_MODE_LONG_EDGE).build())
+                    }.onFailure { error = "Yazdırma açılamadı." }
+                }, Modifier.weight(1f), variant = NovaButtonVariant.Surface, enabled = !busy, symbol = "printer", compact = true)
+            }
+        }
+    }
+    NovaPopup(showingDocument, { showingDocument = false }, identifier = "education.certificate.document") {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            NovaPageHeading(result?.snapshot?.number.orEmpty().ifEmpty { "Eğitim belgesi" }, onBack = { showingDocument = false })
+            pages.forEachIndexed { index, page -> Image(page.asImageBitmap(), "Belge sayfası ${index + 1}", Modifier.fillMaxWidth()) }
         }
     }
 }

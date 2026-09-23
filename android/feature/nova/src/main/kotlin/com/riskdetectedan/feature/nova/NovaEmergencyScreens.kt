@@ -28,7 +28,7 @@ import com.riskdetectedan.core.designsystem.isg.*
 import kotlinx.coroutines.launch
 
 /** One active employee of a company, offered as a name to copy into a snapshot. */
-data class NovaPersonOption(val id: String, val name: String)
+data class NovaPersonOption(val id: String, val name: String, val department: String? = null, val jobTitle: String? = null)
 
 /** The module's calls bound to one identity (iOS `NovaEmergencyClient`); the design preview supplies its own. */
 interface NovaEmergencyClient {

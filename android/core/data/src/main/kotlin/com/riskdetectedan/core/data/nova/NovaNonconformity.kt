@@ -147,7 +147,7 @@ data class NovaNonconformityRow(
 data class NovaNonconformityWorkplace(val id: String, val name: String, @SerialName("needs_review") val needsReview: Boolean)
 
 /** A company choice offered by the analysis and nonconformity pickers. */
-data class NovaCompanyOption(val id: String, val name: String, val detail: String, val sector: String?)
+data class NovaCompanyOption(val id: String, val name: String, val detail: String, val sector: String?, val hazardClass: String? = null)
 
 enum class NovaNonconformityFailure { denied, validation, conflict, unavailable, severityUnknown, payloadRejected, riskInputIncomplete }
 
@@ -434,7 +434,7 @@ class NovaNonconformityService @Inject constructor(private val transport: NovaEx
 
     suspend fun companyOptions(identity: IsgWorkspaceIdentity): List<NovaCompanyOption> =
         overview.overview(identity).filter { !it.isArchived }.map {
-            NovaCompanyOption(it.id, it.name, "${it.workplaceCount} işyeri · ${it.personnelCount} personel", it.sector)
+            NovaCompanyOption(it.id, it.name, "${it.workplaceCount} işyeri · ${it.personnelCount} personel", it.sector, it.hazardClass)
         }
 
     companion object {
