@@ -282,6 +282,8 @@ object NovaSymbols {
             "sparkle" to Icons.Outlined.AutoAwesome,
             "sparkles" to Icons.Outlined.AutoAwesome,
             "square.and.arrow.up" to Icons.Outlined.IosShare,
+            "square.and.arrow.down" to Icons.Outlined.Download,
+            "printer" to Icons.Outlined.Print,
             "square.and.pencil" to Icons.Outlined.EditNote,
             "square.dashed" to Icons.Outlined.CropFree,
             "square.grid.2x2" to Icons.Outlined.GridView,

@@ -7,9 +7,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,7 +20,6 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.riskdetectedan.core.data.isg.IsgWorkspaceIdentity
 import com.riskdetectedan.core.data.nova.*
 import com.riskdetectedan.core.designsystem.isg.*
@@ -33,7 +29,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 /** The process-record calls bound to one identity (iOS `NovaProcessService` plus the file client). */
 interface NovaProcessClient {
@@ -691,7 +686,6 @@ private fun DateTimeControl(field: NovaProcessField, value: String, context: Pro
     val zone = ZoneId.of("Europe/Istanbul")
     val instant = runCatching { Instant.parse(value) }.getOrNull()
     val local = instant?.atZone(zone)
-    var picking by remember { mutableStateOf(false) }
     fun write(day: LocalDate, time: LocalTime) = context.set(field.id, JsonPrimitive(day.atTime(time).atZone(zone).toInstant().truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString()))
     if (!field.required) Row(verticalAlignment = Alignment.CenterVertically) {
         NovaText("Tarih belirt", Modifier.weight(1f), NovaTypeToken.meta)
@@ -703,24 +697,7 @@ private fun DateTimeControl(field: NovaProcessField, value: String, context: Pro
         val day = local?.toLocalDate() ?: LocalDate.now(zone)
         val time = local?.toLocalTime() ?: LocalTime.of(9, 0)
         NovaDayField("Gün", day.toString(), { picked -> NovaDay.parse(picked)?.let { write(it, time) } }, "process.datetime.${field.id}.day")
-        NovaFormValueRow("Saat", "clock") {
-            Box(Modifier.heightIn(min = 36.dp).novaRowPress { picking = true }.testTag("process.datetime.${field.id}.time").padding(horizontal = 10.dp),
-                contentAlignment = Alignment.Center) { NovaText(time.format(DateTimeFormatter.ofPattern("HH:mm")), style = NovaTypeToken.bodyStrong) }
-        }
-        if (picking) {
-            val state = rememberTimePickerState(time.hour, time.minute, is24Hour = true)
-            Dialog({ picking = false }) {
-                NovaCard(padding = 16) {
-                    TimePicker(state)
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        TextButton({ picking = false }) { NovaText("Vazgeç", style = NovaTypeToken.button, color = NovaColorToken.textSecondary.color()) }
-                        TextButton({ write(day, LocalTime.of(state.hour, state.minute)); picking = false }) {
-                            NovaText("Tamam", style = NovaTypeToken.button, color = NovaColorToken.accentInk.color())
-                        }
-                    }
-                }
-            }
-        }
+        NovaTimeField("Saat", time, "process.datetime.${field.id}.time") { write(day, it) }
     }
 }
 

@@ -100,6 +100,10 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             NovaDestination.documentChecklist -> NovaFollowupScreen({ company, status, query, offset -> services.followup(identity, company, status, query, offset) },
                 services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable),
                 onBack = { navigate(NovaDestination.home) })
+            NovaDestination.training, NovaDestination.newTraining -> key(destination) {
+                NovaTrainingScreen(services.trainingClient(identity, state.userName), state.writable, onBack = { navigate(NovaDestination.home) },
+                    createOnOpen = destination == NovaDestination.newTraining)
+            }
             NovaDestination.checklists -> NovaChecklistScreen(services.checklistClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
@@ -254,6 +258,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val followups: NovaFollowupService,
     private val checklists: NovaChecklistService,
     private val checklistQueue: NovaChecklistOfflineQueue,
+    private val training: NovaTrainingService,
     private val personnel: com.riskdetectedan.core.data.company.PersonnelRepository,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
@@ -276,6 +281,8 @@ class NovaRootServices @javax.inject.Inject constructor(
     }
     fun emergencyClient(identity: IsgWorkspaceIdentity) =
         NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity))
+    fun trainingClient(identity: IsgWorkspaceIdentity, userName: String) =
+        NovaServiceTrainingClient(training, identity, companies(identity), userName, people(identity))
     fun checklistClient(identity: IsgWorkspaceIdentity) = NovaServiceChecklistClient(checklists, checklistQueue, files, identity, companies(identity))
     fun companyOptions(identity: IsgWorkspaceIdentity) = companies(identity)
     suspend fun followup(identity: IsgWorkspaceIdentity, company: String?, status: String?, query: String, offset: Int) =
