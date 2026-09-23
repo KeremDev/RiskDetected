@@ -30,7 +30,7 @@ class NovaDirectoryDestinationTest {
             save = { error("No writes expected") }, pending = { null })
         compose.setContent { NovaTheme(false) { NovaDirectoryDestination(scope, NovaDirectoryKind.workplaces, client = client, canWrite = false, onBack = {}) } }
         compose.onNodeWithText("Düzenle").assertDoesNotExist()
-        compose.onNodeWithText("Tarihli bağlam").performScrollTo().performClick()
+        compose.onNodeWithText("Bilgi geçmişi").performScrollTo().performClick()
         compose.onNodeWithText("Yeni kayıt").assertIsNotEnabled()
     }
     @Test fun pendingWriteBlocksNewRecordAndRetryUsesSameIntent() {
@@ -52,7 +52,7 @@ class NovaDirectoryDestinationTest {
             else NovaDirectoryPage(listOf(row), null, null)
         }, save = { error("No writes expected") }, pending = { null })
         compose.setContent { NovaTheme(false) { NovaDirectoryDestination(scope, NovaDirectoryKind.workplaces, client = client, onBack = {}) } }
-        compose.onNodeWithText("Tarihli bağlam").performScrollTo().performClick()
+        compose.onNodeWithText("Bilgi geçmişi").performScrollTo().performClick()
         compose.onNodeWithText("İşyeri Bağlam Geçmişi").assertIsDisplayed()
         compose.onNodeWithContentDescription("Geri").performClick()
         compose.onNodeWithText("Sentetik İşyeri").assertExists()

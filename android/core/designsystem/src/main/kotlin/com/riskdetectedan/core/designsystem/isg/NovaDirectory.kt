@@ -6,6 +6,24 @@ enum class NovaDirectoryKind(val title: String) {
     workplaces("İşyerleri"), departments("Departmanlar"), jobs("Görev ve Unvanlar"), contractors("Dış Firmalar"),
     engagements("İşyeri İlişkileri"), contexts("İşyeri Bağlam Geçmişi"), assignments("Görevlendirme Geçmişi"), employers("Personelin İşvereni");
     val isCatalog get() = this in setOf(workplaces, departments, jobs, contractors)
+    val symbol get() = when (this) {
+        workplaces -> "building.2"
+        departments -> "point.3.connected.trianglepath.dotted"
+        jobs -> "briefcase"
+        contractors, engagements -> "building.2.crop.circle"
+        contexts -> "clock.arrow.circlepath"
+        assignments, employers -> "person.crop.rectangle"
+    }
+    val help get() = when (this) {
+        workplaces -> "Firmanın şube ve çalışma alanlarını yönetin. Bilgi geçmişi, geçmiş tarihlerde geçerli işyeri bilgilerini korur."
+        departments -> "Personelleri üretim, ofis gibi birimlere ayırın."
+        jobs -> "Personellere atanabilecek görev ve unvanları tanımlayın."
+        contractors -> "Birlikte çalıştığınız yüklenici ve tedarikçileri yönetin."
+        engagements -> "Dış firmanın hangi işyerinde, hangi dönemde çalıştığını kaydedin."
+        contexts -> "Tehlike sınıfı gibi bilgilerin geçerli olduğu dönemleri kaydedin; eski kayıtlar değişmez."
+        assignments -> "Personelin işyeri, departman ve görev değişikliklerini tarihleriyle izleyin."
+        employers -> "Personelin ana firma veya dış firma ile işveren ilişkisini belirleyin."
+    }
 }
 sealed interface NovaDirectoryValue {
     data class Text(val value: String): NovaDirectoryValue
