@@ -10,7 +10,7 @@ Tarih: 2026-09-22. Referans: iOS `codex/isg-transition-foundation` @ `1c942f20`.
 | Uzman kabuğu gerçek uygulamada | `NovaPilotMainGate` → `NovaIntegratedWorkspaceGate` → `NovaPilotRoot` | **Yok.** `NovaExpertShell` yalnızca `isg-design-preview` önizleme uygulamasında |
 | Erişilebilen İSG yüzeyi | 35 hedefin tamamı, her biri özel ekran | Profil → `OsgbWorkspaceScreen`: ham JSON liste + detay sayfası, salt okunur |
 | Backend RPC | 123 | 72 (**75 RPC eksik**) |
-| Pilot build | `com.riskdetected.app.osgbpilot` (staging) + kişisel pilot (canlı, sahip UUID) | Yok |
+| Pilot build | `com.riskdetected.app.osgbpilot` (staging) + kişisel pilot (canlı, sahip UUID) | `osgbPilot` build type (staging) |
 
 Baseline `./gradlew :app:assembleDebug` başarılı (JDK: `/opt/homebrew/opt/openjdk@17`).
 
@@ -36,7 +36,7 @@ iOS OSGB pilotunun eşi: yeni `osgbPilot` build type.
 
 - `initWith(debug)` → **staging** backend (`qlymhrrlhklcudveknih`). Paylaşılan uzman
   paneli backend'i yalnızca staging'e deploy edildi; canlıya dokunulmadı.
-- `applicationIdSuffix = ".osgbpilot"`, `BuildConfig.NOVA_PILOT = true`.
+- `BuildConfig.NOVA_PILOT = true`; paket şimdilik staging debug paketiyle aynı (`com.riskdetectedan.app.debug`), bkz. bilinen konular.
 - Diğer tüm build tiplerinde `NOVA_PILOT = false` → mevcut `MainShell` aynen çalışır.
   Canlı (release) uygulama davranışı değişmez.
 - Kişisel canlı pilot (production + sahip UUID) bu planın dışında; canlıya açmak
@@ -91,7 +91,24 @@ sırası, aynı durum geçişleri, aynı boş/hata/yükleniyor durumları, aynı
 |---|---|---|
 | F1 Temel + kabuk + navigasyon kataloğu | Tamam; 408 tasarım sistemi testi + iOS/Node navigasyon sözleşmesi geçiyor | `3651e480` |
 | F0 Pilot build + transport + çalışma alanı + kök | Tamam; `osgbPilot` APK emülatörde açılıyor | (bu commit) |
-| F2 Ana sayfa + bildirim merkezi | Ana sayfa canlı özet, zil, bildirim merkezi tamam; istatistik bekliyor | (bu commit) |
+| F2 Ana sayfa + bildirim merkezi | Ana sayfa canlı özet, zil, bildirim merkezi tamam | `5c38a6db` |
+| F5 Uygunsuzluk panosu + kayıt + manuel bulgu | Tamam | `7cc1029b` |
+| F7 Risk değerlendirmesi (modül günlüğü + dosya alanı) | Tamam | `c105c38e` |
+| F12 Periyodik kontroller | Tamam | `44521e30` |
+| F9 Acil durum planları + tatbikatlar | Tamam | `2d06488b` |
+| F10 Atama, KKD zimmet, İSG-KATİP | Tamam; menüdeki İSG-KATİP iOS gibi süreç kaydına gider (`NovaKatipScreen` kullanılmıyor) | `da07d5ac` |
+| F14 Süreç kayıtları (ziyaret sihirbazı, yıllık plan, kurul, izin, taşeron) + PDF/XLSX | Tamam | `a7e0b733` |
+| F11 Dosya arşivi + evrak takibi | Tamam | `5133718f` |
+| F8 Kontrol listeleri (çevrimdışı kuyruk dahil) | Tamam | `4a955fad` |
+| F13 Eğitimler + kişisel sertifika | Tamam; firmasız yeni kayıtta takvim adımı kilidi Android'de açıldı (iOS'ta hâlâ var) | `d8e94e0b` |
+| F2 İstatistik + süreç takibi kartı | Tamam | `8e1bde4a` |
+| Rapor Merkezi + Rapor Arşivi | Tamam; Excel çıktısı gerçek XLSX (iOS CSV yazıyor) | `2cb242d6` |
+| F15 Not defteri | iOS sayfasına getirildi | `d0a7c1d4` |
+| F15 Aktivite + aktif süre (presence) | Tamam | `12f0b171` |
+
+Kalanlar: F6 analiz (iOS tarafı başka oturumda değişiyor), F3 firma çalışma alanı, F4 personel
+yükseltmesi, F16 OSGB yönetici kökü, F17 NOVA onboarding, KKD form PDF'i. Doğrulama önizleme
+uygulamasında yapıldı; canlı staging doğrulaması kullanıcı girişini bekliyor.
 
 Bilinen dışsal konular:
 - `isg-contract-tests` modülü `core/data` kaynaklarını bağımlılıksız derlediği için HEAD'de de kırık (bu işten önce).
