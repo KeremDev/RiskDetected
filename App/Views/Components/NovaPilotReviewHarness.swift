@@ -117,7 +117,8 @@ struct NovaPilotReviewHarness: View {
             } else if [.findings, .newFinding, .analyses, .newAnalysis, .documentChecklist, .documents, .periodicChecks].contains(destination) {
                 analysisReview(destination)
             } else if selected {
-                NovaCompanyWorkspace(scope: scope, companyName: summary.name, canWrite: true, personnel: personnel, directory: directory,
+                NovaCompanyWorkspace(scope: scope, companyName: summary.name, canWrite: true, canWritePersonnel: true,
+                    personnel: personnel, directory: directory,
                     onBack: { selected = false }, loadSummary: { summary },
                     loadNonconformities: { reviewEntries.map(\.row) },
                     onOpenNonconformities: { navigation.apply(.navigate(.findings), from: navigation.epoch) })

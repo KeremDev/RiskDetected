@@ -4,7 +4,7 @@ enum NovaSuccessMessage {
     static let companyCreated = "Firma başarıyla eklendi!"
     static let companyUpdated = "Firma bilgileri başarıyla güncellendi!"
     static let companyLogoAdded = "Firma logosu başarıyla eklendi!"
-    static let personnelCreated = "Personel başarıyla eklendi!"
+    static let personnelCreated = "Tebrikler, personel eklendi!"
     static let personnelUpdated = "Personel bilgileri başarıyla güncellendi!"
     static let personnelArchived = "Personel başarıyla arşivlendi!"
     static let findingCreated = "Uygunsuzluk başarıyla eklendi!"

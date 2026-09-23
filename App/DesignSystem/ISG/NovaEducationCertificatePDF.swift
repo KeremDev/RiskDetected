@@ -13,7 +13,7 @@ struct NovaEducationPDFFile: FileDocument {
 }
 
 @MainActor enum NovaEducationCertificatePDF {
-    static let rendererVersion = 1
+    static let rendererVersion = 2
     private struct Block { let text: String; var size: CGFloat = 10; var bold = false; var space: CGFloat = 6; var height: CGFloat? }
     private struct Placed { let block: Block; let y: CGFloat; let height: CGFloat }
     static func data(_ snapshot: NovaEducationCertificate.Snapshot) -> Data {
@@ -46,8 +46,8 @@ struct NovaEducationPDFFile: FileDocument {
             .init(text: s.legal_name, size: 15, bold: true, space: 14),
             .init(text: snapshot.is_draft ? "TASLAK · " + snapshot.title : snapshot.title, size: 21, bold: true, space: 18),
             .init(text: snapshot.person.name ?? "", size: 18, bold: true),
-            .init(text: "Unvan: \(snapshot.person.job_title.isEmpty ? "Eksik" : snapshot.person.job_title)", size: 11),
-            .init(text: "İşyeri: \(s.workplace_name) · \(hazardName(s.hazard_class))", size: 10),
+            .init(text: "Unvan: \(snapshot.person.job_title.isEmpty ? "____________________" : snapshot.person.job_title)", size: 11),
+            .init(text: "\(s.workplace_name == nil ? "Firma" : "İşyeri"): \(s.workplace_name ?? s.company_name) · \(hazardName(s.hazard_class))", size: 10),
             .init(text: "Düzenleyen: \(snapshot.provider_name)", size: 11),
             .init(text: "Eğitim: \(cycle)", size: 11),
             .init(text: "Gerçekleşen gün ve saatler (Europe/Istanbul)\n" + times.joined(separator: "\n")),
@@ -63,7 +63,7 @@ struct NovaEducationPDFFile: FileDocument {
             let groups = Set(s.topics.filter { $0.trainer_ids.contains(trainer.id) }.map(\.group)).sorted().joined(separator: ", ")
             front.append(signature("\(trainer.name) · \(trainer.title)\nKonu kapsamı: \(groups)\nİmza:"))
         }
-        front.append(signature("\(s.employer_capacity == "employer" ? "İşveren" : "İşveren vekili"): \(s.employer_name)\nİmza / kaşe:"))
+        front.append(signature("İşveren / vekili adı: ____________________\nSıfatı: ____________________\nİmza / kaşe:"))
         front.append(.init(text: "Belge, düzenleyen uzmanın kaydına ve beyanına dayanır. İmza alanları fiziki imza için boş bırakılmıştır.", size: 8))
         var back: [Block] = [.init(text: "EĞİTİM KONULARI VE SÜRELERİ", size: 16, bold: true, space: 12)]
         for group in ["G1","G2","G3","G4"] {
@@ -145,16 +145,11 @@ struct NovaEducationCertificateScreen: View {
     var documentID: UUID?
     var documentRevision: Int?
     @Environment(\.dismiss) private var dismiss
-    @State private var editable: NovaEducationDraft?
-    @State private var current: NovaTrainingSession?
     @State private var issued = Date()
     @State private var logoPNG: String?
-    private var fieldsChanged: Bool {
-        guard let editable, let record = current?.education else { return false }
-        return editable.scopes != record.scopes || editable.trainers != record.trainers || editable.provider_name != record.provider_name
-    }
     @State private var result: NovaEducationCertificate?
     @State private var url: URL?
+    @State private var showingDocument = false
     @State private var busy = false
     @State private var error: String?
     @State private var exporting = false
@@ -163,22 +158,34 @@ struct NovaEducationCertificateScreen: View {
         VStack(spacing: 12) {
             HStack { Text("Kişisel eğitim belgesi").font(NovaFont.font(.cardTitle)); Spacer(); Button { dismiss() } label: { Image(systemName: "xmark").padding(10) } }
             if busy { ProgressView() }
-            if let error { Text(error).font(NovaFont.font(.meta)).foregroundStyle(.red) }
+            if let error { NovaHelpHint(text: error) }
             if let result {
-                ForEach(result.issues, id: \.self) { Text(NovaEducationService.issue($0)).font(NovaFont.font(.meta)).foregroundStyle(.orange) }
-                if let edit = editable, result.snapshot.is_draft {
-                    NovaEducationCertificateFields(draft: Binding(get: { editable ?? edit }, set: { editable = $0 }), scopeID: scopeID, personID: personID)
-                    DatePicker("Düzenleme tarihi", selection: $issued, in: ...Date(), displayedComponents: .date)
-                    Button("Belge bilgilerini kaydet ve önizlemeyi yenile") { Task { await saveFields() } }.disabled(busy || !canIssue)
+                if !result.issues.isEmpty {
+                    NovaCard(padding: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            NovaText(text: "Sertifika için eğitim içeriğini tamamlayın", style: .cardTitle)
+                            ForEach(result.issues, id: \.self) { code in
+                                Label(NovaEducationService.issue(code), systemImage: "info.circle")
+                                    .font(NovaFont.font(.meta))
+                            }
+                            NovaText(text: "Eğitimi açıp işaretlenen içeriği düzelttikten sonra sertifika otomatik hazırlanır.", style: .metaQuiet)
+                            NovaCompactActionButton(title: "Eğitim içeriğine dön", symbol: "arrow.left") { dismiss() }
+                        }
+                    }
+                } else if result.snapshot.is_draft {
+                    NovaText(text: "Sertifika hazırlanıyor…", style: .metaQuiet)
+                } else {
+                    NovaCard(padding: 16) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            NovaText(text: "Sertifika hazır", style: .cardTitle)
+                            NovaText(text: result.snapshot.number, style: .metaQuiet)
+                        }
+                    }
                 }
-                if !result.issues.isEmpty { Text("Alanları eğitim formunda tamamlayıp kaydedin. Aşağıdaki çıktı numarasız taslaktır.").font(NovaFont.font(.meta)) }
-                if let url { NovaEducationPDFPreview(url: url).id("\(result.snapshot.source_session_revision)-\(result.snapshot.issued_on)-\(result.snapshot.is_draft)").frame(minHeight: 360) }
-                if result.snapshot.is_draft {
-                    Button("Belge numarasını al ve sertifika hazırla") { Task { await load(issue: true) } }
-                        .buttonStyle(.borderedProminent).disabled(busy || fieldsChanged || !result.issues.isEmpty || !canIssue)
-                }
-                HStack {
+                if !result.snapshot.is_draft {
+                HStack(spacing: 12) {
                     if let url {
+                        Button("Görüntüle") { showingDocument = true }
                         ShareLink(item: url) { Label("Paylaş", systemImage: "square.and.arrow.up") }
                         Button("Kaydet") { do { exportFile = .init(data: try Data(contentsOf: url)); exporting = true } catch { self.error = error.localizedDescription } }
                         Button("Yazdır") {
@@ -188,10 +195,9 @@ struct NovaEducationCertificateScreen: View {
                         }
                     }
                 }.font(NovaFont.font(.meta)).disabled(busy)
+                }
             } else if !busy { Button("Tekrar dene") { Task { await load(issue: false) } } }
         }.padding(18).task {
-            current = session
-            if let education = session.education { editable = .init(id: session.id, expected_version: session.version, title: session.title, provider_name: education.provider_name, notes: session.notes, trainers: education.trainers, scopes: education.scopes) }
             if documentID == nil, let path = session.education?.scopes.first(where: { $0.id == scopeID })?.logo_path,
                path.lowercased().hasPrefix(identity.userID.uuidString.lowercased() + "/companies/"),
                let image = try? await CompanyService.shared.logoImage(path: path), image.size.width > 0, image.size.height > 0 {
@@ -202,21 +208,16 @@ struct NovaEducationCertificateScreen: View {
                 if let png, png.count <= 262144 { logoPNG = png.base64EncodedString() }
             }
             await load(issue: false)
+            if canIssue, result?.snapshot.is_draft == true, result?.issues.isEmpty == true {
+                await load(issue: true)
+            }
+        }
+        .sheet(isPresented: $showingDocument) {
+            if let url { NovaEducationPDFPreview(url: url) }
         }
         .fileExporter(isPresented: $exporting, document: exportFile, contentType: .pdf, defaultFilename: result?.snapshot.is_draft == false ? result?.snapshot.number ?? "Eğitim belgesi" : "TASLAK eğitim belgesi") { outcome in
             if case .failure(let error) = outcome { self.error = error.localizedDescription }
         }
-    }
-    private func saveFields() async {
-        guard let editable else { return }
-        busy = true; error = nil
-        do {
-            let response = try await NovaEducationService(identity: identity).save(editable)
-            guard let row = response.row, let education = row.education else { throw NovaPersonnelFailure.unavailable }
-            current = row
-            self.editable = .init(id: row.id, expected_version: row.version, title: row.title, provider_name: education.provider_name, notes: row.notes, trainers: education.trainers, scopes: education.scopes)
-            busy = false; await load(issue: false)
-        } catch { self.error = NovaEducationService.message(error); busy = false }
     }
     private func load(issue: Bool) async {
         busy = true; error = nil; defer { busy = false }
@@ -224,35 +225,12 @@ struct NovaEducationCertificateScreen: View {
             let service = NovaEducationService(identity: identity)
             let request: NovaEducationService.CertificateRequest = !issue && documentID != nil
                 ? .init(action: "read", document_id: documentID, revision: documentRevision)
-                : .init(action: issue ? "issue" : "preview", session_id: session.id, scope_id: scopeID, person_id: personID, expected_version: current?.version ?? session.version, issued_on: NovaEducationClock.day(issued), logo_png_base64: logoPNG)
+                : .init(action: issue ? "issue" : "preview", session_id: session.id, scope_id: scopeID, person_id: personID, expected_version: session.version, issued_on: NovaEducationClock.day(issued), logo_png_base64: logoPNG)
             let certificate = try await service.certificate(request)
-            try service.check(); url = try NovaEducationCertificatePDF.file(certificate); result = certificate
+            try service.check()
+            url = certificate.snapshot.is_draft ? nil : try NovaEducationCertificatePDF.file(certificate)
+            result = certificate
         } catch { self.error = NovaEducationService.message(error) }
-    }
-}
-private struct NovaEducationCertificateFields: View {
-    @Binding var draft: NovaEducationDraft
-    let scopeID: UUID
-    let personID: UUID
-    var body: some View {
-        DisclosureGroup("Eksik belge bilgilerini tamamla") {
-            VStack(spacing: 8) {
-                TextField("Düzenleyici kişi / kurum", text: $draft.provider_name)
-                ForEach($draft.trainers) { $trainer in
-                    TextField("Eğitici adı", text: $trainer.name)
-                    TextField("Eğitici unvanı", text: $trainer.title)
-                }
-                ForEach($draft.scopes) { $scope in
-                    if scope.id == scopeID {
-                        TextField("İşveren / vekili", text: $scope.employer_name)
-                        TextField("İşyeri tam unvanı", text: $scope.legal_name)
-                        ForEach($scope.participants) { $person in
-                            if person.id == personID { TextField("Belgeye özel personel unvanı", text: $person.job_title) }
-                        }
-                    }
-                }
-            }.textFieldStyle(.roundedBorder)
-        }
     }
 }
 private struct NovaEducationPDFPreview: UIViewRepresentable {

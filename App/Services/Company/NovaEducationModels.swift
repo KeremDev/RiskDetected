@@ -42,7 +42,7 @@ struct NovaEducationDay: Codable, Equatable, Identifiable {
     var id = UUID(); var starts: Date; var lessonCount = 8; var extraBreakAfter = 4; var extraBreakMinutes = 0
 }
 struct NovaEducationScope: Codable, Equatable, Identifiable {
-    var id = UUID(); var company_id: UUID; var workplace_id: UUID
+    var id = UUID(); var company_id: UUID; var workplace_id: UUID?
     var logo_path: String?; var company_name: String?; var workplace_name: String?; var hazard_class: String?
     var group_name = "Genel"; var cycle = "initial"; var context_note = ""; var legal_name = ""
     var employer_name = ""; var employer_capacity = "representative"; var location = ""; var renewal_months = 0
@@ -95,7 +95,7 @@ struct NovaEducationCertificate: Codable {
 }
 // The server intentionally leaves other participants out of a personal certificate.
 struct NovaEducationCertificateScope: Codable {
-    let id: UUID; let company_id: UUID; let workplace_id: UUID; let legal_name: String; let company_name: String; let workplace_name: String
+    let id: UUID; let company_id: UUID; let workplace_id: UUID?; let legal_name: String; let company_name: String; let workplace_name: String?
     let hazard_class: String; let cycle: String; let context_note: String; let topics: [NovaEducationTopic]; let lessons: [NovaEducationLesson]
     let employer_name: String; let employer_capacity: String; let location: String
     let instruction_minutes: Int; let break_minutes: Int; let lesson_units: Int; let held_on: String; let valid_until: String?
@@ -109,7 +109,10 @@ enum NovaEducationClock {
     }
     static func day(_ date: Date) -> String { let f = DateFormatter(); f.calendar = calendar; f.timeZone = calendar.timeZone; f.locale = Locale(identifier:"en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"; return f.string(from: date) }
     static func initialDays(minutes: Int, basic: Bool) -> [NovaEducationDay] {
-        let count = basic ? max(1,minutes / 45) : 1; let dayCount = (count + 7) / 8
+        // Keep the final lesson at least 45 minutes. Rounding up would turn
+        // 370 minutes into eight 45-minute lessons plus an invalid 10-minute one.
+        let count = basic ? max(1, minutes / 45) : 1
+        let dayCount = max(1, (count + 7) / 8)
         let first = calendar.date(byAdding: .day, value: -dayCount, to: Date())!
         return (0..<dayCount).map { n in .init(starts: calendar.date(bySettingHour: 9, minute: 0, second: 0, of: calendar.date(byAdding: .day,value:n,to:first)!)!, lessonCount: min(8,count - n * 8)) }
     }
@@ -148,10 +151,7 @@ enum NovaEducationClock {
 /// finished only when it carries what the record needs — the same rule the
 /// manual nonconformity form uses for its own accordion.
 enum NovaEducationStep: String, CaseIterable, Identifiable {
-    /// The last step is deliberately explicit: a long education form should
-    /// never make the expert hunt for the final save action after selecting
-    /// people. It is a review checkpoint, not another data-entry section.
-    case info, schedule, trainers, participants, review
+    case companies, info, topics, schedule, trainers, participants, review
     var id: String { rawValue }
 }
 
@@ -160,12 +160,16 @@ extension NovaEducationDraft {
 
     func isComplete(_ step: NovaEducationStep) -> Bool {
         switch step {
-        case .info: return filled(title)
-        case .schedule: return scopes.contains { !$0.lessons.isEmpty }
+        case .companies:
+            guard let hazard = scopes.first?.hazard_class else { return false }
+            return scopes.allSatisfy { $0.hazard_class == hazard }
+        case .info: return filled(title) && filled(provider_name)
+        case .topics: return !scopes.isEmpty && scopes.allSatisfy { $0.net > 0 }
+        case .schedule: return !scopes.isEmpty && scopes.allSatisfy { !$0.lessons.isEmpty }
         case .trainers: return trainers.contains { filled($0.name) }
-        case .participants: return scopes.contains { !$0.participants.isEmpty }
+        case .participants: return !scopes.isEmpty && scopes.allSatisfy { !$0.participants.isEmpty }
         case .review:
-            return isComplete(.info) && isComplete(.schedule) &&
+            return isComplete(.companies) && isComplete(.info) && isComplete(.topics) && isComplete(.schedule) &&
                 isComplete(.trainers) && isComplete(.participants)
         }
     }

@@ -121,6 +121,7 @@ import Supabase
             case "FEATURE_UNAVAILABLE": return "Yeni eğitim modülü bu hesap için henüz açılmadı."
             case "VERSION_CONFLICT": return "Kayıt başka bir cihazda değişti. Kapatıp güncel kaydı açın; form taslağınız korunur."
             case "TRAINING_DATE_INVALID", "LESSON_OVERLAP_OR_FUTURE": return "Ders saatleri çakışmamalı ve eğitimin tamamı geçmişte olmalı."
+            case "TRAINING_HAZARD_MISMATCH": return "Farklı tehlike sınıfındaki firmalar aynı eğitim dosyasında yer alamaz. Ayrı kayıt oluşturun."
             case "PARTICIPANT_DUPLICATE": return "Bir personeli yalnız bir eğitim kapsamına ekleyin."
             case "WORKPLACE_REQUIRED": return "Firmaya ait işyeri seçin."
             case "TRAINER_INVALID": return "En az bir eğitici adı girin ve konu dağılımlarını kontrol edin."

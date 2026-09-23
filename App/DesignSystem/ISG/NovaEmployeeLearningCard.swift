@@ -6,10 +6,8 @@ struct NovaEmployeeLearningCard: View {
     let identity: NovaSessionIdentity
     let company: UUID
     let employee: UUID
-    let canWrite: Bool
     @State private var result: Learning?
     @State private var failure = false
-    @State private var certificates = false
     @State private var revision = 0
     struct Learning: Decodable {
         let schema_version: Int; let owner_id: UUID; let company_id: UUID; let employee_id: UUID
@@ -62,13 +60,9 @@ struct NovaEmployeeLearningCard: View {
                     NovaText(text: "Bu özet sertifika veya sınav sonucu oluşturmaz.", style: .meta)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-            NovaButton(label: "Sertifika ve belgeleri", symbol: "doc.text", variant: .surface) { certificates = true }
         }
         .task(id: revision) { await load() }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("isgada.records.changed"))) { _ in revision += 1 }
-        .novaPopup(isPresented: $certificates) {
-            NovaPilotProcessGate(identity: identity, kind: "personnel_certificate", initialCompany: company, parent: employee, canWrite: canWrite, onBack: { certificates = false })
-        }
     }
     private func hours(_ minutes: Int) -> String { String(format: "%.1f", Double(minutes) / 45).replacingOccurrences(of: ".0", with: "") }
     private func load() async {
@@ -85,5 +79,112 @@ struct NovaEmployeeLearningCard: View {
     private func checkSession() throws {
         guard let session = SupabaseService.shared.client.auth.currentSession, session.user.id == identity.userID,
               NovaPersonnelService.sessionID(session.accessToken) == identity.sessionID else { throw NovaPPEFailure.denied }
+    }
+}
+
+/// Opens only the education records that include this employee. Certificate
+/// issuance remains in the education domain; the other personnel documents
+/// keep their existing destination.
+struct NovaEmployeeCertificatesScreen: View {
+    let identity: NovaSessionIdentity
+    let company: UUID
+    let employee: UUID
+    let canWrite: Bool
+    let onBack: () -> Void
+    private struct Entry: Identifiable {
+        let session: NovaTrainingSession
+        let scopeID: UUID
+        var id: String { "\(session.id)-\(scopeID)" }
+    }
+    private struct Selection: Identifiable {
+        let id = UUID()
+        let session: NovaTrainingSession
+        let scopeID: UUID
+        let documentID: UUID?
+        let revision: Int?
+    }
+    @State private var entries: [Entry] = []
+    @State private var selection: Selection?
+    @State private var otherDocuments = false
+    @State private var loading = true
+    @State private var error: String?
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    NovaText(text: "Sertifika ve belgeler", style: .screenTitle)
+                    Spacer()
+                    Button("Bitti", action: onBack)
+                }
+                if loading { ProgressView().frame(maxWidth: .infinity) }
+                if let error { NovaHelpHint(text: error) }
+                if !loading && entries.isEmpty && error == nil {
+                    NovaEmptyState(title: "Eğitim sertifikası yok",
+                        message: "Bu personelin yer aldığı bir eğitim kaydı henüz bulunamadı.")
+                }
+                ForEach(entries) { entry in
+                    Button { Task { await open(entry) } } label: {
+                        NovaCard(padding: 14) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "graduationcap")
+                                VStack(alignment: .leading, spacing: 3) {
+                                    NovaText(text: entry.session.title, style: .bodyStrong)
+                                    NovaText(text: entry.session.held_on, style: .metaQuiet)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                            }
+                        }
+                    }.buttonStyle(NovaRowPressStyle())
+                }
+                NovaCompactActionButton(title: "Diğer belgeler", symbol: "doc.text") { otherDocuments = true }
+            }.padding(18).novaPopupContentSize()
+        }
+        .task { await load() }
+        .novaFullScreenCover(item: $selection) { value in
+            NovaPopup {
+                NovaEducationCertificateScreen(identity: identity, session: value.session,
+                    scopeID: value.scopeID, personID: employee, canIssue: canWrite,
+                    documentID: value.documentID, documentRevision: value.revision)
+            }
+        }
+        .novaPopup(isPresented: $otherDocuments) {
+            NovaPilotProcessGate(identity: identity, kind: "personnel_certificate",
+                initialCompany: company, parent: employee, canWrite: canWrite,
+                onBack: { otherDocuments = false })
+        }
+    }
+    private func load() async {
+        loading = true; error = nil
+        do {
+            let service = NovaTrainingSessionService(identity: identity)
+            var rows: [Entry] = []
+            var after: UUID?
+            var seen = Set<UUID>()
+            repeat {
+                let page = try await service.list(company: company, after: after)
+                for session in page.rows {
+                    for scope in session.education?.scopes ?? [] where
+                        scope.company_id == company && scope.participants.contains(where: { $0.id == employee }) {
+                        rows.append(.init(session: session, scopeID: scope.id))
+                    }
+                }
+                after = page.next_id
+                if let after, !seen.insert(after).inserted { throw NovaPersonnelFailure.unavailable }
+            } while after != nil
+            entries = rows.sorted { $0.session.held_on > $1.session.held_on }
+        } catch { self.error = NovaTrainingSessionService.message(error) }
+        loading = false
+    }
+    private func open(_ entry: Entry) async {
+        do {
+            let context = try await NovaEducationService(identity: identity).context(id: entry.session.id)
+            guard let session = context.row else { throw NovaPersonnelFailure.unavailable }
+            let document = context.certificates.first {
+                $0.scope_id == entry.scopeID && $0.person_id == employee && $0.source_session_revision == session.version
+            }
+            selection = .init(session: session, scopeID: entry.scopeID,
+                documentID: document?.document_id, revision: document?.revision)
+        } catch { self.error = NovaEducationService.message(error) }
     }
 }

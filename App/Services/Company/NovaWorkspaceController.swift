@@ -18,6 +18,11 @@ import Supabase
     typealias Capability = NovaWorkspaceCapability
     var isAvailable: Bool { capability?.can_read == true && host.phase == .ready }
     var canWrite: Bool { scope != nil && capability?.can_write == true }
+    /// Personnel has its own pilot grant. The general workspace capability
+    /// still reflects paid access for the other company modules.
+    var canWritePersonnel: Bool {
+        scope != nil && capability?.can_read == true && capability?.is_archived != true
+    }
     var scope: NovaPersonnelScope? {
         guard isAvailable, let identity = host.identity, let company = selectedCompanyID, capability?.company_id == company else { return nil }
         return .init(ownerID: identity.userID, sessionID: identity.sessionID, companyID: company, epoch: host.navigation.epoch)
@@ -27,7 +32,7 @@ import Supabase
     var personnelClient: NovaPersonnelClient {
         let client = personnel
         return .init(employees: client.employees, departments: client.departments, detail: client.detail, save: { [weak self] intent in
-            guard let self, self.scope == intent.scope, self.canWrite else { throw NovaPersonnelFailure.denied }
+            guard let self, self.scope == intent.scope, self.canWritePersonnel else { throw NovaPersonnelFailure.denied }
             return try await client.save(intent)
         }, pending: client.pending)
     }

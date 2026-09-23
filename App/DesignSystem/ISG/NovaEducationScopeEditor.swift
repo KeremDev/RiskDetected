@@ -4,10 +4,8 @@ import SwiftUI
 /// which topics, how many minutes each (and whether today's session actually
 /// covered a given one), plus trainer assignment per topic. Reached by its
 /// own "Konuları ve Süre" link from the info step, opened in the same Nova
-/// popup chrome as every other module. Cycle (İlk Temel Eğitim / Yenileme /
-/// …) and the realized days/hours live one level up now — cycle in the info
-/// step next to the title, schedule in its own accordion step — this popup
-/// is topics only.
+/// popup chrome as every other module. The guided flow shows a topic summary
+/// first; this sheet is for optional edits to those topics and minutes.
 struct NovaEducationTopicsPopup: View {
     /// Bound to the record's shared template scope (or, once at least one
     /// real company/workplace has been added, to that first scope — the
@@ -18,9 +16,6 @@ struct NovaEducationTopicsPopup: View {
     /// a fact, not a guess, and is shown read-only instead of offered as a
     /// preview picker.
     let hazardLocked: Bool
-    /// nil until a real scope exists — "firma varsayılanı" has no firma to
-    /// save against before that.
-    let saveCurriculum: (() -> Void)?
     private var basic: Bool { ["initial","periodic_repeat"].contains(scope.cycle) }
     private var hazardBinding: Binding<String> {
         Binding(get: { scope.hazard_class ?? "low" }, set: { scope.hazard_class = $0; defaults() })
@@ -78,13 +73,8 @@ struct NovaEducationTopicsPopup: View {
                     : RDLocalization.string("localizable.nova.education.topics.hint.custom", table: .localizable, fallback: "Tekrar eğitimi dağılımı düzenlenebilir ürün önerisidir."))
                     .font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
             }
-            HStack {
-                Button(RDLocalization.string("localizable.nova.education.topics.resetdefaults", table: .localizable, fallback: "Varsayılanlara dön")) { defaults() }
-                Spacer()
-                if let saveCurriculum {
-                    Button(RDLocalization.string("localizable.nova.education.topics.savedefault", table: .localizable, fallback: "Firma varsayılanı olarak kaydet"), action: saveCurriculum)
-                }
-            }.font(NovaFont.font(.meta))
+            Button(RDLocalization.string("localizable.nova.education.topics.resetdefaults", table: .localizable, fallback: "Varsayılanlara dön")) { defaults() }
+                .font(NovaFont.font(.meta))
         }
     }
     private func topicRow(_ binding: Binding<NovaEducationTopic>) -> some View {
@@ -100,12 +90,16 @@ struct NovaEducationTopicsPopup: View {
         context.package.topics(cycle: scope.cycle, hazard: scope.hazard_class ?? "low").first { $0.code == topic.code }?.instruction_minutes ?? 30
     }
     private func defaults() {
+        let method = scope.topics.first?.method ?? "face_to_face"
+        let trainerIDs = scope.topics.first?.trainer_ids ?? []
         let curriculum = context.curricula.first { $0.company_id == scope.company_id && $0.workplace_id == scope.workplace_id && $0.education.cycle == scope.cycle && $0.education.group_name == scope.group_name && $0.education.hazard_class == scope.hazard_class }
         scope.topics = curriculum?.education.topics ?? context.package.topics(cycle: scope.cycle, hazard: scope.hazard_class ?? "low")
+        for i in scope.topics.indices {
+            let inPersonRequired = scope.topics[i].group == "G4" && (scope.hazard_class != "low" || scope.cycle == "onboarding")
+            scope.topics[i].method = inPersonRequired ? "face_to_face" : method
+            scope.topics[i].trainer_ids = trainerIDs
+        }
         scope.context_note = curriculum?.education.context_note ?? ""
-        // Trainer assignment is session-level now (the "Eğiticiler" step),
-        // not per topic — the caller resyncs every topic's trainer_ids to
-        // match the current trainer list whenever it changes.
     }
     private func groupSummary(_ group: String) -> String {
         let minutes = scope.topics.filter { $0.group == group }.reduce(0) { $0 + $1.instruction_minutes }
@@ -130,7 +124,7 @@ struct NovaEducationTopicsPopup: View {
 /// else. Trainer and method (yüz yüze/online) do not vary per topic, so
 /// they live one level up (the "Eğiticiler" step and the info step's bulk
 /// toggle) instead of being asked again here for every single row.
-private struct NovaEducationTopicEditor: View {
+struct NovaEducationTopicEditor: View {
     @Binding var topic: NovaEducationTopic
     let removable: Bool
     /// Restored when the checkbox is switched back on after being switched
@@ -147,7 +141,8 @@ private struct NovaEducationTopicEditor: View {
         Binding(get: { topic.instruction_minutes > 0 }, set: { on in topic.instruction_minutes = on ? (defaultMinutes > 0 ? defaultMinutes : 30) : 0 })
     }
     var body: some View {
-        HStack(alignment: .center, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
             // A compact checkbox, not a full-size iOS switch — this row
             // repeats up to ~20 times on screen, so the control needs to
             // read as a small "seçim kutusu", not a row of pill switches.
@@ -158,22 +153,33 @@ private struct NovaEducationTopicEditor: View {
                 RDLocalization.string("localizable.nova.education.topics.included", table: .localizable, fallback: "Bu konu bu eğitimde işlendi"))
             if topic.group == "G4" || topic.parent_code != nil || topic.code.hasPrefix("CUSTOM") {
                 TextField(RDLocalization.string("localizable.nova.education.topics.topictitle", table: .localizable, fallback: "Konu başlığı"), text: $topic.title, axis: .vertical)
+                    .lineLimit(2...3)
             } else {
-                Text(topic.title).font(NovaFont.font(.body)).frame(maxWidth: .infinity, alignment: .leading)
+                Text(topic.title).font(NovaFont.font(.body)).fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            // A visible box around the minutes field — otherwise it reads
-            // as plain, non-interactive text next to the title.
-            HStack(spacing: 3) {
-                TextField(RDLocalization.string("localizable.nova.education.topics.minutes", table: .localizable, fallback: "Dakika"), value: $topic.instruction_minutes, format: .number)
-                    .keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 34)
-                Text("dk").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
-            }.padding(.horizontal, 8).padding(.vertical, 6)
-                .background(Color.white, in: RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.black.opacity(0.08)))
             if removable {
                 Button { remove() } label: { Image(systemName: "trash").font(.system(size: 13)) }.foregroundStyle(.red)
                     .accessibilityLabel(RDLocalization.string("localizable.nova.education.topics.removetopic", table: .localizable, fallback: "Kaldır"))
             }
-        }.padding(.vertical, 4)
+            }
+            HStack(spacing: 10) {
+                Button { topic.instruction_minutes = max(0, topic.instruction_minutes - 10) } label: {
+                    Image(systemName: "minus.circle").font(.system(size: 22))
+                }.accessibilityLabel("10 dakika azalt")
+                TextField(RDLocalization.string("localizable.nova.education.topics.minutes", table: .localizable, fallback: "Dakika"), value: $topic.instruction_minutes, format: .number)
+                    .keyboardType(.numberPad).multilineTextAlignment(.center).frame(width: 52)
+                Text("dk").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+                Button { topic.instruction_minutes += 10 } label: {
+                    Image(systemName: "plus.circle").font(.system(size: 22))
+                }.accessibilityLabel("10 dakika artır")
+                Spacer(minLength: 0)
+                Menu("Hızlı seç") {
+                    ForEach([10, 20, 30, 40, 60], id: \.self) { minutes in
+                        Button("\(minutes) dk") { topic.instruction_minutes = minutes }
+                    }
+                }.font(NovaFont.font(.meta))
+            }.padding(.leading, 26)
+        }.padding(.vertical, 8)
     }
 }

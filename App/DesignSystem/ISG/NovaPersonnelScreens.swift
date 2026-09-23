@@ -137,7 +137,7 @@ private struct PersonnelContent: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 14) {
                 PersonnelHeading(title: "Personeller", subtitle: companyName,
-                    trailingTitle: "Ekle", trailingAction: { showingCreate = true }, onBack: onBack)
+                    trailingTitle: "Ekle", trailingAction: canWrite && pending == nil ? { showingCreate = true } : nil, onBack: onBack)
                 NovaCard(padding: 14) {
                     HStack { NovaIcon(symbol: "magnifyingglass", size: 18); TextField(RDLocalization.string("localizable.nova.personnel.screens.personel.ara.6695c740", table: .localizable, fallback: "Personel ara…"), text: $query).font(NovaFont.font(.body)).accessibilityIdentifier("personnel.search") }
                 }
@@ -245,9 +245,11 @@ private struct PersonnelHeading: View {
             Spacer(minLength: 0)
             if let trailingAction {
                 Button(action: trailingAction) {
-                    HStack(spacing: 4) { Image(systemName: "plus").font(.system(size: 11, weight: .medium)); NovaSizedText(text: trailingTitle ?? "Ekle", size: 11.5, weight: "Medium") }
-                        .padding(.horizontal, 15).frame(minWidth: 108, minHeight: 32)
-                        .foregroundStyle(NovaColorToken.onAccent.color(in: scheme))
+                    Label(trailingTitle ?? "Ekle", systemImage: "plus")
+                        .font(NovaFont.font(.bodyStrong))
+                        .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                        .padding(.horizontal, 14).frame(minHeight: 44)
+                        .background(NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
                 }.buttonStyle(NovaRowPressStyle()).disabled(!isBackEnabled).accessibilityIdentifier("personnel.add")
             }
         }
@@ -267,35 +269,51 @@ private struct NovaEmployeeDetail: View {
     @State private var row: NovaEmployeeRow?
     @State private var error = false
     @State private var refresh = UUID()
+    @State private var certificates = false
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 PersonnelHeading(title: RDLocalization.string("localizable.nova.personnel.screens.personel.detayi.93b8adba", table: .localizable, fallback: "Personel Detayı"), onBack: onBack)
                 if let row {
-                    NovaCard(padding: 16) {
-                        VStack(alignment: .leading, spacing: 10) {
+                    NovaCard(padding: 14) {
+                        VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 8) {
                                 NovaIcon(symbol: "person", size: 23)
                                 NovaSizedText(text: row.name, size: 16, weight: "Bold")
                                 Spacer(minLength: 0)
                                 Circle().fill(row.isArchived ? NovaColorToken.statusDangerDot.color(in: scheme) : NovaColorToken.statusSuccessDot.color(in: scheme)).frame(width: 9, height: 9)
                             }
-                            let placement = [row.departmentName, row.jobTitle].compactMap { $0 }.joined(separator: " · ")
-                            HStack(spacing: 7) { NovaIcon(symbol: "building.2", size: 18); NovaText(text: placement.isEmpty ? RDLocalization.string("localizable.nova.personnel.no.department.selected", table: .localizable, fallback: "Departman seçilmedi") : placement, style: .metaQuiet) }
-                            HStack(spacing: 7) { NovaIcon(symbol: "building.2", size: 15).foregroundStyle(NovaColorToken.accentInk.color(in: scheme)); NovaText(text: companyName, style: .metaQuiet) }
+                            let placement = [row.departmentName, row.jobTitle].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+                            HStack(spacing: 5) {
+                                NovaIcon(symbol: "building.2", size: 13).foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                                NovaText(text: companyName, style: .metaQuiet)
+                                if !placement.isEmpty {
+                                    NovaText(text: "· \(placement)", style: .metaQuiet)
+                                }
+                            }
 
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }.accessibilityIdentifier("personnel.detail")
-                    NovaEmployeeLearningCard(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID), company: scope.companyID, employee: employeeID, canWrite: canWrite && !row.isArchived)
-                    if canWrite { NovaButton(label: row.isArchived ? RDLocalization.string("localizable.nova.personnel.reactivate", table: .localizable, fallback: "Yeniden etkinleştir") : RDLocalization.string("localizable.nova.personnel.edit", table: .localizable, fallback: "Düzenle"), symbol: row.isArchived ? "arrow.uturn.backward" : "pencil", action: { onEdit(row) }).accessibilityIdentifier(row.isArchived ? "personnel.restore" : "personnel.edit") }
-                    if let onDirectory {
-                        NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.gorevlendirme.gecmisi.b56428ce", table: .localizable, fallback: "Görevlendirme geçmişi"), symbol: "clock.arrow.circlepath", variant: .surface) { onDirectory(.assignments) }.accessibilityIdentifier("personnel.assignments")
-                        NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.isveren.iliskisi.9ad2bc6f", table: .localizable, fallback: "İşveren ilişkisi"), symbol: "building.2", variant: .surface) { onDirectory(.employers) }.accessibilityIdentifier("personnel.employers")
-                    }
-                    if canWrite && !row.isArchived {
-                        NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.personeli.arsivle.715aa012", table: .localizable, fallback: "Personeli arşivle"), symbol: "trash", variant: .danger) { onArchive(row) }
-                            .accessibilityIdentifier("personnel.detail.archive")
+                    NovaEmployeeLearningCard(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID), company: scope.companyID, employee: employeeID)
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        NovaCompactActionButton(title: "Sertifika ve belgeler", symbol: "doc.text") { certificates = true }
+                            .accessibilityIdentifier("personnel.certificates")
+                        if canWrite {
+                            NovaCompactActionButton(title: row.isArchived ? "Etkinleştir" : "Düzenle",
+                                symbol: row.isArchived ? "arrow.uturn.backward" : "pencil", prominent: true) { onEdit(row) }
+                                .accessibilityIdentifier(row.isArchived ? "personnel.restore" : "personnel.edit")
+                        }
+                        if let onDirectory {
+                            NovaCompactActionButton(title: "Görevlendirmeler", symbol: "clock.arrow.circlepath") { onDirectory(.assignments) }
+                                .accessibilityIdentifier("personnel.assignments")
+                            NovaCompactActionButton(title: "İşveren ilişkisi", symbol: "building.2") { onDirectory(.employers) }
+                                .accessibilityIdentifier("personnel.employers")
+                        }
+                        if canWrite && !row.isArchived {
+                            NovaCompactActionButton(title: "Arşivle", symbol: "archivebox") { onArchive(row) }
+                                .accessibilityIdentifier("personnel.detail.archive")
+                        }
                     }
                 } else if error { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.personel.yuklenemedi.9398cf6a", table: .localizable, fallback: "Personel yüklenemedi.")); NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.tekrar.dene.d6e62bf1", table: .localizable, fallback: "Tekrar dene"), symbol: "arrow.clockwise", action: { refresh = UUID() }) }
                 else { ProgressView() }
@@ -308,6 +326,11 @@ private struct NovaEmployeeDetail: View {
                 guard result.id == employeeID, result.companyID == scope.companyID, result.ownerID == scope.ownerID else { throw NovaPersonnelFailure.denied }
                 row = result
             } catch { if !Task.isCancelled { self.error = true } }
+        }
+        .novaPopup(isPresented: $certificates) {
+            NovaEmployeeCertificatesScreen(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID),
+                company: scope.companyID, employee: employeeID,
+                canWrite: canWrite && row?.isArchived == false, onBack: { certificates = false })
         }
     }
     private func employeeTag(_ symbol: String, _ title: String, tone: NovaColorToken) -> some View {

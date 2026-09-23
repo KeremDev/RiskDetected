@@ -61,6 +61,8 @@ struct NovaTrainingRegister: View {
     @State private var pending = false
     @State private var revision = UUID()
     @State private var didOpen = false
+    @State private var createPending = false
+    @State private var createMessage: String?
     @State private var initializedFilter = false
     @State private var employeeTotal: Int?
     @State private var editor: Editor?
@@ -97,6 +99,7 @@ struct NovaTrainingRegister: View {
                         selected: company?.uuidString, identifier: "training.company") { company = $0.flatMap(UUID.init(uuidString:)) }
                 }
                 NovaHelpHint(text: "Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz.")
+                if let createMessage { NovaHelpHint(text: createMessage) }
                 trainingStats
                 NovaCard(padding: 12) {
                     HStack { Image(systemName: "magnifyingglass"); TextField("Eğitim veya eğitmen ara…", text: $query) }
@@ -147,8 +150,7 @@ struct NovaTrainingRegister: View {
             .task(id: company) { await loadEmployeeTotal() }
             .onAppear { if !initializedFilter { company = initialCompany; initializedFilter = true } }
             .onChange(of: createRequest) { _ in
-                guard canWrite, !loading, !pending, error == nil, !writableCompanies.isEmpty else { return }
-                editor = Editor(session: nil)
+                requestCreate()
             }
             .refreshable { revision = UUID() }
             .novaFullScreenCover(item: $editor, onDismiss: { revision = UUID() }) { value in
@@ -175,7 +177,6 @@ struct NovaTrainingRegister: View {
     }
     private func load() async {
         loading = true; error = nil
-        defer { loading = false }
         do {
             let loadedCompanies = try await loadNovaPilotOverview(identity: identity)
             var rows: [NovaTrainingSession] = []; var after: UUID?; var seen = Set<UUID>()
@@ -188,8 +189,53 @@ struct NovaTrainingRegister: View {
             try Task.checkCancellation()
             companies = loadedCompanies.filter { !$0.is_archived }; sessions = rows
             pending = try service.pending() != nil
-            if createOnOpen && !didOpen && !pending && canWrite && !writableCompanies.isEmpty { didOpen = true; editor = Editor(session: nil) }
         } catch { if !Task.isCancelled { self.error = NovaTrainingSessionService.message(error) } }
+        guard !Task.isCancelled else { return }
+        loading = false
+        if createOnOpen && !didOpen {
+            didOpen = true
+            createPending = true
+        }
+        presentRequestedCreate()
+    }
+
+    private func requestCreate() {
+        createPending = true
+        if loading {
+            createMessage = "Eğitim bilgileri hazırlanıyor…"
+        } else if error != nil || writableCompanies.isEmpty {
+            // A newly granted company may not be in this screen's cached page.
+            createMessage = "Eğitim bilgileri güncelleniyor…"
+            revision = UUID()
+        } else {
+            presentRequestedCreate()
+        }
+    }
+
+    private func presentRequestedCreate() {
+        guard createPending, !loading else { return }
+        if let error {
+            createMessage = "Eğitim ekranı açılamadı: \(error) Yenile ile tekrar deneyin."
+            return
+        }
+        guard canWrite else {
+            createMessage = "Bu hesapta eğitim kaydı oluşturma yetkisi yok."
+            createPending = false
+            return
+        }
+        guard !pending else {
+            createMessage = "Önce bekleyen eğitim işlemini tamamlayın."
+            createPending = false
+            return
+        }
+        guard !writableCompanies.isEmpty else {
+            createMessage = "Eğitim ekleyebileceğiniz firma bulunamadı. Firma erişiminizi kontrol edin."
+            createPending = false
+            return
+        }
+        createPending = false
+        createMessage = nil
+        editor = Editor(session: nil)
     }
     private func retry() async {
         loading = true

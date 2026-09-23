@@ -2662,7 +2662,8 @@ struct NovaPilotRoot: View {
     @ViewBuilder private var companies: some View {
         if ready, let scope = controller.scope {
             NovaCompanyWorkspace(scope: scope, companyName: controller.capability?.company_name ?? "Firma",
-                canWrite: controller.canWrite, personnel: controller.personnelClient, directory: controller.directoryClient,
+                canWrite: controller.canWrite, canWritePersonnel: controller.canWritePersonnel,
+                personnel: controller.personnelClient, directory: controller.directoryClient,
                 onBack: { controller.select(nil) },
                 loadSummary: { try await loadNovaPilotOverview(identity: identity, companyID: scope.companyID).first },
                 loadNonconformities: {

@@ -17,6 +17,7 @@ struct NovaCompanyManagementGate<Fallback: View>: View {
                 NavigationStack {
                     if let scope = controller.scope {
                         NovaCompanyWorkspace(scope: scope, companyName: controller.capability?.company_name ?? "Firma", canWrite: controller.canWrite,
+                            canWritePersonnel: controller.canWritePersonnel,
                             personnel: controller.personnelClient, directory: controller.directoryClient,
                             onBack: { controller.select(nil) },
                             loadNonconformities: {
@@ -52,6 +53,7 @@ struct NovaCompanyWorkspace: View {
     let scope: NovaPersonnelScope
     let companyName: String
     let canWrite: Bool
+    let canWritePersonnel: Bool
     let personnel: NovaPersonnelClient
     let directory: NovaDirectoryClient
     let onBack: () -> Void
@@ -428,7 +430,7 @@ struct NovaCompanyWorkspace: View {
         }
         .novaFullScreenCover(item: $personnelDetail) { route in
             NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
-                onBack: { personnelDetail = nil }, directory: directory, canWrite: canWrite, preview: false,
+                onBack: { personnelDetail = nil }, directory: directory, canWrite: canWritePersonnel, preview: false,
                 initialEmployee: route.id)
         }
         .novaFullScreenCover(isPresented: Binding(get: { processKind != nil }, set: { if !$0 { processKind = nil } }), onDismiss: {
@@ -444,7 +446,7 @@ struct NovaCompanyWorkspace: View {
         }
         .navigationDestination(isPresented: $personnelPage) {
             NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
-                onBack: { personnelPage = false }, directory: directory, canWrite: canWrite, preview: false)
+                onBack: { personnelPage = false }, directory: directory, canWrite: canWritePersonnel, preview: false)
         }
         .novaPopupCover(item: $sheet, onDismiss: { summaryRevision = UUID() }) { destination in
             NovaPopup {
@@ -472,7 +474,7 @@ struct NovaCompanyWorkspace: View {
                     NovaPersonnelCreateSheet(scope: scope, companyName: companyName, client: personnel)
                 case .personnel:
                     NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
-                        onBack: { sheet = nil }, directory: directory, canWrite: canWrite, preview: true,
+                        onBack: { sheet = nil }, directory: directory, canWrite: canWritePersonnel, preview: true,
                         onShowAll: { sheet = nil; personnelPage = true })
                 case .directory(let kind):
                     NovaDirectoryDestination(scope: scope, kind: kind, client: directory,
@@ -776,7 +778,7 @@ struct NovaCompanyWorkspace: View {
                 NovaCompactActionButton(title: RDLocalization.string("localizable.nova.company.personnel.all", table: .localizable,
                     fallback: "Tüm personel"), symbol: "person.2") { sheet = .personnel }
                 NovaCompactActionButton(title: "Personel ekle", symbol: "plus", prominent: true,
-                    enabled: canWrite) { sheet = .addPersonnel }
+                    enabled: canWritePersonnel) { sheet = .addPersonnel }
                     .accessibilityIdentifier("company.personnel.add")
             }
         }
