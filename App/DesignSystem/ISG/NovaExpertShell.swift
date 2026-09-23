@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// New expert shell only. The owner supplies scoped state and real destination content.
 /// Not installed in the legacy MainTabView; no Auth, billing or service calls here.
@@ -1061,6 +1062,52 @@ struct NovaIcon: View {
     }
 }
 
+/// Quiet background texture for the dashboard greeting. The icons are purely
+/// decorative and deliberately stay behind the readable content.
+private struct NovaSafetyIconPattern: View {
+    private struct Item: Identifiable {
+        let id: Int
+        let symbol: String
+        let size: CGFloat
+        let opacity: Double
+        let x: CGFloat
+        let y: CGFloat
+    }
+
+    private let items: [Item] = [
+        .init(id: 1, symbol: "eyeglasses", size: 22, opacity: 0.20, x: 0.71, y: 0.18),
+        .init(id: 2, symbol: "hardhat", size: 34, opacity: 0.15, x: 0.94, y: 0.18),
+        .init(id: 3, symbol: "glove", size: 16, opacity: 0.19, x: 0.76, y: 0.72),
+        .init(id: 4, symbol: "earmuffs", size: 27, opacity: 0.16, x: 0.94, y: 0.72),
+        .init(id: 5, symbol: "safetyTape", size: 20, opacity: 0.17, x: 0.83, y: 0.46),
+        .init(id: 6, symbol: "trafficCone", size: 15, opacity: 0.18, x: 0.69, y: 0.87),
+        .init(id: 7, symbol: "exclamationmark.triangle.fill", size: 17, opacity: 0.16, x: 0.99, y: 0.46),
+        .init(id: 8, symbol: "hardhat", size: 15, opacity: 0.18, x: 0.80, y: 0.12),
+        .init(id: 9, symbol: "eyeglasses", size: 14, opacity: 0.15, x: 0.68, y: 0.50),
+        .init(id: 10, symbol: "glove", size: 13, opacity: 0.18, x: 0.99, y: 0.90),
+        .init(id: 11, symbol: "safetyTape", size: 16, opacity: 0.15, x: 0.82, y: 0.91),
+        .init(id: 12, symbol: "trafficCone", size: 19, opacity: 0.16, x: 0.74, y: 0.31)
+    ]
+
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                ForEach(items) { item in
+                    NovaSafetyPPEGlyph(symbol: item.symbol, size: item.size,
+                        color: NovaColorToken.textSecondary.color(in: scheme))
+                        .opacity(item.opacity)
+                        .position(x: geometry.size.width * item.x, y: geometry.size.height * item.y)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 struct NovaSizedText: View {
     let text: String
     var size: CGFloat = 15
@@ -1088,7 +1135,9 @@ struct NovaDashboardScreen: View {
     let data: NovaDashboardData
     let onNavigate: (NovaDestination) -> Void
     let onPhoto: () -> Void
-    let onAssistant: () -> Void
+    var onAssistant: () -> Void = {}
+    var analysisThumbnail: (UUID) async -> UIImage? = { await NovaAnalysisWorkspace.thumbnail(analysisID: $0) }
+    var onOpenAnalysis: ((UUID) -> Void)? = nil
     var onFinding: ((String) -> Void)?
     var trackingIdentity: NovaSessionIdentity?
     var trackingCanWrite = false
@@ -1096,8 +1145,8 @@ struct NovaDashboardScreen: View {
     /// surface. This keeps OSGB company selection/actions on the shared home
     /// page instead of creating a second dashboard layout.
     var footer: AnyView?
-    /// Capability-gated actions may be removed without forking the dashboard
-    /// layout. A hidden control is preferable to a button with an empty action.
+    /// Capability-gated photo capture can be removed without forking the
+    /// dashboard layout.
     var showsPhotoCapture = true
     var showsAssistant = true
     @Environment(\.colorScheme) private var scheme
@@ -1153,28 +1202,17 @@ struct NovaDashboardScreen: View {
                     .accessibilityIdentifier("nova.home.analysis.empty")
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
+                        HStack(alignment: .top, spacing: 10) {
                             ForEach(data.recentAnalyses) { analysis in
-                                Button { onNavigate(.analyses) } label: {
-                                    VStack(alignment: .leading, spacing: 7) {
-                                        HStack(spacing: 7) {
-                                            NovaIcon(symbol: "photo.on.rectangle.angled", size: 18)
-                                                .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-                                            Spacer(minLength: 0)
-                                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
+                                NovaRecentAnalysisStory(analysis: analysis,
+                                    loadPhoto: analysisThumbnail,
+                                    onOpen: {
+                                        if let id = UUID(uuidString: analysis.id), let onOpenAnalysis {
+                                            onOpenAnalysis(id)
+                                        } else {
+                                            onNavigate(.analyses)
                                         }
-                                        NovaText(text: analysis.title, style: .bodyStrong)
-                                            .lineLimit(2).multilineTextAlignment(.leading)
-                                        NovaText(text: [analysis.companyName, analysis.createdOn]
-                                            .filter { !$0.isEmpty }.joined(separator: " · "), style: .metaQuiet,
-                                            color: muted).lineLimit(1)
-                                    }
-                                    .frame(width: 174, height: 106, alignment: .topLeading)
-                                    .padding(12)
-                                    .novaControlBackground(cornerRadius: 18)
-                                }
-                                .buttonStyle(NovaRowPressStyle())
-                                .accessibilityIdentifier("nova.home.analysis.\(analysis.id)")
+                                    })
                             }
                         }.padding(.horizontal, 20).padding(.top, 12)
                     }
@@ -1193,36 +1231,39 @@ struct NovaDashboardScreen: View {
     }
 
     private var welcome: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(LinearGradient(
+                        colors: [
+                            NovaColorToken.surface.color(in: scheme),
+                            NovaColorToken.surface.color(in: scheme).opacity(0.94),
+                            NovaColorToken.accent.color(in: scheme).opacity(scheme == .dark ? 0.48 : 0.38)
+                        ], startPoint: .topLeading, endPoint: .bottomTrailing))
+                NovaSafetyIconPattern()
                 greeting
-                if showsAssistant { assistant }
+                    .frame(width: geometry.size.width * (typeSize.isAccessibilitySize ? 0.94 : 0.78), alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
-            VStack(alignment: .leading, spacing: 12) {
-                greeting
-                if showsAssistant { assistant }
-            }
-        }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
-            .novaControlBackground(cornerRadius: 22)
+        }
+        .frame(height: typeSize.isAccessibilitySize ? 92 : 72)
+        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22)
+            .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
     }
     private var greeting: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 7) {
                 NovaIcon(symbol: "helmet", size: 18)
                 NovaSizedText(text: String(format: RDLocalization.string("localizable.nova.shell.greeting", table: .localizable, fallback: "Merhaba, %@"), data.firstName), size: 15.5, weight: "Bold")
-            }
+                    .lineLimit(1).minimumScaleFactor(0.85)
+            }.lineLimit(1)
             NovaText(text: data.summaryMessage ?? data.openCount.map { String(format: RDLocalization.string("localizable.nova.shell.open.nonconformities.today", table: .localizable, fallback: "Bugün %@ açık uygunsuzluk var."), String($0)) } ?? RDLocalization.string("localizable.nova.shell.summary.loading", table: .localizable, fallback: "Özet yükleniyor…"),
                      style: .metaQuiet, color: muted)
+                .lineLimit(1).minimumScaleFactor(0.85)
         }.frame(maxWidth: .infinity, alignment: .leading)
-    }
-    private var assistant: some View {
-        Button(action: onAssistant) {
-            HStack(spacing: 7) {
-                NovaIcon(symbol: "sparkle", size: 14)
-                NovaSizedText(text: RDLocalization.string("localizable.nova.expert.shell.ai.asistan.fd9d94db", table: .localizable, fallback: "AI Asistan"), size: 13.5)
-            }.padding(.horizontal, 15).frame(minHeight: 44)
-                .background(NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
-        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("nova.home.assistant")
     }
     private var activity: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -1251,60 +1292,315 @@ struct NovaDashboardScreen: View {
     private var capture: some View {
         VStack(spacing: 12) {
             HStack {
-                NovaText(text: RDLocalization.string("localizable.nova.expert.shell.yeni.kayit.9acd3c41", table: .localizable, fallback: "Yeni kayıt"), style: .meta, color: NovaColorToken.text.color(in: scheme))
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
+                NovaText(text: RDLocalization.string("localizable.nova.expert.shell.yeni.kayit.9acd3c41", table: .localizable, fallback: "Yeni kayıt"), style: .sectionTitle)
                 Spacer()
                 HStack(spacing: 5) {
-                    ForEach([1.0, 0.45, 0.2], id: \.self) { opacity in
-                        Circle().fill(NovaColorToken.accent.color(in: scheme).opacity(opacity)).frame(width: 6, height: 6)
+                    Image(systemName: "arrow.left.and.right")
+                    Text("Kaydır")
+                }
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
+                .accessibilityHidden(true)
+            }
+            GeometryReader { geometry in
+                let width = geometry.size.width * (typeSize.isAccessibilitySize ? 0.86 : 0.68)
+                let height: CGFloat = typeSize.isAccessibilitySize ? 210 : 176
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        addActionCard(title: RDLocalization.string("localizable.nova.nonconformity.choose.photo.title", table: .localizable, fallback: "Fotoğraftan analiz"),
+                            detail: RDLocalization.string("localizable.nova.home.photo.detail", table: .localizable, fallback: "Fotoğraf seç veya çek"), symbol: "camera.fill", isPhoto: true, width: width, height: height,
+                            action: onPhoto, identifier: "nova.home.photo")
+                        addActionCard(title: RDLocalization.string("localizable.nova.home.manual.title", table: .localizable, fallback: "Elle uygunsuzluk"),
+                            detail: RDLocalization.string("localizable.nova.home.manual.detail", table: .localizable, fallback: "Bilgileri adım adım gir"), symbol: "square.and.pencil", isPhoto: false, width: width, height: height,
+                            action: { onNavigate(.newFinding) }, identifier: "nova.home.addFinding")
                     }
-                }.accessibilityHidden(true)
-            }
-            // Both creation methods answer the same question and therefore
-            // share one hierarchy: neither is a visually dominant “primary”
-            // route that makes the other look secondary.
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 10) {
-                    addActionCard(title: RDLocalization.string("localizable.nova.nonconformity.choose.photo.title", table: .localizable, fallback: "Fotoğraftan analiz"),
-                        detail: RDLocalization.string("localizable.nova.home.photo.detail", table: .localizable, fallback: "Fotoğraf seç veya çek"), symbol: "camera", action: onPhoto, identifier: "nova.home.photo")
-                    addActionCard(title: RDLocalization.string("localizable.nova.home.manual.title", table: .localizable, fallback: "Elle uygunsuzluk"),
-                        detail: RDLocalization.string("localizable.nova.home.manual.detail", table: .localizable, fallback: "Bilgileri adım adım gir"), symbol: "square.and.pencil", action: { onNavigate(.newFinding) }, identifier: "nova.home.addFinding")
+                    .padding(.trailing, 2)
                 }
-                VStack(spacing: 10) {
-                    addActionCard(title: RDLocalization.string("localizable.nova.nonconformity.choose.photo.title", table: .localizable, fallback: "Fotoğraftan analiz"),
-                        detail: RDLocalization.string("localizable.nova.home.photo.detail", table: .localizable, fallback: "Fotoğraf seç veya çek"), symbol: "camera", action: onPhoto, identifier: "nova.home.photo")
-                    addActionCard(title: RDLocalization.string("localizable.nova.home.manual.title", table: .localizable, fallback: "Elle uygunsuzluk"),
-                        detail: RDLocalization.string("localizable.nova.home.manual.detail", table: .localizable, fallback: "Bilgileri adım adım gir"), symbol: "square.and.pencil", action: { onNavigate(.newFinding) }, identifier: "nova.home.addFinding")
-                }
+                .accessibilityIdentifier("nova.home.quickActions")
             }
-        }.padding(18)
-            .novaControlBackground(cornerRadius: 26)
+            .frame(height: typeSize.isAccessibilitySize ? 210 : 176)
+        }
     }
 
     private func addActionCard(title: String, detail: String, symbol: String,
+                               isPhoto: Bool, width: CGFloat, height: CGFloat,
                                action: @escaping () -> Void, identifier: String) -> some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 9) {
-                Image(systemName: symbol).font(.system(size: 21, weight: .semibold))
-                    .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-                NovaText(text: title, style: .bodyStrong)
-                NovaText(text: detail, style: .metaQuiet)
-                Spacer(minLength: 0)
-                HStack {
-                    NovaText(text: RDLocalization.string("localizable.nova.home.start", table: .localizable, fallback: "Başla"),
-                        style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
-                    Spacer(minLength: 0)
-                    Image(systemName: "arrow.right").font(.system(size: 12, weight: .semibold))
+            ZStack {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(NovaColorToken.surface.color(in: scheme))
+                if isPhoto { NovaPhotoSafetyPattern() }
+                VStack(alignment: .leading, spacing: 6) {
+                    Spacer(minLength: typeSize.isAccessibilitySize ? 48 : 78)
+                    NovaText(text: title, style: .bodyStrong).lineLimit(2)
+                    NovaText(text: detail, style: .metaQuiet).lineLimit(2)
+                    Spacer(minLength: 2)
+                    HStack {
+                        NovaText(text: RDLocalization.string("localizable.nova.home.start", table: .localizable, fallback: "Başla"),
+                            style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
+                        Spacer(minLength: 0)
+                        Image(systemName: "arrow.right").font(.system(size: 12, weight: .semibold))
+                    }
+                }
+                .padding(14)
+                .overlay(alignment: .center) {
+                    Image(systemName: symbol)
+                        .font(.system(size: isPhoto ? 22 : 20, weight: .semibold))
+                        .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                        .frame(width: isPhoto ? 52 : 48, height: isPhoto ? 52 : 48)
+                        .background(NovaColorToken.accent.color(in: scheme).opacity(0.13), in: Circle())
+                        .overlay(Circle().strokeBorder(NovaColorToken.accent.color(in: scheme).opacity(0.34), lineWidth: 1))
+                        .offset(y: typeSize.isAccessibilitySize ? -42 : -27)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 126, alignment: .leading)
-            .padding(14)
-            .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+            .frame(width: width, height: height)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(NovaColorToken.borderStrong.color(in: scheme),
+                        style: StrokeStyle(lineWidth: 1.2, lineCap: .round, dash: [5, 4]))
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(NovaRowPressStyle())
         .accessibilityIdentifier(identifier)
+    }
+}
+
+/// Full-bleed portrait photo cards for the recent-analysis story rail.
+private struct NovaRecentAnalysisStory: View {
+    let analysis: NovaRecentAnalysis
+    let loadPhoto: (UUID) async -> UIImage?
+    let onOpen: () -> Void
+    @Environment(\.colorScheme) private var scheme
+    @State private var photo: UIImage?
+
+    private let diameter: CGFloat = 82
+    private let ringWidth: CGFloat = 3
+    private var photoDiameter: CGFloat { diameter - ringWidth * 2 }
+
+    var body: some View {
+        Button(action: onOpen) {
+            ZStack {
+                Circle().fill(NovaColorToken.accentSoft.color(in: scheme))
+                if let photo {
+                    Image(uiImage: photo)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: photoDiameter, height: photoDiameter)
+                        .scaleEffect(1.55)
+                        .frame(width: photoDiameter, height: photoDiameter)
+                        .clipped()
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(
+                            Color.white.opacity(scheme == .dark ? 0.14 : 0.82), lineWidth: 1))
+                } else {
+                    Circle()
+                        .fill(NovaColorToken.surfaceMuted.color(in: scheme))
+                        .frame(width: photoDiameter, height: photoDiameter)
+                        .overlay(Circle().strokeBorder(
+                            Color.white.opacity(scheme == .dark ? 0.14 : 0.82), lineWidth: 1))
+                }
+            }
+            .frame(width: diameter, height: diameter)
+            .overlay(Circle().strokeBorder(
+                NovaColorToken.accent.color(in: scheme).opacity(scheme == .dark ? 0.78 : 0.60),
+                lineWidth: 1.25))
+            .contentShape(Circle())
+        }
+        .buttonStyle(NovaRowPressStyle())
+        .accessibilityLabel("\(analysis.companyName), \(analysis.createdOn)")
+        .accessibilityIdentifier("nova.home.analysis.\(analysis.id)")
+        .task(id: analysis.id) {
+            guard let id = UUID(uuidString: analysis.id) else { return }
+            photo = await loadPhoto(id)
+        }
+    }
+}
+
+/// Light PPE glyph collage on the white photo-analysis card. The centered
+/// camera badge stays on a quiet field so the primary action remains obvious.
+private struct NovaPhotoSafetyPattern: View {
+    private struct Item: Identifiable {
+        let id: Int
+        let symbol: String
+        let size: CGFloat
+        let x: CGFloat
+        let y: CGFloat
+        let rotation: Double
+        let opacity: Double
+    }
+    private let items: [Item] = [
+        .init(id: 1, symbol: "hardhat", size: 27, x: 0.11, y: 0.16, rotation: -12, opacity: 0.22),
+        .init(id: 2, symbol: "eyeglasses", size: 24, x: 0.39, y: 0.11, rotation: 8, opacity: 0.19),
+        .init(id: 3, symbol: "earmuffs", size: 21, x: 0.78, y: 0.15, rotation: 10, opacity: 0.22),
+        .init(id: 4, symbol: "shield.fill", size: 17, x: 0.94, y: 0.32, rotation: 9, opacity: 0.18),
+        .init(id: 5, symbol: "glove", size: 23, x: 0.08, y: 0.40, rotation: -8, opacity: 0.20),
+        .init(id: 6, symbol: "trafficCone", size: 28, x: 0.91, y: 0.51, rotation: 7, opacity: 0.23),
+        .init(id: 7, symbol: "safetyTape", size: 20, x: 0.12, y: 0.67, rotation: -8, opacity: 0.18),
+        .init(id: 8, symbol: "hardhat", size: 17, x: 0.35, y: 0.58, rotation: 12, opacity: 0.16),
+        .init(id: 9, symbol: "hardhat", size: 22, x: 0.61, y: 0.70, rotation: 12, opacity: 0.20),
+        .init(id: 10, symbol: "eyeglasses", size: 23, x: 0.89, y: 0.84, rotation: -10, opacity: 0.18),
+        .init(id: 11, symbol: "hand.raised.fill", size: 18, x: 0.66, y: 0.34, rotation: 12, opacity: 0.17),
+        .init(id: 12, symbol: "exclamationmark.triangle.fill", size: 19, x: 0.39, y: 0.88, rotation: -9, opacity: 0.21),
+        .init(id: 13, symbol: "earmuffs", size: 18, x: 0.54, y: 0.17, rotation: -6, opacity: 0.17),
+        .init(id: 14, symbol: "safetyTape", size: 24, x: 0.73, y: 0.91, rotation: 8, opacity: 0.18),
+        .init(id: 15, symbol: "trafficCone", size: 17, x: 0.10, y: 0.91, rotation: -7, opacity: 0.17),
+        .init(id: 16, symbol: "shield.fill", size: 16, x: 0.52, y: 0.49, rotation: 4, opacity: 0.14),
+        .init(id: 17, symbol: "glove", size: 19, x: 0.91, y: 0.08, rotation: 10, opacity: 0.17),
+        .init(id: 18, symbol: "hardhat", size: 18, x: 0.20, y: 0.27, rotation: -9, opacity: 0.16)
+    ]
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        GeometryReader { geometry in
+            ForEach(items) { item in
+                NovaSafetyPPEGlyph(symbol: item.symbol, size: item.size,
+                    color: NovaColorToken.textTertiary.color(in: scheme))
+                    .opacity(item.opacity)
+                    .rotationEffect(.degrees(item.rotation))
+                    .position(x: geometry.size.width * item.x, y: geometry.size.height * item.y)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Small native PPE glyphs for the background collage, with no external art
+/// assets or platform-specific SF Symbol requirements.
+private struct NovaSafetyPPEGlyph: View {
+    let symbol: String
+    let size: CGFloat
+    let color: Color
+
+    @ViewBuilder var body: some View {
+        switch symbol {
+        case "hardhat": hardhat
+        case "earmuffs": earmuffs
+        case "trafficCone": trafficCone
+        case "safetyTape": safetyTape
+        case "glove": Image(systemName: "hand.raised.fill").font(.system(size: size, weight: .medium)).foregroundStyle(color)
+        default: Image(systemName: symbol).font(.system(size: size, weight: .medium)).foregroundStyle(color)
+        }
+    }
+
+    private var lineWidth: CGFloat { max(1.2, size * 0.055) }
+
+    private var hardhat: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+            ZStack {
+                Path { path in
+                    path.move(to: CGPoint(x: width * 0.14, y: height * 0.66))
+                    path.addLine(to: CGPoint(x: width * 0.86, y: height * 0.66))
+                    path.addLine(to: CGPoint(x: width * 0.82, y: height * 0.54))
+                    path.addCurve(to: CGPoint(x: width * 0.18, y: height * 0.54),
+                        control1: CGPoint(x: width * 0.74, y: height * 0.12),
+                        control2: CGPoint(x: width * 0.26, y: height * 0.12))
+                    path.closeSubpath()
+                }
+                .fill(color.opacity(0.12))
+                Path { path in
+                    path.move(to: CGPoint(x: width * 0.14, y: height * 0.66))
+                    path.addLine(to: CGPoint(x: width * 0.86, y: height * 0.66))
+                    path.move(to: CGPoint(x: width * 0.50, y: height * 0.22))
+                    path.addLine(to: CGPoint(x: width * 0.50, y: height * 0.60))
+                    path.move(to: CGPoint(x: width * 0.08, y: height * 0.73))
+                    path.addLine(to: CGPoint(x: width * 0.92, y: height * 0.73))
+                }
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
+            }
+        }
+        .frame(width: size, height: size)
+    }
+
+    private var earmuffs: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+            ZStack {
+                Path { path in
+                    path.move(to: CGPoint(x: width * 0.19, y: height * 0.69))
+                    path.addCurve(to: CGPoint(x: width * 0.81, y: height * 0.69),
+                        control1: CGPoint(x: width * 0.12, y: height * 0.02),
+                        control2: CGPoint(x: width * 0.88, y: height * 0.02))
+                }
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                RoundedRectangle(cornerRadius: size * 0.1)
+                    .fill(color.opacity(0.14))
+                    .overlay(RoundedRectangle(cornerRadius: size * 0.1).stroke(color, lineWidth: lineWidth))
+                    .frame(width: width * 0.24, height: height * 0.38)
+                    .position(x: width * 0.19, y: height * 0.65)
+                RoundedRectangle(cornerRadius: size * 0.1)
+                    .fill(color.opacity(0.14))
+                    .overlay(RoundedRectangle(cornerRadius: size * 0.1).stroke(color, lineWidth: lineWidth))
+                    .frame(width: width * 0.24, height: height * 0.38)
+                    .position(x: width * 0.81, y: height * 0.65)
+            }
+        }
+        .frame(width: size, height: size)
+    }
+
+    private var trafficCone: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+            ZStack {
+                Path { path in
+                    path.move(to: CGPoint(x: width * 0.47, y: height * 0.12))
+                    path.addLine(to: CGPoint(x: width * 0.56, y: height * 0.12))
+                    path.addLine(to: CGPoint(x: width * 0.78, y: height * 0.78))
+                    path.addLine(to: CGPoint(x: width * 0.22, y: height * 0.78))
+                    path.closeSubpath()
+                }
+                .fill(color.opacity(0.12))
+                Path { path in
+                    path.move(to: CGPoint(x: width * 0.47, y: height * 0.12))
+                    path.addLine(to: CGPoint(x: width * 0.56, y: height * 0.12))
+                    path.addLine(to: CGPoint(x: width * 0.78, y: height * 0.78))
+                    path.addLine(to: CGPoint(x: width * 0.22, y: height * 0.78))
+                    path.closeSubpath()
+                    path.move(to: CGPoint(x: width * 0.34, y: height * 0.52))
+                    path.addLine(to: CGPoint(x: width * 0.66, y: height * 0.52))
+                }
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
+                Path { path in
+                    path.addRoundedRect(in: CGRect(x: width * 0.12, y: height * 0.81,
+                        width: width * 0.76, height: height * 0.12), cornerSize: CGSize(width: 2, height: 2))
+                }
+                .fill(color.opacity(0.2))
+                .overlay {
+                    Path { path in
+                        path.move(to: CGPoint(x: width * 0.12, y: height * 0.93))
+                        path.addLine(to: CGPoint(x: width * 0.88, y: height * 0.93))
+                    }
+                    .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                }
+            }
+        }
+        .frame(width: size, height: size)
+    }
+
+    private var safetyTape: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+            ZStack {
+                Path { path in
+                    path.move(to: CGPoint(x: width * 0.16, y: height * 0.12))
+                    path.addLine(to: CGPoint(x: width * 0.16, y: height * 0.88))
+                    path.move(to: CGPoint(x: width * 0.84, y: height * 0.12))
+                    path.addLine(to: CGPoint(x: width * 0.84, y: height * 0.88))
+                    path.move(to: CGPoint(x: width * 0.16, y: height * 0.36))
+                    path.addLine(to: CGPoint(x: width * 0.39, y: height * 0.57))
+                    path.addLine(to: CGPoint(x: width * 0.61, y: height * 0.39))
+                    path.addLine(to: CGPoint(x: width * 0.84, y: height * 0.57))
+                }
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round, dash: [size * 0.11, size * 0.07]))
+            }
+        }
+        .frame(width: size, height: size)
     }
 }
 
