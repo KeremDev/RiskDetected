@@ -86,7 +86,9 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 NovaPageHeading("Profil", modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) { navigate(NovaDestination.home) }
                 Box(Modifier.weight(1f)) { slots.profile { navigate(NovaDestination.home) } }
             }
-            NovaDestination.findings -> NovaFindingsDestination(identity, NovaFindingsSurface.board, state.writable, navigate)
+            NovaDestination.findings -> if (state.overviewFailed) NovaPilotStatusPage(destination, state, onWorkspaceSwitch, viewModel::reload) {
+                navigate(NovaDestination.home)
+            } else NovaFindingsDestination(identity, NovaFindingsSurface.board, state.writable, navigate)
             NovaDestination.newFinding -> NovaFindingsDestination(identity, NovaFindingsSurface.addFinding, state.writable, navigate)
             NovaDestination.companies, NovaDestination.newCompany -> key(destination) {
                 CompaniesDestination(services, identity, state, workspace, navigate, viewModel::reload, startCreating = destination == NovaDestination.newCompany)
@@ -118,7 +120,9 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 NovaTrainingScreen(services.trainingClient(identity, state.userName), state.writable, onBack = { navigate(NovaDestination.home) },
                     createOnOpen = destination == NovaDestination.newTraining)
             }
-            NovaDestination.statistics -> NovaStatisticsScreen(services.statisticsClient(identity), onBack = { navigate(NovaDestination.home) },
+            NovaDestination.statistics -> if (state.overviewFailed) NovaPilotStatusPage(destination, state, onWorkspaceSwitch, viewModel::reload) {
+                navigate(NovaDestination.home)
+            } else NovaStatisticsScreen(services.statisticsClient(identity), onBack = { navigate(NovaDestination.home) },
                 onNavigate = navigate, openTracked = trackedOpener(services, identity, state.writable)) { company, onBack ->
                 NovaFollowupScreen({ selected, status, query, offset -> services.followup(identity, selected, status, query, offset) },
                     services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable, state.userName),
@@ -136,7 +140,6 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             NovaDestination.analyses -> AnalysesDestination(services, identity, workspace, state.writable, navigate)
             NovaDestination.newAnalysis -> PhotoAnalysisDestination(services, identity, workspace, state.writable, navigate)
             NovaDestination.checklists -> NovaChecklistScreen(services.checklistClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
-            else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
     }
     NovaNoticeDialog(state.message, "İSGADA pilot", viewModel::dismissMessage)
@@ -368,23 +371,28 @@ private fun processKind(destination: NovaDestination) = when (destination) {
 }
 
 /** A module whose Android page is not ported yet says so plainly; it never pretends to work. */
+
+/**
+ * What a page shows while the pilot access cannot be confirmed (iOS `statusCard`): the workspace, its state, the
+ * way to another workspace, and a retry.
+ */
 @Composable
-private fun NovaModulePending(destination: NovaDestination, state: NovaPilotUiState, onWorkspaceSwitch: (() -> Unit)?,
-                              onBack: () -> Unit) {
+private fun NovaPilotStatusPage(destination: NovaDestination, state: NovaPilotUiState, onWorkspaceSwitch: (() -> Unit)?, onRetry: () -> Unit,
+                                onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
         .padding(top = 12.dp, bottom = 24.dp + novaTabBarInset), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         NovaPageHeading(destination.title, onBack = onBack)
-        NovaEmptyState("Bu sayfa Android'e taşınıyor",
-            "${destination.title} iOS'ta kullanılabiliyor; Android sürümü sıradaki güncellemelerle bu ekrana gelecek. Kayıtlarınız değişmez.")
         NovaCard(Modifier.fillMaxWidth(), padding = 12) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NovaIcon(if (state.ready) "checkmark.shield" else "lock.shield", 18.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                NovaIcon("lock.shield", 18.dp)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     state.workspaceLabel?.let { NovaText(it, style = NovaTypeToken.bodyStrong) }
                     NovaText(status(state), style = NovaTypeToken.metaQuiet)
                 }
             }
         }
+        NovaText("Bu sayfa için canlı pilot erişimi doğrulanamadı. Bağlantınızı kontrol edip tekrar deneyin.")
+        NovaButton("Pilot erişimini tekrar kontrol et", onRetry, variant = NovaButtonVariant.Surface, symbol = "arrow.clockwise")
         if (onWorkspaceSwitch != null) NovaButton("Çalışma alanını değiştir", onWorkspaceSwitch,
             variant = NovaButtonVariant.Surface, symbol = "arrow.triangle.2.circlepath")
         NovaButton("Ana sayfaya dön", onBack, variant = NovaButtonVariant.Surface, symbol = "chevron.left")
