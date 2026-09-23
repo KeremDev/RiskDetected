@@ -1,12 +1,18 @@
 package com.riskdetectedan.core.data.company
 
 import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.data.isg.NovaExpertTransport
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlinx.serialization.Serializable
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
@@ -57,12 +63,20 @@ private data class CompanyProfilePayload(
  * specific substrings — matches backend-is-the-authority: this repository doesn't decide
  * whether a user can add a company, it just translates the server's rejection reason).
  */
+private val organizationJson = Json { ignoreUnknownKeys = true }
+
 @Singleton
 class CompanyRepository @Inject constructor(
     private val client: SupabaseClient,
+    /** Present in the app; an OSGB expert's companies are the organization's, read through it (iOS `CompanyService`). */
+    private val expert: NovaExpertTransport? = null,
 ) {
     suspend fun listCompanies(includeArchived: Boolean = false): RdResult<List<Company>> = try {
-        val companies = client.postgrest.from("companies")
+        val ticket = expert?.capture()
+        val companies = if (expert != null && ticket?.access?.workspaceId != null) {
+            val data = expert.executeObject("isg_expert_companies_v1", buildJsonObject { put("p_archived", includeArchived) }, ticket)
+            organizationJson.decodeFromJsonElement(ListSerializer(Company.serializer()), data["rows"] ?: JsonArray(emptyList()))
+        } else client.postgrest.from("companies")
             .select {
                 if (!includeArchived) filter { eq("is_archived", false) }
                 order("created_at", Order.DESCENDING)
