@@ -62,6 +62,12 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
         onDispose { lifecycle.removeObserver(observer); services.presence.background() }
     }
     val notices = state.notices
+    // iOS reads one equipment page for the menu and home counters, again whenever the page changes.
+    var equipmentBoard by remember(identity) { mutableStateOf<NovaEquipmentBoard?>(null) }
+    LaunchedEffect(identity, workspaceId, state.navigation.selected) {
+        equipmentBoard = try { services.equipmentSummary(identity) }
+            catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled } catch (_: Exception) { equipmentBoard }
+    }
     // A notice opens its own record over the shell (iOS `openNotice`); training rows are matched to their session first.
     val coroutines = rememberCoroutineScope()
     var noticeRecord by remember(identity) { mutableStateOf<NovaFollowupPage.Row?>(null) }
@@ -96,7 +102,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
     LaunchedEffect(identity) { notebookAvailable = services.notebook.enabled() }
     NovaExpertShell(state.navigation, state.userName, viewModel::apply,
         profileAvatar = state.avatar, menuRoleTitle = "İSG Uzmanı", notebookAvailable = notebookAvailable,
-        menuStats = menuStats(state), menuNextAction = nextAction(state),
+        menuStats = menuStats(state, equipmentBoard), menuNextAction = nextAction(state, equipmentBoard),
         hasUnread = notices.unread > 0, unreadCount = notices.unread,
         notices = notices.rows.map(::noticeItem),
         noticeNote = if (notices.rows.isEmpty()) "" else NovaNoticeWords.dismissNote,
@@ -113,7 +119,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             onLogout = viewModel::signOut,
         )) { destination ->
         when (destination) {
-            NovaDestination.home -> NovaDashboardScreen(dashboardData(state).copy(recentAnalyses = recentAnalyses), onNavigate = navigate,
+            NovaDestination.home -> NovaDashboardScreen(dashboardData(state, equipmentBoard).copy(recentAnalyses = recentAnalyses), onNavigate = navigate,
                 onPhoto = { navigate(NovaDestination.newAnalysis) }, onAssistant = viewModel::showUnavailable,
                 analysisThumbnail = { id ->
                     services.analysis.thumbnail(id, workspace?.selection)?.let { bytes ->
@@ -473,10 +479,11 @@ internal fun hazardTitle(value: String): String? = when (value) {
 private fun menuAnalysisCount(state: NovaPilotUiState): Int? =
     state.dashboard?.openNonconformities?.toInt() ?: state.activeCompanies?.sumOf { it.findingCount ?: 0 }
 
-private fun menuStats(state: NovaPilotUiState): List<NovaMenuStat> {
+private fun menuStats(state: NovaPilotUiState, equipment: NovaEquipmentBoard?): List<NovaMenuStat> {
     val board = state.dashboard
-    val upcoming = board?.let { (it.equipmentDueSoon + it.riskDueSoon).toString() } ?: "—"
-    val overdue = board?.overdueNonconformities?.toString() ?: "—"
+    // A personal account has no workspace dashboard; its equipment page carries the dates instead (iOS).
+    val upcoming = board?.let { (it.equipmentDueSoon + it.riskDueSoon).toString() } ?: equipment?.needsAttention?.toString() ?: "—"
+    val overdue = board?.overdueNonconformities?.toString() ?: equipment?.let { (it.counts[NovaEquipmentState.overdue] ?: 0).toString() } ?: "—"
     val analyses = menuAnalysisCount(state)?.toString() ?: "—"
     return listOf(
         NovaMenuStat("upcoming", "Yaklaşan İşler", upcoming, "calendar.badge.clock", NovaDestination.periodicChecks),
@@ -484,7 +491,7 @@ private fun menuStats(state: NovaPilotUiState): List<NovaMenuStat> {
         NovaMenuStat("analyses", "Analiz", analyses, "photo.on.rectangle.angled", NovaDestination.analyses))
 }
 
-private fun nextAction(state: NovaPilotUiState): NovaMenuNextAction? {
+private fun nextAction(state: NovaPilotUiState, equipment: NovaEquipmentBoard?): NovaMenuNextAction? {
     val companies = state.activeCompanies ?: return null
     if (companies.isEmpty()) return NovaMenuNextAction("Firma ekle", "building.2.crop.circle",
         if (state.isWorkspaceExpert) NovaDestination.companies else NovaDestination.newCompany, 0, 1)
@@ -492,6 +499,7 @@ private fun nextAction(state: NovaPilotUiState): NovaMenuNextAction? {
         NovaDestination.newAnalysis, 0, 8)
     var completed = 1
     if ((menuAnalysisCount(state) ?: 0) > 0) completed++
+    if ((equipment?.counts?.values?.sum() ?: 0) > 0) completed++
     state.dashboard?.let {
         if (it.trainingCompleted > 0) completed++
         if (it.visitsTotal > 0) completed++
@@ -500,7 +508,7 @@ private fun nextAction(state: NovaPilotUiState): NovaMenuNextAction? {
         completed.coerceAtMost(8), 8)
 }
 
-private fun dashboardData(state: NovaPilotUiState): NovaDashboardData {
+private fun dashboardData(state: NovaPilotUiState, equipment: NovaEquipmentBoard?): NovaDashboardData {
     val companies = state.activeCompanies
     fun sum(pick: (com.riskdetectedan.core.data.nova.NovaCompanySummary) -> Int) = companies?.sumOf(pick)?.toString() ?: "—"
     val metrics = listOf(
@@ -512,7 +520,7 @@ private fun dashboardData(state: NovaPilotUiState): NovaDashboardData {
             NovaDestination.companies),
         NovaMetricItem("departments", sum { it.departmentCount }, "Departman", "Aktif kayıt", "square.grid.2x2",
             NovaColorToken.accent, NovaDestination.companies),
-        NovaMetricItem("equipment", state.dashboard?.equipmentDueSoon?.toString() ?: "—", "Kontrol", "ilgi bekleyen",
+        NovaMetricItem("equipment", equipment?.needsAttention?.toString() ?: "—", "Kontrol", "ilgi bekleyen",
             "checkmark.shield", NovaColorToken.accent, NovaDestination.periodicChecks),
     )
     val summary = when {
@@ -662,6 +670,7 @@ class NovaRootServices @javax.inject.Inject constructor(
         NovaServiceAppointmentClient(appointments, identity, companies(identity), fileClient(identity), moduleManage(identity))
     fun drillClient(identity: IsgWorkspaceIdentity) = NovaServiceDrillClient(drills, identity, companies(identity), moduleManage(identity))
     private fun moduleManage(identity: IsgWorkspaceIdentity) = NovaModuleManage(moduleEditor, identity, fileClient(identity))
+    suspend fun equipmentSummary(identity: IsgWorkspaceIdentity) = equipment.board(identity, NovaEquipmentQuery(limit = 1))
     fun equipmentClient(identity: IsgWorkspaceIdentity) = NovaServiceEquipmentClient(equipment, identity, companies(identity), fileClient(identity))
     fun riskClient(identity: IsgWorkspaceIdentity) = NovaServiceRiskClient(risk, identity, companies(identity), fileClient(identity))
 
