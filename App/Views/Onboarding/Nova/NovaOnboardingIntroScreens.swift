@@ -47,9 +47,9 @@ struct NovaOBSplashScreen: View {
         withAnimation(.linear(duration: 0.3)) { logoVisible = true }
         try? await Task.sleep(nanoseconds: 180_000_000)
         withAnimation(.linear(duration: 0.24)) { mascotOpacity = 0 }
-        // Hold on the wordmark before handing over to the intro.
+        // Hold on the wordmark before handing over to the reveal screen.
         try? await Task.sleep(nanoseconds: 2_000_000_000)
-        controller.go(.intro1)
+        controller.go(.reveal)
     }
 }
 

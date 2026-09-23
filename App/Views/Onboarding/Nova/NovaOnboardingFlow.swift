@@ -20,7 +20,7 @@ struct NovaOBAuthBridge {
 
 /// Screen identifiers, one per `sc-if` branch in the prototype.
 enum NovaOBScreen: Equatable {
-    case splash, intro1, intro2, intro3, social
+    case splash, reveal, intro1, intro2, intro3, social
     case questions, prep, card, edit
     case signup, emailForm, otp
     case trial, trialHow, push
@@ -74,7 +74,7 @@ final class NovaOBController: ObservableObject {
             return
         }
         let map: [String: NovaOBScreen] = [
-            "splash": .splash, "i1": .intro1, "i2": .intro2, "i3": .intro3, "social": .social,
+            "splash": .splash, "reveal": .reveal, "i1": .intro1, "i2": .intro2, "i3": .intro3, "social": .social,
             "prep": .prep, "card": .card, "edit": .edit, "signup": .signup,
             "emailform": .emailForm, "otp": .otp, "trial": .trial, "trialhow": .trialHow,
             "push": .push, "login": .login
@@ -471,6 +471,7 @@ struct NovaOnboardingFlow: View {
         ZStack {
             switch controller.screen {
             case .splash: NovaOBSplashScreen(controller: controller)
+            case .reveal: NovaOBRevealScreen(controller: controller, onLogin: onOpenLogin)
             case .intro1: NovaOBIntroScreen(controller: controller, page: 0, onLogin: onOpenLogin)
             case .intro2: NovaOBIntroScreen(controller: controller, page: 1, onLogin: onOpenLogin)
             case .intro3: NovaOBIntroScreen(controller: controller, page: 2, onLogin: onOpenLogin)

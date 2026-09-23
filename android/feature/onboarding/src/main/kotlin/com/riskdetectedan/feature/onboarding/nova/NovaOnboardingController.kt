@@ -83,7 +83,7 @@ class NovaOBAuth @Inject constructor(
 }
 
 /** Screen identifiers, one per `sc-if` branch in the prototype. */
-internal enum class NovaOBScreen { Splash, Intro1, Intro2, Intro3, Social, Questions, Prep, Card, Signup, EmailForm, Otp, Trial, TrialHow, Push }
+internal enum class NovaOBScreen { Splash, Reveal, Intro1, Intro2, Intro3, Social, Questions, Prep, Card, Signup, EmailForm, Otp, Trial, TrialHow, Push }
 
 /** State and transitions of the Nova onboarding funnel (iOS `NovaOBController`). */
 @HiltViewModel

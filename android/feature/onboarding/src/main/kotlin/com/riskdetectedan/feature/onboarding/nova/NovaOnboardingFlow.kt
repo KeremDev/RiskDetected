@@ -32,6 +32,7 @@ fun NovaOnboardingFlow(onOpenLogin: () -> Unit, onFinished: () -> Unit, controll
         label = "nova-onboarding") { screen ->
         when (screen) {
             NovaOBScreen.Splash -> NovaOBSplashScreen(controller)
+            NovaOBScreen.Reveal -> NovaOBRevealScreen(controller, onOpenLogin)
             NovaOBScreen.Intro1 -> NovaOBIntroScreen(controller, 0, onOpenLogin)
             NovaOBScreen.Intro2 -> NovaOBIntroScreen(controller, 1, onOpenLogin)
             NovaOBScreen.Intro3 -> NovaOBIntroScreen(controller, 2, onOpenLogin)

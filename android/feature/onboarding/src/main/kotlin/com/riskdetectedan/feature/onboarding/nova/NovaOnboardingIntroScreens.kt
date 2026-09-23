@@ -75,9 +75,9 @@ internal fun NovaOBSplashScreen(controller: NovaOnboardingController) {
         launch { logoAlpha.animateTo(1f, tween(300, easing = LinearEasing)) }
         delay(180)
         mascotAlpha.animateTo(0f, tween(240, easing = LinearEasing))
-        // Hold on the wordmark before handing over to the intro.
+        // Hold on the wordmark before handing over to the reveal screen.
         delay(2_000)
-        controller.go(NovaOBScreen.Intro1)
+        controller.go(NovaOBScreen.Reveal)
     }
     Box(Modifier.fillMaxSize().background(NovaOB.surface), contentAlignment = Alignment.Center) {
         Image(painterResource(R.drawable.nova_ob_logo), null, Modifier.width(220.dp).alpha(logoAlpha.value))
