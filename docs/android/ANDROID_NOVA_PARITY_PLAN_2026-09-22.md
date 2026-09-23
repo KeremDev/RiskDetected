@@ -124,6 +124,7 @@ sırası, aynı durum geçişleri, aynı boş/hata/yükleniyor durumları, aynı
 | Eğitim editörü 7 adım (firma → tür → konu → gün → eğitici → katılımcı → kontrol) + sertifika ekranı yeni akış | Tamam | `fa006e03` |
 | Profil "Arkadaşını davet et" (referral kodu, paylaşım, ödül başlatma, kod kullanma, davet bağlantısı) | Tamam | `025d7e95` |
 | Eğitim kaydetme kuralları (seçilen firma listesi + kaldır, eğitici kaldırma, sunucu sınırları, arka planda sertifika) | Tamam | `96bad3f7` |
+| Kayıt sonrası sertifika sayfası (kişi kartları, görüntüle/indir/paylaş, sürümler) + editör görünüm güncellemesi | Tamam | `f3fa6c43` |
 
 iOS'ta erişilemeyen (ölü) olduğu için taşınmayanlar: `NovaPPEFormPDF` (KKD form PDF'i),
 `IsgWorkspaceTrainingAdvancedScreen`, analiz bölüm başlığı/risk özet kartı/madde çubuğu/defter paneli,
