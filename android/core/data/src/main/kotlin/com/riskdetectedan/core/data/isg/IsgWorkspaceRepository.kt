@@ -320,6 +320,64 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
         bytes
     }
 
+    suspend fun domainDetail(context: IsgWorkspaceContext, companyId: String, domain: IsgWorkspaceDomain, id: String): IsgWorkspaceRecord =
+        inScope(context, companyId) {
+            IsgWorkspaceRecords.record(gateway.domainDetail(context.workspaceId, context.membership.membershipId,
+                context.membership.permissionRevision, companyId, domain, id), domain)
+        }
+
+    /** Checklist templates as (id "code:version", code, version, title, item count). */
+    suspend fun checklistTemplates(context: IsgWorkspaceContext, companyId: String): List<IsgWorkspaceChecklistTemplate> = inScope(context, companyId) {
+        gateway.checklistTemplates(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId).map {
+            val row = it.jsonObject
+            IsgWorkspaceChecklistTemplate(row["code"]!!.jsonPrimitive.content, row["version"]!!.jsonPrimitive.int,
+                row["title"]!!.jsonPrimitive.content, row["item_count"]!!.jsonPrimitive.int)
+        }
+    }
+
+    suspend fun equipmentCatalog(context: IsgWorkspaceContext, companyId: String): IsgWorkspaceEquipmentCatalog = inScope(context, companyId) {
+        val root = gateway.equipmentCatalog(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId)
+        IsgWorkspaceEquipmentCatalog(
+            root["suggestions"]!!.jsonArray.map { it.jsonObject }.map {
+                IsgWorkspaceEquipmentCatalog.Suggestion(it["code"]!!.jsonPrimitive.content, it["ordinal"]!!.jsonPrimitive.int,
+                    it["default_period_months"]?.jsonPrimitive?.intOrNull, it["default_basis_note"]?.jsonPrimitive?.contentOrNull)
+            }.sortedBy { it.ordinal },
+            root["rules"]!!.jsonArray.map { it.jsonObject }.map {
+                IsgWorkspaceEquipmentCatalog.Rule(it["equipment_type"]!!.jsonPrimitive.content, it["period_months"]!!.jsonPrimitive.int,
+                    it["period_source"]?.jsonPrimitive?.contentOrNull.orEmpty(), it["needs_review"]?.jsonPrimitive?.booleanOrNull == true,
+                    it["exception_note"]?.jsonPrimitive?.contentOrNull)
+            })
+    }
+
+    /** The company's workplaces, creating its default one first when it has none (iOS `initializePersonnel`). */
+    suspend fun ensuredWorkplaces(context: IsgWorkspaceContext, companyId: String): List<Pair<String, String>> {
+        val existing = directory(context, companyId, "workplaces")
+        if (existing.isNotEmpty() || !context.canOperate) return existing
+        inScope(context, companyId) {
+            gateway.initializePersonnel(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
+                context.canOperate, companyId)
+        }
+        return directory(context, companyId, "workplaces")
+    }
+
+    suspend fun trainingRecords(context: IsgWorkspaceContext, companyId: String, kind: IsgWorkspaceTrainingAdvancedKind) =
+        trainingAdvanced(context, companyId, kind)["rows"]!!.jsonArray.map { IsgWorkspaceAdvancedRecord.parse(it.jsonObject) }
+
+    suspend fun personnelRecords(context: IsgWorkspaceContext, companyId: String, kind: IsgWorkspacePersonnelAdvancedKind) =
+        personnelAdvanced(context, companyId, kind)["rows"]!!.jsonArray.map { IsgWorkspaceAdvancedRecord.parse(it.jsonObject) }
+
+    suspend fun mutateTrainingAdvanced(context: IsgWorkspaceContext, mutationId: String, companyId: String, payload: JsonObject): JsonObject =
+        inScope(context, companyId) {
+            gateway.mutateTrainingAdvanced(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
+                context.canOperate, mutationId, companyId, payload)
+        }
+
+    suspend fun mutatePersonnelAdvanced(context: IsgWorkspaceContext, mutationId: String, companyId: String, payload: JsonObject): JsonObject =
+        inScope(context, companyId) {
+            gateway.mutatePersonnelAdvanced(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
+                context.canOperate, mutationId, companyId, payload)
+        }
+
     suspend fun search(context: IsgWorkspaceContext, companyId: String, query: String): JsonObject = inScope(context, companyId) {
         gateway.search(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId, query)
     }

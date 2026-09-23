@@ -189,14 +189,21 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
     val domainClient = remember(context, selected?.id) {
         selected?.let { company ->
             NovaOsgbDomainClient(snapshot = { viewModel.repository.snapshot(context, company.id, it) },
+                detail = { domain, id -> viewModel.repository.domainDetail(context, company.id, domain, id) },
                 workplaces = { viewModel.repository.directory(context, company.id, "workplaces").toMap() },
                 employees = { viewModel.repository.directory(context, company.id, "employees").toMap() })
         }
     }
 
-    @Composable fun domain(value: IsgWorkspaceDomain, onBack: () -> Unit = { navigate(NovaDestination.home) }) {
+    @Composable fun domain(value: IsgWorkspaceDomain, onBack: () -> Unit = { navigate(NovaDestination.home) }, startInAddMode: Boolean = false) {
         if (selected == null || domainClient == null) CompanyRequired(value.title, onBack)
-        else key(selected.id, value) { NovaOsgbDomainScreen(domainClient, value, selected.name, onBack) }
+        else key(selected.id, value, startInAddMode) {
+            val scope = remember(context, selected) { NovaOsgbScope(context, viewModel.repository, selected.id, selected.name, selected.hazardClass) }
+            NovaOsgbDomainScreen(domainClient, value, selected.name, onBack, startInAddMode = startInAddMode,
+                create = if (context.canOperate) ({ close -> NovaOsgbCreateFlow(scope, value, close) }) else null) { row, workplaces, changed ->
+                NovaOsgbRecordActions(context, viewModel.repository, selected.id, value, row, workplaces, selected.hazardClass, changed)
+            }
+        }
     }
 
     @Composable fun search(onBack: () -> Unit) {
@@ -238,7 +245,7 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
         when (destination) {
             NovaDestination.home -> when {
                 showingSearch -> search { showingSearch = false }
-                dashboardDomain != null -> domain(dashboardDomain!!) { dashboardDomain = null }
+                dashboardDomain != null -> domain(dashboardDomain!!, onBack = { dashboardDomain = null })
                 else -> NovaDashboardScreen(managerDashboardData(state.userName, context, selected, board), onNavigate = navigate,
                     onPhoto = { navigate(NovaDestination.newAnalysis) }, onAssistant = {}, showsAssistant = false) {
                     ManagerHomeFooter(workspace, selected, canManage, context.canManageMembers, store, onSearch = { showingSearch = true },
@@ -261,7 +268,7 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
                 val open = workspace.companies.firstOrNull { it.id == companyPage }
                 when {
                     open != null && showingSearch -> search { showingSearch = false }
-                    open != null && companyDomain != null -> domain(companyDomain!!) { companyDomain = null }
+                    open != null && companyDomain != null -> domain(companyDomain!!, onBack = { companyDomain = null })
                     open != null -> NovaOsgbCompanyOverview(context, open, workspace, viewModel.repository,
                         onEdit = if (canManage) ({ editor = ManagerEditor(open) }) else null,
                         onBack = { companyPage = null; companyDomain = null }, onDomain = { companyDomain = it },
@@ -278,8 +285,10 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
                 onBack = { navigate(NovaDestination.home) })
             NovaDestination.reportArchive -> NovaReportArchive(remember(identity) { services.reportClient(identity) }, slots.analysisReports,
                 onBack = { navigate(NovaDestination.reports) })
-            NovaDestination.findings, NovaDestination.newFinding -> domain(IsgWorkspaceDomain.NONCONFORMITY)
-            NovaDestination.training, NovaDestination.newTraining -> domain(IsgWorkspaceDomain.TRAINING)
+            NovaDestination.findings -> domain(IsgWorkspaceDomain.NONCONFORMITY)
+            NovaDestination.newFinding -> domain(IsgWorkspaceDomain.NONCONFORMITY, startInAddMode = true)
+            NovaDestination.training -> domain(IsgWorkspaceDomain.TRAINING)
+            NovaDestination.newTraining -> domain(IsgWorkspaceDomain.TRAINING, startInAddMode = true)
             NovaDestination.riskAssessments -> domain(IsgWorkspaceDomain.RISK)
             NovaDestination.checklists -> domain(IsgWorkspaceDomain.CHECKLIST)
             NovaDestination.emergencyPlans -> domain(IsgWorkspaceDomain.EMERGENCY_PLAN)
@@ -289,10 +298,12 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
             NovaDestination.katipContracts -> domain(IsgWorkspaceDomain.KATIP)
             NovaDestination.annualWorkPlans -> domain(IsgWorkspaceDomain.ANNUAL_PLAN)
             NovaDestination.boardMeetings -> domain(IsgWorkspaceDomain.BOARD)
-            NovaDestination.visits, NovaDestination.newVisit -> domain(IsgWorkspaceDomain.VISIT)
+            NovaDestination.visits -> domain(IsgWorkspaceDomain.VISIT)
+            NovaDestination.newVisit -> domain(IsgWorkspaceDomain.VISIT, startInAddMode = true)
             NovaDestination.workPermits -> domain(IsgWorkspaceDomain.WORK_PERMIT)
             NovaDestination.periodicChecks -> domain(IsgWorkspaceDomain.EQUIPMENT)
-            NovaDestination.documentChecklist, NovaDestination.documents, NovaDestination.newDocument -> domain(IsgWorkspaceDomain.FILES)
+            NovaDestination.documentChecklist, NovaDestination.documents -> domain(IsgWorkspaceDomain.FILES)
+            NovaDestination.newDocument -> domain(IsgWorkspaceDomain.FILES, startInAddMode = true)
             NovaDestination.contractors -> domain(IsgWorkspaceDomain.PERSONNEL)
             NovaDestination.memory, NovaDestination.notifications -> NovaOsgbChangeScreen({
                 viewModel.repository.changes(context, selected?.id)["rows"]?.jsonArray.orEmpty().mapNotNull { item ->
@@ -767,6 +778,18 @@ private fun NovaOsgbCompanyOverview(context: IsgWorkspaceContext, company: NovaW
             }
         }
     }
+}
+
+/** The create flow of one domain (iOS `IsgWorkspaceDomainScreen.createEditor`). */
+@Composable
+private fun NovaOsgbCreateFlow(scope: NovaOsgbScope, domain: IsgWorkspaceDomain, onClose: () -> Unit) = when (domain) {
+    IsgWorkspaceDomain.FILES -> NovaOsgbFileCreateEditor(scope, onClose)
+    IsgWorkspaceDomain.TRAINING -> NovaOsgbTrainingCreateEditor(scope, onClose)
+    IsgWorkspaceDomain.NONCONFORMITY -> NovaOsgbManualNonconformityEditor(scope, onClose)
+    IsgWorkspaceDomain.RISK -> NovaOsgbRiskCreateEditor(scope, onClose)
+    IsgWorkspaceDomain.EMERGENCY_PLAN -> NovaOsgbEmergencyPlanCreateFlow(scope, onClose)
+    IsgWorkspaceDomain.EQUIPMENT -> NovaOsgbEquipmentCreateEditor(scope, onClose)
+    else -> NovaOsgbDomainCreateEditor(scope, domain, onClose)
 }
 
 /** A white-backed JPEG of at most 5 MB, stepping down in size and quality (iOS `normalizedCompanyLogo`). */

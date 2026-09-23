@@ -336,6 +336,49 @@ class IsgWorkspaceGateway(
         return result.text("download_token")?.takeIf { Regex("^[0-9a-f]{64}$").matches(it) } ?: fail()
     }
 
+    /** Published checklist templates the company may start from. */
+    suspend fun checklistTemplates(workspaceId: String, membershipId: String, permissionRevision: Long, companyId: String): JsonArray {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        val result = invoke("isg_workspace_checklist_read_v1", buildJsonObject {
+            put("p_workspace", workspaceId); put("p_company", companyId); put("p_id", JsonNull); put("p_after", JsonNull); put("p_limit", 1)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        requireEnvelope(result, workspaceId, companyId)
+        val templates = result["templates"] as? JsonArray ?: fail()
+        if (templates.size > 500 || templates.any { row -> (row as? JsonObject)?.let {
+                !it.text("code").isNullOrEmpty() && !it.text("title").isNullOrEmpty() &&
+                    (it.safeLong("version") ?: 0) in 1..1000 && (it.safeLong("item_count") ?: 0) in 1..500
+            } != true }) fail()
+        return templates
+    }
+
+    /** Equipment type suggestions and the company's control period rules. */
+    suspend fun equipmentCatalog(workspaceId: String, membershipId: String, permissionRevision: Long, companyId: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        val result = invoke("isg_workspace_equipment_read_v1", buildJsonObject {
+            put("p_workspace", workspaceId); put("p_company", companyId); put("p_kind", "catalog"); put("p_id", JsonNull)
+            put("p_query", ""); put("p_state", JsonNull); put("p_type", JsonNull); put("p_after", JsonNull); put("p_limit", 100)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        requireEnvelope(result, workspaceId, companyId)
+        val suggestions = result["suggestions"] as? JsonArray ?: fail()
+        val rules = result["rules"] as? JsonArray ?: fail()
+        if (suggestions.size > 100 || rules.size > 100 ||
+            suggestions.any { (it as? JsonObject)?.let { row -> !row.text("code").isNullOrEmpty() && (row.safeLong("ordinal") ?: 0) > 0 } != true } ||
+            rules.any { (it as? JsonObject)?.let { row -> !row.text("equipment_type").isNullOrEmpty() && (row.safeLong("period_months") ?: 0) in 1..240 } != true })
+            fail()
+        return result
+    }
+
+    /** Creates the invisible default workplace of a company that has none yet. */
+    suspend fun initializePersonnel(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean, companyId: String) {
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        val result = invoke("isg_workspace_personnel_initialize_v1", buildJsonObject { put("p_workspace", workspaceId); put("p_company", companyId) })
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        requireEnvelope(result, workspaceId, companyId)
+        if (result.text("workplace_id") == null) fail()
+    }
+
     private fun validMember(row: JsonObject): Boolean {
         val role = row.text("role"); val status = row.text("status"); val practicing = row.bool("is_practicing_expert")
         return row.text("membership_id")?.let(UUID::matches) == true && role in setOf("owner", "admin", "expert") &&
@@ -493,6 +536,25 @@ class IsgWorkspaceGateway(
             after = next
         }
         fail()
+    }
+
+    /** One record with its full history (iOS `domainDetail`); equipment reads its detail projection. */
+    suspend fun domainDetail(workspaceId: String, membershipId: String, permissionRevision: Long,
+                             companyId: String, domain: IsgWorkspaceDomain, id: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        if (!UUID.matches(id)) validation()
+        val (function, base) = domainReadRequest(workspaceId, companyId, domain, null, 1)
+        val arguments = JsonObject(base.toMutableMap().apply {
+            put("p_id", JsonPrimitive(id)); put("p_after", JsonNull); put("p_limit", JsonPrimitive(1))
+            if (domain == IsgWorkspaceDomain.EQUIPMENT) put("p_kind", JsonPrimitive("detail"))
+        })
+        val result = invoke(function, arguments)
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        requireEnvelope(result, workspaceId, companyId)
+        val rows = result["rows"] as? JsonArray ?: (result["row"] as? JsonObject)?.let { JsonArray(listOf(it)) } ?: fail()
+        val row = rows.singleOrNull() as? JsonObject ?: fail()
+        if (domainRowId(row) != id || (result["next"] ?: JsonNull) != JsonNull) fail()
+        return row
     }
 
     suspend fun domainMetrics(workspaceId: String, membershipId: String, permissionRevision: Long,

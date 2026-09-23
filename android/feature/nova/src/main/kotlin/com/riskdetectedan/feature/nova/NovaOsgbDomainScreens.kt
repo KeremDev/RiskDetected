@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -13,7 +14,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.riskdetectedan.core.data.isg.*
 import com.riskdetectedan.core.designsystem.isg.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 /** The OSGB title and symbol of each workspace domain (iOS `IsgWorkspaceDomain.title/symbol`). */
@@ -33,6 +36,7 @@ internal val IsgWorkspaceDomain.symbol: String get() = if (this == IsgWorkspaceD
 /** The workspace calls one domain page needs, bound to the selected workspace and company. */
 class NovaOsgbDomainClient(
     val snapshot: suspend (IsgWorkspaceDomain) -> IsgWorkspaceSnapshot,
+    val detail: suspend (IsgWorkspaceDomain, String) -> IsgWorkspaceRecord,
     val workplaces: suspend () -> Map<String, String>,
     val employees: suspend () -> Map<String, String>,
 )
@@ -180,14 +184,21 @@ private fun emptyMessage(domain: IsgWorkspaceDomain) = when (domain) {
     else -> "Yeni kayıtlar bu firmaya ve yetkili çalışma alanına bağlı olarak burada görünür."
 }
 
+private fun addTitle(domain: IsgWorkspaceDomain) = when (domain) {
+    IsgWorkspaceDomain.EMERGENCY_PLAN -> "Plan Ekle"; IsgWorkspaceDomain.APPOINTMENT -> "Atama Ekle"; IsgWorkspaceDomain.BOARD -> "Toplantı Ekle"
+    IsgWorkspaceDomain.RISK -> "Kayıt Ekle"; IsgWorkspaceDomain.TRAINING -> "Eğitim Ekle"; IsgWorkspaceDomain.EQUIPMENT -> "Ekipman Ekle"
+    else -> "Ekle"
+}
+
 /**
  * A workspace-only operational browser (iOS `IsgWorkspaceDomainScreen`): it reads through the workspace API alone,
- * so an OSGB route can never fall back to a personal owner boundary. [addAction] is the domain's create flow.
+ * so an OSGB route can never fall back to a personal owner boundary. [create] is the domain's create flow, shown
+ * full screen; [actions] is the operable part of a record's detail.
  */
 @Composable
 fun NovaOsgbDomainScreen(client: NovaOsgbDomainClient, domain: IsgWorkspaceDomain, companyName: String, onBack: () -> Unit,
-                         addAction: Pair<String, () -> Unit>? = null, revision: Int = 0,
-                         detailExtra: (@Composable (IsgWorkspaceRecord, onChanged: () -> Unit) -> Unit)? = null) {
+                         startInAddMode: Boolean = false, create: (@Composable (onClose: () -> Unit) -> Unit)? = null,
+                         actions: (@Composable (IsgWorkspaceRecord, workplaces: Map<String, String>, onChanged: () -> Unit) -> Unit)? = null) {
     var snapshot by remember { mutableStateOf<IsgWorkspaceSnapshot?>(null) }
     var query by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(true) }
@@ -196,8 +207,25 @@ fun NovaOsgbDomainScreen(client: NovaOsgbDomainClient, domain: IsgWorkspaceDomai
     var workplaces by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var employees by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var selected by remember { mutableStateOf<IsgWorkspaceRecord?>(null) }
+    var detailLoading by remember { mutableStateOf<String?>(null) }
+    var creating by rememberSaveable { mutableStateOf(startInAddMode && create != null) }
+    val coroutines = rememberCoroutineScope()
+    if (creating && create != null) {
+        create { creating = false; reload++ }
+        return
+    }
     BackHandler(onBack = onBack)
-    LaunchedEffect(reload, revision) {
+    fun open(row: IsgWorkspaceRecord) {
+        if (detailLoading != null) return
+        detailLoading = row.id
+        coroutines.launch {
+            selected = try { client.detail(domain, row.id) } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) {
+                error = "Kayıt geçmişinin tamamı yüklenemedi. Özet bilgiler gösteriliyor."; row
+            }
+            detailLoading = null
+        }
+    }
+    LaunchedEffect(reload) {
         loading = true; error = null
         try {
             snapshot = client.snapshot(domain)
@@ -215,7 +243,7 @@ fun NovaOsgbDomainScreen(client: NovaOsgbDomainClient, domain: IsgWorkspaceDomai
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset)
         .testTag("osgb.domain.${domain.name.lowercase()}"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         NovaListHeading(domain.title, onBack) {
-            addAction?.let { (label, action) -> NovaButton(label, action, symbol = "plus", compact = true) }
+            if (create != null) NovaButton(addTitle(domain), { creating = true }, symbol = "plus", compact = true)
         }
         NovaSearchCapsule(query, "Kayıtlarda ara", "osgb.domain.search") { query = it }
         snapshot?.let { value ->
@@ -227,7 +255,7 @@ fun NovaOsgbDomainScreen(client: NovaOsgbDomainClient, domain: IsgWorkspaceDomai
         }
         when {
             loading -> NovaLoadingView("Kayıtlar yükleniyor…")
-            error != null -> {
+            error != null && snapshot == null -> {
                 NovaEmptyState("Kayıtlar yüklenemedi", error!!)
                 NovaCompactActionButton("Tekrar dene", "arrow.clockwise", Modifier.width(IntrinsicSize.Max)) { reload++ }
             }
@@ -235,7 +263,7 @@ fun NovaOsgbDomainScreen(client: NovaOsgbDomainClient, domain: IsgWorkspaceDomai
             else -> NovaListEntrance(true) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     rows.forEachIndexed { index, row ->
-                        NovaCard(Modifier.fillMaxWidth().novaRowEntrance(index).clip(RoundedCornerShape(22.dp)).novaRowPress { selected = row }
+                        NovaCard(Modifier.fillMaxWidth().novaRowEntrance(index).clip(RoundedCornerShape(22.dp)).novaRowPress(enabled = detailLoading == null) { open(row) }
                             .testTag("osgb.record.${row.id}"), padding = 14) {
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 NovaIcon(domain.symbol, 19.dp)
@@ -247,18 +275,20 @@ fun NovaOsgbDomainScreen(client: NovaOsgbDomainClient, domain: IsgWorkspaceDomai
                                         NovaText(it.joinToString(" · "), style = NovaTypeToken.metaQuiet)
                                     }
                                 }
-                                NovaIcon("chevron.right", 12.dp)
+                                if (detailLoading == row.id) NovaSpinner(NovaColorToken.text.color(), size = 14.dp)
+                                else NovaIcon("chevron.right", 12.dp)
                             }
                         }
                     }
                 }
             }
         }
+        if (snapshot != null) error?.let { NovaHelpHint(it) }
     }
     val open = selected
     NovaPopup(open != null, { selected = null }, identifier = "osgb.record.detail") {
         if (open != null) NovaOsgbRecordDetail(domain, open, recordTitle(domain, open, workplaces, employees), workplaces, employees) {
-            detailExtra?.invoke(open) { selected = null; reload++ }
+            actions?.invoke(open, workplaces) { selected = null; reload++ }
         }
     }
 }
