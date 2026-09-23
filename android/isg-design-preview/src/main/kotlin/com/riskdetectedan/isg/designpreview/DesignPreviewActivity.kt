@@ -60,6 +60,8 @@ class DesignPreviewActivity : ComponentActivity() {
                             onBack = { navigate(NovaDestination.home) })
                         NovaDestination.checklists -> com.riskdetectedan.feature.nova.NovaChecklistScreen(PreviewChecklistClient, true,
                             onBack = { navigate(NovaDestination.home) })
+                        NovaDestination.activity -> com.riskdetectedan.feature.nova.NovaActivityScreen(PreviewActivityClient,
+                            onClose = { navigate(NovaDestination.home) }) { _, _ -> navigate(NovaDestination.companies) }
                         NovaDestination.reports -> com.riskdetectedan.feature.nova.NovaReportCenter(PreviewReportClient,
                             { com.riskdetectedan.core.designsystem.isg.NovaEmptyState("Analiz raporları", "Önizlemede analiz raporu yok.") },
                             onBack = { navigate(NovaDestination.home) })

@@ -100,6 +100,7 @@ class NovaPilotViewModel @Inject constructor(
         mutable.value = state.value.copy(message = "Bu modül hazırlanıyor. Bu build’de henüz canlı işlem yapmıyor.")
     }
 
+    fun showMessage(text: String) { mutable.value = state.value.copy(message = text) }
     fun dismissMessage() { mutable.value = state.value.copy(message = null) }
 
     /** Overview and bell reload together after a scene return, a save or a mark. */

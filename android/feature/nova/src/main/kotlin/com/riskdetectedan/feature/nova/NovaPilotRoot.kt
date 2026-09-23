@@ -42,6 +42,20 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
         return
     }
     val navigate: (NovaDestination) -> Unit = viewModel::navigate
+    val workspaceId = workspace?.expertWorkspace?.workspaceId
+    // iOS `ExpertUsagePresence`: active time counts only while the pilot is in front.
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(identity, workspaceId, lifecycle) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_START -> services.presence.foreground(identity, workspaceId)
+                androidx.lifecycle.Lifecycle.Event.ON_STOP -> services.presence.background()
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer); services.presence.background() }
+    }
     val notices = state.notices
     NovaExpertShell(state.navigation, state.userName, viewModel::apply,
         profileAvatar = state.avatar, menuRoleTitle = "İSG Uzmanı",
@@ -114,6 +128,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 com.riskdetectedan.feature.profile.NotebookScreen(onClose = { navigate(NovaDestination.home) },
                     startWithNewNote = destination == NovaDestination.newNote)
             }
+            NovaDestination.activity -> ActivityDestination(services, identity, workspaceId, state.writable, state.userName, navigate, viewModel::showMessage)
             NovaDestination.reports -> NovaReportCenter(services.reportClient(identity), slots.analysisReports, onBack = { navigate(NovaDestination.home) })
             NovaDestination.reportArchive -> NovaReportArchive(services.reportClient(identity), slots.analysisReports,
                 onBack = { navigate(NovaDestination.reports) })
@@ -140,6 +155,35 @@ private fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdent
             NovaText("Önceki evrak kaydı · ${row.title}")
         }
         else -> NovaFileLibraryScreen(services.fileClient(identity), services.companyOptions(identity), canWrite, onBack, initialCompany = row.companyId)
+    }
+}
+
+/** Aktivitem with its record links (iOS `openActivityRecord`): a record of another workspace is never opened here. */
+@Composable
+private fun ActivityDestination(services: NovaRootServices, identity: IsgWorkspaceIdentity, workspaceId: String?, canWrite: Boolean, userName: String,
+                                navigate: (NovaDestination) -> Unit, notice: (String) -> Unit) {
+    var source by remember { mutableStateOf<NovaFollowupPage.Row?>(null) }
+    val row = source
+    if (row != null) {
+        recordOpener(services, identity, canWrite, userName)(row) { source = null }
+        return
+    }
+    NovaActivityScreen(services.activityClient(identity, workspaceId), onClose = { navigate(NovaDestination.home) }) { detail, companyOnly ->
+        val company = detail.linkCompanyId ?: return@NovaActivityScreen
+        if (!detail.linkWorkspaceId.orEmpty().equals(workspaceId.orEmpty(), true)) {
+            notice("Bu kayıt başka bir çalışma alanına ait. Önce ilgili çalışma alanına geçin.")
+            return@NovaActivityScreen
+        }
+        val kind = mapOf("drill" to "completed_drill", "certificate" to "personnel_certificate", "contract" to "katip_contract", "visit" to "site_visit",
+            "board" to "board", "risk" to "risk_assessment", "equipment" to "equipment", "emergency" to "emergency_plan",
+            "assignment" to "appointment", "training_session" to "training")[detail.entityType]
+        val record = detail.entityId
+        if (!companyOnly && record != null && kind != null) {
+            source = NovaFollowupPage.Row(kind, company, "", record, record, NovaActivityWords.title(detail.action), null, "active")
+        } else navigate(if (companyOnly) NovaDestination.companies else mapOf("nonconformity" to NovaDestination.findings,
+            "training" to NovaDestination.training, "file" to NovaDestination.documents, "checklist" to NovaDestination.checklists,
+            "ppe" to NovaDestination.ppeHandovers, "permit" to NovaDestination.workPermits, "plan" to NovaDestination.annualWorkPlans)[detail.entityType]
+            ?: NovaDestination.companies)
     }
 }
 
@@ -287,6 +331,8 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val checklistQueue: NovaChecklistOfflineQueue,
     private val training: NovaTrainingService,
     private val statistics: NovaStatisticsService,
+    private val activity: NovaActivityService,
+    val presence: NovaUsagePresence,
     private val personnel: com.riskdetectedan.core.data.company.PersonnelRepository,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
@@ -309,6 +355,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     }
     fun emergencyClient(identity: IsgWorkspaceIdentity) =
         NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity))
+    fun activityClient(identity: IsgWorkspaceIdentity, workspace: String?) = NovaServiceActivityClient(activity, identity, workspace)
     fun reportClient(identity: IsgWorkspaceIdentity) = NovaServiceReportClient(training, process, statistics, identity, companies(identity))
     fun statisticsClient(identity: IsgWorkspaceIdentity) = NovaServiceStatisticsClient(statistics, process, followups, identity, changes(identity))
     fun trainingClient(identity: IsgWorkspaceIdentity, userName: String) =
