@@ -8,7 +8,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.serialization.json.*
 import java.util.UUID
 
-internal fun PersonnelRepository.novaDirectoryClient(currentScope: () -> NovaPersonnelScope?): NovaDirectoryClient {
+fun PersonnelRepository.novaDirectoryClient(currentScope: () -> NovaPersonnelScope?): NovaDirectoryClient {
     suspend fun <T> scoped(scope: NovaPersonnelScope, block: suspend () -> T): T {
         currentCoroutineContext().ensureActive()
         if (currentScope() != scope) throw NovaPersonnelFailure(NovaPersonnelFailure.Kind.denied)

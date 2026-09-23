@@ -1,6 +1,9 @@
 package com.riskdetectedan.feature.nova
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.riskdetectedan.feature.profile.novaClient
+import com.riskdetectedan.feature.profile.novaDirectoryClient
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
@@ -84,13 +87,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             }
             NovaDestination.findings -> NovaFindingsDestination(identity, NovaFindingsSurface.board, state.writable, navigate)
             NovaDestination.newFinding -> NovaFindingsDestination(identity, NovaFindingsSurface.addFinding, state.writable, navigate)
-            NovaDestination.companies, NovaDestination.newCompany -> NovaCompaniesScreen(
-                companies = companyItems(state, workspace),
-                isLoading = state.overview == null && !state.overviewFailed && workspace == null,
-                error = if (state.overviewFailed && workspace == null) "Firmalar yüklenemedi. Lütfen tekrar deneyin." else null,
-                isOwnedList = workspace == null,
-                onSelect = { viewModel.showUnavailable() },
-                onBack = { navigate(NovaDestination.home) }, onRetry = viewModel::reload)
+            NovaDestination.companies, NovaDestination.newCompany -> CompaniesDestination(services, identity, state, workspace, navigate, viewModel::reload)
             NovaDestination.riskAssessments -> NovaRiskScreen(services.riskClient(identity), state.writable,
                 onBack = { navigate(NovaDestination.home) })
             NovaDestination.periodicChecks -> NovaEquipmentScreen(services.equipmentClient(identity), state.writable,
@@ -155,6 +152,60 @@ private fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdent
             NovaText("Önceki evrak kaydı · ${row.title}")
         }
         else -> NovaFileLibraryScreen(services.fileClient(identity), services.companyOptions(identity), canWrite, onBack, initialCompany = row.companyId)
+    }
+}
+
+/** Firmalar (iOS `companies`): the list, and once one is chosen its company page over the same identity. */
+@Composable
+private fun CompaniesDestination(services: NovaRootServices, identity: IsgWorkspaceIdentity, state: NovaPilotUiState, workspace: NovaWorkspaceUiState?,
+                                 navigate: (NovaDestination) -> Unit, reload: () -> Unit) {
+    var selected by rememberSaveable { mutableStateOf<String?>(null) }
+    val items = companyItems(state, workspace)
+    val company = selected
+    if (company != null) {
+        val name = items.firstOrNull { it.id == company }?.name ?: "Firma"
+        val scope = remember(identity, company) { services.personnelScope(identity, company) }
+        key(company) {
+            NovaCompanyWorkspaceScreen(remember(identity, company) { services.companyClient(identity, company) }, company, name, state.writable,
+                canManageCompany = workspace == null && state.writable, onBack = { selected = null; reload() },
+                onOpenFindings = { navigate(NovaDestination.findings) }) { page, onBack ->
+                CompanyPage(services, identity, scope, company, name, state, page, onBack)
+            }
+        }
+        return
+    }
+    NovaCompaniesScreen(companies = items,
+        isLoading = state.overview == null && !state.overviewFailed && workspace == null,
+        error = if (state.overviewFailed && workspace == null) "Firmalar yüklenemedi. Lütfen tekrar deneyin." else null,
+        isOwnedList = workspace == null, onSelect = { selected = it },
+        onBack = { navigate(NovaDestination.home) }, onRetry = reload)
+}
+
+/** One module page opened from a company, already narrowed to that company. */
+@Composable
+private fun CompanyPage(services: NovaRootServices, identity: IsgWorkspaceIdentity, scope: NovaPersonnelScope, company: String, name: String,
+                        state: NovaPilotUiState, page: NovaCompanyPage, onBack: () -> Unit) {
+    val canWrite = state.writable
+    when (page) {
+        NovaCompanyPage.Personnel -> NovaPersonnelDestination(scope, name, remember(scope) { services.personnelClient(scope) }, onBack,
+            remember(scope) { services.directoryClient(scope) }, canWrite)
+        is NovaCompanyPage.Directory -> NovaDirectoryDestination(scope, page.kind, client = remember(scope) { services.directoryClient(scope) },
+            canWrite = canWrite, onBack = onBack)
+        NovaCompanyPage.Training -> NovaTrainingScreen(services.trainingClient(identity, state.userName), canWrite, onBack, initialCompany = company)
+        is NovaCompanyPage.Files -> NovaFileLibraryScreen(services.fileClient(identity), services.companyOptions(identity), canWrite, onBack,
+            initialCompany = company, initialCategories = page.categories, headingOverride = page.heading, startInAddMode = page.adding)
+        is NovaCompanyPage.Module -> when (page.kind) {
+            "risk" -> NovaRiskScreen(services.riskClient(identity), canWrite, onBack, initialCompany = company, startInAddMode = page.adding)
+            "equipment" -> NovaEquipmentScreen(services.equipmentClient(identity), canWrite, onBack, initialCompany = company,
+                startInAddMode = page.adding, headingOverride = page.heading)
+            "appointment" -> NovaAppointmentScreen(services.appointmentClient(identity), canWrite, onBack, initialCompany = company, startInAddMode = page.adding)
+            "emergency_plan" -> NovaEmergencyScreen(services.emergencyClient(identity), canWrite, onBack, initialCompany = company, startInAddMode = page.adding)
+            "drill" -> NovaDrillScreen(services.drillClient(identity), canWrite, onBack, initialCompany = company)
+            "ppe" -> NovaPPEScreen(services.ppeClient(identity), canWrite, onBack, initialCompany = company, startInAddMode = page.adding)
+            else -> key(page.kind) { NovaProcessGate(services.processClient(identity), page.kind, canWrite, onBack, initialCompany = company,
+                startInAddMode = page.adding) }
+        }
+        NovaCompanyPage.Editor -> Unit
     }
 }
 
@@ -334,6 +385,8 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val activity: NovaActivityService,
     val presence: NovaUsagePresence,
     private val personnel: com.riskdetectedan.core.data.company.PersonnelRepository,
+    private val overview: NovaOverviewService,
+    private val companyRecords: com.riskdetectedan.core.data.company.CompanyRepository,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
     private fun companies(identity: IsgWorkspaceIdentity): suspend () -> List<NovaCompanyOption> =
@@ -355,6 +408,37 @@ class NovaRootServices @javax.inject.Inject constructor(
     }
     fun emergencyClient(identity: IsgWorkspaceIdentity) =
         NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity))
+    fun personnelScope(identity: IsgWorkspaceIdentity, company: String) = NovaPersonnelScope(java.util.UUID.fromString(identity.userId),
+        java.util.UUID.fromString(identity.sessionId), java.util.UUID.fromString(company), "pilot-$company")
+    fun personnelClient(scope: NovaPersonnelScope) = personnel.novaClient { scope }
+    fun directoryClient(scope: NovaPersonnelScope) = personnel.novaDirectoryClient { scope }
+    private fun <T> com.riskdetectedan.core.common.RdResult<T>.value(): T = when (this) {
+        is com.riskdetectedan.core.common.RdResult.Success -> value
+        is com.riskdetectedan.core.common.RdResult.Failure -> throw IllegalStateException(message)
+    }
+    /** Every read and write the company page needs, bound to one identity and company. */
+    fun companyClient(identity: IsgWorkspaceIdentity, company: String) = NovaCompanyWorkspaceClient(
+        summary = { overview.overview(identity, company).firstOrNull { it.id.equals(company, true) } },
+        record = { companyRecords.listCompanies(includeArchived = true).value().firstOrNull { it.id.equals(company, true) } },
+        logo = { path -> (companyRecords.downloadLogo(path) as? com.riskdetectedan.core.common.RdResult.Success)?.value },
+        saveLogo = { record, jpeg ->
+            val path = companyRecords.uploadLogo(identity.userId, record.id, jpeg).value()
+            companyRecords.saveCompany(identity.userId, com.riskdetectedan.core.data.company.CompanyDraft(id = record.id, name = record.name,
+                hazardClass = record.hazardClass, logoPath = path, address = record.address.orEmpty(), contactPerson = record.contactPerson.orEmpty(),
+                department = record.department.orEmpty(), defaultResponsible = record.defaultResponsible.orEmpty(),
+                defaultDueDaysText = record.defaultDueDays?.toString().orEmpty())).value().also { events.recordsChanged(identity.userId) }
+        },
+        saveCompany = { draft -> companyRecords.saveCompany(identity.userId, draft).value().also { events.recordsChanged(identity.userId) } },
+        nonconformities = { findings.list(NovaCompanyScope(identity, company)) },
+        completedTrainings = { training.completed(identity, company) },
+        tracking = { statistics.tracking(identity, company) },
+        equipment = { equipment.board(identity, NovaEquipmentQuery(company = company, limit = 5)) },
+        risk = { risk.board(identity, NovaRiskQuery(company = company, limit = 1)) },
+        appointments = { role -> appointments.board(identity, NovaAppointmentQuery(company = company, role = role.wire, limit = 1)) },
+        fileCategories = { files.catalogue(identity).categories },
+        files = { files.library(identity, NovaFileQuery(company = company, limit = 1)) },
+        changes = changes(identity),
+    )
     fun activityClient(identity: IsgWorkspaceIdentity, workspace: String?) = NovaServiceActivityClient(activity, identity, workspace)
     fun reportClient(identity: IsgWorkspaceIdentity) = NovaServiceReportClient(training, process, statistics, identity, companies(identity))
     fun statisticsClient(identity: IsgWorkspaceIdentity) = NovaServiceStatisticsClient(statistics, process, followups, identity, changes(identity))

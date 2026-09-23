@@ -362,6 +362,18 @@ class NovaTrainingService @Inject constructor(@ApplicationContext context: Conte
         return Page(page.rows, page.nextId, page.writableCompanies.map { it.lowercase() }.toSet())
     }
 
+    @Serializable private data class CompanyTrainingPage(@SerialName("schema_version") val schemaVersion: Int,
+        @SerialName("owner_id") val ownerId: String, @SerialName("company_id") val companyId: String, val completed: Int? = null)
+
+    /** Completed trainings of one company, as the company page counts them (iOS `NovaTrainingService.list(company).completed`). */
+    suspend fun completed(identity: IsgWorkspaceIdentity, company: String): Int {
+        val page = rpc(identity, "isg_pilot_training_read_v1", buildJsonObject {
+            put("p_company", company); put("p_id", JsonNull); put("p_after", JsonNull)
+        }).decode(CompanyTrainingPage.serializer())
+        if (page.schemaVersion != 1 || !page.ownerId.sameId(identity.userId) || !page.companyId.sameId(company)) throw NovaTrainingException("ACCESS_DENIED")
+        return page.completed ?: 0
+    }
+
     suspend fun context(identity: IsgWorkspaceIdentity, id: String?): NovaEducationContext {
         val result = rpc(identity, "isg_pilot_training_detail_v3", buildJsonObject { put("p_id", id?.let(::JsonPrimitive) ?: JsonNull) })
             .decode(NovaEducationContext.serializer())

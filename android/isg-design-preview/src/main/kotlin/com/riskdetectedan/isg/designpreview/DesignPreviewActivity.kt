@@ -76,8 +76,7 @@ class DesignPreviewActivity : ComponentActivity() {
                             }) { _, onBack -> com.riskdetectedan.core.designsystem.isg.NovaPageHeading("Evrak Takibi", onBack = onBack) }
                         NovaDestination.training, NovaDestination.newTraining -> com.riskdetectedan.feature.nova.NovaTrainingScreen(PreviewTrainingClient, true,
                             onBack = { navigate(NovaDestination.home) }, createOnOpen = destination == NovaDestination.newTraining)
-                        NovaDestination.companies -> NovaCompaniesScreen(listOf(NovaCompanyItem("fixture", "Koza Altın A.Ş", "Kaymaz Mah. · Maden · Çok tehlikeli")),
-                            onSelect = { navigate(NovaDestination.memory) }, onBack = { navigate(NovaDestination.home) }, onRetry = {})
+                        NovaDestination.companies -> PreviewCompanies(navigate)
                         else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             NovaPageTitle(destination)
                             NovaCard(Modifier.fillMaxWidth(), padding = 20) {
@@ -141,4 +140,18 @@ private fun PreviewFindings(board: Boolean, navigate: (NovaDestination) -> Unit)
             com.riskdetectedan.feature.nova.NovaRecordClient({ entry.row }, { _, _, _ -> entry.row }, { _, _ -> entry.row },
                 { _, _ -> entry.row }, { entry.row }, { _, _ -> ByteArray(0) }), canWrite = true)
     }
+}
+
+@androidx.compose.runtime.Composable
+private fun PreviewCompanies(navigate: (NovaDestination) -> Unit) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    if (open) {
+        com.riskdetectedan.feature.nova.NovaCompanyWorkspaceScreen(PreviewCompanyClient, "c1", "Koza Altın A.Ş", true, true, onBack = { open = false },
+            onOpenFindings = { navigate(NovaDestination.findings) }) { _, onBack ->
+            com.riskdetectedan.core.designsystem.isg.NovaPageHeading("Modül", onBack = onBack)
+        }
+        return
+    }
+    NovaCompaniesScreen(listOf(NovaCompanyItem("fixture", "Koza Altın A.Ş", "Kaymaz Mah. · Maden · Çok tehlikeli")),
+        onSelect = { open = true }, onBack = { navigate(NovaDestination.home) }, onRetry = {})
 }

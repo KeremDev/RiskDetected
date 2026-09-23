@@ -10,7 +10,7 @@ import java.text.Normalizer
 import java.util.UUID
 
 /** Explicit production boundary; not installed by the offline/synthetic İSGADA host. */
-internal fun PersonnelRepository.novaClient(currentScope: () -> NovaPersonnelScope?): NovaPersonnelClient {
+fun PersonnelRepository.novaClient(currentScope: () -> NovaPersonnelScope?): NovaPersonnelClient {
     suspend fun <T> scoped(scope: NovaPersonnelScope, block: suspend () -> T): T {
         currentCoroutineContext().ensureActive()
         if (currentScope() != scope) throw NovaPersonnelFailure(NovaPersonnelFailure.Kind.denied)

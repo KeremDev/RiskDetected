@@ -272,8 +272,8 @@ private fun NovaReportCreateFlow(client: NovaReportClient, archive: NovaGenerate
                 NovaText("Raporda neler yer alsın?", style = NovaTypeToken.sectionTitle)
                 NovaHelpHint("Önerilen başlıkların tamamı seçili gelir. İstemediğiniz başlıkları çıkarabilir veya rapora özel bir alan ekleyebilirsiniz.")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NovaCompactActionButton("Tümünü seç", "checkmark.circle") { selected = options.map { it.first }.toSet() }
-                    NovaCompactActionButton("Seçimi temizle", "xmark.circle") { selected = emptySet() }
+                    NovaCompactActionButton("Tümünü seç", "checkmark.circle", Modifier.weight(1f)) { selected = options.map { it.first }.toSet() }
+                    NovaCompactActionButton("Seçimi temizle", "xmark.circle", Modifier.weight(1f)) { selected = emptySet() }
                 }
                 options.forEach { (id, title, symbol) ->
                     SelectableCard(symbol, title, null, id in selected, "report.create.content.$id") {

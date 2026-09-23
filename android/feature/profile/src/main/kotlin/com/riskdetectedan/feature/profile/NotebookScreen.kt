@@ -444,8 +444,8 @@ private fun NoteRow(note: NotebookRecord, blocked: Boolean, model: NotebookViewM
         }
         // iOS offers these from the row's context menu; here the row's own menu button reveals them.
         if (menu) Row(Modifier.padding(start = 15.dp, end = 15.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NovaCompactActionButton("Checklist ve Etiketler", "checklist") { menu = false; model.openOrganization(note.note_id) }
-            NovaCompactActionButton("Hatırlatıcı Ekle", "bell.badge") {
+            NovaCompactActionButton("Checklist ve Etiketler", "checklist", Modifier.weight(1f)) { menu = false; model.openOrganization(note.note_id) }
+            NovaCompactActionButton("Hatırlatıcı Ekle", "bell.badge", Modifier.weight(1f)) {
                 menu = false; model.editReminder(NotebookReminderEditor(title = note.title.orEmpty(), note = note.note_id))
             }
         }
@@ -492,10 +492,10 @@ private fun ReminderRow(reminder: NotebookReminder, model: NotebookViewModel) {
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             reminder.next_occurrence?.let { occurrence ->
-                NovaCompactActionButton("Tamamla", "checkmark") { model.settleReminder("complete", reminder, occurrence) }
-                NovaCompactActionButton("10 dk ertele", "clock.arrow.circlepath") { model.settleReminder("snooze", reminder, occurrence) }
+                NovaCompactActionButton("Tamamla", "checkmark", Modifier.weight(1f)) { model.settleReminder("complete", reminder, occurrence) }
+                NovaCompactActionButton("10 dk ertele", "clock.arrow.circlepath", Modifier.weight(1f)) { model.settleReminder("snooze", reminder, occurrence) }
             }
-            NovaCompactActionButton("İptal et", "bell.slash") { model.settleReminder("cancel", reminder) }
+            NovaCompactActionButton("İptal et", "bell.slash", Modifier.weight(1f)) { model.settleReminder("cancel", reminder) }
         }
     }
 }
@@ -535,11 +535,11 @@ private fun EditorFields(state: NotebookScreenState, model: NotebookViewModel, o
         Row(Modifier.fillMaxWidth().background(NovaColorToken.canvas.color()).navigationBarsPadding().padding(bottom = novaTabBarClearance)
             .heightIn(min = 54.dp).padding(horizontal = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             val saved = editor.version > 0
-            NovaCompactActionButton("Checklist", "checklist", enabled = saved && editor.pending == null) {
+            NovaCompactActionButton("Checklist", "checklist", Modifier.width(IntrinsicSize.Max), enabled = saved && editor.pending == null) {
                 val note = editor.note
                 model.finishEditor { model.openOrganization(note) }
             }
-            NovaCompactActionButton("Hatırlat", "bell.badge", enabled = saved) {
+            NovaCompactActionButton("Hatırlat", "bell.badge", Modifier.width(IntrinsicSize.Max), enabled = saved) {
                 val note = editor.note; val title = editor.title
                 model.finishEditor { model.editReminder(NotebookReminderEditor(title = title, note = note)) }
             }
