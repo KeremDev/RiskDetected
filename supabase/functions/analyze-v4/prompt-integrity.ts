@@ -4,6 +4,8 @@ import {
 } from "./contracts.ts";
 import { V5_RESPONSE_SCHEMA } from "./v5-contracts.ts";
 import { V5_FREE_PROMPT } from "./v5-prompt.ts";
+import { V5_FREE_PROMPT_EN } from "./v5-prompt-en.ts";
+import { safetyProfiles } from "../_shared/approved-safety-profiles.generated.ts";
 import {
   V4_COVERAGE_REPAIR_COMMON,
   V4_GEMINI3_OUTPUT_LANGUAGE_LINE,
@@ -65,9 +67,9 @@ export async function assertV4PromptIntegrity(
  */
 export async function computeV4Gemini3PromptSHA256(): Promise<string> {
   return await sha256Text(
-    `${V4_GEMINI3_PROMPT.trim()}\n---LANG---\n${
-      V4_GEMINI3_OUTPUT_LANGUAGE_LINE.trim()
-    }\n---SCHEMA---\n${stable(V4_GEMINI3_RESPONSE_SCHEMA)}`,
+    `${V4_GEMINI3_PROMPT.trim()}\n---LANG---\n${V4_GEMINI3_OUTPUT_LANGUAGE_LINE.trim()}\n---SCHEMA---\n${
+      stable(V4_GEMINI3_RESPONSE_SCHEMA)
+    }`,
   );
 }
 
@@ -90,6 +92,38 @@ export async function assertV5PromptIntegrity(
   const actual = await computeV5PromptSHA256();
   if (typeof expected !== "string" || expected !== actual) {
     throw new Error(`v5_prompt_integrity_mismatch:${actual}`);
+  }
+  return actual;
+}
+
+/**
+ * The English free-engine prompt, hashed on its own.
+ *
+ * Kept out of computeV5PromptSHA256 so the Turkish hash -- pinned into every
+ * route snapshot already queued -- does not move when English ships. The
+ * English profiles' sealed directives are appended to this prompt per
+ * analysis, so they are part of what is pinned.
+ */
+export async function computeV5PromptENSHA256(): Promise<string> {
+  const directives = safetyProfiles
+    .filter((profile) => profile.language === "en")
+    .map((profile) => ({
+      id: profile.id,
+      prompt_directives: profile.prompt_directives,
+    }));
+  return await sha256Text(
+    `${V5_FREE_PROMPT_EN.trim()}\n---PROFILES---\n${
+      stable(directives)
+    }\n---SCHEMA---\n${stable(V5_RESPONSE_SCHEMA)}`,
+  );
+}
+
+export async function assertV5PromptENIntegrity(
+  expected: unknown,
+): Promise<string> {
+  const actual = await computeV5PromptENSHA256();
+  if (typeof expected !== "string" || expected !== actual) {
+    throw new Error(`v5_prompt_en_integrity_mismatch:${actual}`);
   }
   return actual;
 }

@@ -102,8 +102,8 @@ export class V5RetryPending extends Error {
 }
 
 /** One physical request per dispatch; retry resumes the same photo checkpoint.
- * The provider callback is unchanged between attempts (including its 110s
- * timeout). Database errors never re-enter the provider retry catch.
+ * The caller may add a language correction on the second attempt. Database
+ * errors never re-enter the provider retry catch.
  */
 export async function runV5PhotoAttempt(params: {
   model: string;
@@ -111,7 +111,10 @@ export async function runV5PhotoAttempt(params: {
   previous: unknown;
   maxAttempts: 1 | 2;
   maxOutputTokens: number;
-  call: () => Promise<StructuredGeminiResponse>;
+  call: (attemptNumber: number) => Promise<StructuredGeminiResponse>;
+  validateOutput?: (output: ReturnType<typeof parseV5Output>) => string | null;
+  /** Keep an English language retry from enabling unrelated retries on Free. */
+  retryOtherErrors?: boolean;
   checkpoint: (state: V5Checkpoint) => Promise<void>;
   recordAttempt: (event: V5AttemptEvent) => Promise<void>;
   now?: () => number;
@@ -127,8 +130,12 @@ export async function runV5PhotoAttempt(params: {
   const attemptCount = Math.max(0, Number(previous.attemptCount) || 0);
   const priorUsage = usage(previous.usage);
   if (previous.status === "completed") {
+    const output = parseV5Output(JSON.stringify(previous.output));
+    if (params.validateOutput?.(output)) {
+      throw new Error("v5_output_language_invalid_checkpoint");
+    }
     return {
-      output: parseV5Output(JSON.stringify(previous.output)),
+      output,
       usage: priorUsage,
       finishReason: String(previous.finishReason ?? ""),
       attemptCount,
@@ -168,7 +175,7 @@ export async function runV5PhotoAttempt(params: {
   let response: StructuredGeminiResponse | undefined;
   let output: ReturnType<typeof parseV5Output>;
   try {
-    response = await params.call();
+    response = await params.call(number);
     try {
       output = parseV5Output(response.text);
     } catch {
@@ -189,6 +196,21 @@ export async function runV5PhotoAttempt(params: {
         response.effectiveServiceTier,
       );
     }
+    const languageFailure = params.validateOutput?.(output);
+    if (languageFailure) {
+      throw new V4ProviderError(
+        `v5_output_language_invalid:${languageFailure}`,
+        "v5_output_language_invalid",
+        response.httpStatus,
+        response.durationMs,
+        true,
+        response.usage,
+        response.providerRequestID,
+        [],
+        null,
+        response.effectiveServiceTier,
+      );
+    }
   } catch (error) {
     const providerError = error instanceof V4ProviderError
       ? error
@@ -199,7 +221,9 @@ export async function runV5PhotoAttempt(params: {
         0,
         false,
       );
-    const retryable = providerError.retryable && number < params.maxAttempts;
+    const retryable = providerError.retryable && number < params.maxAttempts &&
+      (params.retryOtherErrors !== false ||
+        providerError.code === "v5_output_language_invalid");
     const retryMs = Math.max(5_000, providerError.retryAfterMs);
     const failed: V5Checkpoint = {
       ...state,

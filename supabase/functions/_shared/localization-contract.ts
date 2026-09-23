@@ -46,6 +46,7 @@ export class LocalizationContractError extends Error {
 }
 
 export type LocalizationRequest = {
+  app_language?: unknown;
   output_language?: unknown;
   output_locale?: unknown;
   work_jurisdiction_country?: unknown;

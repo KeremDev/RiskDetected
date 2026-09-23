@@ -280,14 +280,19 @@ function schemaFor(model: string) {
     : V4_PROVIDER_RESPONSE_SCHEMA;
 }
 
-function promptFor(model: string, prompt: string): string {
+function promptFor(
+  model: string,
+  prompt: string,
+  appendTurkishLanguageRule = false,
+): string {
   if (!isGemini3(model)) return prompt;
   return prompt.includes(V4_PROMPT_COMMON)
     ? prompt.replace(V4_PROMPT_COMMON, V4_GEMINI3_PROMPT)
-    // A call with its own prompt still has to answer in Turkish. It gets the
-    // one rule that governs every Gemini 3 answer rather than the whole core,
-    // whose candidate and coverage sections would not apply to it.
-    : `${prompt}${V4_GEMINI3_OUTPUT_LANGUAGE_LINE}`;
+    // V4 standalone calls and Turkish V5 explicitly opt in. English V5 must
+    // not receive this suffix; it caused analysis 807885e7 to be in Turkish.
+    : appendTurkishLanguageRule
+    ? `${prompt}${V4_GEMINI3_OUTPUT_LANGUAGE_LINE}`
+    : prompt;
 }
 
 /** Gemini 3 and later: the thinking enum, no temperature, ultra-high media. */
@@ -396,6 +401,8 @@ export type StructuredGeminiCall = {
   maxOutputTokens: number;
   serviceTier: AnalysisServiceTier;
   billingTier?: "paid" | "free";
+  /** Explicit for Turkish Gemini 3 calls; never append to English V5. */
+  appendTurkishLanguageRule?: boolean;
 };
 
 export type StructuredGeminiResponse = {
@@ -444,7 +451,13 @@ export async function sendStructuredGemini(
         contents: [{
           role: "user",
           parts: [
-            { text: promptFor(params.model, params.prompt) },
+            {
+              text: promptFor(
+                params.model,
+                params.prompt,
+                params.appendTurkishLanguageRule === true,
+              ),
+            },
             imagePart(params.model, params.mimeType, params.imageData),
           ],
         }],
@@ -595,7 +608,10 @@ export async function callV4Gemini(
     durationMs,
     httpStatus,
     effectiveServiceTier,
-  } = await sendStructuredGemini(params, schemaFor(params.model));
+  } = await sendStructuredGemini(
+    { ...params, appendTurkishLanguageRule: true },
+    schemaFor(params.model),
+  );
   try {
     const parsed = parseOutput(
       text,

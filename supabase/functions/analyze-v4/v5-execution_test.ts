@@ -17,6 +17,7 @@ import {
   v5ProviderKey,
   V5RetryPending,
 } from "./v5-execution.ts";
+import { v5EnglishLanguageFailure } from "./v5-language.ts";
 
 function snapshot(
   route = "free_legacy",
@@ -470,4 +471,86 @@ Deno.test("checkpoint rejects changed prompt/model/settings rather than spending
     "v5_checkpoint_identity_mismatch",
   );
   assertEquals(calls, 0);
+});
+
+Deno.test("English language failure retries once and never checkpoints Turkish as completed", async () => {
+  let saved: V5Checkpoint | undefined;
+  let now = 1_000;
+  let calls = 0;
+  const turkish = {
+    ...response(),
+    text: JSON.stringify({
+      scene_summary:
+        "Çalışma alanında bulunan basınçlı gaz tüpü sabitlenmemiş olup yanında yanıcı malzemeler vardır.",
+      layer_scan: [],
+      findings: [],
+      positive_controls: [],
+    }),
+  };
+  const run = (answer: StructuredGeminiResponse) =>
+    runV5PhotoAttempt({
+      model: "gemini-3.5-flash-lite",
+      identity: "english-prompt-and-photo",
+      previous: saved,
+      maxAttempts: 2,
+      maxOutputTokens: 32768,
+      retryOtherErrors: false,
+      validateOutput: v5EnglishLanguageFailure,
+      call: () => {
+        calls++;
+        return Promise.resolve(answer);
+      },
+      checkpoint: (state) => {
+        saved = structuredClone(state);
+        return Promise.resolve();
+      },
+      recordAttempt: () => Promise.resolve(),
+      now: () => now,
+    });
+  await assertRejects(() => run(turkish), V5RetryPending);
+  assertEquals(saved?.status, "failed");
+  assertEquals(saved?.errorCode, "v5_output_language_invalid");
+  now += 6_000;
+  const result = await run(response());
+  assertEquals(result.attemptCount, 2);
+  assertEquals(result.usage.costUSD, 0.002);
+  assertEquals(calls, 2);
+});
+
+Deno.test("a second Turkish answer is terminal rather than published", async () => {
+  let saved: V5Checkpoint | undefined;
+  let now = 1_000;
+  const answer = {
+    ...response(),
+    text: JSON.stringify({
+      scene_summary:
+        "Çalışma alanında bulunan basınçlı gaz tüpü sabitlenmemiş olup yanında yanıcı malzemeler vardır.",
+      layer_scan: [],
+      findings: [],
+      positive_controls: [],
+    }),
+  };
+  const run = () =>
+    runV5PhotoAttempt({
+      model: "gemini-3.5-flash-lite",
+      identity: "english-prompt-and-photo",
+      previous: saved,
+      maxAttempts: 2,
+      maxOutputTokens: 32768,
+      retryOtherErrors: false,
+      validateOutput: v5EnglishLanguageFailure,
+      call: () => Promise.resolve(answer),
+      checkpoint: (state) => {
+        saved = structuredClone(state);
+        return Promise.resolve();
+      },
+      recordAttempt: () => Promise.resolve(),
+      now: () => now,
+    });
+  await assertRejects(run, V5RetryPending);
+  now += 6_000;
+  await assertRejects(run, V4ProviderError, "v5_output_language_invalid");
+  assertEquals(saved?.status, "failed");
+  assertEquals(saved?.retryable, false);
+  await assertRejects(run, Error, "v5_output_language_invalid");
 });

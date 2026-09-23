@@ -52,6 +52,10 @@ function textList(value: unknown, max = 6): string[] {
 const ASSERTS_INVISIBLE_ABSENCE =
   /(?:e[ğg]itim|sertifika|belge|yetki\s*belges|periyodik\s*kontrol|muayene\s*raporu|[öo]l[çc][üu]m|kalibrasyon|risk\s*de[ğg]erlendirmes)\w*\s+(?:[^.]{0,24}?)(?:yok|yoktur|bulunmuyor|bulunmamakta|eksik|yap[ıi]lmam[ıi][şs]|al[ıi]nmam[ıi][şs]|mevcut\s*de[ğg]il|ge[çc]ersiz)/iu;
 
+/** The same claim class, in an English answer. */
+const ASSERTS_INVISIBLE_ABSENCE_EN =
+  /\b(?:training|certificat|permit|licen[cs]e|periodic\s+inspection|inspection\s+(?:record|report|certificate)|thorough\s+examination|measurement|calibration|risk\s+assessment)\w*\s+(?:[^.]{0,24}?)(?:is\s+missing|are\s+missing|missing|absent|lacking|not\s+(?:available|provided|present|carried\s+out|done|performed)|has\s+not\s+been|have\s+not\s+been|was\s+not|were\s+not|expired|invalid)\b/iu;
+
 export type SanitizeResult = { text: string; removed: string[] };
 
 /**
@@ -78,7 +82,10 @@ export function sanitizeFreeText(
     : value.split(/(?<=[.!?])\s+/u).filter(Boolean);
   const removed: string[] = [];
   const kept = sentences.filter((sentence) => {
-    if (ASSERTS_INVISIBLE_ABSENCE.test(sentence)) {
+    if (
+      ASSERTS_INVISIBLE_ABSENCE.test(sentence) ||
+      ASSERTS_INVISIBLE_ABSENCE_EN.test(sentence)
+    ) {
       removed.push("asserts_invisible_absence");
       return false;
     }
@@ -256,9 +263,9 @@ export function parseV5Output(raw: string): V5PhotoOutput {
             description: text(control.description, 600),
           };
         }).filter((control) => control.title && control.description),
-    observed_assets: (Array.isArray(envelope.observed_assets)
-      ? envelope.observed_assets
-      : []).map((entry) => text(entry, 64)).filter(isExpertAssetFamily),
+    observed_assets:
+      (Array.isArray(envelope.observed_assets) ? envelope.observed_assets : [])
+        .map((entry) => text(entry, 64)).filter(isExpertAssetFamily),
   };
 }
 
@@ -465,6 +472,49 @@ function isRecordsOnly(finding: V5Finding): boolean {
 }
 
 /**
+ * The words this module writes itself, around the model's text.
+ *
+ * Analysis ea39b232 (en-US) came back with the model's findings in Turkish and
+ * would still have carried "Düzeltici Önlem" and "Eğitim:" had the model
+ * answered in English. Only tr and en exist (appLanguages); anything else
+ * reads as English, which is what the app falls back to as well.
+ */
+type V5Labels = {
+  corrective: string;
+  preventive: string;
+  ppePrefix: string;
+  trainingPrefix: string;
+  recordsCategory: string;
+  generalCategory: string;
+  positiveCategory: string;
+};
+
+const V5_LABELS: Record<"tr" | "en", V5Labels> = {
+  tr: {
+    corrective: "Düzeltici Önlem",
+    preventive: "Önleyici Kontrol",
+    ppePrefix: "Kişisel koruyucu donanım",
+    trainingPrefix: "Eğitim",
+    recordsCategory: "Periyodik Kontroller",
+    generalCategory: "Genel",
+    positiveCategory: "Olumlu kontrol",
+  },
+  en: {
+    corrective: "Corrective Action",
+    preventive: "Preventive Control",
+    ppePrefix: "Personal protective equipment",
+    trainingPrefix: "Training",
+    recordsCategory: "Periodic Inspections",
+    generalCategory: "General",
+    positiveCategory: "Positive control",
+  },
+};
+
+export function v5LanguageKey(language: unknown): "tr" | "en" {
+  return language === "tr" ? "tr" : "en";
+}
+
+/**
  * The model's findings become the report's findings, in its own order of
  * severity, with the arithmetic done here.
  *
@@ -475,7 +525,12 @@ function isRecordsOnly(finding: V5Finding): boolean {
  */
 export function routeV5Findings(
   outputs: Array<{ photoIndex: number; output: V5PhotoOutput }>,
+  options: { language?: string } = {},
 ): V5Routed {
+  // Turkish unless told otherwise: every caller before English existed was
+  // Turkish, and the tests that pin its output still are.
+  const lang = v5LanguageKey(options.language ?? "tr");
+  const labels = V5_LABELS[lang];
   const candidates: Record<string, unknown>[] = [];
   const scored: Array<{ item: RoutedItem; fk: number }> = [];
   const assurance: RoutedItem[] = [];
@@ -487,9 +542,15 @@ export function routeV5Findings(
   // The registry speaks in standards and intervals; the model's own records
   // finding says "check the paperwork". Where the registry has something to
   // say, publishing both is the report noise this engine exists to avoid.
-  const expert = expertRecommendationsFor(
-    outputs.flatMap((entry) => entry.output.observed_assets ?? []),
-  );
+  //
+  // The registry is Turkish and cites Turkish regulation, and every English
+  // safety profile is regulatory_reference_policy "none". An English report
+  // keeps the model's own records findings instead.
+  const expert = lang === "tr"
+    ? expertRecommendationsFor(
+      outputs.flatMap((entry) => entry.output.observed_assets ?? []),
+    )
+    : { recommendations: [], familiesWithoutEntry: [] };
   const registryCovered = expert.recommendations.length > 0;
 
   for (const { photoIndex, output } of outputs) {
@@ -509,10 +570,13 @@ export function routeV5Findings(
       // One dayanak per line. Joined with a space, analysis 6f72a303 published
       // "6331 Sayılı İSG Kanunu — Madde 4 Elle Taşıma İşleri Yönetmeliği":
       // two separate references read as one sentence naming the wrong article.
+      // English profiles carry no legal references at all; whatever the model
+      // wrote there despite the prompt is not published.
       const references = sanitizeFreeText(
-        finding.regulatory_references.map(endSentence).filter(Boolean).join(
-          "\n",
-        ),
+        lang === "tr"
+          ? finding.regulatory_references.map(endSentence).filter(Boolean)
+            .join("\n")
+          : "",
         true,
       );
       const preventive = sanitizeFreeText(finding.preventive_measure);
@@ -531,7 +595,9 @@ export function routeV5Findings(
         training,
         ppe,
         ...steps,
-      ].flatMap((entry) => entry.removed);
+      ].flatMap((entry) =>
+        entry.removed
+      );
       sanitizedCount += removed.length;
 
       if (!title.text || !description.text || !control.text) {
@@ -558,14 +624,14 @@ export function routeV5Findings(
           criticality: "ordinary",
           ordinal: 0,
           title: title.text.slice(0, 200),
-          category: finding.category || "Periyodik Kontroller",
+          category: finding.category || labels.recordsCategory,
           description: description.text,
           recommended_action: control.text,
           recommended_measures: [
             ...(steps.some((entry) => entry.text)
               ? [{
                 kind: "corrective" as const,
-                title: "Düzeltici Önlem",
+                title: labels.corrective,
                 text: steps.map((entry) => entry.text).filter(Boolean).map((
                   line,
                   index,
@@ -575,7 +641,7 @@ export function routeV5Findings(
             ...(preventive.text
               ? [{
                 kind: "preventive" as const,
-                title: "Önleyici Kontrol",
+                title: labels.preventive,
                 text: endSentence(preventive.text),
               }]
               : []),
@@ -666,11 +732,13 @@ export function routeV5Findings(
 
       const correctiveText = [
         ...steps.map((entry) => entry.text).filter(Boolean),
-        ...(ppe.text ? [`Kişisel koruyucu donanım: ${ppe.text}`] : []),
+        ...(ppe.text ? [`${labels.ppePrefix}: ${ppe.text}`] : []),
       ].map((line, index) => `${index + 1}. ${endSentence(line)}`).join("\n");
       const preventiveText = [
         endSentence(preventive.text),
-        ...(training.text ? [`Eğitim: ${endSentence(training.text)}`] : []),
+        ...(training.text
+          ? [`${labels.trainingPrefix}: ${endSentence(training.text)}`]
+          : []),
       ].filter(Boolean).join(" ");
 
       scored.push({
@@ -683,21 +751,21 @@ export function routeV5Findings(
           criticality,
           ordinal: 0,
           title: title.text.slice(0, 200),
-          category: finding.category || "Genel",
+          category: finding.category || labels.generalCategory,
           description: description.text,
           recommended_action: control.text,
           recommended_measures: [
             ...(correctiveText
               ? [{
                 kind: "corrective" as const,
-                title: "Düzeltici Önlem",
+                title: labels.corrective,
                 text: correctiveText,
               }]
               : []),
             ...(preventiveText
               ? [{
                 kind: "preventive" as const,
-                title: "Önleyici Kontrol",
+                title: labels.preventive,
                 text: preventiveText,
               }]
               : []),
@@ -828,7 +896,7 @@ export function routeV5Findings(
         criticality: "ordinary",
         ordinal: order,
         title: title.text.slice(0, 200),
-        category: "Olumlu kontrol",
+        category: labels.positiveCategory,
         description: description.text,
         recommended_action: "",
         recommended_measures: [],

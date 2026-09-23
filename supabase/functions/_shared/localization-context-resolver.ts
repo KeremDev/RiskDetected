@@ -240,6 +240,12 @@ export function resolveLocalizationContext(
   }
 
   const explicit = hasLocalizationRequestFields(input.request);
+  if (!explicit && asTrimmedString(input.request.app_language) === "en") {
+    throw new LocalizationContractError(
+      LOCALIZATION_ERROR_CODES.profileRequired,
+      400,
+    );
+  }
   if (explicit && !asTrimmedString(input.request.safety_profile_id)) {
     throw new LocalizationContractError(
       LOCALIZATION_ERROR_CODES.profileRequired,

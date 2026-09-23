@@ -451,7 +451,13 @@ async function loadAuthoritativeSections(context: Context) {
   // photograph shows. It arrives only from a company the user bound to this
   // analysis; without one the card states all three classes rather than
   // asserting a class nobody declared.
-  const generatedTraining = metadataAvailable
+  //
+  // The catalogue is Turkish only (catalog.tr.ts) and cites Turkish training
+  // law, so an English result carries no training section, the same way it
+  // carries no approved book. Analysis ea39b232 (en-US) showed eight Turkish
+  // training cards under its findings.
+  const trainingSupported = context.language === "tr";
+  const generatedTraining = metadataAvailable && trainingSupported
     ? buildTrainingCardSnapshots({
       analysisID: String(context.analysis.id),
       sectorID: cleanString(context.analysis.analysis_sector, 64) || null,
@@ -478,7 +484,9 @@ async function loadAuthoritativeSections(context: Context) {
   const persisted = generatedTraining.length === 0 || notebookRows.length === 0
     ? await loadPersistedProjections(context)
     : { training: [], notebook: [] };
-  const training = generatedTraining.length > 0
+  const training = !trainingSupported
+    ? []
+    : generatedTraining.length > 0
     ? generatedTraining
     : persisted.training;
   if (notebookRows.length === 0) notebookRows = persisted.notebook;

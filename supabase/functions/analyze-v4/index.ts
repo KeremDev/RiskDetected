@@ -36,11 +36,17 @@ import {
 import { normalizeCandidates } from "./evidence-normalizer.ts";
 import {
   assertV4PromptIntegrity,
+  assertV5PromptENIntegrity,
   assertV5PromptIntegrity,
   sha256Text,
 } from "./prompt-integrity.ts";
 import { sendStructuredGemini, thinkingTelemetry } from "./provider.ts";
 import { buildV5Prompt, buildV5SplitPrompt } from "./v5-prompt.ts";
+import {
+  buildV5PromptEN,
+  buildV5SplitPromptEN,
+  V5_PROMPT_EN_VERSION,
+} from "./v5-prompt-en.ts";
 import {
   runV5PhotoAttempt,
   v5AttemptLimit,
@@ -52,6 +58,10 @@ import {
   V5_PROMPT_VERSION,
   V5_RESPONSE_SCHEMA,
 } from "./v5-contracts.ts";
+import {
+  v5EnglishLanguageFailure,
+  v5EnglishRetryPrompt,
+} from "./v5-language.ts";
 import {
   applySplitFindings,
   looksLikePlaceholder,
@@ -710,6 +720,7 @@ serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   let engineRunID: string | null = null;
+  let outputLanguageForFailure = "tr";
   try {
     const { data: claim, error: claimError } = await supabase.rpc(
       "validate_analysis_job_claim_v2",
@@ -771,6 +782,7 @@ serve(async (req) => {
       )
       .eq("id", analysisID).eq("user_id", userID).maybeSingle();
     if (analysisError || !analysis) throw new Error("analysis_not_found");
+    outputLanguageForFailure = analysis.output_language === "en" ? "en" : "tr";
     const requestedPaths = [...new Set(strings(body.photo_paths))].slice(0, 3);
     if (requestedPaths.length === 0) throw new Error("photo_required");
     const { data: rows, error: photoError } = await supabase.from("photos")
@@ -850,9 +862,22 @@ serve(async (req) => {
     // are untouched and the way back is one config key. See v5-contracts.ts
     // for why it exists.
     if (String(engineConfig.engine_mode ?? "contract") === V5_ENGINE_MODE) {
-      const v5PromptSHA = await assertV5PromptIntegrity(
-        engineConfig.v5_prompt_sha256,
-      );
+      // A route pinned before the English prompt key existed cannot safely
+      // produce an English report. Fail it instead of using the Turkish prompt.
+      if (
+        language !== "tr" &&
+        typeof engineConfig.v5_prompt_en_sha256 !== "string"
+      ) {
+        throw new Error("v5_prompt_en_unpinned");
+      }
+      const englishPrompt = language !== "tr" &&
+        typeof engineConfig.v5_prompt_en_sha256 === "string";
+      const promptLanguage = englishPrompt ? "en" : "tr";
+      const safetyProfileID = record(analysis.localization_snapshot)
+        .safety_profile_id;
+      const v5PromptSHA = englishPrompt
+        ? await assertV5PromptENIntegrity(engineConfig.v5_prompt_en_sha256)
+        : await assertV5PromptIntegrity(engineConfig.v5_prompt_sha256);
       // Thinking is billed against this cap too, so an eighteen-layer sweep at
       // HIGH needs far more headroom than the contract engine's 12288.
       const freeMaxOutputTokens = Number(
@@ -867,13 +892,21 @@ serve(async (req) => {
         (Array.isArray(begin.photo_runs) ? begin.photo_runs : [])
           .map(record);
       const settled = await Promise.allSettled(photos.map(async (photo) => {
-        const prompt = buildV5Prompt({
-          photoIndex: photo.photoIndex,
-          photoCount: photos.length,
-          outputLanguage: language,
-          sectorID,
-          analysisContext: String(analysis.canvas ?? "general"),
-        });
+        const prompt = englishPrompt
+          ? buildV5PromptEN({
+            photoIndex: photo.photoIndex,
+            photoCount: photos.length,
+            sectorID,
+            safetyProfileID,
+            analysisContext: String(analysis.canvas ?? "general"),
+          })
+          : buildV5Prompt({
+            photoIndex: photo.photoIndex,
+            photoCount: photos.length,
+            outputLanguage: language,
+            sectorID,
+            analysisContext: String(analysis.canvas ?? "general"),
+          });
         const request = {
           apiKey: key,
           model: config.primaryModel,
@@ -885,6 +918,7 @@ serve(async (req) => {
           thinkingLevel: freeThinkingLevel,
           maxOutputTokens: freeMaxOutputTokens,
           serviceTier: config.requestedServiceTier,
+          appendTurkishLanguageRule: !englishPrompt,
           billingTier: config.providerPool === "free_standard"
             ? "free" as const
             : "paid" as const,
@@ -905,14 +939,29 @@ serve(async (req) => {
           Number(row.photo_index) === photo.photoIndex &&
           row.storage_path === photo.storagePath
         );
+        const retryPrompt = englishPrompt
+          ? v5EnglishRetryPrompt(prompt)
+          : prompt;
+        const languageRetry =
+          record(prior?.normalized_output).errorCode ===
+            "v5_output_language_invalid";
         let photoRunID: string | null = null;
         const result = await runV5PhotoAttempt({
           model: config.primaryModel,
           identity,
           previous: prior?.normalized_output,
-          maxAttempts: v5AttemptLimit(snapshot, config),
+          maxAttempts: englishPrompt ? 2 : v5AttemptLimit(snapshot, config),
+          retryOtherErrors: !englishPrompt ||
+            v5AttemptLimit(snapshot, config) === 2,
           maxOutputTokens: freeMaxOutputTokens,
-          call: () => sendStructuredGemini(request, V5_RESPONSE_SCHEMA),
+          validateOutput: englishPrompt ? v5EnglishLanguageFailure : undefined,
+          call: (attemptNumber) =>
+            sendStructuredGemini({
+              ...request,
+              prompt: attemptNumber > 1 && languageRetry
+                ? retryPrompt
+                : prompt,
+            }, V5_RESPONSE_SCHEMA),
           checkpoint: async (state) => {
             photoRunID = await checkpointPhoto(supabase, {
               userID,
@@ -933,8 +982,8 @@ serve(async (req) => {
               },
             });
           },
-          recordAttempt: (event) =>
-            recordAttempt(supabase, {
+          recordAttempt: async (event) =>
+            await recordAttempt(supabase, {
               attemptID: event.id,
               userID,
               engineRunID: engineRunID!,
@@ -948,7 +997,9 @@ serve(async (req) => {
               requestedTier: config.requestedServiceTier,
               fallbackReason: event.reason,
               promptSHA256: v5PromptSHA,
-              promptBundleSHA256: v5PromptSHA,
+              promptBundleSHA256: event.number > 1 && languageRetry
+                ? await sha256Text(retryPrompt)
+                : v5PromptSHA,
               maxOutputTokens: freeMaxOutputTokens,
               error: event.error,
               result: event.response
@@ -1032,18 +1083,31 @@ serve(async (req) => {
           const second = await sendStructuredGemini({
             apiKey: key,
             model: config.primaryModel,
-            prompt: buildV5SplitPrompt({
-              photoIndex: entry.photoIndex,
-              photoCount: photos.length,
-              outputLanguage: language,
-              sectorID,
-              packed: packed.map((finding) => ({
-                title: finding.title,
-                layers: finding.layers,
-                description: finding.description,
-              })),
-              scanNotes: hazardNotes,
-            }),
+            prompt: englishPrompt
+              ? buildV5SplitPromptEN({
+                photoIndex: entry.photoIndex,
+                photoCount: photos.length,
+                sectorID,
+                safetyProfileID,
+                packed: packed.map((finding) => ({
+                  title: finding.title,
+                  layers: finding.layers,
+                  description: finding.description,
+                })),
+                scanNotes: hazardNotes,
+              })
+              : buildV5SplitPrompt({
+                photoIndex: entry.photoIndex,
+                photoCount: photos.length,
+                outputLanguage: language,
+                sectorID,
+                packed: packed.map((finding) => ({
+                  title: finding.title,
+                  layers: finding.layers,
+                  description: finding.description,
+                })),
+                scanNotes: hazardNotes,
+              }),
             imageData: photo.base64,
             mimeType: photo.mimeType,
             timeoutMs: 110_000,
@@ -1051,6 +1115,7 @@ serve(async (req) => {
             thinkingLevel: freeThinkingLevel,
             maxOutputTokens: freeMaxOutputTokens,
             serviceTier: config.requestedServiceTier,
+            appendTurkishLanguageRule: !englishPrompt,
           }, V5_RESPONSE_SCHEMA);
           await recordAttempt(supabase, {
             ...telemetry,
@@ -1060,9 +1125,13 @@ serve(async (req) => {
               requestedServiceTier: config.requestedServiceTier,
             },
           });
+          const splitOutput = parseV5Output(second.text);
+          if (englishPrompt && v5EnglishLanguageFailure(splitOutput)) {
+            throw new Error("v5_split_output_language_invalid");
+          }
           const applied = applySplitFindings(
             entry.output,
-            parseV5Output(second.text).findings,
+            splitOutput.findings,
           );
           outputs[index] = { ...entry, output: applied.output };
           splitOutcomes.push({
@@ -1084,12 +1153,26 @@ serve(async (req) => {
         }
       }
 
+      if (
+        englishPrompt &&
+        outputs.some((entry) => v5EnglishLanguageFailure(entry.output))
+      ) {
+        throw new Error("v5_output_language_invalid_before_publish");
+      }
+
       const routedFree = routeV5Findings(
         outputs.map((entry) => ({
           photoIndex: entry.photoIndex,
           output: entry.output,
         })),
+        { language: promptLanguage },
       );
+      // Observed, not enforced: a retry here is a second paid call, and the
+      // English prompt is the fix. The flag says whether it held.
+      const turkishInEnglish = promptLanguage === "en" &&
+        routedFree.items.some((item) =>
+          /[çğışöüÇĞİŞÖÜ]/u.test(`${item.title} ${item.description}`)
+        );
       // Scored site findings. Assurance items are published too -- the hub
       // routes them to Uzman Görüşü -- but they are not what "no visible items"
       // is asking about, and they carry no score.
@@ -1121,7 +1204,8 @@ serve(async (req) => {
           version_snapshot: {
             engine: V4_ENGINE_VERSION,
             engine_mode: V5_ENGINE_MODE,
-            prompt: V5_PROMPT_VERSION,
+            prompt: englishPrompt ? V5_PROMPT_EN_VERSION : V5_PROMPT_VERSION,
+            prompt_language: promptLanguage,
             router: "v5-free-router-v1",
           },
           photo_coverage_matrix: outputs.map((entry) => ({
@@ -1225,6 +1309,12 @@ serve(async (req) => {
           },
           quality_flags: [
             "engine_mode_free",
+            ...(englishPrompt ? ["v5_prompt_en"] : []),
+            ...(englishPrompt ? ["v5_language_validated_en"] : []),
+            ...(englishPrompt && outputs.some((entry) => entry.attemptCount > 1)
+              ? ["v5_retry_used"]
+              : []),
+            ...(turkishInEnglish ? ["v5_output_language_mismatch"] : []),
             ...(echoedSummary ? ["v5_prompt_example_echoed"] : []),
             ...(outputs.some((entry) =>
                 unfulfilledHazardLayers(entry.output).length > 0
@@ -1248,11 +1338,17 @@ serve(async (req) => {
           ],
         },
         analysis_result: {
-          status_message: `Analiz tamamlandı. Destek kodu: ${supportID}`,
+          status_message: promptLanguage === "en"
+            ? `Analysis completed. Support code: ${supportID}`
+            : `Analiz tamamlandı. Destek kodu: ${supportID}`,
           ai_summary: (echoedSummary ? "" : outputs[0]?.output.scene_summary) ||
-            (visibleFree.length > 0
-              ? `${visibleFree.length} bulgu raporlandı.`
-              : "Görüntüde kullanıcıya gösterilecek yeterli kanıt bulunamadı."),
+            (promptLanguage === "en"
+              ? (visibleFree.length > 0
+                ? `${visibleFree.length} findings reported.`
+                : "The image did not contain enough evidence to show the user.")
+              : (visibleFree.length > 0
+                ? `${visibleFree.length} bulgu raporlandı.`
+                : "Görüntüde kullanıcıya gösterilecek yeterli kanıt bulunamadı.")),
           duration_ms: Date.now() - started,
         },
       };
@@ -1844,7 +1940,9 @@ serve(async (req) => {
       p_claim_token: claimToken,
       p_error: code,
       p_failure_code: code,
-      p_status_message: `Analiz tamamlanamadı. Destek kodu: ${supportID}`,
+      p_status_message: outputLanguageForFailure === "en"
+        ? `Analysis could not be completed. Support code: ${supportID}`
+        : `Analiz tamamlanamadı. Destek kodu: ${supportID}`,
       p_terminal: true,
       p_raw_ai_response: { _engine: V4_ENGINE_VERSION, _support_id: supportID },
     });

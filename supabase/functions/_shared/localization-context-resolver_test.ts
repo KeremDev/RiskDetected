@@ -134,6 +134,23 @@ Deno.test("English context requires an explicit safety profile", () => {
   );
 });
 
+Deno.test("English app language cannot silently use legacy Turkish defaults", () => {
+  expectCode(
+    LOCALIZATION_ERROR_CODES.profileRequired,
+    () =>
+      resolveLocalizationContext({
+        request: { app_language: "en" },
+        persistedMethod: "fine_kinney",
+        workerInvocation: false,
+        rolloutPolicy: {
+          enabledProfileIDs: allProfilesEnabled,
+          queueSnapshotAuthorityEnabled: true,
+          approvedSafetyProfileSourceSHA256: safetyProfileSourceSHA256,
+        },
+      }),
+  );
+});
+
 Deno.test("disabled non-TR profile fails closed", () => {
   expectCode(
     LOCALIZATION_ERROR_CODES.profileNotEnabled,
