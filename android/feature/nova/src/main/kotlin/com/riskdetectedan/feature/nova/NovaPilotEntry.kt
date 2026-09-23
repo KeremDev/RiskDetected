@@ -39,6 +39,9 @@ class NovaSessionViewModel @Inject constructor(personnel: PersonnelRepository) :
         IsgWorkspaceIdentity(it.ownerID.toString(), it.sessionID.toString()) }
 }
 
+/** Set while the profile slot is shown by a personal NOVA root: opens that root's own company list. */
+val LocalNovaOpenCompanies = staticCompositionLocalOf<(() -> Unit)?> { null }
+
 /** What the app shell lends the NOVA root: the regular profile page and anything that needs app routes. */
 class NovaPilotSlots(
     val profile: @Composable (onBack: () -> Unit) -> Unit,

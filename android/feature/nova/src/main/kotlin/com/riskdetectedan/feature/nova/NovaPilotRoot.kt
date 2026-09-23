@@ -104,7 +104,11 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 onBack = { navigate(NovaDestination.home) })
             NovaDestination.profile -> Column(Modifier.fillMaxSize()) {
                 NovaPageHeading("Profil", modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) { navigate(NovaDestination.home) }
-                Box(Modifier.weight(1f)) { slots.profile { navigate(NovaDestination.home) } }
+                // A personal account's "Firmalarım" opens its own companies here, where iOS opens the same
+                // company page through NovaCompanyManagementGate; an OSGB expert keeps the app route.
+                CompositionLocalProvider(LocalNovaOpenCompanies provides if (workspace == null) ({ navigate(NovaDestination.companies) }) else null) {
+                    Box(Modifier.weight(1f)) { slots.profile { navigate(NovaDestination.home) } }
+                }
             }
             NovaDestination.findings -> if (state.overviewFailed) NovaPilotStatusPage(destination, state, onWorkspaceSwitch, viewModel::reload) {
                 navigate(NovaDestination.home)
