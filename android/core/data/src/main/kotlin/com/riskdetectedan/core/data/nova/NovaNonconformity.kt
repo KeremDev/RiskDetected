@@ -31,6 +31,10 @@ enum class NovaNonconformityRecordKind { nonconformity, improvement;
 
 enum class NovaRiskMethod(val wire: String) {
     fineKinney("fine_kinney"), matrix5x5("matrix_5x5");
+    /** The product's name for the method (iOS `RiskMethod.label`). */
+    val label: String get() = if (this == fineKinney) "Fine-Kinney" else "5×5 L-Tipi"
+    /** The short code the analysis aggregates use (iOS `RiskMethod.rawValue`). */
+    val code: String get() = if (this == fineKinney) "fk" else "m5"
     companion object {
         fun of(wire: String?) = entries.firstOrNull { it.wire == wire }
         val probabilityScale = listOf(0.2, 0.5, 1.0, 3.0, 6.0, 10.0)

@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.ThumbDown
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NotificationAdd
 import androidx.compose.material.icons.filled.Notifications
@@ -203,6 +205,20 @@ object NovaSymbols {
             "folder" to Icons.Outlined.Folder,
             "folder.badge.plus" to Icons.Outlined.CreateNewFolder,
             "gearshape" to Icons.Outlined.Settings,
+            "hammer.fill" to Icons.Outlined.Construction,
+            "bolt.fill" to Icons.Outlined.Bolt,
+            "building.2.fill" to Icons.Outlined.Apartment,
+            "gearshape.2.fill" to Icons.Outlined.Settings,
+            "mountain.2.fill" to Icons.Outlined.Landscape,
+            "shippingbox.fill" to Icons.Outlined.Inventory2,
+            "flask.fill" to Icons.Outlined.Science,
+            "fork.knife" to Icons.Outlined.Restaurant,
+            "leaf.fill" to Icons.Outlined.Eco,
+            "bag.fill" to Icons.Outlined.ShoppingBag,
+            "signpost.right.fill" to Icons.Outlined.Signpost,
+            "bed.double.fill" to Icons.Outlined.Hotel,
+            "hand.thumbsup.fill" to Icons.Filled.ThumbUp,
+            "hand.thumbsdown.fill" to Icons.Filled.ThumbDown,
             "gift" to Icons.Outlined.CardGiftcard,
             "graduationcap" to Icons.Outlined.School,
             "graduationcap.fill" to Icons.Outlined.School,

@@ -405,6 +405,18 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
                 context.canOperate, mutationId, companyId, payload)
         }
 
+    /** The state of one export job (`queued`, `running`, `succeeded`, `failed`, `cancelled`). */
+    suspend fun exportStatus(context: IsgWorkspaceContext, companyId: String, jobId: String): String = inScope(context, companyId) {
+        gateway.export(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId, jobId)["row"]!!
+            .jsonObject["status"]!!.jsonPrimitive.content
+    }
+
+    /** A photo analysis job's status and, once it succeeded, its analysis. */
+    suspend fun photoAnalysisJob(context: IsgWorkspaceContext, companyId: String, jobId: String): Pair<String, String?> = inScope(context, companyId) {
+        val job = gateway.photoAnalysisJob(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId, jobId)
+        job["status"]!!.jsonPrimitive.content to job["analysis_id"]?.jsonPrimitive?.contentOrNull
+    }
+
     suspend fun search(context: IsgWorkspaceContext, companyId: String, query: String): JsonObject = inScope(context, companyId) {
         gateway.search(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId, query)
     }

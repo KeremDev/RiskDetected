@@ -424,6 +424,19 @@ class IsgWorkspaceGateway(
         return cleanCode.isNotEmpty() && cleanCode.toByteArray().size <= 80 && cleanName.isNotEmpty() && cleanName.toByteArray().size <= 200
     }
 
+    /** One photo analysis job (`isg_workspace_photo_analysis_get_v1`). */
+    suspend fun photoAnalysisJob(workspaceId: String, membershipId: String, permissionRevision: Long, companyId: String, jobId: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        val result = invoke("isg_workspace_photo_analysis_get_v1", buildJsonObject { put("p_workspace", workspaceId); put("p_job", jobId) })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        val status = result.text("status")
+        if (result.safeLong("schema_version") != 1L || result.text("workspace_id") != workspaceId || result.text("company_id") != companyId ||
+            result.text("job_id") != jobId || result.text("feature") != "photo_analysis" ||
+            status !in setOf("queued", "running", "succeeded", "failed", "cancelled", "reconcile") ||
+            (status == "succeeded" && (result.text("output_asset_id") == null || result.text("analysis_id") == null))) fail()
+        return result
+    }
+
     private fun validMember(row: JsonObject): Boolean {
         val role = row.text("role"); val status = row.text("status"); val practicing = row.bool("is_practicing_expert")
         return row.text("membership_id")?.let(UUID::matches) == true && role in setOf("owner", "admin", "expert") &&

@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.riskdetectedan.core.data.isg.IsgWorkspaceContext
 import com.riskdetectedan.core.data.isg.IsgWorkspaceIdentity
 import com.riskdetectedan.core.data.nova.*
 import kotlinx.coroutines.flow.filter
@@ -132,11 +133,104 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             NovaDestination.reportArchive -> NovaReportArchive(services.reportClient(identity), slots.analysisReports,
                 onBack = { navigate(NovaDestination.reports) })
             NovaDestination.memory -> NovaReportArchive(services.reportClient(identity), slots.analysisReports, onBack = { navigate(NovaDestination.home) })
+            NovaDestination.analyses -> AnalysesDestination(services, identity, workspace, state.writable, navigate)
+            NovaDestination.newAnalysis -> PhotoAnalysisDestination(services, identity, workspace, state.writable, navigate)
             NovaDestination.checklists -> NovaChecklistScreen(services.checklistClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
     }
     NovaNoticeDialog(state.message, "İSGADA pilot", viewModel::dismissMessage)
+}
+
+/**
+ * Fotoğraf Analizi (iOS `NovaPilotFindingsGate` photo surface): photos, then company, sector and focus in one popup,
+ * then the waiting page; the finished analysis opens over it. Nothing is filled in behind the expert's answers.
+ */
+@Composable
+private fun PhotoAnalysisDestination(services: NovaRootServices, identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiState?, canWrite: Boolean,
+                                     navigate: (NovaDestination) -> Unit) {
+    val coroutines = rememberCoroutineScope()
+    val context = workspace?.selection
+    val organization = context != null
+    var images by remember { mutableStateOf<List<android.graphics.Bitmap>>(emptyList()) }
+    var companies by remember { mutableStateOf<List<NovaAnalysisCompanyOption>>(emptyList()) }
+    var tier by remember { mutableStateOf<com.riskdetectedan.core.data.profile.SubscriptionTier?>(null) }
+    var draft by remember { mutableStateOf(NovaAnalysisIntakeDraft()) }
+    var intakeOpen by remember { mutableStateOf(false) }
+    var running by remember { mutableStateOf(false) }
+    var stage by remember { mutableStateOf<NovaAnalysisService.Progress?>(null) }
+    var finished by rememberSaveable { mutableStateOf<String?>(null) }
+    var notice by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(identity) {
+        companies = runCatching { services.analysis.companyOptions(identity) }.getOrDefault(emptyList())
+        tier = runCatching { services.analysis.tier(identity) }.getOrNull()
+    }
+    finished?.let { id ->
+        val cached = remember(identity) { mutableStateOf<NovaRiskMethod?>(null) }
+        val method: suspend () -> NovaRiskMethod = { cached.value ?: services.analysis.preferredMethod(identity).also { cached.value = it } }
+        NovaAnalysisDetailScreen(remember(identity, id) { services.analysisDetailClient(identity, context, id, method) },
+            onBack = { finished = null; navigate(NovaDestination.analyses) }, canWrite = canWrite && (context?.canOperate ?: true))
+        return
+    }
+    if (running) { NovaAnalyzingScreen(images.firstOrNull(), images.size, stage); return }
+    NovaPhotoIntakeScreen(images, { images = it }, onStart = {
+        // The workspace already has a company in scope: offer it rather than asking again.
+        val current = workspace?.selectedCompanyId?.let { id -> companies.firstOrNull { it.id.equals(id, true) } }
+        draft = NovaAnalysisIntakeDraft(photoCount = images.size).let { if (current != null) it.chooseOwner(current) else it }
+        intakeOpen = true
+    }, onBack = { navigate(NovaDestination.findings) })
+    NovaPopup(intakeOpen, { if (!running) intakeOpen = false }, identifier = "analysis.intake") {
+        NovaAnalysisIntakePopup(companies, tier, organization, draft, { draft = it }, running) {
+            val focuses = draft.focusIds.filter { id -> organization || AnalysisCanvasTier.allowed(id, tier) }
+            if (!draft.isReady || images.isEmpty()) return@NovaAnalysisIntakePopup
+            if (focuses.isEmpty()) { notice = "Planınızın kapsadığı en az bir odak seçin."; return@NovaAnalysisIntakePopup }
+            intakeOpen = false; running = true; stage = null
+            coroutines.launch {
+                try {
+                    val bytes = analysisPhotoBytes(images)
+                    val id = services.analysis.run(identity, context, draft.companyId, bytes, focuses, draft.sectorId) { stage = it }
+                    images = emptyList()
+                    services.events.recordsChanged(identity.userId)
+                    finished = id
+                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled } catch (_: Exception) {
+                    notice = "Analiz tamamlanamadı. Bağlantınızı kontrol edip tekrar deneyin."
+                }
+                running = false
+            }
+        }
+    }
+    NovaNoticeDialog(notice, "Fotoğraf Analizi", { notice = null })
+}
+
+/** Which focuses the account's plan includes; a locked one is shown, never sent. */
+private object AnalysisCanvasTier {
+    fun allowed(id: String, tier: com.riskdetectedan.core.data.profile.SubscriptionTier?) =
+        com.riskdetectedan.core.data.analysis.AnalysisCanvas.all.firstOrNull { it.id == id }?.let { tier?.includes(it.minTier) == true } == true
+}
+
+/**
+ * Analizler (iOS `NovaPilotFindingsGate` analyses surface): the list, the report archive, and an analysis opened over
+ * them. The expert's own method opens every page.
+ */
+@Composable
+private fun AnalysesDestination(services: NovaRootServices, identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiState?, canWrite: Boolean,
+                                navigate: (NovaDestination) -> Unit) {
+    var reports by rememberSaveable { mutableStateOf(false) }
+    var open by rememberSaveable { mutableStateOf<String?>(null) }
+    val context = workspace?.selection
+    val cached = remember(identity) { mutableStateOf<NovaRiskMethod?>(null) }
+    val method: suspend () -> NovaRiskMethod = { cached.value ?: services.analysis.preferredMethod(identity).also { cached.value = it } }
+    open?.let { id ->
+        key(id) {
+            NovaAnalysisDetailScreen(remember(identity, id) { services.analysisDetailClient(identity, context, id, method) }, onBack = { open = null },
+                canWrite = canWrite && (context?.canOperate ?: true))
+        }
+        return
+    }
+    if (reports) NovaAnalysisReportsScreen(load = { offset -> services.analysis.reports(identity, offset = offset) },
+        download = { entry -> services.analysis.downloadReport(entry, identity, context) }, onBack = { reports = false }, onOpenAnalysis = { open = it })
+    else NovaAnalysisListScreen(remember(identity, context) { services.analysisListClient(identity, context, method) }, onOpen = { open = it },
+        onBack = { navigate(NovaDestination.findings) }, onNewPhotoAnalysis = { navigate(NovaDestination.newAnalysis) }, onReports = { reports = true })
 }
 
 /** Opens the module record a followup row or a file link points at (iOS `NovaFollowupDestination`). */
@@ -406,11 +500,36 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val companyRecords: com.riskdetectedan.core.data.company.CompanyRepository,
     private val companyCreate: NovaCompanyCreateService,
     private val learning: NovaEmployeeLearningService,
+    private val analyses: NovaAnalysisService,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
     private fun companies(identity: IsgWorkspaceIdentity): suspend () -> List<NovaCompanyOption> =
         { runCatching { findings.companyOptions(identity) }.getOrDefault(emptyList()) }
     fun fileClient(identity: IsgWorkspaceIdentity) = NovaFileClient(files, identity)
+    val analysis: NovaAnalysisService get() = analyses
+
+    /** The analysis list over the account's (or organization's) analyses, read under [method]. */
+    fun analysisListClient(identity: IsgWorkspaceIdentity, context: IsgWorkspaceContext?, method: suspend () -> NovaRiskMethod) = NovaAnalysisListClient(
+        load = { offset -> analyses.summaries(identity, method(), offset = offset) },
+        stats = { analyses.stats(identity, method()) },
+        thumbnail = { id -> analyses.thumbnail(id, context) })
+
+    fun analysisDetailClient(identity: IsgWorkspaceIdentity, context: IsgWorkspaceContext?, analysisId: String, method: suspend () -> NovaRiskMethod,
+                             onAssigned: () -> Unit = {}) = NovaAnalysisDetailClient(
+        load = { analyses.detail(analysisId, identity, method()) },
+        photos = {
+            analyses.photos(analysisId, context).mapNotNull { bytes ->
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
+            }
+        },
+        companies = { analyses.companyOptions(identity) },
+        assign = { company -> analyses.assign(analysisId, company, identity); onAssigned() },
+        workplaces = { company -> analyses.filingWorkplaces(identity, company) },
+        file = { request -> analyses.file(request, analysisId, identity, null).also { if (it == NovaFindingOutcome.Opened) events.recordsChanged(identity.userId) } },
+        edit = { change -> analyses.edit(change, identity) },
+        remove = { item -> analyses.remove(analysisId, item.id, identity) },
+        react = { item, section, reaction -> analyses.react(analysisId, item, section, reaction, identity) },
+        report = { request -> analyses.report(request, identity, context) })
     /** Active personnel of one company, every page, capped like iOS at a thousand names. */
     private fun people(identity: IsgWorkspaceIdentity): suspend (String) -> List<NovaPersonOption> = { company ->
         val rows = mutableListOf<NovaPersonOption>()
