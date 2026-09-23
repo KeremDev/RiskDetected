@@ -333,7 +333,7 @@ fun NovaProcessEditor(client: NovaProcessClient, kind: String, company: String, 
         try {
             val snapshot = client.mutate(company, "export", payload()) ?: throw NovaProcessException("UNAVAILABLE")
             if (excel) novaShareFile(context, NovaProcessExport.xlsx(snapshot, spec), NovaProcessExport.fileName(snapshot, spec, "xlsx"),
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                NovaXlsx.MIME)
             else novaShareFile(context, NovaProcessExport.pdf(snapshot, spec), NovaProcessExport.fileName(snapshot, spec, "pdf"), "application/pdf")
         } catch (error: Exception) { failure = NovaProcessService.message(error) }
         busy = false

@@ -204,3 +204,26 @@ fun NovaFilterField(label: String, options: List<NovaChooserOption>, selected: S
 }
 
 internal fun Modifier.graphicsAlpha(alpha: Float): Modifier = if (alpha >= 1f) this else this.alpha(alpha)
+
+/** A segmented choice between a few options (iOS `.pickerStyle(.segmented)`). */
+@Composable
+fun NovaSegmentedControl(options: List<String>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
+    val shape = RoundedCornerShape(10.dp)
+    Row(modifier.fillMaxWidth().heightIn(min = 36.dp).background(NovaColorToken.surfaceMuted.color(), shape).padding(2.dp)
+        .semantics { role = Role.RadioButton }, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        options.forEachIndexed { index, option ->
+            val on = index == selected
+            Box(Modifier.weight(1f).heightIn(min = 32.dp).clip(RoundedCornerShape(8.dp))
+                .background(if (on) NovaColorToken.surface.color() else Color.Transparent, RoundedCornerShape(8.dp))
+                .novaRowPress { onSelect(index) }.semantics { this.selected = on; contentDescription = option }, contentAlignment = Alignment.Center) {
+                NovaText(option, style = if (on) NovaTypeToken.buttonSm else NovaTypeToken.meta, maxLines = 1)
+            }
+        }
+    }
+}
+
+/** A hairline between rows. */
+@Composable
+fun NovaDivider(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxWidth().height(1.dp).background(NovaColorToken.hairline.color()))
+}
