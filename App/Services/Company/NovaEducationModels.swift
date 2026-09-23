@@ -186,8 +186,8 @@ extension NovaEducationDraft {
             guard let hazard = scopes.first?.hazard_class else { return false }
             return scopes.allSatisfy { $0.hazard_class == hazard }
         case .info: return filled(title) && filled(provider_name)
-        case .topics: return !scopes.isEmpty && scopes.allSatisfy { $0.net > 0 }
-        case .schedule: return !scopes.isEmpty && scopes.allSatisfy { !$0.lessons.isEmpty }
+        case .topics: return filled(title) && !scopes.isEmpty && scopes.allSatisfy { $0.net > 0 }
+        case .schedule: return filled(title) && !scopes.isEmpty && scopes.allSatisfy { !$0.lessons.isEmpty }
         case .trainers:
             return !trainers.isEmpty && trainers.count <= 20 && trainers.allSatisfy {
                 let name = $0.name.trimmingCharacters(in: .whitespacesAndNewlines)

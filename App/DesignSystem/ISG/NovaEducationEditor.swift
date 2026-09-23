@@ -298,7 +298,7 @@ struct NovaEducationEditor: View {
 
     private func stepStatus(_ step: NovaEducationStep) -> String {
         if validationStep == step && firstMissingField()?.0 == step { return "Eksik bilgi" }
-        if step == .schedule && !scheduleEndsInPast { return "Kontrol gerekli" }
+        if step == .schedule && !selectedCycle.isEmpty && !scheduleEndsInPast { return "Kontrol gerekli" }
         if draft.isComplete(step) { return "Tamamlandı" }
         return step == .review ? "Kontrol gerekli" : "Eksik bilgi"
     }
@@ -309,8 +309,8 @@ struct NovaEducationEditor: View {
             guard !draft.scopes.isEmpty else { return nil }
             return "\(draft.scopes.count) firma/işyeri seçimi · \(hazardLabel(draft.scopes.first?.hazard_class ?? "")) · " + draft.scopes.compactMap(\.company_name).joined(separator: ", ")
         case .info: return selectedCycle.isEmpty ? nil : "\(template.cycleName) · \(methodBinding.wrappedValue == "online" ? "Online" : "Yüz yüze")"
-        case .topics: return template.net > 0 ? "Toplam öğretim: \(formatDuration(template.net))" : nil
-        case .schedule: return template.lessons.isEmpty ? nil : "\(scheduleDays.count) gün · \(formatDuration(template.net + template.breakTotal)) (molalar dahil)"
+        case .topics: return !selectedCycle.isEmpty && template.net > 0 ? "Toplam öğretim: \(formatDuration(template.net))" : nil
+        case .schedule: return selectedCycle.isEmpty || template.lessons.isEmpty ? nil : "\(scheduleDays.count) gün · \(formatDuration(template.net + template.breakTotal)) (molalar dahil)"
         case .trainers: return draft.trainers.isEmpty ? nil : draft.trainers.map(\.name).filter { !$0.isEmpty }.joined(separator: ", ")
         case .participants: return draft.scopes.isEmpty ? nil : "\(draft.scopes.reduce(0) { $0 + $1.participants.count }) kişi · \(Set(draft.scopes.map(\.company_id)).count) firma"
         case .review: return draft.isComplete(.review) ? "Kaydetmeye hazır" : nil
@@ -321,8 +321,12 @@ struct NovaEducationEditor: View {
         switch currentStep {
         case .companies: companiesStep
         case .info: infoStep
-        case .topics: topicsStep
-        case .schedule: scheduleStep
+        case .topics:
+            if selectedCycle.isEmpty { NovaHelpHint(text: "Konular, eğitim türünü seçtikten sonra hazırlanır.") }
+            else { topicsStep }
+        case .schedule:
+            if selectedCycle.isEmpty { NovaHelpHint(text: "Gün ve saatler, eğitim türünü seçtikten sonra hazırlanır.") }
+            else { scheduleStep }
         case .trainers: trainersStep
         case .participants: participantsStep
         case .review: reviewStep
@@ -1294,8 +1298,15 @@ struct NovaEducationEditor: View {
             } else {
                 seedFreshDraft()
             }
+            // A draft may already contain a company, whose scope has the
+            // model's default cycle even though no type was chosen yet.
+            let hasChosenType = !draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let titleCycle = NovaEducationScope.cycles.first { $0.1 == draft.title }?.0
+            selectedCycle = (original != nil || hasChosenType)
+                ? (draft.scopes.first?.cycle ?? titleCycle ?? template.cycle)
+                : ""
+            if !selectedCycle.isEmpty { template.cycle = selectedCycle }
             syncTemplateFromScopes()
-            selectedCycle = (original != nil || restoredDraft || pending) ? (draft.scopes.first?.cycle ?? (draft.title.isEmpty ? "" : template.cycle)) : ""
             ready = true
             if original != nil { currentStep = .review }
             if original == nil, !restoredDraft, !pending, draft.scopes.isEmpty,
@@ -1344,18 +1355,23 @@ struct NovaEducationEditor: View {
             }
         }
     }
-    /// `template` mirrors whichever real curriculum already exists (editing
-    /// or migrating), or gets a first, editable preview (a brand-new
-    /// record) so the info step's topics link has something to show right
-    /// away instead of waiting for a company to be picked.
+    /// An existing record restores its curriculum. A new record stays empty
+    /// until the expert explicitly selects an education type.
     private func syncTemplateFromScopes() {
         if let first = draft.scopes.first {
             template.cycle = first.cycle; template.topics = first.topics; template.context_note = first.context_note
             template.lessons = first.lessons; template.draft_days = first.draft_days; template.location = first.location
             template.hazard_class = first.hazard_class
-        } else if template.topics.isEmpty {
+        } else if !selectedCycle.isEmpty && template.topics.isEmpty {
             template.hazard_class = "low"
             template.topics = context.package.topics(cycle: template.cycle, hazard: "low")
+        }
+        guard !selectedCycle.isEmpty else {
+            template.topics = []
+            template.lessons = []
+            template.draft_days = nil
+            scheduleDays = []
+            return
         }
         scheduleDays = template.draft_days ?? NovaEducationClock.days(from: template.lessons)
         // A record with topics but nothing scheduled yet (a brand-new one,
@@ -1381,8 +1397,8 @@ struct NovaEducationEditor: View {
         draft = NovaEducationDraft(); template = NovaEducationScope(company_id: UUID(), workplace_id: nil)
         restoredDraft = false; showingRestoredBanner = false; notice = nil
         seedFreshDraft()
-        syncTemplateFromScopes()
         selectedCycle = original == nil ? "" : (draft.scopes.first?.cycle ?? template.cycle)
+        syncTemplateFromScopes()
         Task { for company in Set(draft.scopes.map(\.company_id)) { await loadPeople(company) } }
     }
     private func add(company: UUID, workplace: UUID?, seed: Bool = true) {
@@ -1402,18 +1418,19 @@ struct NovaEducationEditor: View {
             return
         }
         if seed, draft.scopes.isEmpty, template.hazard_class != hazard {
-            // The first real company: the preview hazard class (a guess, or
-            // whatever was picked in the topics popup before any company
-            // existed) gives way to reality. Official cycles' topics refresh
-            // to match; a custom cycle has no hazard dependency and is left
-            // exactly as the expert defined it.
+            // The first company determines the hazard class. Curriculum and
+            // schedule are prepared only after an education type is chosen.
             let method = methodBinding.wrappedValue
-            if template.cycle != "custom" { template.topics = context.package.topics(cycle: template.cycle, hazard: hazard) }
+            if !selectedCycle.isEmpty && template.cycle != "custom" {
+                template.topics = context.package.topics(cycle: template.cycle, hazard: hazard)
+            }
             template.hazard_class = hazard
-            applyMethod(method)
-            for i in template.topics.indices { template.topics[i].trainer_ids = draft.trainers.map(\.id) }
-            scheduleDays = NovaEducationClock.initialDays(minutes: template.net, basic: basicCycle)
-            recomputeLessons()
+            if !selectedCycle.isEmpty {
+                applyMethod(method)
+                for i in template.topics.indices { template.topics[i].trainer_ids = draft.trainers.map(\.id) }
+                scheduleDays = NovaEducationClock.initialDays(minutes: template.net, basic: basicCycle)
+                recomputeLessons()
+            }
         }
         var scope = NovaEducationScope(company_id: company, workplace_id: workplace,
             company_name: companyRow.name, workplace_name: wp?.name, hazard_class: hazard)
