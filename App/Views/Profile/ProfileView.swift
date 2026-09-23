@@ -9,6 +9,7 @@ struct ProfileView: View {
     private let pilotNavigate: ((NovaDestination) -> Void)?
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.novaCanvasStyle) private var canvasStyle
     @Environment(\.openURL) private var openURL
     @Environment(\.rdLayoutProfile) private var layoutProfile
     @StateObject private var notifications = NotificationService.shared
@@ -54,6 +55,9 @@ struct ProfileView: View {
     private var profileLine: Color {
         colorScheme == .dark ? Color.white.opacity(0.08) : Color.rdLine
     }
+    private var profilePageBackground: Color {
+        pilotOnBack == nil ? Color.rdPaper : canvasStyle.color(in: colorScheme)
+    }
 
     init(pilotOnBack: (() -> Void)? = nil, pilotNavigate: ((NovaDestination) -> Void)? = nil) {
         self.pilotOnBack = pilotOnBack
@@ -93,7 +97,7 @@ struct ProfileView: View {
                 }
             }
         }
-        .background(Color.rdPaper.ignoresSafeArea())
+        .background(profilePageBackground.ignoresSafeArea())
         .accessibilityIdentifier("profile.root")
         .fullScreenCover(isPresented: $showNotebook) { NotebookDestination(onClose: { showNotebook = false }) }
         .fullScreenCover(isPresented: $showActivity) { ExpertActivityDestination(onClose: { showActivity = false }) }
@@ -324,7 +328,7 @@ struct ProfileView: View {
         }
         .frame(height: 54)
         .padding(.horizontal, 20)
-        .background(Color.rdPaper)
+        .background(profilePageBackground)
     }
 
     private var pilotProfileContent: some View {
