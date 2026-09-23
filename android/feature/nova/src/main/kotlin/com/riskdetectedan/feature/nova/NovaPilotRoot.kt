@@ -62,6 +62,24 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
         onDispose { lifecycle.removeObserver(observer); services.presence.background() }
     }
     val notices = state.notices
+    // A notice opens its own record over the shell (iOS `openNotice`); training rows are matched to their session first.
+    val coroutines = rememberCoroutineScope()
+    var noticeRecord by remember(identity) { mutableStateOf<NovaFollowupPage.Row?>(null) }
+    fun openNotice(key: String) {
+        val entry = notices.rows.firstOrNull { it.key == key } ?: return
+        val company = entry.companyId ?: return
+        val record = entry.recordId ?: return
+        if (entry.kind == NovaNoticeKind.training) coroutines.launch {
+            try {
+                val page = services.followup(identity, company, null, entry.title.take(100), 0)
+                page.rows.firstOrNull { it.recordId.equals(record, true) }?.let { noticeRecord = it }
+                    ?: NovaDestination.entries.firstOrNull { it.name == entry.destination }?.let(navigate)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled } catch (_: Exception) {
+                viewModel.showMessage("Bildirim kaydı açılamadı. Yeniden deneyin.")
+            }
+        } else noticeRecord = NovaFollowupPage.Row(if (entry.kind == NovaNoticeKind.drill) "completed_drill" else entry.kind.wire, company,
+            entry.companyName.orEmpty(), record, record, entry.title, entry.dueOn, if (entry.severity == NovaNoticeSeverity.overdue) "expired" else "soon")
+    }
     // iOS home: the six newest analyses under the expert's own method, reread on each workspace/overview change.
     var recentAnalyses by remember(identity) { mutableStateOf<List<NovaRecentAnalysis>>(emptyList()) }
     var pendingAnalysis by rememberSaveable { mutableStateOf<String?>(null) }
@@ -89,6 +107,9 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             onRestoreNotice = { viewModel.markNotice("restore", it) },
             onReadAll = { viewModel.markNotice("read_all") },
             onClearNotifications = { viewModel.markNotice("dismiss_all") },
+            onOpenNotice = ::openNotice,
+            // Only a personal account opens a company of its own (iOS `onCompanyCreate`).
+            onCompanyCreate = if (state.isWorkspaceExpert) null else ({ navigate(NovaDestination.newCompany) }),
             onLogout = viewModel::signOut,
         )) { destination ->
         when (destination) {
@@ -168,6 +189,9 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             NovaDestination.newAnalysis -> PhotoAnalysisDestination(services, identity, workspace, state.writable, navigate)
             NovaDestination.checklists -> NovaChecklistScreen(services.checklistClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
         }
+    }
+    noticeRecord?.let { row ->
+        Box(Modifier.fillMaxSize()) { recordOpener(services, identity, state.writable, state.userName)(row) { noticeRecord = null } }
     }
     NovaNoticeDialog(state.message, "İSGADA pilot", viewModel::dismissMessage)
 }
