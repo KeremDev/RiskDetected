@@ -65,6 +65,38 @@ class IsgWorkspaceGateway(
         return context
     }
 
+    /** Creates an OSGB owned by the caller (`isg_osgb_workspace_create_v1`); a retry with the same mutation is idempotent. */
+    suspend fun createWorkspace(userId: String, sessionId: String, mutationId: String, name: String, timezone: String): IsgWorkspaceContext {
+        checkIdentity(userId, sessionId)
+        val cleanName = name.trim()
+        val cleanTimezone = timezone.trim()
+        if (!UUID.matches(mutationId) || cleanName.isEmpty() || cleanName.toByteArray().size > 200 ||
+            cleanTimezone.isEmpty() || cleanTimezone.toByteArray().size > 80) validation()
+        val response = invoke("isg_osgb_workspace_create_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_name", cleanName); put("p_timezone", cleanTimezone)
+        })
+        checkIdentity(userId, sessionId)
+        return joinedOsgb(response, userId)
+    }
+
+    /** Joins an OSGB with the 64-character invitation code (`isg_workspace_invitation_accept_v1`). */
+    suspend fun acceptInvitation(userId: String, sessionId: String, mutationId: String, token: String): IsgWorkspaceContext {
+        checkIdentity(userId, sessionId)
+        val clean = token.trim().lowercase()
+        if (!UUID.matches(mutationId) || !INVITATION_TOKEN.matches(clean)) validation()
+        val response = invoke("isg_workspace_invitation_accept_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_token", clean)
+        })
+        checkIdentity(userId, sessionId)
+        return joinedOsgb(response, userId)
+    }
+
+    private fun joinedOsgb(response: JsonObject, userId: String): IsgWorkspaceContext {
+        val context = IsgWorkspaceContext.parse(response) ?: fail()
+        if (context.membership.userId != userId || context.kind != "osgb" || !context.canRead) fail()
+        return context
+    }
+
     suspend fun companies(workspaceId: String, membershipId: String, permissionRevision: Long,
                           after: String? = null, limit: Int = 50): JsonObject {
         checkWorkspace(workspaceId, membershipId, permissionRevision)
@@ -954,5 +986,6 @@ class IsgWorkspaceGateway(
     private companion object {
         val UUID = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
         val DAY = Regex("^\\d{4}-\\d{2}-\\d{2}$")
+        val INVITATION_TOKEN = Regex("^[0-9a-f]{64}$")
     }
 }

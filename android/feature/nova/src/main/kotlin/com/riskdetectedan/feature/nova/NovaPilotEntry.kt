@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -23,7 +24,10 @@ import com.riskdetectedan.core.data.isg.IsgWorkspaceContext
 import com.riskdetectedan.core.data.isg.IsgWorkspaceIdentity
 import com.riskdetectedan.core.designsystem.isg.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 /** Auth-owned identity only; the server decides every workspace and company. */
@@ -60,9 +64,10 @@ fun NovaPilotEntry(slots: NovaPilotSlots, session: NovaSessionViewModel = hiltVi
             when {
                 identity == null || (state.selection == null && state.phase in setOf(NovaWorkspacePhase.signedOut, NovaWorkspacePhase.loading)) ->
                     NovaPageSurface { NovaLoadingView("Çalışma alanı yükleniyor…") }
-                state.contexts.isNotEmpty() && (choosing || state.phase == NovaWorkspacePhase.choosing ||
-                    (state.phase == NovaWorkspacePhase.failed && state.selection == null)) ->
-                    NovaWorkspaceChooser(state, canCancel = state.selection != null, onRefresh = store::refresh,
+                choosing || (state.contexts.isNotEmpty() && (state.phase == NovaWorkspacePhase.choosing ||
+                    (state.phase == NovaWorkspacePhase.failed && state.selection == null))) ->
+                    // A personal account (no OSGB yet) can always return to its own root.
+                    NovaWorkspaceChooser(state, store, canCancel = state.selection != null || state.contexts.isEmpty(),
                         onSelect = { store.select(it); choosing = false }) { choosing = false }
                 state.selection?.kind == "osgb" && state.isExpert ->
                     key("expert:${state.selection?.workspaceId}:${state.selection?.membership?.permissionRevision}") {
@@ -72,8 +77,11 @@ fun NovaPilotEntry(slots: NovaPilotSlots, session: NovaSessionViewModel = hiltVi
                     key("manager:${state.selection?.workspaceId}:${state.selection?.membership?.permissionRevision}") {
                         NovaOsgbManagerRoot(identity!!, state, store, slots)
                     }
+                // The chooser is where an OSGB is created or joined, so it stays reachable whenever
+                // the workspace RPCs answered (iOS lists the personal context for the same reason).
                 else -> key("personal:${identity?.userId}") {
-                    NovaPilotRoot(identity!!, null, slots, onWorkspaceSwitch = if (state.contexts.isNotEmpty()) ({ choosing = true }) else null)
+                    NovaPilotRoot(identity!!, null, slots, onWorkspaceSwitch = if (state.contexts.isNotEmpty() ||
+                        state.phase == NovaWorkspacePhase.choosing) ({ choosing = true }) else null)
                 }
             }
         }
@@ -81,20 +89,27 @@ fun NovaPilotEntry(slots: NovaPilotSlots, session: NovaSessionViewModel = hiltVi
 }
 
 @Composable
-private fun NovaWorkspaceChooser(state: NovaWorkspaceUiState, canCancel: Boolean, onRefresh: () -> Unit,
+private fun NovaWorkspaceChooser(state: NovaWorkspaceUiState, store: NovaWorkspaceStore, canCancel: Boolean,
                                  onSelect: (IsgWorkspaceContext) -> Unit, onClose: () -> Unit) {
+    var access by remember { mutableStateOf<NovaWorkspaceAccess?>(null) }
     NovaPageSurface {
         Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (canCancel) NovaBackButton(onClick = onClose)
                 NovaText("Çalışma Alanı", Modifier.weight(1f), NovaTypeToken.screenTitle)
-                Box(Modifier.size(48.dp).novaRowPress(onClick = onRefresh)
+                Box(Modifier.size(48.dp).novaRowPress(onClick = store::refresh)
                     .semantics { contentDescription = "Çalışma alanlarını yenile" }, contentAlignment = Alignment.Center) {
                     NovaIcon("arrow.clockwise", 20.dp)
                 }
             }
             NovaHelpHint("Yetkili olduğunuz çalışma alanını seçin.")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NovaCompactActionButton("OSGB oluştur", "building.2.crop.circle", Modifier.weight(1f), prominent = true,
+                    identifier = "nova.workspace.create") { access = NovaWorkspaceAccess(create = true) }
+                NovaCompactActionButton("Davete katıl", "envelope.open", Modifier.weight(1f),
+                    identifier = "nova.workspace.accept") { access = NovaWorkspaceAccess(create = false) }
+            }
             if (state.phase == NovaWorkspacePhase.failed) NovaEmptyState("Çalışma alanları yüklenemedi",
                 "Bağlantınızı kontrol edip yeniden deneyin.")
             state.contexts.filter { it.kind == "osgb" }.forEach { context ->
@@ -105,7 +120,7 @@ private fun NovaWorkspaceChooser(state: NovaWorkspaceUiState, canCancel: Boolean
                             contentAlignment = Alignment.Center) { NovaIcon("building.2", 22.dp) }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                             NovaText(context.name, style = NovaTypeToken.cardTitle)
-                            NovaText(workspaceRoleTitle(context.membership.role), style = NovaTypeToken.metaQuiet)
+                            NovaText(chooserRoleTitle(context.membership.role), style = NovaTypeToken.metaQuiet)
                         }
                         NovaIcon("chevron.right", 15.dp)
                     }
@@ -113,14 +128,56 @@ private fun NovaWorkspaceChooser(state: NovaWorkspaceUiState, canCancel: Boolean
             }
         }
     }
+    val route = access
+    NovaPopup(route != null, onDismissRequest = { access = null }, identifier = "nova.workspace.access") {
+        if (route != null) NovaWorkspaceAccessEditor(route, store) { access = null; onClose() }
+    }
 }
 
-internal fun workspaceRoleTitle(role: String) = when (role) {
-    "owner" -> "Sahip"
-    "admin" -> "Yönetici"
-    "expert" -> "İSG uzmanı"
-    "viewer" -> "Görüntüleyici"
-    else -> "Üye"
+/** One create/join attempt; its mutation id survives retries so a repeated tap cannot create twice. */
+private class NovaWorkspaceAccess(val create: Boolean, val mutationId: String = UUID.randomUUID().toString())
+
+/** OSGB name or invitation code, then the store opens the joined workspace (iOS `IsgWorkspaceAccessEditor`). */
+@Composable
+private fun NovaWorkspaceAccessEditor(route: NovaWorkspaceAccess, store: NovaWorkspaceStore, onDone: () -> Unit) {
+    val celebrate = rememberNovaCelebrate()
+    val coroutines = rememberCoroutineScope()
+    var value by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val clean = value.trim()
+    val valid = if (route.create) clean.isNotEmpty() else clean.length == 64
+    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        NovaText(if (route.create) "OSGB çalışma alanı oluştur" else "OSGB davetini kabul et", style = NovaTypeToken.sectionTitle)
+        NovaHelpHint(if (route.create) "Firmalarınızı ve uzman ekibinizi kişisel kayıtlardan ayrı yönetin."
+            else "Size iletilen 64 karakterli davet kodunu girin.")
+        NovaCard(Modifier.fillMaxWidth(), padding = 14) {
+            NovaTextField(if (route.create) "OSGB adı" else "Davet kodu", value, { value = it },
+                identifier = if (route.create) "nova.workspace.name" else "nova.workspace.token", multiline = !route.create,
+                keyboardType = if (route.create) KeyboardType.Text else KeyboardType.Ascii)
+        }
+        error?.let { NovaHelpHint(it) }
+        NovaButton(if (saving) "Kaydediliyor…" else "Kaydet", {
+            saving = true; error = null
+            coroutines.launch {
+                try {
+                    if (route.create) store.createWorkspace(route.mutationId, clean) else store.acceptInvitation(route.mutationId, clean)
+                    celebrate(if (route.create) "OSGB çalışma alanı oluşturuldu." else "OSGB daveti kabul edildi.")
+                    onDone()
+                } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) {
+                    error = "İşlem tamamlanamadı. Bilgileri kontrol edip yeniden deneyin."
+                    saving = false
+                }
+            }
+        }, enabled = valid && !saving, symbol = if (saving) "hourglass" else "checkmark")
+    }
+}
+
+/** How the chooser names a membership (iOS `IsgWorkspaceChooser.role`). */
+private fun chooserRoleTitle(role: String) = when (role) {
+    "owner" -> "OSGB sahibi"
+    "admin" -> "OSGB yöneticisi"
+    else -> "İSG uzmanı"
 }
 
 /** Re-reads on every return to the foreground, like the iOS scene revalidation. */

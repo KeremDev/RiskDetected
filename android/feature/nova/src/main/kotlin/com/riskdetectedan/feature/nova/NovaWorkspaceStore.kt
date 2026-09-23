@@ -3,6 +3,7 @@ package com.riskdetectedan.feature.nova
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.data.isg.IsgWorkspaceContext
+import com.riskdetectedan.core.data.isg.IsgWorkspaceGatewayFailure
 import com.riskdetectedan.core.data.isg.IsgWorkspaceIdentity
 import com.riskdetectedan.core.data.isg.IsgWorkspaceRepository
 import com.riskdetectedan.core.data.isg.NovaExpertWorkspace
@@ -99,6 +100,24 @@ class NovaWorkspaceStore @Inject constructor(private val repository: IsgWorkspac
             companies = emptyList(), dashboard = null, selectedCompanyId = null)
         val token = generation
         request = viewModelScope.launch { resolve(context, current, token) }
+    }
+
+    /** Creates an OSGB and opens it (iOS `IsgWorkspaceStore.createWorkspace`). */
+    suspend fun createWorkspace(mutationId: String, name: String): IsgWorkspaceContext =
+        join { repository.createOsgbWorkspace(mutationId, name) }
+
+    /** Joins an OSGB by invitation code and opens it (iOS `IsgWorkspaceStore.acceptInvitation`). */
+    suspend fun acceptInvitation(mutationId: String, token: String): IsgWorkspaceContext =
+        join { repository.acceptOsgbInvitation(mutationId, token) }
+
+    private suspend fun join(action: suspend () -> IsgWorkspaceContext): IsgWorkspaceContext {
+        val current = identity ?: throw IsgWorkspaceGatewayFailure("AUTH_REQUIRED")
+        val context = action()
+        if (identity != current) throw IsgWorkspaceGatewayFailure("STALE_SESSION")
+        mutable.value = state.value.copy(contexts = (state.value.contexts.filter { it.workspaceId != context.workspaceId } + context)
+            .sortedBy { it.workspaceId.lowercase() })
+        select(context)
+        return context
     }
 
     fun selectCompany(companyId: String?) {

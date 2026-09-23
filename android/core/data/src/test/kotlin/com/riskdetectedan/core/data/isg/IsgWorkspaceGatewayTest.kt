@@ -224,4 +224,41 @@ class IsgWorkspaceGatewayTest {
                 IsgWorkspacePersonnelAdvancedKind.JOB_ROLES)
         }
     }
+
+    private val user = "30000000-0000-4000-8000-000000000001"
+    private val mutation = "31000000-0000-4000-8000-000000000001"
+    private fun joined(kind: String, owner: String = user) = buildJsonObject {
+        put("schema_version", 1); put("workspace_id", workspace); put("kind", kind); put("name", "Sentetik OSGB")
+        put("status", "active"); put("timezone", "Europe/Istanbul"); put("workspace_version", 0)
+        put("membership", buildJsonObject {
+            put("membership_id", targetMembership); put("user_id", owner); put("role", "owner"); put("status", "active")
+            put("is_practicing_expert", false); put("permission_revision", 0); put("membership_version", 0)
+        })
+        put("can_read", true); put("can_operate", true); put("can_manage_members", true); put("can_manage_billing", true)
+    }
+    @Test fun createWorkspaceSendsCleanArgumentsAndReturnsTheOsgb() = runBlocking {
+        var sent: Pair<String, JsonObject>? = null
+        val gateway = IsgWorkspaceGateway({ name, arguments -> sent = name to arguments; joined("osgb") }, { _, _ -> true }, { _, _, _ -> true }, { "current" })
+        val context = gateway.createWorkspace(user, "session", mutation, "  Sentetik OSGB ", "Europe/Istanbul")
+        assertEquals("isg_osgb_workspace_create_v1", sent?.first)
+        assertEquals("Sentetik OSGB", sent?.second?.get("p_name")?.jsonPrimitive?.content)
+        assertEquals(mutation, sent?.second?.get("p_mutation")?.jsonPrimitive?.content)
+        assertEquals(workspace, context.workspaceId)
+    }
+    @Test fun joinedWorkspaceMustBeAnOsgbOfTheCaller() = runBlocking {
+        rejected("INVALID_RESPONSE") {
+            IsgWorkspaceGateway({ _, _ -> joined("personal") }, { _, _ -> true }, { _, _, _ -> true }, { "current" })
+                .createWorkspace(user, "session", mutation, "OSGB", "Europe/Istanbul")
+        }
+        rejected("INVALID_RESPONSE") {
+            IsgWorkspaceGateway({ _, _ -> joined("osgb", owner = company) }, { _, _ -> true }, { _, _, _ -> true }, { "current" })
+                .acceptInvitation(user, "session", mutation, "a".repeat(64))
+        }
+    }
+    @Test fun invitationCodeIsValidatedBeforeAnyCall() = runBlocking {
+        val gateway = IsgWorkspaceGateway({ _, _ -> error("Must not call the server") }, { _, _ -> true }, { _, _, _ -> true }, { "current" })
+        rejected("VALIDATION_ERROR") { gateway.acceptInvitation(user, "session", mutation, "a".repeat(63)) }
+        rejected("VALIDATION_ERROR") { gateway.acceptInvitation(user, "session", mutation, "g".repeat(64)) }
+        rejected("VALIDATION_ERROR") { gateway.createWorkspace(user, "session", mutation, "   ", "Europe/Istanbul") }
+    }
 }

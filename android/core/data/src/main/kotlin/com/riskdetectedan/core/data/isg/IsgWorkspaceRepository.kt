@@ -74,6 +74,19 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
         return gateway.list(identity.userId, identity.sessionId).filter { it.kind == "osgb" }
     }
 
+    /** Creates an OSGB for the signed-in account (iOS `IsgWorkspaceAPI.createWorkspace`). */
+    suspend fun createOsgbWorkspace(mutationId: String, name: String,
+                                    timezone: String = java.util.TimeZone.getDefault().id): IsgWorkspaceContext {
+        val identity = identityNow() ?: throw IsgWorkspaceGatewayFailure("AUTH_REQUIRED")
+        return gateway.createWorkspace(identity.userId, identity.sessionId, mutationId, name, timezone)
+    }
+
+    /** Joins an OSGB with an invitation code (iOS `IsgWorkspaceAPI.acceptInvitation`). */
+    suspend fun acceptOsgbInvitation(mutationId: String, token: String): IsgWorkspaceContext {
+        val identity = identityNow() ?: throw IsgWorkspaceGatewayFailure("AUTH_REQUIRED")
+        return gateway.acceptInvitation(identity.userId, identity.sessionId, mutationId, token)
+    }
+
     fun select(context: IsgWorkspaceContext, companyId: String? = null) {
         val identity = identityNow() ?: throw IsgWorkspaceGatewayFailure("AUTH_REQUIRED")
         if (context.membership.userId != identity.userId || !context.canRead) {
