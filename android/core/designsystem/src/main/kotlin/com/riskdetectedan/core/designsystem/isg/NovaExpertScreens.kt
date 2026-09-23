@@ -14,6 +14,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -57,6 +58,8 @@ internal fun NovaSizeText(text: String, size: Float, weight: FontWeight = FontWe
 @Composable
 fun NovaDashboardScreen(data: NovaDashboardData, onNavigate: (NovaDestination) -> Unit, onPhoto: () -> Unit,
                         onAssistant: () -> Unit, showsPhotoCapture: Boolean = true, showsAssistant: Boolean = true,
+                        analysisThumbnail: (suspend (String) -> androidx.compose.ui.graphics.ImageBitmap?)? = null,
+                        onOpenAnalysis: ((String) -> Unit)? = null,
                         tracking: (@Composable () -> Unit)? = null, footer: (@Composable () -> Unit)? = null) {
     val muted = NovaColorToken.textMuted.color()
     val accentInk = NovaColorToken.accentInk.color()
@@ -99,23 +102,34 @@ fun NovaDashboardScreen(data: NovaDashboardData, onNavigate: (NovaDestination) -
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 data.recentAnalyses.forEach { analysis ->
-                    Column(Modifier.width(198.dp).height(130.dp).clip(RoundedCornerShape(18.dp)).novaControlBackground(18.dp)
-                        .novaRowPress { onNavigate(NovaDestination.analyses) }.testTag("nova.home.analysis.${analysis.id}")
-                        .padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            NovaIcon("photo.on.rectangle.angled", 18.dp, tint = accentInk)
-                            Spacer(Modifier.weight(1f))
-                            NovaIcon("chevron.right", 13.dp)
-                        }
-                        NovaText(analysis.title, style = NovaTypeToken.bodyStrong, maxLines = 2)
-                        NovaText(listOf(analysis.companyName, analysis.createdOn).filter { it.isNotEmpty() }.joinToString(" · "),
-                            style = NovaTypeToken.metaQuiet, color = muted, maxLines = 1)
+                    NovaRecentAnalysisStory(analysis, analysisThumbnail) {
+                        onOpenAnalysis?.invoke(analysis.id) ?: onNavigate(NovaDestination.analyses)
                     }
                 }
             }
         }
         if (tracking != null) Box(Modifier.padding(horizontal = 20.dp).padding(top = 22.dp)) { tracking() }
         if (footer != null) Box(Modifier.padding(horizontal = 16.dp).padding(top = 22.dp)) { footer() }
+    }
+}
+
+/** One recent analysis as a ringed photo circle (iOS `NovaRecentAnalysisStory`). */
+@Composable
+private fun NovaRecentAnalysisStory(analysis: NovaRecentAnalysis, loadPhoto: (suspend (String) -> androidx.compose.ui.graphics.ImageBitmap?)?,
+                                    onOpen: () -> Unit) {
+    var photo by remember(analysis.id) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    LaunchedEffect(analysis.id) { photo = loadPhoto?.invoke(analysis.id) }
+    val dark = LocalNovaDark.current
+    Box(Modifier.size(82.dp).clip(androidx.compose.foundation.shape.CircleShape).background(NovaColorToken.accentSoft.color())
+        .border(1.25.dp, NovaColorToken.accent.color().copy(alpha = if (dark) 0.78f else 0.6f), androidx.compose.foundation.shape.CircleShape)
+        .novaRowPress(onClick = onOpen).semantics { contentDescription = "${analysis.companyName}, ${analysis.createdOn}" }
+        .testTag("nova.home.analysis.${analysis.id}"), contentAlignment = Alignment.Center) {
+        val inner = Modifier.size(76.dp).clip(androidx.compose.foundation.shape.CircleShape)
+            .border(1.dp, Color.White.copy(alpha = if (dark) 0.14f else 0.82f), androidx.compose.foundation.shape.CircleShape)
+        val current = photo
+        if (current != null) androidx.compose.foundation.Image(current, null, inner.graphicsLayer { scaleX = 1.55f; scaleY = 1.55f },
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+        else Box(inner.background(NovaColorToken.surfaceMuted.color()))
     }
 }
 

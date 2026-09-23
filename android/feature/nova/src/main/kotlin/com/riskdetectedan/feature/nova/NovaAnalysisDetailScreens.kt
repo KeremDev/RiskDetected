@@ -645,7 +645,7 @@ private fun NovaAnalysisFilingScreen(data: NovaAnalysisDetailData, item: NovaAna
 
 /** Editing one scored finding (iOS `NovaAnalysisEditSheet`); an unfinished score is never sent. */
 @Composable
-private fun NovaAnalysisEditSheet(item: NovaAnalysisItem, method: NovaRiskMethod, onCancel: () -> Unit, save: suspend (NovaAnalysisFindingEdit) -> Unit) {
+internal fun NovaAnalysisEditSheet(item: NovaAnalysisItem, method: NovaRiskMethod, onCancel: () -> Unit, save: suspend (NovaAnalysisFindingEdit) -> Unit) {
     val coroutines = rememberCoroutineScope()
     var title by remember { mutableStateOf(item.title) }
     var category by remember { mutableStateOf(item.category.orEmpty()) }
@@ -687,7 +687,7 @@ private fun NovaAnalysisEditSheet(item: NovaAnalysisItem, method: NovaRiskMethod
 
 /** Deleting one finding says what will be lost before the press that does it. */
 @Composable
-private fun NovaAnalysisDeleteSheet(item: NovaAnalysisItem, onCancel: () -> Unit, remove: suspend () -> Unit) {
+internal fun NovaAnalysisDeleteSheet(item: NovaAnalysisItem, onCancel: () -> Unit, remove: suspend () -> Unit) {
     val coroutines = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }

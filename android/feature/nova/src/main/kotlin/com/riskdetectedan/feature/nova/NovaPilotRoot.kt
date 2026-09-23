@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.isg.IsgWorkspaceContext
@@ -61,6 +62,17 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
         onDispose { lifecycle.removeObserver(observer); services.presence.background() }
     }
     val notices = state.notices
+    // iOS home: the six newest analyses under the expert's own method, reread on each workspace/overview change.
+    var recentAnalyses by remember(identity) { mutableStateOf<List<NovaRecentAnalysis>>(emptyList()) }
+    var pendingAnalysis by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(identity, workspaceId, state.overview) {
+        recentAnalyses = runCatching {
+            services.analysis.summaries(identity, services.analysis.preferredMethod(identity), limit = 6).first.map {
+                NovaRecentAnalysis(it.id.lowercase(), NovaAnalysisPresentation.title(it.title), it.companyName ?: "Firmasız",
+                    NovaAnalysisPresentation.dateOnly(it.createdOn))
+            }
+        }.getOrDefault(emptyList())
+    }
     NovaExpertShell(state.navigation, state.userName, viewModel::apply,
         profileAvatar = state.avatar, menuRoleTitle = "İSG Uzmanı",
         menuStats = menuStats(state), menuNextAction = nextAction(state),
@@ -77,8 +89,16 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             onLogout = viewModel::signOut,
         )) { destination ->
         when (destination) {
-            NovaDestination.home -> NovaDashboardScreen(dashboardData(state), onNavigate = navigate,
-                onPhoto = { navigate(NovaDestination.newAnalysis) }, onAssistant = viewModel::showUnavailable)
+            NovaDestination.home -> NovaDashboardScreen(dashboardData(state).copy(recentAnalyses = recentAnalyses), onNavigate = navigate,
+                onPhoto = { navigate(NovaDestination.newAnalysis) }, onAssistant = viewModel::showUnavailable,
+                analysisThumbnail = { id ->
+                    services.analysis.thumbnail(id, workspace?.selection)?.let { bytes ->
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                            android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+                        }
+                    }
+                },
+                onOpenAnalysis = { id -> pendingAnalysis = id; navigate(NovaDestination.analyses) })
             NovaDestination.notifications -> NovaNoticeCenterScreen(services.noticeClient(identity),
                 onOpen = { raw -> NovaDestination.entries.firstOrNull { it.name == raw }?.let(navigate) },
                 onBack = { navigate(NovaDestination.home) })
@@ -88,7 +108,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             }
             NovaDestination.findings -> if (state.overviewFailed) NovaPilotStatusPage(destination, state, onWorkspaceSwitch, viewModel::reload) {
                 navigate(NovaDestination.home)
-            } else NovaFindingsDestination(identity, NovaFindingsSurface.board, state.writable, navigate)
+            } else NovaFindingsDestination(identity, NovaFindingsSurface.board, state.writable, navigate, workspace?.selection)
             NovaDestination.newFinding -> NovaFindingsDestination(identity, NovaFindingsSurface.addFinding, state.writable, navigate)
             NovaDestination.companies, NovaDestination.newCompany -> key(destination) {
                 CompaniesDestination(services, identity, state, workspace, navigate, viewModel::reload, startCreating = destination == NovaDestination.newCompany)
@@ -137,7 +157,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             NovaDestination.reportArchive -> NovaReportArchive(services.reportClient(identity), slots.analysisReports,
                 onBack = { navigate(NovaDestination.reports) })
             NovaDestination.memory -> NovaReportArchive(services.reportClient(identity), slots.analysisReports, onBack = { navigate(NovaDestination.home) })
-            NovaDestination.analyses -> AnalysesDestination(services, identity, workspace, state.writable, navigate)
+            NovaDestination.analyses -> AnalysesDestination(services, identity, workspace, state.writable, navigate, pendingAnalysis) { pendingAnalysis = null }
             NovaDestination.newAnalysis -> PhotoAnalysisDestination(services, identity, workspace, state.writable, navigate)
             NovaDestination.checklists -> NovaChecklistScreen(services.checklistClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
         }
@@ -217,9 +237,10 @@ private object AnalysisCanvasTier {
  */
 @Composable
 private fun AnalysesDestination(services: NovaRootServices, identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiState?, canWrite: Boolean,
-                                navigate: (NovaDestination) -> Unit) {
+                                navigate: (NovaDestination) -> Unit, initialAnalysis: String? = null, onInitialOpened: () -> Unit = {}) {
     var reports by rememberSaveable { mutableStateOf(false) }
     var open by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(initialAnalysis) { initialAnalysis?.let { open = it; onInitialOpened() } }
     val context = workspace?.selection
     val cached = remember(identity) { mutableStateOf<NovaRiskMethod?>(null) }
     val method: suspend () -> NovaRiskMethod = { cached.value ?: services.analysis.preferredMethod(identity).also { cached.value = it } }

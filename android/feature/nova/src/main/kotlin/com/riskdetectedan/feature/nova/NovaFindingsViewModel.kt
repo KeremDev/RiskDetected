@@ -68,6 +68,7 @@ fun novaJpeg(bitmap: Bitmap, maxSide: Int = 2048): ByteArray {
 class NovaFindingsViewModel @Inject constructor(
     val service: NovaNonconformityService,
     val files: NovaFileLibraryService,
+    val analysis: com.riskdetectedan.core.data.nova.NovaAnalysisService,
 ) : ViewModel() {
     suspend fun board(identity: IsgWorkspaceIdentity) = service.board(identity)
     suspend fun companies(identity: IsgWorkspaceIdentity) = runCatching { service.companyOptions(identity) }.getOrDefault(emptyList())

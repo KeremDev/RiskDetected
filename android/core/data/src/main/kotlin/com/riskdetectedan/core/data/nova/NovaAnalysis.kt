@@ -636,6 +636,38 @@ class NovaAnalysisService @Inject constructor(
 
     suspend fun filingWorkplaces(identity: IsgWorkspaceIdentity, companyId: String) = nonconformity.filingWorkplaces(NovaCompanyScope(identity, companyId))
 
+    /** The original analysis item behind a filed nonconformity (iOS `RecordFindingPresentation`). */
+    data class RecordFinding(val analysisId: String, val item: NovaAnalysisItem, val section: NovaAnalysisSectionKind, val method: NovaRiskMethod,
+                             val photo: ByteArray?, val analysisTitle: String, val companyName: String?, val createdOn: String)
+
+    @Serializable private data class FindingLink(@SerialName("analysis_id") val analysisId: String)
+
+    /** Resolves a record born from a photo finding back to that finding, its analysis and its picture (iOS `recordFinding`). */
+    suspend fun recordFinding(entry: NovaNonconformityEntry, identity: IsgWorkspaceIdentity, context: IsgWorkspaceContext?,
+                              method: NovaRiskMethod): RecordFinding {
+        val reference = entry.row.sourceRef?.lowercase()
+        organization()?.let { ticket ->
+            val analysis = call("source", buildJsonObject { put("record_id", entry.id) }, ticket)["analysis"]?.jsonObject?.get("id")
+                ?.jsonPrimitive?.contentOrNull ?: throw NovaAnalysisException("unavailable")
+            val detail = detail(analysis, identity, method)
+            val (section, item) = detail.sections.asSequence().flatMap { section -> section.items.asSequence().map { section.kind to it } }
+                .firstOrNull { (_, item) -> reference != null && (item.id.lowercase() == reference || reference.contains(item.id.lowercase())) }
+                ?: throw NovaAnalysisException("unavailable")
+            return RecordFinding(analysis, item, section, method, photos(analysis, context).firstOrNull(), detail.title,
+                detail.companyName ?: entry.companyName, detail.createdOn)
+        }
+        check(identity)
+        if (!entry.row.cameFromFinding || reference == null) throw NovaAnalysisException("denied")
+        val link = client.postgrest.from("findings").select(Columns.list("analysis_id")) { filter { eq("id", reference) }; limit(1) }
+            .decodeList<FindingLink>().firstOrNull() ?: throw NovaAnalysisException("unavailable")
+        val detail = detail(link.analysisId, identity, method)
+        val (section, item) = detail.sections.asSequence().flatMap { section -> section.items.asSequence().map { section.kind to it } }
+            .firstOrNull { it.second.id.equals(reference, true) } ?: throw NovaAnalysisException("unavailable")
+        val pictures = photos(link.analysisId, null)
+        val photo = item.photoIndices.firstOrNull()?.takeIf { it in 1..pictures.size }?.let { pictures[it - 1] } ?: pictures.firstOrNull()
+        return RecordFinding(link.analysisId, item, section, method, photo, detail.title, entry.companyName, detail.createdOn)
+    }
+
     /** Where a photo analysis is on its way (iOS `AnalysisProgressUpdate`). */
     enum class Progress { uploadingPhotos, creatingAnalysis, queued, analyzing }
 

@@ -2,6 +2,7 @@ package com.riskdetectedan.feature.nova
 
 import androidx.compose.runtime.*
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.riskdetectedan.core.data.isg.IsgWorkspaceContext
 import com.riskdetectedan.core.data.isg.IsgWorkspaceIdentity
 import com.riskdetectedan.core.data.nova.NovaCompanyOption
 import com.riskdetectedan.core.data.nova.NovaCompanyScope
@@ -16,7 +17,8 @@ enum class NovaFindingsSurface { board, addFinding }
  */
 @Composable
 fun NovaFindingsDestination(identity: IsgWorkspaceIdentity, surface: NovaFindingsSurface, canWrite: Boolean,
-                            onNavigate: (NovaDestination) -> Unit, viewModel: NovaFindingsViewModel = hiltViewModel()) {
+                            onNavigate: (NovaDestination) -> Unit, context: IsgWorkspaceContext? = null,
+                            viewModel: NovaFindingsViewModel = hiltViewModel()) {
     var companies by remember { mutableStateOf<List<NovaCompanyOption>>(emptyList()) }
     var manual by remember { mutableStateOf(false) }
     var record by remember { mutableStateOf<NovaNonconformityEntry?>(null) }
@@ -40,6 +42,11 @@ fun NovaFindingsDestination(identity: IsgWorkspaceIdentity, surface: NovaFinding
     }
     val entry = record
     NovaPopup(entry != null, { record = null; revision++ }, identifier = "nova.record") {
-        if (entry != null) NovaNonconformityRecordSheet(entry, viewModel.recordClient(identity, entry), canWrite)
+        if (entry != null) {
+            // A record born from a photo finding reuses the finding page; the record sheet stands in when the source is gone.
+            val record = @Composable { NovaNonconformityRecordSheet(entry, viewModel.recordClient(identity, entry), canWrite) }
+            if (entry.row.cameFromFinding) key(entry.id) { NovaFiledFindingSheet(entry, identity, context, viewModel.analysis, canWrite, record) }
+            else record()
+        }
     }
 }
