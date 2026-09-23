@@ -293,8 +293,13 @@ test("L10N-004", "Swift user-facing hard-coded literal debt is zero", () => {
 test("L10N-005", "backend user-facing literal scan matches approved baseline", () => {
   assertLiteralSurfaceSnapshot(
     ["backend"],
-    248,
-    "e9c8fbe0e5b90368b97774e227d086fd7f45438b858bf228696576d1be7449b8",
+    // 2026-09-24: reviewed against 63a338fe: 23 new units, none removed.
+    // 21 are Turkish fallbacks and PDF headings in the OSGB photo-analysis
+    // job (process-isg-workspace-jobs); 2 are the Turkish-only notebook
+    // reminder push (process-notebook-reminders), still to be paired with
+    // English.
+    271,
+    "eeaa1a722004e243ea248cde900a88466e55d99e9d3603046f2f51883f567a2c",
   );
 });
 
@@ -312,8 +317,11 @@ test("L10N-007", "notification/email literal scan matches approved baseline", ()
   assertLiteralSurfaceSnapshot(
     ["notification", "push", "email"],
     // Five baseline diagnostics were logs, not notification/email messages.
-    57,
-    "eb36ad1476cfc38f7097e290a5ee00950be8e821629c6a73068faae877dd562e",
+    // 2026-09-24: reviewed against 63a338fe: 12 new units, none removed; the
+    // OSGB workspace transactional notifications (overdue, due soon,
+    // assignment, report ready, handover), paired TR/EN.
+    69,
+    "22845f843f2e21aab5a7ff22dbd3bfbf4c468fbdaa9d6bad2c0f070869e5d239",
   );
 });
 
@@ -775,7 +783,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 2_387, "Turkish localized-unit count");
+  assert.equal(rows.length, 6_312, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
@@ -799,7 +807,14 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // (24 dark-paywall labels/features, trial and cancellation disclosures).
     // All other Turkish catalog units are unchanged; owner-requested copy.
     // 2026-09-08: ATT prompt removed; original catalog snapshot restored.
-    "4c07bb59d61233843a9125b02f5b7f46f27102e7172cfb5f18d7e5506ec19e7d",
+    // 2026-09-24: reviewed against 63a338fe: 3,925 new units (Localizable
+    // 3,765, Reports 116, Analysis 44) from the İSGADA/Nova screens and the
+    // L10N-004 move of Swift copy into the catalogs; none removed. Two
+    // existing units changed on purpose: CFBundleDisplayName "RiskDetected"
+    // -> "İSGADA" (matches INFOPLIST_KEY_CFBundleDisplayName since 7fa86431)
+    // and the history search prompt "Analiz ara" -> "Analiz, firma veya
+    // sektör ara".
+    "e2d0224a2e00a77c3966e0ea93eae59ddfee0ca22ee82c973fab046a9555e54d",
     "Turkish catalog snapshot changed",
   );
   assert.equal(
