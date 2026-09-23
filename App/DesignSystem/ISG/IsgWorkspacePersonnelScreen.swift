@@ -5,7 +5,7 @@ enum IsgPersonnelSection: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .employee: return RDLocalization.string("localizable.nova.workspace.personnel.employees", table: .localizable, fallback: "Personel")
+        case .employee: return RDLocalization.string("localizable.nova.workspace.personnel.employees", table: .localizable, fallback: "Personeller")
         case .workplace: return RDLocalization.string("localizable.nova.workspace.personnel.workplaces", table: .localizable, fallback: "İşyerleri")
         case .department: return RDLocalization.string("localizable.nova.workspace.personnel.departments", table: .localizable, fallback: "Departmanlar")
         case .jobRole: return "Görevler"
@@ -109,7 +109,7 @@ struct IsgWorkspacePersonnelScreen: View {
                             "localizable.nova.workspace.domain.empty", table: .localizable,
                             fallback: "Henüz %@ kaydı yok."), section.title),
                             message: RDLocalization.string("localizable.nova.workspace.personnel.empty.detail",
-                                table: .localizable, fallback: "Kayıt ekleyerek firmanın personel organizasyonunu güvenli biçimde yönetin."))
+                                table: .localizable, fallback: "Firma personel dizinini başlatmak için işyeri, departman veya personel ekleyin."))
                     } else { records }
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
                     .novaAsyncContent(isLoading: loading)
@@ -234,7 +234,7 @@ struct IsgWorkspacePersonnelScreen: View {
         }
     }
     private var addTitle: String { String(format: RDLocalization.string(
-        "localizable.nova.workspace.personnel.add", table: .localizable, fallback: "%@ ekle"), section.title) }
+        "localizable.nova.workspace.personnel.add", table: .localizable, fallback: "Kayıt ekle"), section.title) }
     private func matches(_ values: String...) -> Bool {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
         return needle.isEmpty || values.contains { $0.localizedCaseInsensitiveContains(needle) }
@@ -317,8 +317,8 @@ private struct IsgWorkspaceDirectoryEditor: View {
         TextField(label, text: text).font(NovaFont.font(.body)).padding(14).novaControlBackground(cornerRadius: 14)
     }
     private var addTitle: String { String(format: RDLocalization.string("localizable.nova.workspace.personnel.add",
-        table: .localizable, fallback: "%@ ekle"), route.kind == .workplace ? IsgPersonnelSection.workplace.title : IsgPersonnelSection.department.title) }
-    private var editTitle: String { RDLocalization.string("localizable.nova.workspace.personnel.edit", table: .localizable, fallback: "Kaydı düzenle") }
+        table: .localizable, fallback: "Kayıt ekle"), route.kind == .workplace ? IsgPersonnelSection.workplace.title : IsgPersonnelSection.department.title) }
+    private var editTitle: String { RDLocalization.string("localizable.nova.workspace.personnel.edit", table: .localizable, fallback: "Düzenle") }
     private var saveTitle: String { working ? RDLocalization.string("localizable.nova.workspace.saving", table: .localizable, fallback: "Kaydediliyor…") : RDLocalization.string("localizable.nova.editor.kaydet.8f6f32fd", table: .localizable, fallback: "Kaydet") }
     private func save() { mutate(route.entry == nil ? "create" : "edit") }
     private func archive() { mutate("archive") }
@@ -374,13 +374,13 @@ private struct IsgWorkspaceEmployeeEditor: View {
                 TextField(RDLocalization.string("localizable.nova.workspace.personnel.fullname", table: .localizable, fallback: "Ad soyad"), text: $name).padding(14).novaControlBackground(cornerRadius: 14)
                 if !departments.isEmpty {
                     Picker(IsgPersonnelSection.department.title, selection: $departmentID) {
-                        Text(RDLocalization.string("localizable.nova.workspace.personnel.department.none", table: .localizable, fallback: "Departman seçilmedi")).tag(UUID?.none)
+                        Text(RDLocalization.string("localizable.nova.workspace.personnel.department.none", table: .localizable, fallback: "Departman yok")).tag(UUID?.none)
                         ForEach(departments) { Text($0.name).tag(Optional($0.id)) }
                     }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
                 }
-                DatePicker(RDLocalization.string("localizable.nova.workspace.personnel.hired", table: .localizable, fallback: "İşe giriş"), selection: $hiredOn, displayedComponents: .date).padding(12).novaControlBackground(cornerRadius: 14)
+                DatePicker(RDLocalization.string("localizable.nova.workspace.personnel.hired", table: .localizable, fallback: "İşe giriş tarihi"), selection: $hiredOn, displayedComponents: .date).padding(12).novaControlBackground(cornerRadius: 14)
                 Toggle(RDLocalization.string("localizable.nova.workspace.personnel.has.end", table: .localizable, fallback: "Bitiş tarihi var"), isOn: $hasEnd).padding(12).novaControlBackground(cornerRadius: 14)
-                if hasEnd { DatePicker(RDLocalization.string("localizable.nova.workspace.personnel.ends", table: .localizable, fallback: "Bitiş"), selection: $endsBefore, in: hiredOn..., displayedComponents: .date).padding(12).novaControlBackground(cornerRadius: 14) }
+                if hasEnd { DatePicker(RDLocalization.string("localizable.nova.workspace.personnel.ends", table: .localizable, fallback: "Bitiş tarihi"), selection: $endsBefore, in: hiredOn..., displayedComponents: .date).padding(12).novaControlBackground(cornerRadius: 14) }
                 IsgWorkspaceInlineAttachmentField(
                     title: "Personel belgesi ekle (isteğe bağlı)",
                     attachment: $attachment)

@@ -279,7 +279,7 @@ struct NovaKatipScreen: View {
     @ViewBuilder private func list(_ board: NovaKatipBoard) -> some View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.katip.empty.title",
-                table: .localizable, fallback: "Henüz sözleşme kaydı yok"),
+                table: .localizable, fallback: "Sözleşme kaydı yok"),
                 message: "İSG hizmeti sözleşmesini ekleyerek başlangıç, bitiş ve bağlı dosya bilgilerini takip edebilirsiniz.")
         } else {
             VStack(spacing: 10) {

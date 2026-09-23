@@ -261,7 +261,7 @@ struct NovaAnalysisDetailScreen: View {
                 }
                 if data.isProjectionMissing {
                     NovaText(text: RDLocalization.string("localizable.nova.analysis.projection.missing", table: .localizable,
-                        fallback: "Bu eski analizde ek öneri bölümleri bulunmuyor; kayıtlı risk bulguları gösteriliyor."), style: .metaQuiet)
+                        fallback: "Bu eski analiz kayıtlı bulgularından gösteriliyor; bazı ek öneri bölümleri bulunmayabilir."), style: .metaQuiet)
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -731,7 +731,7 @@ private struct NovaAnalysisItemDetailScreen: View {
             HStack(spacing: 7) {
                 NovaStatusPill(
                     label: section.isScored ? NovaNonconformityWords.band(item.band(method))
-                        : RDLocalization.string("localizable.nova.analysis.section.expert", table: .localizable, fallback: "Uzman görüşü"),
+                        : RDLocalization.string("localizable.nova.analysis.section.expert", table: .localizable, fallback: "Uzman Görüşü"),
                     status: section.isScored ? NovaNonconformityWords.tone(item.band(method)) : .warning,
                     showsDot: true
                 )

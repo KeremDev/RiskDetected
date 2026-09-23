@@ -375,7 +375,7 @@ struct NovaPilotFindingsGate: View {
             let visible = try await analysisFilingService.list(current)
             guard visible.contains(where: { $0.id == filedRow.id && $0.state == filedRow.state }) else {
                 return .failed(RDLocalization.string("localizable.nova.bridge.outcome.verify.failed", table: .localizable,
-                    fallback: "Kayıt oluşturuldu ancak listede doğrulanamadı. Listeyi yenileyip tekrar kontrol edin."))
+                    fallback: "İşlem sonucu doğrulanamadı. Yeniden denemeden önce listeyi yenileyin."))
             }
             boardRevision = UUID()
             return result.alreadyOpen ? .alreadyOpen : .opened
@@ -440,7 +440,7 @@ struct NovaPilotFindingsGate: View {
             let visible = try await service.list(target)
             guard visible.contains(where: { $0.id == result.row.id }) else {
                 return RDLocalization.string("localizable.nova.bridge.outcome.verify.failed", table: .localizable,
-                    fallback: "Kayıt oluşturuldu ancak listede doğrulanamadı. Listeyi yenileyip tekrar kontrol edin.")
+                    fallback: "İşlem sonucu doğrulanamadı. Yeniden denemeden önce listeyi yenileyin.")
             }
             if !result.alreadyOpen {
                 NotificationCenter.default.post(name: Notification.Name("isgada.mutation.succeeded"), object: identity.userID,

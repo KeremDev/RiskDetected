@@ -495,7 +495,7 @@ struct NovaCompanyWorkspace: View {
     }
     private func moduleTag(overdue: Int, upcoming: Int, total: Int) -> (String, NovaStatus)? {
         guard total > 0 else { return nil }
-        if overdue > 0 { return (RDLocalization.string("localizable.nova.document.status.expired", table: .localizable, fallback: "Süresi geçti"), .danger) }
+        if overdue > 0 { return (RDLocalization.string("localizable.nova.document.status.expired", table: .localizable, fallback: "Süresi doldu"), .danger) }
         if upcoming > 0 { return (RDLocalization.string("localizable.nova.document.status.due.soon", table: .localizable, fallback: "Yaklaşıyor"), .warning) }
         return (RDLocalization.string("localizable.nova.document.status.valid", table: .localizable, fallback: "Güncel"), .success)
     }
@@ -595,7 +595,7 @@ struct NovaCompanyWorkspace: View {
     private func appointmentStats(_ board: NovaAppointmentBoard) -> some View {
         statStrip([
             ("Aktif", "checkmark.circle", board.count(.active)),
-            (RDLocalization.string("localizable.nova.document.status.due.soon", table: .localizable, fallback: "Yaklaşan"), "clock", board.count(.upcoming)),
+            (RDLocalization.string("localizable.nova.document.status.due.soon", table: .localizable, fallback: "Yaklaşıyor"), "clock", board.count(.upcoming)),
             ("Sona eren", "calendar.badge.exclamationmark", board.count(.ended))
         ], identifier: "company.section.appointment.stats")
     }
@@ -606,8 +606,8 @@ struct NovaCompanyWorkspace: View {
     private func trackingStats(_ row: NovaModuleTrackingSnapshot.Summary, identifier: String) -> some View {
         statStrip([
             (RDLocalization.string("localizable.nova.company.metric.records", table: .localizable, fallback: "Kayıt"), "doc.text", row.total),
-            (RDLocalization.string("localizable.nova.document.status.expired", table: .localizable, fallback: "Süresi geçti"), "exclamationmark.triangle", row.overdue),
-            (RDLocalization.string("localizable.nova.document.status.due.soon", table: .localizable, fallback: "Yaklaşan"), "clock", row.upcoming)
+            (RDLocalization.string("localizable.nova.document.status.expired", table: .localizable, fallback: "Süresi doldu"), "exclamationmark.triangle", row.overdue),
+            (RDLocalization.string("localizable.nova.document.status.due.soon", table: .localizable, fallback: "Yaklaşıyor"), "clock", row.upcoming)
         ], identifier: identifier)
     }
     private func sectionView(_ section: NovaCompanySection, outlinesWhenExpanded: Bool = true) -> some View {
@@ -744,7 +744,7 @@ struct NovaCompanyWorkspace: View {
                     fallback: "Personel listesi alınamadı"), message: personnelError)
             } else if personnelRows.isEmpty {
                 NovaEmptyState(title: personnelQuery.isEmpty
-                    ? RDLocalization.string("localizable.nova.personnel.screens.henuz.personel.yok.d4c4f866", table: .localizable, fallback: "Henüz personel yok")
+                    ? RDLocalization.string("localizable.nova.personnel.screens.henuz.personel.yok.d4c4f866", table: .localizable, fallback: "Henüz personel yok.")
                     : RDLocalization.string("localizable.nova.appointment.form.person.empty", table: .localizable, fallback: "Eşleşen personel yok"),
                     message: personnelQuery.isEmpty
                         ? RDLocalization.string("localizable.nova.company.personnel.empty.detail", table: .localizable,
@@ -1283,12 +1283,12 @@ struct NovaCompanyWorkspace: View {
                     statStrip([
                         ("Toplam", "checklist", nonconformityCount ?? 0),
                         (RDLocalization.string("localizable.nova.nonconformity.state.open", table: .localizable, fallback: "Açık"), "circle.dotted", openNonconformityCount),
-                        (RDLocalization.string("localizable.nova.document.status.expired", table: .localizable, fallback: "Süresi geçti"), "exclamationmark.triangle", overdueNonconformityCount)
+                        (RDLocalization.string("localizable.nova.document.status.expired", table: .localizable, fallback: "Süresi doldu"), "exclamationmark.triangle", overdueNonconformityCount)
                     ], identifier: "company.section.nonconformities.stats")
                     let records = rows.filter { $0.kind == .nonconformity }
                     if records.isEmpty {
                         NovaEmptyState(title: RDLocalization.string("localizable.nova.nonconformity.empty", table: .localizable,
-                                fallback: "Henüz uygunsuzluk kaydı yok"),
+                                fallback: "Henüz uygunsuzluk kaydı yok."),
                             message: RDLocalization.string("localizable.nova.company.nonconformity.empty.detail", table: .localizable,
                                 fallback: "Analiz bulgularını firmaya aktarabilir veya yeni bir uygunsuzluk kaydı açabilirsiniz."))
                     } else {

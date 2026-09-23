@@ -264,7 +264,7 @@ struct NovaPPEScreen: View {
     @ViewBuilder private func list(_ board: NovaPPEBoard) -> some View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.ppe.empty.title",
-                table: .localizable, fallback: "Henüz zimmet kaydı yok"),
+                table: .localizable, fallback: "Zimmet kaydı yok"),
                 message: "Firma personeline verilen kişisel koruyucu donanımı kaydedebilir ve zimmet formunu oluşturabilirsiniz.")
         } else {
             VStack(spacing: 10) {

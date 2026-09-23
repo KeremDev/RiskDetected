@@ -320,7 +320,7 @@ struct NovaRiskScreen: View {
     @ViewBuilder private func list(_ board: NovaRiskBoard) -> some View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.risk.empty.title", table: .localizable,
-                fallback: "Henüz risk değerlendirmesi kaydı yok"),
+                fallback: "Kayıt yok"),
                 message: "Risk değerlendirmesi ekleyerek sürümleri, geçerlilik tarihini ve bağlı dosyayı tek yerden takip edebilirsiniz.")
         } else {
             VStack(spacing: 10) {

@@ -222,5 +222,5 @@ enum NovaAppointmentWords {
         fallback: "Ürün bir işyeri için kaç kişi gerektiğini söylemez; onaylanmış bir sayı kataloğu yok.")
     static let letterNote = RDLocalization.string("localizable.nova.appointment.letter.note",
         table: .localizable,
-        fallback: "Atama yazısının kendisi burada tutulmaz; yalnızca arşivdeki konumu kaydedilir.")
+        fallback: "Atama yazısı uygulamada saklanmaz. Burada yalnız aslının nerede tutulduğunu not edersiniz.")
 }

@@ -291,7 +291,7 @@ struct NovaEmergencyPlanScreen: View {
     @ViewBuilder private func list(_ board: NovaEmergencyBoard) -> some View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.emergency.empty.title",
-                table: .localizable, fallback: "Henüz acil durum planı yok"),
+                table: .localizable, fallback: "Plan yok"),
                 message: "Plan ekleyerek ekibi, dosyayı ve geçerlilik tarihini dijital ortamda takip edebilirsiniz.")
         } else {
             VStack(spacing: 10) {

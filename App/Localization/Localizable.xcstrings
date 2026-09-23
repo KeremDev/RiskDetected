@@ -16739,6 +16739,7 @@
         }
       }
     },
+    "localizable.nova.editor.kaydet.8f6f32fd": {"comment":"nova_workspace personnel editor save action; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Save"}},"tr":{"stringUnit":{"state":"translated","value":"Kaydet"}}}},
     "localizable.nova.education.certificates.incomplete": {
       "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
       "extractionState": "manual",
@@ -27814,13 +27815,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Overdue · %d"
+            "value": "Overdue"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Termini geçen · %d"
+            "value": "Termini geçen"
           }
         }
       }

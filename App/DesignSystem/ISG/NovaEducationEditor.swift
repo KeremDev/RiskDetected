@@ -751,7 +751,7 @@ struct NovaEducationEditor: View {
                     .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
             }
             if basicCycle && scheduleDays.count < requiredLessonUnits {
-            Button(RDLocalization.string("localizable.nova.education.schedule.addday", table: .localizable, fallback: "Gün ekle"), systemImage: "calendar.badge.plus") {
+            Button(RDLocalization.string("localizable.nova.education.schedule.addday", table: .localizable, fallback: "Gerçekleşen gün ekle"), systemImage: "calendar.badge.plus") {
                 let last = scheduleDays.last?.starts ?? Date()
                 scheduleDays.append(.init(starts: NovaEducationClock.calendar.date(byAdding: .day, value: 1, to: last) ?? last, lessonCount: 1))
                 rebalanceScheduleDays()

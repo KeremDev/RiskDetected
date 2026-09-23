@@ -422,7 +422,7 @@ enum NovaChecklistWords {
         fallback: "Olumsuz yanıt kendiliğinden uygunsuzluk kaydı açmaz. Kayıt açmak sizin seçiminizdir.")
     /// The sentence the templates screen carries at the top.
     static let catalogNotice = RDLocalization.string("localizable.nova.checklist.product.note", table: .localizable,
-        fallback: "Hazır listeler saha kontrolünü yapılandıran uzman yardımcılarıdır. Mevzuata uygunluk kararı değildir; firma, iş ve ekipman kapsamını uzman doğrular.")
+        fallback: "Ürün hazır kontrol listesi göndermez. Onaylanmış bir soru kataloğu yok; listeyi siz yazarsınız.")
     /// The sentence beside a published version.
     static let selfApproved = RDLocalization.string("localizable.nova.checklist.approval.note", table: .localizable,
         fallback: "Yayımlamak listenin sizin onayınızdan geçtiği anlamına gelir; mevzuat onayı değildir.")

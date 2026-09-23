@@ -276,7 +276,7 @@ struct NovaAppointmentScreen: View {
     @ViewBuilder private func list(_ board: NovaAppointmentBoard) -> some View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.appointment.empty.title",
-                table: .localizable, fallback: "Henüz atama kaydı yok"),
+                table: .localizable, fallback: "Atama kaydı yok"),
                 message: "Firma personelinden temsilci, destek elemanı veya ekip üyesi seçerek görev süresini takip edebilirsiniz.")
         } else {
             VStack(spacing: 10) {

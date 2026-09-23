@@ -396,7 +396,7 @@ struct NovaAnalysisListScreen: View {
             }
         } else if visible.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.analysis.list.empty", table: .localizable,
-                fallback: "Henüz analiz kaydı yok"),
+                fallback: "Görüntülenecek analiz yok."),
                 message: RDLocalization.string("localizable.nova.analysis.list.empty.detail", table: .localizable,
                     fallback: "Fotoğraf veya metin analizi oluşturarak riskleri, uzman görüşlerini ve önerileri dijital ortamda saklayabilirsiniz."))
         } else {

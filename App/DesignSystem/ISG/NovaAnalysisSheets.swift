@@ -318,7 +318,7 @@ struct NovaFiledFindingSheet: View {
                 NovaNonconformityRecordSheet(entry: entry, client: fallbackClient, canWrite: canWrite)
             } else {
                 NovaLoadingView(message: RDLocalization.string("localizable.nova.analysis.loading", table: .localizable,
-                    fallback: "Bulgu yükleniyor…"))
+                    fallback: "Analiz yükleniyor…"))
                     .padding(20).novaPopupContentSize()
             }
         }

@@ -119,7 +119,7 @@ private struct IsgWorkspaceChooser: View {
                                 fallback: "Çalışma alanlarını yenile"))
                     }
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.choose.hint", table: .localizable,
-                        fallback: "Yetkili olduğunuz çalışma alanını seçin."))
+                        fallback: "Kişisel kayıtlarınız ile yetkili olduğunuz OSGB alanları birbirinden ayrı tutulur."))
                     HStack(spacing: 8) {
                         NovaCompactActionButton(title: RDLocalization.string("localizable.nova.workspace.create", table: .localizable,
                             fallback: "OSGB oluştur"), symbol: "building.2.crop.circle", prominent: true) {
@@ -227,7 +227,7 @@ private struct IsgWorkspaceAccessEditor: View {
             if let error { NovaHelpHint(text: error) }
             NovaButton(label: saving
                 ? RDLocalization.string("localizable.nova.workspace.saving", table: .localizable, fallback: "Kaydediliyor…")
-                : RDLocalization.string("localizable.nova.personnel.save", table: .localizable, fallback: "Kaydet"),
+                : RDLocalization.string("localizable.nova.personnel.save", table: .localizable, fallback: "Personeli kaydet"),
                 symbol: saving ? "hourglass" : "checkmark", isEnabled: valid && !saving) { save() }
         }.padding(18).novaPopupContentSize()
     }

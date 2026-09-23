@@ -813,7 +813,7 @@ struct NovaShellPanel: View {
             NovaText(text: RDLocalization.string("localizable.nova.expert.shell.ne.eklemek.istiyorsun.ee07893e", table: .localizable, fallback: "Ne eklemek istiyorsun?"), style: .sectionTitle).padding(.horizontal, 4).padding(.bottom, 4)
             if isManager {
                 managerQuickAction(title: "Firma ekle", detail: RDLocalization.string("localizable.nova.manager.company.add.detail", table: .localizable,
-                    fallback: "Yeni firmayı ekleyin."), symbol: "building.2.crop.circle", action: onCompanyCreate)
+                    fallback: "Yeni firmayı OSGB çalışma alanına ekleyin."), symbol: "building.2.crop.circle", action: onCompanyCreate)
                 managerQuickAction(title: "Uzman ekle", detail: RDLocalization.string("localizable.nova.manager.expert.add.detail", table: .localizable,
                     fallback: "Ekibinize yeni bir İSG uzmanı davet edin."), symbol: "person.badge.plus", action: onExpertCreate)
                 managerQuickAction(title: RDLocalization.string("localizable.nova.manager.assignment", table: .localizable,

@@ -272,7 +272,7 @@ struct NovaDrillScreen: View {
     @ViewBuilder private func list(_ board: NovaDrillBoard) -> some View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.drill.empty.title",
-                table: .localizable, fallback: "Henüz tatbikat kaydı yok"),
+                table: .localizable, fallback: "Tatbikat kaydı yok"),
                 message: "Gerçekleşen tatbikatı fotoğraf, dosya, süre ve senaryo bilgileriyle kaydedip takip edebilirsiniz.")
         } else {
             VStack(spacing: 10) {

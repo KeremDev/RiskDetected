@@ -310,7 +310,7 @@ struct HistoryView: View {
             Image(systemName: "magnifyingglass")
                 .font(RDTypography.font(size: RDFontScale.size(14), weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
-            TextField(RDLocalization.string("localizable.history.view.analiz.ara.39912a48", table: .localizable, fallback: "Analiz ara"), text: $search)
+            TextField(RDLocalization.string("localizable.history.view.analiz.ara.39912a48", table: .localizable, fallback: "Analiz, firma veya sektör ara"), text: $search)
                 .font(RDTypography.font(size: RDFontScale.size(14), design: .rounded))
                 .foregroundStyle(Color.rdBlack)
         }

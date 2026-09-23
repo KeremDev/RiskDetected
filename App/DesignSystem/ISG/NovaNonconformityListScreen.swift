@@ -169,9 +169,9 @@ struct NovaNonconformityListScreen: View {
         } else if visible.isEmpty {
             NovaEmptyState(title: filter.isEmpty
                 ? RDLocalization.string("localizable.nova.nonconformity.empty", table: .localizable,
-                    fallback: "Henüz uygunsuzluk kaydı yok")
+                    fallback: "Henüz uygunsuzluk kaydı yok.")
                 : RDLocalization.string("localizable.nova.nonconformity.empty.filtered", table: .localizable,
-                    fallback: "Bu filtrelerle eşleşen kayıt yok"),
+                    fallback: "Bu filtrelerle eşleşen kayıt yok."),
                 message: filter.isEmpty
                     ? RDLocalization.string("localizable.nova.nonconformity.empty.detail", table: .localizable,
                         fallback: "Hızlıca uygunsuzluk ekleyebilir, düzeltme sürecini ve terminleri dijital ortamda takip edebilirsiniz.")

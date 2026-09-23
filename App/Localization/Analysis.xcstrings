@@ -6757,6 +6757,7 @@
         }
       }
     },
+    "analysis.result_hub.title": {"comment":"RiskDetected 2.0 result UI copy: result screen title; placeholders: none; review: release migration","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Analysis Result"}},"tr":{"stringUnit":{"state":"translated","value":"Analiz Sonucu"}}}},
     "analysis.result_hub.training.group.all": {
       "comment": "Training result category filter; placeholders: none; review: human",
       "extractionState": "manual",
