@@ -21,6 +21,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -30,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import com.riskdetectedan.core.data.nova.*
@@ -295,5 +299,168 @@ internal fun NovaEducationCertificateScreen(client: NovaTrainingClient, session:
             NovaPageHeading(result?.snapshot?.number.orEmpty().ifEmpty { "Eğitim belgesi" }, onBack = { showingDocument = false })
             pages.forEachIndexed { index, page -> Image(page.asImageBitmap(), "Belge sayfası ${index + 1}", Modifier.fillMaxWidth()) }
         }
+    }
+}
+
+/**
+ * Where a saved training lands (iOS `NovaEducationCertificatesPage`): one card per participant. Certificates
+ * already issued for this revision are read back; the rest are issued here, without keeping the editor open.
+ */
+@Composable
+internal fun NovaEducationCertificatesPage(client: NovaTrainingClient, session: NovaTrainingSession, canIssue: Boolean,
+                                           showSavedCelebration: Boolean, created: Boolean, onClose: () -> Unit) {
+    BackHandler(onBack = onClose)
+    class Target(val scope: String, val person: String, val name: String, val company: String) { val id = "$scope:$person" }
+    class Prepared(val file: File, val number: String, val revision: Int)
+    val context = LocalContext.current
+    val coroutines = rememberCoroutineScope()
+    val celebrate = rememberNovaCelebrate()
+    val targets = remember(session) {
+        session.education?.scopes.orEmpty().flatMap { scope ->
+            scope.participants.map { Target(scope.id, it.id, it.name ?: "Personel", scope.workplaceName ?: scope.companyName ?: "Firma") }
+        }
+    }
+    var known by remember { mutableStateOf<List<NovaEducationContext.Certificate>>(emptyList()) }
+    val ready = remember { mutableStateMapOf<String, Prepared>() }
+    val working = remember { mutableStateMapOf<String, Boolean>() }
+    val failures = remember { mutableStateMapOf<String, String>() }
+    var loading by remember { mutableStateOf(false) }
+    var pageError by remember { mutableStateOf<String?>(null) }
+    var preview by remember { mutableStateOf<List<Bitmap>?>(null) }
+    var versionsOpen by remember { mutableStateOf<String?>(null) }
+    var exporting by remember { mutableStateOf<Prepared?>(null) }
+    val saveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
+        val source = exporting?.file
+        if (uri != null && source != null) runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { out -> source.inputStream().use { it.copyTo(out) } }
+        }.onFailure { pageError = "Dosya kaydedilemedi." }
+        exporting = null
+    }
+    suspend fun render(certificate: NovaEducationCertificate) =
+        withContext(Dispatchers.IO) { NovaEducationCertificatePDF.file(context, certificate) }
+    suspend fun prepare(target: Target) {
+        if (working[target.id] == true) return
+        working[target.id] = true; failures.remove(target.id)
+        try {
+            val existing = known.filter { it.scopeId.sameId(target.scope) && it.personId.sameId(target.person) && it.sourceSessionRevision == session.version }
+                .maxByOrNull { it.revision }
+            val certificate = when {
+                existing != null -> client.certificate(NovaEducationCertificateRequest("read", documentId = existing.documentId, revision = existing.revision))
+                canIssue -> client.certificate(NovaEducationCertificateRequest("issue", session.id, target.scope, target.person, session.version, NovaDay.today()))
+                else -> { failures[target.id] = "Bu belge henüz hazırlanmamış."; return }
+            }
+            val document = certificate.documentId
+            if (!certificate.ready || certificate.snapshot.isDraft || document == null) {
+                failures[target.id] = certificate.issues.firstOrNull()?.let(NovaTrainingWords::issue) ?: "Sertifika hazırlanamadı."
+                return
+            }
+            val revision = certificate.revision ?: 1
+            ready[target.id] = Prepared(render(certificate), certificate.snapshot.number, revision)
+            if (known.none { it.documentId == document && it.revision == revision })
+                known = known + NovaEducationContext.Certificate(document, revision, target.scope, target.person, session.version)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled } catch (failure: Exception) {
+            failures[target.id] = NovaTrainingWords.message(failure)
+        } finally { working.remove(target.id) }
+    }
+    suspend fun load() {
+        if (loading) return
+        loading = true; pageError = null
+        try { known = client.context(session.id).certificates } catch (failure: Exception) { pageError = NovaTrainingWords.message(failure) }
+        loading = false
+        targets.filter { ready[it.id] == null }.forEach { prepare(it) }
+    }
+    LaunchedEffect(Unit) {
+        if (showSavedCelebration) celebrate(if (created) "Eğitim başarıyla eklendi!" else NovaSuccessMessage.trainingSaved)
+        load()
+    }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset)
+        .testTag("education.certificates.page"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        NovaPageHeading("Sertifikalar", session.title, onBack = onClose)
+        NovaText("${targets.size} kişisel eğitim belgesi", style = NovaTypeToken.bodyStrong)
+        pageError?.let { message ->
+            NovaCard(Modifier.fillMaxWidth(), padding = 14) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NovaText(message, style = NovaTypeToken.metaQuiet, color = NovaColorToken.statusDangerInk.color())
+                    NovaText("Yeniden dene", Modifier.novaRowPress { coroutines.launch { load() } }.padding(vertical = 6.dp), NovaTypeToken.bodyStrong)
+                }
+            }
+        }
+        if (loading && known.isEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            NovaSpinner(NovaColorToken.text.color(), size = 18.dp)
+            NovaText("Sertifikalar hazırlanıyor…", style = NovaTypeToken.metaQuiet)
+        }
+        targets.forEach { target ->
+            val document = ready[target.id]
+            NovaCard(Modifier.fillMaxWidth().testTag("education.certificate.${target.id}"), padding = 16) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        NovaIcon("doc.text", 22.dp, tint = NovaColorToken.accentInk.color())
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            NovaText(target.name, style = NovaTypeToken.cardTitle)
+                            NovaText(target.company, style = NovaTypeToken.metaQuiet)
+                        }
+                    }
+                    when {
+                        document != null -> {
+                            NovaText("Belge no: ${document.number}", style = NovaTypeToken.metaQuiet)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                CertificateAction("Görüntüle", "eye", Modifier.weight(1f)) {
+                                    coroutines.launch { preview = withContext(Dispatchers.IO) { NovaEducationCertificatePDF.pages(document.file) } }
+                                }
+                                CertificateAction("İndir", "square.and.arrow.down", Modifier.weight(1f)) {
+                                    exporting = document; saveLauncher.launch(document.number.ifEmpty { "Eğitim sertifikası" } + ".pdf")
+                                }
+                                CertificateAction("Paylaş", "square.and.arrow.up", Modifier.weight(1f)) {
+                                    novaShareFile(context, document.file.readBytes(), document.file.name, "application/pdf")
+                                }
+                            }
+                            val versions = known.filter { it.scopeId.sameId(target.scope) && it.personId.sameId(target.person) }.sortedByDescending { it.revision }
+                            if (versions.size > 1) {
+                                NovaText("Belge sürümleri", Modifier.novaRowPress { versionsOpen = if (versionsOpen == target.id) null else target.id }
+                                    .padding(vertical = 6.dp), NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
+                                if (versionsOpen == target.id) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    versions.forEach { version ->
+                                        NovaChoiceChip("Revizyon ${version.revision}", false) {
+                                            coroutines.launch {
+                                                try {
+                                                    val read = client.certificate(NovaEducationCertificateRequest("read", documentId = version.documentId, revision = version.revision))
+                                                    val file = render(read)
+                                                    preview = withContext(Dispatchers.IO) { NovaEducationCertificatePDF.pages(file) }
+                                                } catch (failure: Exception) { pageError = NovaTrainingWords.message(failure) }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        working[target.id] == true -> Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            NovaIcon("clock", 13.dp, tint = NovaColorToken.textSecondary.color())
+                            NovaText("Sertifika hazırlanıyor…", style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())
+                        }
+                        else -> {
+                            NovaText(failures[target.id] ?: "Sertifika bekleniyor.", style = NovaTypeToken.metaQuiet, color = NovaColorToken.statusDangerInk.color())
+                            if (canIssue) NovaText("Tekrar dene", Modifier.novaRowPress { coroutines.launch { prepare(target) } }.padding(vertical = 6.dp),
+                                NovaTypeToken.bodyStrong)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    NovaPopup(preview != null, { preview = null }, identifier = "education.certificates.preview") {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            NovaPageHeading("Eğitim sertifikası", onBack = { preview = null })
+            preview.orEmpty().forEachIndexed { index, page -> Image(page.asImageBitmap(), "Belge sayfası ${index + 1}", Modifier.fillMaxWidth()) }
+        }
+    }
+}
+
+@Composable
+private fun CertificateAction(title: String, symbol: String, modifier: Modifier, onClick: () -> Unit) {
+    Column(modifier.heightIn(min = 58.dp).background(NovaColorToken.surfaceMuted.color(), androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+        .novaRowPress(onClick = onClick).semantics { contentDescription = title }.padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterVertically)) {
+        NovaIcon(symbol, 20.dp)
+        NovaText(title, style = NovaTypeToken.meta)
     }
 }

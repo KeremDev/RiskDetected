@@ -124,10 +124,18 @@ fun NovaTrainingScreen(client: NovaTrainingClient, canWrite: Boolean, onBack: ()
             else -> presentRequestedCreate()
         }
     }
+    var certificatesPage by remember { mutableStateOf<CertificatesPage?>(null) }
+    certificatesPage?.let { page ->
+        NovaEducationCertificatesPage(client, page.session, canWrite, page.celebrate, page.created) { certificatesPage = null; revision++ }
+        return
+    }
     val open = editor
     if (open != null) {
         val allowed = canWrite && (open.session?.companies?.all { it.companyId.lowercase() in writable } ?: writable.isNotEmpty())
-        NovaEducationEntry(client, companies, writable, company, open.session, allowed) { editor = null; revision++ }
+        NovaEducationEntry(client, companies, writable, company, open.session, allowed, onSaved = { session ->
+            // A saved training leaves the editor for its certificates, like iOS.
+            editor = null; certificatesPage = CertificatesPage(session, celebrate = true, created = open.session == null)
+        }) { editor = null; revision++ }
         return
     }
     LaunchedEffect(revision) {
@@ -227,7 +235,7 @@ private fun TrainingCard(session: NovaTrainingSession, modifier: Modifier, onCli
 @Composable
 private fun NovaEducationEntry(client: NovaTrainingClient, companies: List<NovaCompanyOption>, writable: Set<String>, initialCompany: String?,
                                original: NovaTrainingSession?,
-                               canWrite: Boolean, onClose: () -> Unit) {
+                               canWrite: Boolean, onSaved: ((NovaTrainingSession) -> Unit)? = null, onClose: () -> Unit) {
     BackHandler(onBack = onClose)
     var context by remember { mutableStateOf<NovaEducationContext?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
@@ -237,7 +245,7 @@ private fun NovaEducationEntry(client: NovaTrainingClient, companies: List<NovaC
     }
     val loaded = context
     when {
-        loaded != null -> NovaEducationEditor(client, companies, writable, initialCompany, loaded.row ?: original, loaded, canWrite, onClose)
+        loaded != null -> NovaEducationEditor(client, companies, writable, initialCompany, loaded.row ?: original, loaded, canWrite, onSaved, onClose)
         failure != null -> Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             NovaBackButton(onClick = onClose)
             NovaText(failure!!)
@@ -264,7 +272,7 @@ fun NovaTrainingRecordScreen(client: NovaTrainingClient, session: String?, compa
         value != null -> {
             val (companies, writable, context) = value
             NovaEducationEditor(client, companies, writable, company, context.row, context,
-                canWrite && context.row?.companies?.all { it.companyId.lowercase() in writable } == true, onBack)
+                canWrite && context.row?.companies?.all { it.companyId.lowercase() in writable } == true, null, onBack)
         }
         failed -> Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             NovaBackButton(onClick = onBack)
@@ -297,7 +305,6 @@ private class EducationEditorModel(val context: NovaEducationContext, val compan
     var template by mutableStateOf(NovaEducationScope(companyId = ""))
     var days by mutableStateOf<List<NovaEducationDay>>(emptyList())
     var saved by mutableStateOf(original)
-    var certificates by mutableStateOf(context.certificates)
     var error by mutableStateOf<String?>(null)
     var notice by mutableStateOf<String?>(null)
     var ready by mutableStateOf(false)
@@ -309,9 +316,6 @@ private class EducationEditorModel(val context: NovaEducationContext, val compan
     var returningToReview by mutableStateOf(false)
     var validationStep by mutableStateOf<NovaEducationStep?>(null)
     var validationMessage by mutableStateOf<String?>(null)
-    var certificateJump by mutableIntStateOf(0)
-    /** Certificates are issued after the save returns, while the expert may already keep editing. */
-    var preparingCertificates by mutableStateOf(false)
     val people = mutableStateMapOf<String, List<NovaPersonOption>>()
     private val requested = mutableSetOf<String>()
 
@@ -633,37 +637,24 @@ private class EducationEditorModel(val context: NovaEducationContext, val compan
         draft.scopes.map { it.companyId }.distinctBy { it.lowercase() }.forEach(::loadPeople)
     }
 
-    /** Re-reads the record after a certificate closes, so issued numbers and revisions show up. */
-    suspend fun refresh() {
-        val row = saved ?: return
-        try {
-            val latest = client.context(row.id)
-            certificates = latest.certificates
-            val fresh = latest.row
-            val education = fresh?.education ?: return
-            ready = false
-            saved = fresh; draft = NovaEducationDraft.of(fresh, education)
-            syncTemplate()
-            selectedCycle = draft.scopes.firstOrNull()?.cycle.orEmpty()
-            ready = true
-        } catch (failure: Exception) { error = NovaTrainingWords.message(failure) }
-    }
 }
 
-private class CertificateTarget(val scope: String, val person: String, val document: String?, val revision: Int?)
+/** The certificates page a save opens; [celebrate] shows the success card once. */
+private class CertificatesPage(val session: NovaTrainingSession, val celebrate: Boolean, val created: Boolean)
 
 private enum class EducationSheet { companies, cycle, participants }
 
 /** The guided seven-step form (iOS `NovaEducationEditor`): one expanded section, the rest as summaries. */
 @Composable
 private fun NovaEducationEditor(client: NovaTrainingClient, companies: List<NovaCompanyOption>, writable: Set<String>, initialCompany: String?,
-                                original: NovaTrainingSession?, context: NovaEducationContext, canWrite: Boolean, onClose: () -> Unit) {
+                                original: NovaTrainingSession?, context: NovaEducationContext, canWrite: Boolean,
+                                onSaved: ((NovaTrainingSession) -> Unit)?, onClose: () -> Unit) {
     val coroutines = rememberCoroutineScope()
     val model = remember { EducationEditorModel(context, companies, original, client, coroutines) }
     var busy by remember { mutableStateOf(false) }
     var saveProgress by remember { mutableStateOf<String?>(null) }
     var sheet by remember { mutableStateOf<EducationSheet?>(null) }
-    var certificate by remember { mutableStateOf<CertificateTarget?>(null) }
+    var certificatesPage by remember { mutableStateOf<CertificatesPage?>(null) }
     var banner by remember { mutableStateOf(false) }
     var options by remember { mutableStateOf(false) }
     val scroll = rememberScrollState()
@@ -679,38 +670,6 @@ private fun NovaEducationEditor(client: NovaTrainingClient, companies: List<Nova
         runCatching { client.preserve(model.draft) }.onFailure { model.error = NovaTrainingWords.message(it) }
     }
     LaunchedEffect(model.step) { positions[model.step.name]?.let { scroll.animateScrollTo(it) } }
-    LaunchedEffect(model.certificateJump) { if (model.certificateJump > 0) positions["certificates"]?.let { scroll.animateScrollTo(it) } }
-    /**
-     * Issues every participant's certificate after the save, in the background. Only the certificate links are
-     * reread afterwards: the expert may already be editing the next change.
-     */
-    suspend fun prepareCertificates(row: NovaTrainingSession) {
-        val education = row.education ?: return
-        val targets = education.scopes.flatMap { scope -> scope.participants.map { scope.id to it.id } }
-        var completed = 0
-        var failures = 0
-        val blocked = mutableListOf<String>()
-        try {
-            targets.forEachIndexed { index, (scope, person) ->
-                saveProgress = "Sertifikalar hazırlanıyor · ${index + 1}/${targets.size}"
-                try {
-                    val issued = client.certificate(NovaEducationCertificateRequest("issue", row.id, scope, person, row.version, NovaDay.today()))
-                    if (issued.ready && issued.documentId != null) completed++ else blocked += issued.issues
-                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled } catch (_: Exception) { failures++ }
-            }
-            runCatching { client.context(row.id) }.getOrNull()?.let { model.certificates = it.certificates }
-            val issue = blocked.firstOrNull()
-            model.notice = when {
-                issue != null -> {
-                    val step = if (issue == "LESSON_TOPIC_MISMATCH" || issue == "LESSON_BREAK_INVALID") NovaEducationStep.schedule else NovaEducationStep.topics
-                    model.validationStep = step; model.validationMessage = NovaTrainingWords.issue(issue); model.step = step
-                    "Eğitim kaydedildi. Sertifikalar için işaretlenen eğitim içeriğini tamamlayın."
-                }
-                failures > 0 -> "Eğitim başarıyla kaydedildi. $completed sertifika hazır, $failures sertifika hazırlanamadı. Tekrar denemek için kaydet düğmesine basın."
-                else -> "Eğitim başarıyla kaydedildi. $completed sertifika hazır; eğitim içeriğinden veya personel kartından açabilirsiniz."
-            }
-        } finally { model.preparingCertificates = false; saveProgress = null }
-    }
     /** Writes the record; a refusal that names a section reopens it instead of showing a generic error. */
     suspend fun save() {
         busy = true; model.error = null
@@ -725,11 +684,9 @@ private fun NovaEducationEditor(client: NovaTrainingClient, companies: List<Nova
                 committed
             }
             if (row.education == null) throw NovaTrainingException("UNAVAILABLE")
-            model.notice = "Eğitim başarıyla kaydedildi. Sertifikalar hazırlanıyor…"
             saveProgress = null
-            model.certificateJump++
-            model.preparingCertificates = true
-            coroutines.launch { prepareCertificates(row) }
+            // The saved training opens its certificates; a list that owns the editor shows them after closing it.
+            if (onSaved != null) onSaved(row) else certificatesPage = CertificatesPage(row, celebrate = true, created = original == null)
         } catch (failure: Exception) {
             saveProgress = null
             val correction = NovaTrainingWords.correction(failure)
@@ -763,13 +720,8 @@ private fun NovaEducationEditor(client: NovaTrainingClient, companies: List<Nova
             } else { model.draft = waiting; model.pending = false; save() }
         } catch (failure: Exception) { model.error = NovaTrainingWords.message(failure) }
     }
-    val selected = certificate
-    val row = model.saved
-    if (selected != null && row != null) {
-        NovaEducationCertificateScreen(client, row, selected.scope, selected.person, context.certificateEnabled && canWrite, selected.document, selected.revision) {
-            certificate = null
-            coroutines.launch { model.refresh() }
-        }
+    certificatesPage?.let { page ->
+        NovaEducationCertificatesPage(client, page.session, context.certificateEnabled && canWrite, page.celebrate, page.created) { certificatesPage = null }
         return
     }
     when (sheet) {
@@ -827,14 +779,15 @@ private fun NovaEducationEditor(client: NovaTrainingClient, companies: List<Nova
             enabled = !busy, symbol = "arrow.clockwise")
         if (model.step == NovaEducationStep.review) {
             NovaButton("Gerçekleşen eğitimi kaydet", { submit() }, Modifier.fillMaxWidth().testTag("education.save"),
-                enabled = canWrite && !busy && !model.preparingCertificates && !model.pending, loading = busy, symbol = "checkmark")
+                enabled = canWrite && !busy && !model.pending, loading = busy, symbol = "checkmark")
             // The draft already autosaves; this makes that explicit so the expert can leave knowing it.
             NovaButton("Taslak olarak kaydet", { runCatching { client.preserve(model.draft) }; onClose() }, Modifier.fillMaxWidth().testTag("education.savedraft"),
                 variant = NovaButtonVariant.Surface, enabled = canWrite && !busy, symbol = "tray.and.arrow.down")
         } else StepNavigation(model)
-        Box(Modifier.onGloballyPositioned { positions["certificates"] = it.positionInParent().y.toInt() }) {
-            Certificates(model, canWrite) { certificate = it }
-        }
+        val saved = model.saved
+        if (saved != null && !model.changed) NovaButton("Sertifikaları aç", { certificatesPage = CertificatesPage(saved, celebrate = false, created = false) },
+            Modifier.fillMaxWidth().testTag("education.certificates.open"), variant = NovaButtonVariant.Surface, symbol = "doc.text")
+        else if (saved != null) NovaText("Sertifikaları görmek için değişiklikleri kaydedin.", style = NovaTypeToken.metaQuiet)
     }
     NovaPopup(options, { options = false }, identifier = "education.options.popup") {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1030,11 +983,18 @@ private fun CyclePicker(selectedCycle: String, onClose: () -> Unit, onPick: (Str
 private fun InfoStep(model: EducationEditorModel, canWrite: Boolean, onCycle: () -> Unit) {
     val template = model.template
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        NovaText("Eğitim:", style = NovaTypeToken.label, color = NovaColorToken.textTertiary.color())
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(NovaColorToken.surfaceMuted.color(), RoundedCornerShape(10.dp))
-            .novaRowPress(enabled = canWrite, onClick = onCycle).testTag("education.cycle").padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            NovaText(if (model.selectedCycle.isEmpty()) "Eğitim türü seçin" else template.cycleName, Modifier.weight(1f))
-            NovaIcon("chevron.up.chevron.down", 12.dp)
+        NovaText("Eğitim türü ve konusu", style = NovaTypeToken.label, color = NovaColorToken.textTertiary.color())
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(NovaColorToken.surfaceMuted.color(), RoundedCornerShape(14.dp))
+            .border(1.5.dp, NovaColorToken.accent.color(), RoundedCornerShape(14.dp))
+            .novaRowPress(enabled = canWrite, onClick = onCycle).testTag("education.cycle").padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            NovaIcon("books.vertical", 19.dp, tint = NovaColorToken.accentInk.color())
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                NovaText(if (model.selectedCycle.isEmpty()) "Eğitim türünü seç" else template.cycleName, style = NovaTypeToken.bodyStrong)
+                NovaText(if (model.selectedCycle.isEmpty()) "Konular ve süreler seçiminize göre hazırlanır" else "Değiştirmek için dokunun",
+                    style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())
+            }
+            NovaIcon("chevron.right", 13.dp, tint = NovaColorToken.accentInk.color())
         }
         NovaText("Eğitim türü değişirse konular ve dakikalar seçilen tehlike sınıfına göre yeniden hazırlanır.", style = NovaTypeToken.metaQuiet)
         NovaText("Eğitim yöntemi", style = NovaTypeToken.label, color = NovaColorToken.textTertiary.color())
@@ -1044,9 +1004,9 @@ private fun InfoStep(model: EducationEditorModel, canWrite: Boolean, onCycle: ()
         }
         if (template.hazardClass != "low" && online) NovaText("İşyerine özgü konular yüz yüze olarak kalır.", style = NovaTypeToken.metaQuiet)
         NovaTextField("Düzenleyici kişi / kurum", model.draft.providerName, { model.draft = model.draft.copy(providerName = it) },
-            identifier = "education.provider", placeholder = "Düzenleyici adı", enabled = canWrite)
+            identifier = "education.provider", placeholder = "Kişi veya kurum adı", enabled = canWrite)
         NovaTextField("Notlar (isteğe bağlı)", model.draft.notes, { model.draft = model.draft.copy(notes = it) }, identifier = "education.notes",
-            multiline = true, enabled = canWrite)
+            multiline = true, placeholder = "Eklemek istediğiniz notu yazın", enabled = canWrite)
     }
 }
 
@@ -1058,19 +1018,21 @@ private fun TopicsStep(model: EducationEditorModel, canWrite: Boolean) {
         model.context.`package`.topics(template.cycle, template.hazardClass ?: "low").firstOrNull { it.code == topic.code }?.instructionMinutes ?: 30
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         NovaText("${NovaTrainingWords.hazard(template.hazardClass)} · ${template.cycleName}", style = NovaTypeToken.bodyStrong)
-        NovaText("Düzenlemek istediğiniz grubu açın. Süre değişince eğitim günleri ve bitiş saatleri yeniden hesaplanır.",
+        NovaText("Bir konu grubuna dokunarak konuları ve dakikaları düzenleyin. Süre değişince eğitim günleri yeniden hesaplanır.",
             style = NovaTypeToken.metaQuiet, color = NovaColorToken.textSecondary.color())
         topicGroups.forEach { (group, name) ->
             val items = template.topics.filter { it.group == group }
             if (items.isEmpty() && group != "G4") return@forEach
             val open = expanded == group
-            Column(Modifier.fillMaxWidth().background(NovaColorToken.surfaceMuted.color(), RoundedCornerShape(12.dp)).padding(12.dp),
+            Column(Modifier.fillMaxWidth().background(NovaColorToken.surfaceMuted.color(), RoundedCornerShape(12.dp))
+                .border(1.dp, (if (open) NovaColorToken.accent else NovaColorToken.border).color(), RoundedCornerShape(12.dp)).padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(Modifier.fillMaxWidth().novaRowPress { expanded = if (open) null else group }.testTag("education.topics.$group"),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    NovaIcon("list.bullet.rectangle", 15.dp, tint = NovaColorToken.accentInk.color())
                     NovaText("$group · $name", Modifier.weight(1f), NovaTypeToken.bodyStrong)
                     NovaText(duration(items.sumOf { it.instructionMinutes }), style = NovaTypeToken.meta)
-                    NovaIcon(if (open) "chevron.up" else "chevron.down", 11.dp)
+                    NovaIcon(if (open) "chevron.up" else "chevron.down", 13.dp)
                 }
                 if (open) {
                     items.forEach { topic ->
@@ -1366,45 +1328,5 @@ private fun ReviewStep(model: EducationEditorModel) {
             }
         }
         NovaText("Bu özet onaylandığında eğitim kaydı ve kişi bazlı katılım bilgisi oluşturulur.", style = NovaTypeToken.metaQuiet)
-    }
-}
-
-/** Personal certificates, offered only for a record whose on-screen state is exactly what the server holds. */
-@Composable
-private fun Certificates(model: EducationEditorModel, canWrite: Boolean, open: (CertificateTarget) -> Unit) {
-    val row = model.saved ?: return
-    if (model.changed) {
-        NovaText("Sertifika için değişiklikleri kaydedin.", style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())
-        return
-    }
-    NovaCard(Modifier.fillMaxWidth(), padding = 12) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            NovaText("Kişisel belgeler", style = NovaTypeToken.cardTitle)
-            if (model.preparingCertificates) NovaText("Sertifikalar otomatik hazırlanıyor…", style = NovaTypeToken.metaQuiet)
-            row.education?.scopes.orEmpty().forEach { scope ->
-                scope.participants.forEach { person ->
-                    val versions = model.certificates.filter { it.scopeId.sameId(scope.id) && it.personId.sameId(person.id) }
-                    val known = versions.firstOrNull { it.sourceSessionRevision == row.version }
-                    val openable = !model.preparingCertificates && (canWrite || known != null)
-                    Row(Modifier.fillMaxWidth().alpha(if (openable) 1f else 0.45f).novaRowPress(enabled = openable) {
-                        open(CertificateTarget(scope.id, person.id, known?.documentId, known?.revision))
-                    }.testTag("education.certificate.${person.id}").padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            NovaText(person.name ?: "Personel")
-                            NovaText(scope.companyName.orEmpty(), style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())
-                        }
-                        NovaText(if (model.preparingCertificates && known == null) "Hazırlanıyor…" else "Sertifikayı aç", style = NovaTypeToken.meta,
-                            color = NovaColorToken.accentInk.color())
-                    }
-                    if (versions.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        versions.forEach { version ->
-                            NovaChoiceChip("Revizyon ${version.revision}", false) {
-                                open(CertificateTarget(scope.id, person.id, version.documentId, version.revision))
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }

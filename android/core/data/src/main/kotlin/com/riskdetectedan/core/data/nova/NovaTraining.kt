@@ -19,7 +19,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-import kotlin.math.ceil
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.roundToLong
@@ -250,8 +249,8 @@ object NovaEducationClock {
     fun date(value: String): Instant? = runCatching { OffsetDateTime.parse(value).toInstant() }.getOrNull()
     fun day(value: Instant): String = value.atZone(zone).toLocalDate().toString()
 
-    /** Basic units round up (a 50-minute lesson is two units); eight units fill a day, ending yesterday at the latest. */
-    fun units(minutes: Int, basic: Boolean) = if (basic) maxOf(1, ceil(minutes / 45.0).toInt()) else 1
+    /** Whole 45-minute basic units (iOS `lessonUnits`); eight units fill a day, ending yesterday at the latest. */
+    fun units(minutes: Int, basic: Boolean) = if (basic) maxOf(1, minutes / 45) else 1
 
     /** The recommended days for [minutes], back-dated so a fresh record describes a training that already happened. */
     fun initialDays(minutes: Int, basic: Boolean): List<NovaEducationDay> {
@@ -307,7 +306,7 @@ object NovaTrainingWords {
         "TOPIC_MINUTES_MISSING" to "Süresi eksik konu var.", "TRAINER_SCOPE_MISSING" to "Konuların eğiticilerini seçin.",
         "FACE_TO_FACE_REQUIRED" to "Bu kapsamın işyerine özgü bölümünü yüz yüze düzenleyin.", "REQUIRED_TOPIC_MISSING" to "Zorunlu konu eksik.",
         "TOTAL_TOO_SHORT" to "Öğretim süresi profilin altında.", "GROUP4_TOO_SHORT" to "İşyerine özgü öğretim süresi eksik.",
-        "COMMON_GROUPS_TOO_SHORT" to "İlk eğitimin G1–G3 referans süresi eksik.", "GROUP4_CONTEXT_MISSING" to "İşyeri ve görev bağlamını açıklayın.",
+        "COMMON_GROUPS_TOO_SHORT" to "İlk eğitimin G1–G3 referans süresi eksik.", "GROUP4_CONTEXT_MISSING" to "Eğitimi yeniden kaydedin; işyerine özgü konu kapsamı otomatik aktarılır.",
         "LESSON_TOPIC_MISMATCH" to "Ders dağılımı konu dakikalarıyla eşleşmiyor. Saatleri yeniden dağıtın.",
         "LESSON_BREAK_INVALID" to "Temel eğitim dersleri en az 45 dakika ve araları en az 15 dakika olmalı.",
         "EMPLOYER_MISSING" to "İşveren / vekili adını doldurun.", "EMPLOYER_CAPACITY_MISSING" to "İşveren / vekili sıfatını seçin.",
