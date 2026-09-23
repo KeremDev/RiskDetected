@@ -13,7 +13,7 @@ struct NovaEducationPDFFile: FileDocument {
 }
 
 @MainActor enum NovaEducationCertificatePDF {
-    static let rendererVersion = 2
+    static let rendererVersion = 3
     private struct Block { let text: String; var size: CGFloat = 10; var bold = false; var space: CGFloat = 6; var height: CGFloat? }
     private struct Placed { let block: Block; let y: CGFloat; let height: CGFloat }
     static func data(_ snapshot: NovaEducationCertificate.Snapshot) -> Data {
@@ -73,7 +73,6 @@ struct NovaEducationPDFFile: FileDocument {
                 back.append(.init(text: "\(t.parent_code ?? t.code)  \(t.parent_code == nil ? t.title : (t.legal_title ?? "") + ": " + t.title) — \(t.instruction_minutes) dk · \(trainingMethodName(t.method))", size: 9, space: 3))
             }
         }
-        back.append(.init(text: "İşyeri / görev bağlamı: \(s.context_note)", size: 9, space: 8))
         back.append(.init(text: "Öğretim: \(s.instruction_minutes) dk · Ara: \(s.break_minutes) dk · Toplam: \(s.instruction_minutes + s.break_minutes) dk", size: 10, bold: true))
         var pages: [[Placed]] = []
         func layout(_ blocks: [Block]) {

@@ -4,9 +4,11 @@ struct NovaEducationPackage: Codable {
     struct Topic: Codable { let code: String; let group_code: String; let legal_label: String; let legal_item: String }
     struct Preset: Codable, Identifiable {
         struct G4: Codable { struct Topic: Codable { let local_key: String; let title: String; let instruction_minutes: Int }; let topics: [Topic]; let budget_instruction_minutes: Int }
+        struct CommonGroupsReviewGuard: Codable { let reference_instruction_minutes: Int }
         let code: String; let label: String; let cycle: String; let hazard_class: String
         let minimum_lesson_units: Int; let default_instruction_minutes: Int; let default_break_minutes: Int
         let renewal_interval_months: Int; let topic_instruction_minutes: [String: Int]; let group4: G4
+        let common_groups_review_guard: CommonGroupsReviewGuard?
         let minutes_origin: String
         var id: String { code }
     }
@@ -108,10 +110,11 @@ enum NovaEducationClock {
         f.formatOptions.insert(.withFractionalSeconds); return f.date(from: value)
     }
     static func day(_ date: Date) -> String { let f = DateFormatter(); f.calendar = calendar; f.timeZone = calendar.timeZone; f.locale = Locale(identifier:"en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"; return f.string(from: date) }
+    static func lessonUnits(minutes: Int, basic: Bool) -> Int { basic ? max(1, minutes / 45) : 1 }
     static func initialDays(minutes: Int, basic: Bool) -> [NovaEducationDay] {
         // Keep the final lesson at least 45 minutes. Rounding up would turn
         // 370 minutes into eight 45-minute lessons plus an invalid 10-minute one.
-        let count = basic ? max(1, minutes / 45) : 1
+        let count = lessonUnits(minutes: minutes, basic: basic)
         let dayCount = max(1, (count + 7) / 8)
         let first = calendar.date(byAdding: .day, value: -dayCount, to: Date())!
         return (0..<dayCount).map { n in .init(starts: calendar.date(bySettingHour: 9, minute: 0, second: 0, of: calendar.date(byAdding: .day,value:n,to:first)!)!, lessonCount: min(8,count - n * 8)) }
@@ -158,6 +161,25 @@ enum NovaEducationStep: String, CaseIterable, Identifiable {
 extension NovaEducationDraft {
     private func filled(_ value: String) -> Bool { !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
+    /// Empty add rows are UI placeholders, not trainers. The form assigns
+    /// every remaining trainer to its shared topics before saving.
+    func preparedForSave() -> NovaEducationDraft {
+        var result = self
+        result.trainers = trainers.map { trainer in
+            var value = trainer
+            value.name = value.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            value.title = value.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            return value
+        }.filter { !$0.name.isEmpty || !$0.title.isEmpty }
+        let ids = result.trainers.map(\.id)
+        for scope in result.scopes.indices {
+            for topic in result.scopes[scope].topics.indices {
+                result.scopes[scope].topics[topic].trainer_ids = ids
+            }
+        }
+        return result
+    }
+
     func isComplete(_ step: NovaEducationStep) -> Bool {
         switch step {
         case .companies:
@@ -166,7 +188,11 @@ extension NovaEducationDraft {
         case .info: return filled(title) && filled(provider_name)
         case .topics: return !scopes.isEmpty && scopes.allSatisfy { $0.net > 0 }
         case .schedule: return !scopes.isEmpty && scopes.allSatisfy { !$0.lessons.isEmpty }
-        case .trainers: return trainers.contains { filled($0.name) }
+        case .trainers:
+            return !trainers.isEmpty && trainers.count <= 20 && trainers.allSatisfy {
+                let name = $0.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                return !name.isEmpty && name.count <= 200 && $0.title.count <= 200
+            } && Set(trainers.map(\.id)).count == trainers.count
         case .participants: return !scopes.isEmpty && scopes.allSatisfy { !$0.participants.isEmpty }
         case .review:
             return isComplete(.companies) && isComplete(.info) && isComplete(.topics) && isComplete(.schedule) &&

@@ -108,7 +108,7 @@ import Supabase
         ["TOPIC_MINUTES_MISSING":"Süresi eksik konu var.","TRAINER_SCOPE_MISSING":"Konuların eğiticilerini seçin.",
          "FACE_TO_FACE_REQUIRED":"Bu kapsamın işyerine özgü bölümünü yüz yüze düzenleyin.","REQUIRED_TOPIC_MISSING":"Zorunlu konu eksik.",
          "TOTAL_TOO_SHORT":"Öğretim süresi profilin altında.","GROUP4_TOO_SHORT":"İşyerine özgü öğretim süresi eksik.",
-         "COMMON_GROUPS_TOO_SHORT":"İlk eğitimin G1–G3 referans süresi eksik.","GROUP4_CONTEXT_MISSING":"İşyeri ve görev bağlamını açıklayın.",
+         "COMMON_GROUPS_TOO_SHORT":"İlk eğitimin G1–G3 referans süresi eksik.","GROUP4_CONTEXT_MISSING":"Eğitimi yeniden kaydedin; işyerine özgü konu kapsamı otomatik aktarılır.",
          "LESSON_TOPIC_MISMATCH":"Ders dağılımı konu dakikalarıyla eşleşmiyor. Saatleri yeniden dağıtın.",
          "LESSON_BREAK_INVALID":"Temel eğitim dersleri en az 45 dakika ve araları en az 15 dakika olmalı.",
          "EMPLOYER_MISSING":"İşveren / vekili adını doldurun.","EMPLOYER_CAPACITY_MISSING":"İşveren / vekili sıfatını seçin.",
@@ -129,5 +129,19 @@ import Supabase
             }
         }
         return NovaTrainingSessionService.message(error)
+    }
+
+    static func correction(_ error: Error) -> (NovaEducationStep, String)? {
+        guard let value = error as? PostgrestError else { return nil }
+        switch value.message {
+        case "TRAINER_INVALID": return (.trainers, "Eğitici adlarını ve konu dağılımını kontrol edin. Boş ek satır kaydedilmez.")
+        case "TOPIC_INVALID", "TOPIC_HIERARCHY_INVALID": return (.topics, "Konu başlıklarını ve dakikalarını kontrol edin.")
+        case "LESSON_INVALID", "LESSON_ALLOCATION_INVALID", "LESSON_OVERLAP_OR_FUTURE":
+            return (.schedule, "Eğitim günlerini, ders sürelerini ve bitiş saatlerini kontrol edin.")
+        case "SCOPE_INVALID", "TRAINING_HAZARD_MISMATCH", "WORKPLACE_REQUIRED":
+            return (.companies, "Firma ve işyeri seçimlerini kontrol edin.")
+        case "PARTICIPANT_DUPLICATE": return (.participants, "Aynı personeli birden fazla kez seçmeyin.")
+        default: return nil
+        }
     }
 }

@@ -390,6 +390,20 @@ struct NovaEducationEditor: View {
             NovaText(text: "Birden fazla firma seçebilirsiniz. İşyeri olmayan firma doğrudan eklenir; işyeri varsa ilgili işyerini seçin. Tehlike sınıfları aynı olmalıdır.",
                 style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
             if let summary = sectionSummary(.companies) { NovaText(text: summary, style: .bodyStrong) }
+            ForEach(draft.scopes) { scope in
+                HStack(spacing: 10) {
+                    Image(systemName: "building.2").foregroundStyle(NovaColorToken.accent.color(in: scheme))
+                    VStack(alignment: .leading, spacing: 2) {
+                        NovaText(text: scope.company_name ?? "Firma", style: .bodyStrong)
+                        if let workplace = scope.workplace_name { NovaText(text: workplace, style: .metaQuiet) }
+                    }
+                    Spacer(minLength: 0)
+                    Button("Kaldır", role: .destructive) { removeScope(scope.id) }
+                        .font(NovaFont.font(.meta))
+                        .accessibilityIdentifier("education.company.remove.\(scope.id)")
+                }.padding(12)
+                    .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
+            }
             NovaButton(label: draft.scopes.isEmpty ? "Firma ekle" : "Başka firma veya işyeri ekle", symbol: "building.2", variant: .surface) {
                 showingCompanies = true
             }
@@ -430,7 +444,7 @@ struct NovaEducationEditor: View {
                 if places.isEmpty {
                     let checked = draft.scopes.contains { $0.company_id == company.id && $0.workplace_id == nil }
                     Button {
-                        if checked { draft.scopes.removeAll { $0.company_id == company.id && $0.workplace_id == nil } }
+                        if checked, let selected = draft.scopes.first(where: { $0.company_id == company.id && $0.workplace_id == nil }) { removeScope(selected.id) }
                         else { pick(company: company.id, workplace: nil) }
                     } label: {
                         HStack(spacing: 10) {
@@ -444,12 +458,12 @@ struct NovaEducationEditor: View {
                             Spacer()
                         }.padding(.vertical, 4)
                     }.buttonStyle(NovaRowPressStyle())
-                        .disabled(draft.scopes.contains { $0.hazard_class != company.hazard_class })
+                        .disabled(!checked && draft.scopes.contains { $0.hazard_class != company.hazard_class })
                 }
                 ForEach(places) { place in
                     let checked = draft.scopes.contains { $0.company_id == company.id && $0.workplace_id == place.id }
                     Button {
-                        if checked { draft.scopes.removeAll { $0.company_id == company.id && $0.workplace_id == place.id } }
+                        if checked, let selected = draft.scopes.first(where: { $0.company_id == company.id && $0.workplace_id == place.id }) { removeScope(selected.id) }
                         else { pick(company: company.id, workplace: place.id) }
                     } label: {
                         HStack(spacing: 10) {
@@ -462,7 +476,7 @@ struct NovaEducationEditor: View {
                             Spacer()
                         }.padding(.vertical, 4)
                     }.buttonStyle(NovaRowPressStyle())
-                        .disabled(draft.scopes.contains { $0.hazard_class != place.hazard_class })
+                        .disabled(!checked && draft.scopes.contains { $0.hazard_class != place.hazard_class })
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }.accessibilityIdentifier("education.companies.\(company.id)")
@@ -637,7 +651,7 @@ struct NovaEducationEditor: View {
                     style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
             }
             if context.package.preset(cycle: template.cycle, hazard: template.hazard_class ?? "") != nil {
-                area("İşyerine özgü eğitim açıklaması (isteğe bağlı)", $template.context_note, id: "education.context")
+                NovaText(text: "İşyerine özgü konular sertifikanın arka yüzünde gösterilir.", style: .metaQuiet)
             }
         }.disabled(!canWrite)
     }
@@ -749,7 +763,7 @@ struct NovaEducationEditor: View {
         return max(1, (requiredLessonUnits + 7) / 8)
     }
     private var requiredLessonUnits: Int {
-        basicCycle ? max(1, Int((Double(template.net) / 45.0).rounded(.up))) : 1
+        NovaEducationClock.lessonUnits(minutes: template.net, basic: basicCycle)
     }
     private var scheduleDistributionValid: Bool {
         guard !scheduleDays.isEmpty,
@@ -793,6 +807,7 @@ struct NovaEducationEditor: View {
                !draft.trainers.contains(where: { $0.name == me }) {
                 Button {
                     let details = [app.profile?.title, app.profile?.certificateNumber].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+                    draft.trainers.removeAll { $0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && $0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
                     draft.trainers.append(.init(name: me, title: details))
                     advanceIfComplete(.trainers)
                 } label: {
@@ -818,12 +833,10 @@ struct NovaEducationEditor: View {
                             field(RDLocalization.string("localizable.nova.education.field.trainertitle", table: .localizable, fallback: "Unvan / belge bilgisi"),
                                 $trainer.title, id: "education.trainer.title.\(trainer.id)")
                         }
-                        if draft.trainers.count > 1 {
-                            // onChange(of: draft.trainers) resyncs every
-                            // topic's trainer_ids to match afterward.
-                            Button(RDLocalization.string("localizable.nova.education.trainer.remove", table: .localizable, fallback: "Eğiticiyi kaldır"),
-                                role: .destructive) { draft.trainers.removeAll { $0.id == trainer.id } }.font(NovaFont.font(.meta))
-                        }
+                        Button(RDLocalization.string("localizable.nova.education.trainer.remove", table: .localizable, fallback: "Eğiticiyi kaldır"),
+                            role: .destructive) { removeTrainer(trainer.id) }
+                            .font(NovaFont.font(.meta))
+                            .accessibilityIdentifier("education.trainer.remove.\(trainer.id)")
                     }
                 }
             }
@@ -1065,6 +1078,9 @@ struct NovaEducationEditor: View {
 
     private func submitEducation() {
         error = nil
+        draft = draft.preparedForSave()
+        let trainerIDs = draft.trainers.map(\.id)
+        for index in template.topics.indices { template.topics[index].trainer_ids = trainerIDs }
         fillContextFromSelectedTraining()
         if let missing = firstMissingField() {
             validationStep = missing.0
@@ -1084,7 +1100,8 @@ struct NovaEducationEditor: View {
     /// only the companies, workplaces and G4 topics the expert already chose.
     private func fillContextFromSelectedTraining() {
         guard context.package.preset(cycle: template.cycle, hazard: template.hazard_class ?? "") != nil,
-              template.context_note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+              template.context_note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+              template.context_note.hasPrefix("Eğitim kapsamı: ") else { return }
         let places = draft.scopes.map { $0.workplace_name ?? $0.company_name ?? "" }.filter { !$0.isEmpty }
         let topics = template.topics.filter { $0.group == "G4" }.map(\.title).filter { !$0.isEmpty }
         guard !places.isEmpty, !topics.isEmpty else { return }
@@ -1097,14 +1114,25 @@ struct NovaEducationEditor: View {
     /// the training record, so a missing field opens its own accordion card.
     private func firstMissingField() -> (NovaEducationStep, String)? {
         if !draft.isComplete(.companies) { return (.companies, "Eğitim için en az bir firma/işyeri seçin. Tehlike sınıfları aynı olmalı.") }
+        if draft.scopes.count > 100 || Set(draft.scopes.map(\.company_id)).count > 30 {
+            return (.companies, "Tek eğitim için firma/işyeri seçim sayısı sınırı aşıldı.")
+        }
+        let scopeKeys = draft.scopes.map { "\($0.company_id):\($0.workplace_id?.uuidString ?? "firma")" }
+        if Set(scopeKeys).count != scopeKeys.count { return (.companies, "Aynı firma/işyerini eğitimde bir kez seçin.") }
         if draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
             draft.provider_name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return (.info, "Eğitim türünü ve düzenleyici kişi veya kurumu tamamlayın.")
+        }
+        if draft.title.count > 200 || draft.provider_name.count > 300 || draft.notes.count > 2000 {
+            return (.info, "Eğitim başlığı, düzenleyici veya notlar için metin uzunluğunu kısaltın.")
         }
         if template.topics.isEmpty || template.topics.contains(where: {
             $0.instruction_minutes <= 0 || $0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }) {
             return (.topics, "Eğitim konularının dakikalarını tamamlayın.")
+        }
+        if template.topics.count > 150 || template.topics.contains(where: { $0.instruction_minutes > 1440 || $0.title.count > 1000 }) {
+            return (.topics, "Konu sayısını, başlık uzunluğunu ve dakikaları kontrol edin.")
         }
         if let preset = context.package.preset(cycle: template.cycle, hazard: template.hazard_class ?? "") {
             let selectedCodes = Set(template.topics.filter { $0.instruction_minutes > 0 }.map { $0.parent_code ?? $0.code })
@@ -1114,8 +1142,13 @@ struct NovaEducationEditor: View {
             if template.net < preset.default_instruction_minutes || template.group4 < preset.group4.budget_instruction_minutes {
                 return (.topics, "Eğitim süresi ve işyerine özgü konu dakikaları seçilen eğitim için yeterli olmalı.")
             }
+            let common = template.topics.filter { $0.group != "G4" }.reduce(0) { $0 + $1.instruction_minutes }
+            if template.cycle == "initial", let minimum = preset.common_groups_review_guard?.reference_instruction_minutes,
+               common < minimum {
+                return (.topics, "Genel, sağlık ve teknik konuların toplam süresini tamamlayın.")
+            }
         }
-        if !draft.isComplete(.trainers) { return (.trainers, "En az bir eğitici adı girin.") }
+        if !draft.isComplete(.trainers) { return (.trainers, "Her eğiticinin adını tamamlayın; boş ek satırları kaldırın.") }
         if template.topics.contains(where: { $0.trainer_ids.isEmpty }) {
             return (.topics, "Konulara en az bir eğitici atayın.")
         }
@@ -1124,10 +1157,17 @@ struct NovaEducationEditor: View {
         }) {
             return (.info, "Bu eğitimde işyerine özgü konular için yüz yüze yöntemi seçin.")
         }
-        if !draft.isComplete(.schedule) || !scheduleEndsInPast {
+        if !draft.isComplete(.schedule) || template.lessons.count > 200 || !scheduleEndsInPast {
             return (.schedule, "Eğitim gün ve saatlerini kontrol edin. Dersler çakışmamalı ve tamamı geçmişte olmalı.")
         }
         if !draft.isComplete(.participants) { return (.participants, "Her seçilen firma/işyeri için en az bir katılımcı seçin.") }
+        if draft.scopes.contains(where: { $0.participants.count > 500 }) {
+            return (.participants, "Bir firma/işyeri için katılımcı sayısı sınırı aşıldı.")
+        }
+        let participantIDs = draft.scopes.flatMap { $0.participants.map(\.id) }
+        if Set(participantIDs).count != participantIDs.count {
+            return (.participants, "Aynı personeli eğitimde bir kez seçin.")
+        }
         return nil
     }
 
@@ -1365,6 +1405,27 @@ struct NovaEducationEditor: View {
         error = nil
         Task { await loadPeople(company) }
     }
+    private func removeScope(_ id: UUID) {
+        draft.scopes.removeAll { $0.id == id }
+        if let participantCompany, !draft.scopes.contains(where: { $0.company_id == participantCompany }) {
+            self.participantCompany = nil
+        }
+        validationStep = nil
+        validationMessage = nil
+    }
+    private func removeTrainer(_ id: String) {
+        draft.trainers.removeAll { $0.id == id }
+        if editingTrainerID == id { editingTrainerID = nil }
+        let ids = draft.trainers.map(\.id)
+        for index in template.topics.indices { template.topics[index].trainer_ids = ids }
+        for scope in draft.scopes.indices {
+            for topic in draft.scopes[scope].topics.indices {
+                draft.scopes[scope].topics[topic].trainer_ids = ids
+            }
+        }
+        validationStep = nil
+        validationMessage = nil
+    }
     private func hazardLabel(_ value: String) -> String {
         ["low": RDLocalization.string("localizable.nova.education.hazard.low", table: .localizable, fallback: "az tehlikeli"),
          "medium": RDLocalization.string("localizable.nova.education.hazard.medium", table: .localizable, fallback: "tehlikeli"),
@@ -1396,7 +1457,14 @@ struct NovaEducationEditor: View {
             Task { await prepareCertificates(for: row) }
         } catch {
             saveProgress = nil
-            self.error = NovaEducationService.message(error)
+            if let correction = NovaEducationService.correction(error) {
+                validationStep = correction.0
+                validationMessage = correction.1
+                currentStep = correction.0
+                self.error = nil
+            } else {
+                self.error = NovaEducationService.message(error)
+            }
             pending = (try? service.pending()) != nil
         }
     }

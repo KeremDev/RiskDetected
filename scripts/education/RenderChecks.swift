@@ -16,6 +16,7 @@ func trainingMethodName(_ method: String) -> String { method == "online" ? "Onli
             let text = document.string ?? ""
             precondition(text.contains("başarıyla tamamlamıştır") && text.contains(snapshot.person.name!) && text.contains("G3-L"))
             precondition(!text.contains("T.C.") && !text.contains("sınav puanı"))
+            precondition(!text.contains("İşyeri / görev bağlamı:"))
             try data.write(to: output.appendingPathComponent("certificate-\(i).pdf"))
             if i == 0 { for page in 0..<2 { try document.page(at:page)!.thumbnail(of:CGSize(width:595,height:842),for:.mediaBox).pngData()!.write(to:output.appendingPathComponent("certificate-page-\(page).png")) } }
         }
