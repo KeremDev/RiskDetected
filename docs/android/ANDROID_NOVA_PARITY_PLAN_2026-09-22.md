@@ -105,10 +105,37 @@ sırası, aynı durum geçişleri, aynı boş/hata/yükleniyor durumları, aynı
 | Rapor Merkezi + Rapor Arşivi | Tamam; Excel çıktısı gerçek XLSX (iOS CSV yazıyor) | `2cb242d6` |
 | F15 Not defteri | iOS sayfasına getirildi | `d0a7c1d4` |
 | F15 Aktivite + aktif süre (presence) | Tamam | `12f0b171` |
+| F3 Firma sayfası + oluşturma sihirbazı | Tamam | `68f8451c`, `2146e96e` |
+| F4 Personel sayfaları | Tamam | `00eab389` |
+| F16 OSGB yönetici kökü (firma, ekip, atama, kayıt komutları, personel, analizler) | Tamam | `e7dafc3d`…`d7f4b69d` |
+| F6 NOVA analizleri (liste, detay, raporlar, foto alımı, dosyalama, dosyalanmış bulgu) | Tamam | `cacd6217`, `4e2b273d` |
+| F17 NOVA onboarding + giriş yüzeyi (yalnız pilot build) | Tamam | `3ffc1edb` |
+| Firma rehberi Nova görünümü (arama, arşiv, boş durum, "Bilgi geçmişi") | Tamam | `962c21bc` |
+| Çalışma alanı seçici: "OSGB oluştur" / "Davete katıl" | Tamam | `b9e4d949` |
+| Takipte "Önceki Evrak Kayıtları" (salt okunur evrak takibi) | Tamam | `89f6062e` |
+| Profil "Firmalarım" → Nova firma sayfası (kişisel hesap) | Tamam | `d9d3c351` |
+| Kayıt düzenleme/silme (atama, acil durum planı, tatbikat) | Tamam | `3b00ecba` |
+| OSGB uzmanı firma listesi (`isg_expert_companies_v1`) | Tamam | `5720042d` |
+| Not defteri sunucu rollout'una bağlandı (yalnız pilot kökü) | Tamam | `f8b972ce` |
+| Zil bildirimi kayda açılır; kabukta "Firma ekle" | Tamam | `3ea366e7` |
+| Menü/ana sayfa sayaçları ekipman sayfasından | Tamam | `deaf3b94` |
 
-Kalanlar: F6 analiz (iOS tarafı başka oturumda değişiyor), F3 firma çalışma alanı, F4 personel
-yükseltmesi, F16 OSGB yönetici kökü, F17 NOVA onboarding, KKD form PDF'i. Doğrulama önizleme
-uygulamasında yapıldı; canlı staging doğrulaması kullanıcı girişini bekliyor.
+iOS'ta erişilemeyen (ölü) olduğu için taşınmayanlar: `NovaPPEFormPDF` (KKD form PDF'i),
+`IsgWorkspaceTrainingAdvancedScreen`, analiz bölüm başlığı/risk özet kartı/madde çubuğu/defter paneli,
+`NovaCompanyWorkspace.sectionView` akordeonu ve içindeki personel bölümü, dosya kütüphanesi firma filtresi
+popup'ı, ekipman ipucu/süre satırı, uzman kabuğu "Canlı Akış" bloğu, `NovaChecklistWords.explain`,
+onboarding "Bilgilerini düzenle" ekranı (yalnız QA ortam değişkeniyle açılıyor), `IsgWorkspaceDomainCreateEditor`
+içindeki eğitim/risk/acil durum formları.
+
+Bilinçli olarak açık bırakılanlar:
+- Üretim (pilot olmayan) `CompanyListScreen` Nova dalı hâlâ basit buton listesi; iOS aynı yerde tam firma sayfasını
+  açıyor. `feature:nova` → `feature:profile` bağımlılığı yüzünden doğrudan kullanılamıyor ve dal rollout arkasında.
+- Üretim profilindeki not defteri kapısı (`NotebookUIRelease.enabled=false`) değiştirilmedi; iOS sunucu rollout'u okuyor.
+- Profil "Arkadaşını davet et" (iOS `onInvite` → referral) Android'de yok.
+- iOS'ta başka oturumda süren işler (eğitim editörü, KKD örnek formu, iş izni kütüphanesi, firma sayfası "Örnek formlar")
+  Android'de de o oturum tarafından taşınıyor.
+
+Doğrulama önizleme uygulamasında ve birim testlerle yapıldı; canlı staging doğrulaması kullanıcı girişini bekliyor.
 
 Bilinen dışsal konular:
 - `isg-contract-tests` modülü `core/data` kaynaklarını bağımlılıksız derlediği için HEAD'de de kırık (bu işten önce).
