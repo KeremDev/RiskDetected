@@ -25,6 +25,7 @@ dependencies {
     // Screens only, fed synthetic lambdas; no Hilt graph or service is started here.
     implementation(project(":feature:nova"))
     implementation(project(":core:data"))
+    implementation(libs.kotlinx.serialization.json)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.foundation)

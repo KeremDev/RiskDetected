@@ -85,11 +85,21 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             NovaDestination.appointments -> NovaAppointmentScreen(services.appointmentClient(identity), state.writable,
                 onBack = { navigate(NovaDestination.home) })
             NovaDestination.ppeHandovers -> NovaPPEScreen(services.ppeClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
-            NovaDestination.katipContracts -> NovaKatipScreen(services.katipClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
+            // iOS NovaPilotRoot files these through the shared process records.
+            NovaDestination.katipContracts, NovaDestination.annualWorkPlans, NovaDestination.boardMeetings, NovaDestination.visits,
+            NovaDestination.workPermits, NovaDestination.contractors, NovaDestination.newVisit -> key(destination) {
+                NovaProcessGate(services.processClient(identity), processKind(destination), state.writable, onBack = { navigate(NovaDestination.home) })
+            }
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
     }
     NovaNoticeDialog(state.message, "İSGADA pilot", viewModel::dismissMessage)
+}
+
+private fun processKind(destination: NovaDestination) = when (destination) {
+    NovaDestination.katipContracts -> "katip_contract"; NovaDestination.annualWorkPlans -> "annual_work_plan"
+    NovaDestination.boardMeetings -> "board"; NovaDestination.visits, NovaDestination.newVisit -> "site_visit"
+    NovaDestination.workPermits -> "work_permit"; else -> "contractor"
 }
 
 /** A module whose Android page is not ported yet says so plainly; it never pretends to work. */
@@ -212,6 +222,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val appointments: NovaAppointmentService,
     private val ppe: NovaPPEService,
     private val katip: NovaKatipService,
+    private val process: NovaProcessService,
     private val personnel: com.riskdetectedan.core.data.company.PersonnelRepository,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
@@ -234,6 +245,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     }
     fun emergencyClient(identity: IsgWorkspaceIdentity) =
         NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity))
+    fun processClient(identity: IsgWorkspaceIdentity) = NovaServiceProcessClient(process, identity, companies(identity), fileClient(identity))
     fun katipClient(identity: IsgWorkspaceIdentity) = NovaServiceKatipClient(katip, files, identity, companies(identity))
     fun ppeClient(identity: IsgWorkspaceIdentity) = NovaServicePPEClient(ppe, identity, companies(identity))
     fun appointmentClient(identity: IsgWorkspaceIdentity) = NovaServiceAppointmentClient(appointments, identity, companies(identity), fileClient(identity))

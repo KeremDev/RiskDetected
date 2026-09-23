@@ -56,6 +56,8 @@ class DesignPreviewActivity : ComponentActivity() {
                             onBack = { navigate(NovaDestination.home) })
                         NovaDestination.drills -> com.riskdetectedan.feature.nova.NovaDrillScreen(PreviewDrillClient, true,
                             onBack = { navigate(NovaDestination.home) })
+                        NovaDestination.visits -> com.riskdetectedan.feature.nova.NovaProcessGate(PreviewProcessClient, "site_visit", true,
+                            onBack = { navigate(NovaDestination.home) })
                         NovaDestination.companies -> NovaCompaniesScreen(listOf(NovaCompanyItem("fixture", "Koza Altın A.Ş", "Kaymaz Mah. · Maden · Çok tehlikeli")),
                             onSelect = { navigate(NovaDestination.memory) }, onBack = { navigate(NovaDestination.home) }, onRetry = {})
                         else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
