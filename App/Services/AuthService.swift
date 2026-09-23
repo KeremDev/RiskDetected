@@ -14,6 +14,7 @@ final class AuthService: ObservableObject {
     private static let installMarkerKey = "rd.install.marker.v1"
     private let supabase = SupabaseService.shared
     private var stateTask: Task<Void, Never>?
+    private var discardsLocalSessionThisLaunch = false
     private var deviceRegionCaptureInFlightUserIDs = Set<UUID>()
     private var deviceRegionCaptureCompletedUserIDs = Set<UUID>()
     private var platformTelemetryInFlightUserIDs = Set<UUID>()
@@ -29,6 +30,7 @@ final class AuthService: ObservableObject {
         }
         #endif
         let isFreshInstall = Self.markInstallAndDetectFreshInstall()
+        discardsLocalSessionThisLaunch = isFreshInstall
         // İlk başta cache'lenmiş session'ı oku. iOS Keychain uygulama silinse bile
         // kalabildiği için fresh install'da eski Supabase session'ını kabul etmiyoruz.
         session = isFreshInstall ? nil : Self.validSession(supabase.client.auth.currentSession)
@@ -47,6 +49,31 @@ final class AuthService: ObservableObject {
     // MARK: - Public
 
     var isAuthenticated: Bool { session != nil }
+
+    /// A stored session whose access token has lapsed (they last an hour) is
+    /// still a signed-in user: the refresh token outlives it by weeks. Launch
+    /// routing waits here for that refresh instead of reading the user as
+    /// signed out and racing the SDK's own background refresh. The SDK joins
+    /// concurrent refreshes into one request, so this never spends the refresh
+    /// token twice. Offline or rejected refreshes fall through after `timeout`.
+    func restoreLapsedSessionIfPossible(timeout seconds: Double = 4) async {
+        guard session == nil, !discardsLocalSessionThisLaunch,
+              let stored = supabase.client.auth.currentSession, stored.isExpired else { return }
+        let client = supabase.client
+        let refreshed: Session? = await withTaskGroup(of: Session?.self) { group in
+            group.addTask { try? await client.auth.session }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
+        guard session == nil, let restored = Self.validSession(refreshed) else { return }
+        session = restored
+        Task { await ensureProfile(for: restored.user) }
+    }
 
     /// E-posta + şifre ile giriş.
     /// signIn'in döndürdüğü Session'dan user ID'yi alıyor — currentSession race condition yok.

@@ -478,7 +478,14 @@ final class AppState: ObservableObject {
         }
         #endif
 
+        // The splash stays up while a lapsed access token refreshes, so a
+        // signed-in user lands in the app rather than in onboarding or login.
+        await auth.restoreLapsedSessionIfPossible()
+
         if auth.isAuthenticated {
+            #if DEBUG && NOVA_PILOT_BUILD
+            NovaPilotEntryGate.markReturningUser()
+            #endif
             async let initialProfileRefresh: Void = auth.refreshProfile()
             async let pendingDraftSync = OnboardingAnswersService.shared.syncPendingDraftIfPossible()
             async let welcomeEmail: Void = sendWelcomeEmailIfPossible()
@@ -1158,11 +1165,15 @@ final class AppState: ObservableObject {
                         await self.sendWelcomeEmailIfPossible()
                     }
                     #if DEBUG && NOVA_PILOT_BUILD
+                    // Only a sign-up the funnel itself started keeps the user in
+                    // the funnel; any other session is a returning user.
                     if self.novaPilotOnboardingActive { return }
-                    #endif
+                    NovaPilotEntryGate.markReturningUser()
+                    #else
                     if self.flow == .onboarding && !self.hasSeenOnboarding {
                         return
                     }
+                    #endif
                     if self.flow != .main {
                         self.flow = .main
                     }
