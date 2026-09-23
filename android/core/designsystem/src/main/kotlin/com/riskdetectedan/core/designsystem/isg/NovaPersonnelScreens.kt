@@ -32,6 +32,9 @@ import java.util.UUID
 /** A per-employee panel the host supplies, such as the training status card (iOS `NovaEmployeeLearningCard`). */
 typealias NovaEmployeeExtra = @Composable (employee: UUID, canWrite: Boolean) -> Unit
 
+/** The person's certificates and documents, opened from the detail actions (iOS `NovaEmployeeCertificatesScreen`). */
+typealias NovaEmployeeCertificates = @Composable (employee: UUID, canWrite: Boolean, onBack: () -> Unit) -> Unit
+
 /**
  * Personeller (iOS `NovaPersonnelDestination`): the scope owns every list, search, form and pending-request
  * state. [initialEmployee] opens straight on one person when the caller already knows who.
@@ -39,8 +42,8 @@ typealias NovaEmployeeExtra = @Composable (employee: UUID, canWrite: Boolean) ->
 @Composable
 fun NovaPersonnelDestination(scope: NovaPersonnelScope, companyName: String, client: NovaPersonnelClient, onBack: () -> Unit,
                              directory: NovaDirectoryClient? = null, canWrite: Boolean = true, initialEmployee: UUID? = null,
-                             employeeExtra: NovaEmployeeExtra? = null) {
-    key(scope, canWrite) { PersonnelContent(scope, companyName, client, onBack, directory, canWrite, initialEmployee, employeeExtra) }
+                             employeeExtra: NovaEmployeeExtra? = null, employeeCertificates: NovaEmployeeCertificates? = null) {
+    key(scope, canWrite) { PersonnelContent(scope, companyName, client, onBack, directory, canWrite, initialEmployee, employeeExtra, employeeCertificates) }
 }
 
 private sealed interface PersonnelRoute {
@@ -54,7 +57,8 @@ private sealed interface PersonnelRoute {
 
 @Composable
 private fun PersonnelContent(scope: NovaPersonnelScope, companyName: String, client: NovaPersonnelClient, onBack: () -> Unit,
-                             directory: NovaDirectoryClient?, canWrite: Boolean, initialEmployee: UUID?, employeeExtra: NovaEmployeeExtra?) {
+                             directory: NovaDirectoryClient?, canWrite: Boolean, initialEmployee: UUID?, employeeExtra: NovaEmployeeExtra?,
+                             employeeCertificates: NovaEmployeeCertificates?) {
     var route by remember { mutableStateOf<PersonnelRoute>(initialEmployee?.let { PersonnelRoute.Detail(it) } ?: PersonnelRoute.List) }
     var refresh by remember { mutableStateOf(UUID.randomUUID()) }
     NovaPageSurface {
@@ -65,7 +69,7 @@ private fun PersonnelContent(scope: NovaPersonnelScope, companyName: String, cli
             }
             is PersonnelRoute.Detail -> EmployeeDetail(scope, current.id, client, companyName, { route = PersonnelRoute.List }, { route = PersonnelRoute.Edit(it) },
                 { route = PersonnelRoute.Archive(it) }, canWrite, if (directory == null) null else { kind -> route = PersonnelRoute.Advanced(current.id, kind) },
-                employeeExtra)
+                employeeExtra, employeeCertificates)
             is PersonnelRoute.Advanced -> directory?.let {
                 NovaDirectoryDestination(scope, current.kind, current.id, it, canWrite = canWrite) { route = PersonnelRoute.Detail(current.id) }
             }
@@ -85,7 +89,7 @@ private fun PersonnelContent(scope: NovaPersonnelScope, companyName: String, cli
 
 @Composable
 private fun PersonnelHeading(title: String, subtitle: String = "", enabled: Boolean = true, backTag: String = "personnel.back",
-                             onAdd: (() -> Unit)? = null, onBack: () -> Unit) {
+                             onAdd: (() -> Unit)? = null, addEnabled: Boolean = true, onBack: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         if (!LocalNovaPopup.current) NovaBackButton(Modifier.testTag(backTag), enabled = enabled, onClick = onBack)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -94,11 +98,19 @@ private fun PersonnelHeading(title: String, subtitle: String = "", enabled: Bool
                 NovaIcon("building.2", 13.dp); NovaText(subtitle, style = NovaTypeToken.metaQuiet)
             }
         }
-        if (onAdd != null) NovaButton("Ekle", onAdd, Modifier.testTag("personnel.add"), enabled = enabled, symbol = "plus", compact = true)
+        if (onAdd != null) {
+            val shape = androidx.compose.foundation.shape.CircleShape
+            Row(Modifier.heightIn(min = 44.dp).clip(shape).background(NovaColorToken.surfaceMuted.color(), shape)
+                .novaPress(enabled = addEnabled, onClick = onAdd).testTag("personnel.add").padding(horizontal = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                NovaIcon("plus", 14.dp, tint = NovaColorToken.accentInk.color())
+                NovaText("Ekle", style = NovaTypeToken.bodyStrong, color = NovaColorToken.accentInk.color())
+            }
+        }
     }
 }
 
-private fun placement(row: NovaEmployeeRow) = listOfNotNull(row.departmentName, row.jobTitle).joinToString(" · ")
+private fun placement(row: NovaEmployeeRow) = listOfNotNull(row.departmentName, row.jobTitle).filter { it.isNotEmpty() }.joinToString(" · ")
 
 @Composable
 private fun EmployeeList(scope: NovaPersonnelScope, companyName: String, client: NovaPersonnelClient, refresh: UUID,
@@ -146,8 +158,9 @@ private fun EmployeeList(scope: NovaPersonnelScope, companyName: String, client:
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 4.dp, bottom = 24.dp + novaTabBarInset)
         .testTag("personnel.list"), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        PersonnelHeading("Personeller", companyName, enabled = canWrite && pendingChecked && pending == null && !reconciling,
-            onAdd = onAdd, onBack = onBack)
+        // Adding is offered only to a writer with nothing pending (iOS).
+        PersonnelHeading("Personeller", companyName, onAdd = if (canWrite && pending == null) onAdd else null,
+            addEnabled = pendingChecked && !reconciling, onBack = onBack)
         NovaCard(Modifier.fillMaxWidth(), padding = 14) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 NovaIcon("magnifyingglass", 18.dp)
@@ -213,8 +226,10 @@ private fun personnelSuccess(action: NovaEmployeeIntent.Action) = when (action) 
 @Composable
 private fun EmployeeDetail(scope: NovaPersonnelScope, id: UUID, client: NovaPersonnelClient, companyName: String, onBack: () -> Unit,
                            onEdit: (NovaEmployeeRow) -> Unit, onArchive: (NovaEmployeeRow) -> Unit, canWrite: Boolean,
-                           onDirectory: ((NovaDirectoryKind) -> Unit)?, employeeExtra: NovaEmployeeExtra?) {
+                           onDirectory: ((NovaDirectoryKind) -> Unit)?, employeeExtra: NovaEmployeeExtra?,
+                           employeeCertificates: NovaEmployeeCertificates?) {
     var row by remember(id) { mutableStateOf<NovaEmployeeRow?>(null) }
+    var certificates by remember(id) { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
     var refresh by remember { mutableStateOf(UUID.randomUUID()) }
     BackHandler { onBack() }
@@ -231,33 +246,49 @@ private fun EmployeeDetail(scope: NovaPersonnelScope, id: UUID, client: NovaPers
         val value = row
         when {
             value != null -> {
-                NovaCard(Modifier.fillMaxWidth().testTag("personnel.detail"), padding = 16) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                NovaCard(Modifier.fillMaxWidth().testTag("personnel.detail"), padding = 14) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             NovaIcon("person", 23.dp)
                             NovaSizedText(value.name, 16f, FontWeight.Bold, modifier = Modifier.weight(1f))
                             Box(Modifier.size(9.dp).background((if (value.isArchived) NovaColorToken.statusDangerDot else NovaColorToken.statusSuccessDot).color(), CircleShape)
                                 .semantics { contentDescription = if (value.isArchived) "Arşivde" else "Aktif" })
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                            NovaIcon("building.2", 18.dp); NovaText(placement(value).ifEmpty { "Departman seçilmedi" }, style = NovaTypeToken.metaQuiet)
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                            NovaIcon("building.2", 15.dp, tint = NovaColorToken.accentInk.color()); NovaText(companyName, style = NovaTypeToken.metaQuiet)
+                        Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                            NovaIcon("building.2", 13.dp, tint = NovaColorToken.accentInk.color())
+                            NovaText(companyName, style = NovaTypeToken.metaQuiet)
+                            placement(value).takeIf { it.isNotEmpty() }?.let { NovaText("· $it", style = NovaTypeToken.metaQuiet) }
                         }
                     }
                 }
                 employeeExtra?.invoke(id, canWrite && !value.isArchived)
-                if (canWrite) NovaButton(if (value.isArchived) "Yeniden etkinleştir" else "Düzenle", { onEdit(value) }, Modifier.fillMaxWidth()
-                    .testTag(if (value.isArchived) "personnel.restore" else "personnel.edit"), symbol = if (value.isArchived) "arrow.uturn.backward" else "pencil")
-                onDirectory?.let { open ->
-                    NovaButton("Görevlendirme geçmişi", { open(NovaDirectoryKind.assignments) }, Modifier.fillMaxWidth().testTag("personnel.assignments"),
-                        variant = NovaButtonVariant.Surface, symbol = "clock.arrow.circlepath")
-                    NovaButton("İşveren ilişkisi", { open(NovaDirectoryKind.employers) }, Modifier.fillMaxWidth().testTag("personnel.employers"),
-                        variant = NovaButtonVariant.Surface, symbol = "building.2")
+                // Every action on one person in a two-column grid (iOS).
+                val actions = buildList<Triple<String, String, Pair<String, () -> Unit>>> {
+                    if (employeeCertificates != null) add(Triple("Sertifika ve belgeler", "doc.text", "personnel.certificates" to { certificates = true }))
+                    if (canWrite) add(Triple(if (value.isArchived) "Etkinleştir" else "Düzenle", if (value.isArchived) "arrow.uturn.backward" else "pencil",
+                        (if (value.isArchived) "personnel.restore" else "personnel.edit") to { onEdit(value) }))
+                    onDirectory?.let { open ->
+                        add(Triple("Görevlendirmeler", "clock.arrow.circlepath", "personnel.assignments" to { open(NovaDirectoryKind.assignments) }))
+                        add(Triple("İşveren ilişkisi", "building.2", "personnel.employers" to { open(NovaDirectoryKind.employers) }))
+                    }
+                    if (canWrite && !value.isArchived) add(Triple("Arşivle", "archivebox", "personnel.detail.archive" to { onArchive(value) }))
                 }
-                if (canWrite && !value.isArchived) NovaButton("Personeli arşivle", { onArchive(value) }, Modifier.fillMaxWidth().testTag("personnel.detail.archive"),
-                    variant = NovaButtonVariant.Danger, symbol = "trash")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    actions.chunked(2).forEach { pair ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            pair.forEach { (title, symbol, target) ->
+                                NovaCompactActionButton(title, symbol, Modifier.weight(1f), prominent = target.first == "personnel.edit" ||
+                                    target.first == "personnel.restore", identifier = target.first, onClick = target.second)
+                            }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+                if (employeeCertificates != null) NovaPopup(certificates, { certificates = false }, identifier = "personnel.certificates.popup", scrollable = false) {
+                    Box(Modifier.fillMaxWidth().heightIn(min = 420.dp, max = 680.dp)) {
+                        employeeCertificates(id, canWrite && !value.isArchived) { certificates = false }
+                    }
+                }
             }
             failed -> {
                 NovaText("Personel yüklenemedi.")

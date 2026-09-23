@@ -16,15 +16,13 @@ private fun lessonHours(minutes: Int) = String.format(java.util.Locale.US, "%.1f
 
 /**
  * Eğitim durumu (iOS `NovaEmployeeLearningCard`): actual instruction and missing topics for one person,
- * independent of certificates. [certificates] opens that person's certificate records.
+ * independent of certificates, which open from the personnel detail actions.
  */
 @Composable
-fun NovaEmployeeLearningCard(load: suspend () -> NovaEmployeeLearning, changes: Flow<Unit> = emptyFlow(),
-                             certificates: @Composable (onBack: () -> Unit) -> Unit) {
+fun NovaEmployeeLearningCard(load: suspend () -> NovaEmployeeLearning, changes: Flow<Unit> = emptyFlow()) {
     var result by remember { mutableStateOf<NovaEmployeeLearning?>(null) }
     var failed by remember { mutableStateOf(false) }
     var revision by remember { mutableIntStateOf(0) }
-    var showCertificates by remember { mutableStateOf(false) }
     LaunchedEffect(changes) { changes.collect { revision++ } }
     LaunchedEffect(revision) {
         result = null; failed = false
@@ -57,11 +55,6 @@ fun NovaEmployeeLearningCard(load: suspend () -> NovaEmployeeLearning, changes: 
                 NovaText("Bu özet sertifika veya sınav sonucu oluşturmaz.", style = NovaTypeToken.meta)
             }
         }
-        NovaButton("Sertifika ve belgeleri", { showCertificates = true }, Modifier.fillMaxWidth().testTag("personnel.certificates"),
-            variant = NovaButtonVariant.Surface, symbol = "doc.text")
-    }
-    NovaPopup(showCertificates, { showCertificates = false }, identifier = "personnel.certificates.popup", scrollable = false) {
-        Box(Modifier.fillMaxWidth().heightIn(min = 420.dp, max = 680.dp)) { certificates { showCertificates = false } }
     }
 }
 

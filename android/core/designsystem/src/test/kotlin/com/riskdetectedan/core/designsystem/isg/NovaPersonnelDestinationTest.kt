@@ -67,7 +67,7 @@ class NovaPersonnelDestinationTest {
         }, save = { error("No write") }, pending = { null })
         compose.setContent { NovaTheme(false) { NovaPersonnelDestination(scope, "Firma", client(), {}, directory, false) } }
         compose.mainClock.advanceTimeBy(250); compose.waitForIdle()
-        compose.onNodeWithTag("personnel.add").assertIsNotEnabled()
+        compose.onNodeWithTag("personnel.add").assertDoesNotExist()
         compose.onNodeWithTag("personnel.row.$employeeID").performScrollTo().performClick()
         compose.onNodeWithTag("personnel.edit").assertDoesNotExist()
         compose.onNodeWithTag("personnel.assignments").performScrollTo().performClick()
@@ -90,7 +90,7 @@ class NovaPersonnelDestinationTest {
         start();add()
         compose.onNodeWithTag("personnel.department").performTextInput("Bakım")
         compose.onNodeWithTag("personnel.save").performScrollTo().performClick()
-        compose.onNodeWithText("Bakım").assertIsDisplayed()
+        compose.onNodeWithText("Bakım", substring = true).assertIsDisplayed()
         compose.runOnIdle { assertEquals(NovaEmployeeDepartment.New("Bakım"),intents.single().department) }
     }
     @Test fun uncertainResultCannotLeaveAndRetriesSameMutationKey() {
