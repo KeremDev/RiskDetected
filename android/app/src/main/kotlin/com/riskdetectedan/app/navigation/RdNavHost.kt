@@ -132,6 +132,9 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 },
                 // The OSGB management root is ported separately; until then managers keep the existing workspace screen.
                 manager = { onSwitch -> OsgbWorkspaceScreen(onBack = onSwitch) },
+                analysisReports = {
+                    ReportsScreen(embeddedInMainShell = true, onOpenAnalysis = { analysisId -> navController.navigate(AnalysisResult(analysisId)) })
+                },
             ))
         }
         composable<Capture> {

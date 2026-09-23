@@ -110,6 +110,10 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                     services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable, state.userName),
                     onBack = onBack, initialCompany = company)
             }
+            NovaDestination.reports -> NovaReportCenter(services.reportClient(identity), slots.analysisReports, onBack = { navigate(NovaDestination.home) })
+            NovaDestination.reportArchive -> NovaReportArchive(services.reportClient(identity), slots.analysisReports,
+                onBack = { navigate(NovaDestination.reports) })
+            NovaDestination.memory -> NovaReportArchive(services.reportClient(identity), slots.analysisReports, onBack = { navigate(NovaDestination.home) })
             NovaDestination.checklists -> NovaChecklistScreen(services.checklistClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
@@ -301,6 +305,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     }
     fun emergencyClient(identity: IsgWorkspaceIdentity) =
         NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity))
+    fun reportClient(identity: IsgWorkspaceIdentity) = NovaServiceReportClient(training, process, statistics, identity, companies(identity))
     fun statisticsClient(identity: IsgWorkspaceIdentity) = NovaServiceStatisticsClient(statistics, process, followups, identity, changes(identity))
     fun trainingClient(identity: IsgWorkspaceIdentity, userName: String) =
         NovaServiceTrainingClient(training, identity, companies(identity), userName, people(identity))

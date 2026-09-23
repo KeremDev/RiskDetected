@@ -150,6 +150,13 @@ fun JsonElement.novaRpc(): JsonElement = when (this) {
                                           @SerialName("recorded_minutes") val recordedMinutes: Int? = null, @SerialName("timed_visits") val timedVisits: Int,
                                           @SerialName("last_visited_on") val lastVisitedOn: String? = null)
 
+/** One archived process document version (iOS `NovaProcessArchive.Entry`). */
+@Serializable data class NovaProcessDocument(val id: String, val version: Int, @SerialName("document_no") val documentNo: String,
+                                             @SerialName("company_name") val companyName: String, val kind: String) {
+    val key get() = "$id:$version"
+    val isFinding get() = kind.contains("nonconform", true) || kind.contains("finding", true)
+}
+
 class NovaProcessException(val code: String) : Exception(code)
 
 /** Process records boundary (iOS `NovaProcessService`). */
@@ -192,6 +199,18 @@ class NovaProcessService @Inject constructor(private val transport: NovaExpertTr
             result.visits < 0 || result.timedVisits < 0 || result.timedVisits > result.visits) throw NovaProcessException("ACCESS_DENIED")
         return result
     }
+
+    /** Archived documents, twenty per page, newest first. */
+    suspend fun documents(identity: IsgWorkspaceIdentity, offset: Int = 0): List<NovaProcessDocument> =
+        call(identity, "isg_pilot_process_documents_v1", buildJsonObject {
+            put("p_company", JsonNull); put("p_document", JsonNull); put("p_version", JsonNull); put("p_offset", offset)
+        }).decode(kotlinx.serialization.builtins.ListSerializer(NovaProcessDocument.serializer()))
+
+    /** The frozen record of one archived document version. */
+    suspend fun document(identity: IsgWorkspaceIdentity, id: String, version: Int): NovaProcessRow =
+        call(identity, "isg_pilot_process_documents_v1", buildJsonObject {
+            put("p_company", JsonNull); put("p_document", id); put("p_version", version); put("p_offset", 0)
+        }).decode(NovaProcessRow.serializer())
 
     @Serializable private data class AttachmentResult(@SerialName("entry_id") val entryId: String)
 

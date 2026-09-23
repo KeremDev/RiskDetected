@@ -39,6 +39,8 @@ class NovaSessionViewModel @Inject constructor(personnel: PersonnelRepository) :
 class NovaPilotSlots(
     val profile: @Composable (onBack: () -> Unit) -> Unit,
     val manager: @Composable (onSwitch: () -> Unit) -> Unit,
+    /** The photo-analysis report list the archive's "Analiz raporları" tab shows (iOS `ReportView`). */
+    val analysisReports: @Composable () -> Unit,
 )
 
 /**

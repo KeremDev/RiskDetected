@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files the preview's module screens hand to a viewer, as the app's own FileProvider does. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="nova" path="nova/" />
+</paths>
