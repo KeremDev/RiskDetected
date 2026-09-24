@@ -99,10 +99,13 @@ private fun RiskMatrix(label: String, selected: Int?, id: String, onPick: (Int) 
 @Composable
 fun NovaNonconformityBoardScreen(load: suspend () -> List<NovaNonconformityEntry>, companies: List<NovaCompanyOption>,
                                  today: String, revision: Any, onOpen: (NovaNonconformityEntry) -> Unit,
-                                 onCreate: (() -> Unit)?, onBack: () -> Unit) {
+                                 onCreate: (() -> Unit)?, onBack: () -> Unit,
+                                 /** Opens on the records a home card counted, until the filter is removed. */
+                                 initialPreset: NovaListPreset? = null, onPresetCleared: () -> Unit = {}) {
     var entries by remember { mutableStateOf<List<NovaNonconformityEntry>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    var filter by remember { mutableStateOf(NovaNonconformityFilter()) }
+    var filter by remember { mutableStateOf(NovaNonconformityFilter(preset = initialPreset)) }
+    LaunchedEffect(filter.preset) { if (filter.preset == null && initialPreset != null) onPresetCleared() }
     var openFilter by remember { mutableStateOf<String?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     LaunchedEffect(reload, revision) {
@@ -121,6 +124,7 @@ fun NovaNonconformityBoardScreen(load: suspend () -> List<NovaNonconformityEntry
             if (onCreate != null) NovaListActionButton("Yeni kayıt ekle", "plus", identifier = "nonconformity.new", onClick = onCreate)
         }
         NovaListHint("Kayıtları firma, durum ve kayıt türüne göre filtreleyin; karta dokunarak düzeltme sürecini açın.")
+        filter.preset?.let { preset -> NovaListPresetChip(preset) { filter = filter.copy(preset = null) } }
         if (entries != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NovaListStat("Toplam kayıt", "list.bullet", all.size, Modifier.weight(1f),

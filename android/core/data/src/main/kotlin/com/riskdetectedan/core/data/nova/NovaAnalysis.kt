@@ -112,6 +112,8 @@ data class NovaAnalysisSummary(
     val id: String, val title: String, val createdOn: String, val companyName: String?, val findingCount: Int?, val photoCount: Int = 0,
     val sectorLabel: String? = null, val highestBand: String? = null, val focusLabel: String? = null, val isReviewed: Boolean = false,
     val createdAt: Instant? = null,
+    /** Who made it, in an organization; personal analyses are all the account's. */
+    val createdBy: String? = null,
 ) {
     val isUnassigned: Boolean get() = companyName == null
     fun matches(query: String): Boolean {
@@ -227,7 +229,8 @@ class NovaAnalysisService @Inject constructor(
                 fun text(key: String) = row[key]?.jsonPrimitive?.contentOrNull
                 NovaAnalysisSummary(text("id")!!, text("title").orEmpty(), day(text("created_at")), text("company_name"),
                     row["finding_count"]?.jsonPrimitive?.intOrNull, highestBand = if (method == NovaRiskMethod.fineKinney) text("highest_band_fk")
-                    else text("highest_band_m5"), isReviewed = true, createdAt = instant(text("created_at")))
+                    else text("highest_band_m5"), isReviewed = true, createdAt = instant(text("created_at")),
+                    createdBy = text("created_by_user_id"))
             }
             return rows to (page["has_more"]?.jsonPrimitive?.booleanOrNull == true)
         }

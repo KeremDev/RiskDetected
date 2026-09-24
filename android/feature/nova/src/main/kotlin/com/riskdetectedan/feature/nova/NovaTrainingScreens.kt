@@ -87,7 +87,10 @@ private class TrainingEditorTarget(val session: NovaTrainingSession?)
 
 /** Eğitimler (iOS `NovaTrainingHub` + `NovaTrainingRegister`): realized trainings, their people and hours. */
 @Composable
-fun NovaTrainingScreen(client: NovaTrainingClient, canWrite: Boolean, onBack: () -> Unit, createOnOpen: Boolean = false, initialCompany: String? = null) {
+fun NovaTrainingScreen(client: NovaTrainingClient, canWrite: Boolean, onBack: () -> Unit, createOnOpen: Boolean = false, initialCompany: String? = null,
+                       /** Opens on the trainings a home card counted, until the filter is removed; the totals follow it. */
+                       initialPreset: NovaListPreset? = null, onPresetCleared: () -> Unit = {}) {
+    var preset by remember { mutableStateOf(initialPreset) }
     var companies by remember { mutableStateOf<List<NovaCompanyOption>>(emptyList()) }
     var sessions by remember { mutableStateOf<List<NovaTrainingSession>?>(null) }
     var writable by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -160,13 +163,17 @@ fun NovaTrainingScreen(client: NovaTrainingClient, canWrite: Boolean, onBack: ()
         company?.let { selected -> employeeTotal = runCatching { client.employees(selected).size }.getOrNull() }
     }
     val all = sessions.orEmpty()
+    // A home card's filter: completed sessions held on its days, and in an organization only the member's own.
+    fun matchesPreset(session: NovaTrainingSession) = preset.let { card ->
+        card == null || (card.includes(session.heldOn) && session.companies.any { it.state == "completed" } && card.isMine(session.createdByUserId))
+    }
     val visible = all.filter { session ->
-        (company == null || session.companies.any { it.companyId.sameId(company) }) &&
+        matchesPreset(session) && (company == null || session.companies.any { it.companyId.sameId(company) }) &&
             (query.isBlank() || session.title.contains(query.trim(), true) || session.trainer.contains(query.trim(), true)) &&
             (dateFilter.isBlank() || session.heldOn.startsWith(dateFilter.trim())) &&
             (cycle == null || session.education?.scopes?.any { it.cycle == cycle } == true)
     }.sortedByDescending { it.heldOn }
-    val completed = all.flatMap { it.companies }.filter { it.state == "completed" && (company == null || it.companyId.sameId(company)) }
+    val completed = all.filter(::matchesPreset).flatMap { it.companies }.filter { it.state == "completed" && (company == null || it.companyId.sameId(company)) }
     val trained = completed.flatMap { scope -> scope.participants.filter { it.attended }.map { it.id.lowercase() } }.toSet()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -175,6 +182,7 @@ fun NovaTrainingScreen(client: NovaTrainingClient, canWrite: Boolean, onBack: ()
         }
         NovaListHint("Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz.")
         createMessage?.let { NovaHelpHint(it) }
+        preset?.let { NovaListPresetChip(it) { preset = null; onPresetCleared() } }
         val trainingStats = listOf(
             Triple("Eğitim saati", hours(completed.sumOf { it.durationMinutes }), NovaStatus.Neutral),
             Triple("Eğitim alan", trained.size.toString(), NovaStatus.Success),

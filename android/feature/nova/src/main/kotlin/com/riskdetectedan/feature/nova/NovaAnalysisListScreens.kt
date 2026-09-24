@@ -89,7 +89,9 @@ private fun RemovableFilter(title: String, onClick: () -> Unit) {
  */
 @Composable
 fun NovaAnalysisListScreen(client: NovaAnalysisListClient, onOpen: (String) -> Unit, onBack: () -> Unit,
-                           onNewPhotoAnalysis: (() -> Unit)? = null, onReports: (() -> Unit)? = null) {
+                           onNewPhotoAnalysis: (() -> Unit)? = null, onReports: (() -> Unit)? = null,
+                           /** Opens on the analyses a home card counted, until the filter is removed. */
+                           initialPreset: NovaListPreset? = null, onPresetCleared: () -> Unit = {}) {
     BackHandler(onBack = onBack)
     val coroutines = rememberCoroutineScope()
     var rows by remember { mutableStateOf<List<NovaAnalysisSummary>?>(null) }
@@ -105,9 +107,18 @@ fun NovaAnalysisListScreen(client: NovaAnalysisListClient, onOpen: (String) -> U
     var company by remember { mutableStateOf<String?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     var menu by remember { mutableStateOf<String?>(null) }
+    var preset by remember { mutableStateOf(initialPreset) }
     LaunchedEffect(reload) {
         error = null
-        try { val (page, more) = client.load(0); rows = page; hasMore = more }
+        try {
+            val (page, more) = client.load(0); rows = page; hasMore = more
+            // The list is newest first: read on until the rows are older than the card's first day,
+            // so every analysis it counted is here.
+            var pages = 1
+            while (preset != null && hasMore && pages < 30 && preset?.isBefore(rows?.lastOrNull()?.createdAt) != true) {
+                val (next, nextMore) = client.load(rows.orEmpty().size); rows = rows.orEmpty() + next; hasMore = nextMore; pages++
+            }
+        }
         catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Exception) { rows = emptyList(); hasMore = false; error = "Analizler alınamadı. Bağlantınızı kontrol edip tekrar deneyin." }
     }
@@ -119,9 +130,10 @@ fun NovaAnalysisListScreen(client: NovaAnalysisListClient, onOpen: (String) -> U
     }
     val all = rows.orEmpty()
     val companyNames = all.mapNotNull { it.companyName }.distinct().sorted()
-    val activeFilters = (if (filter == AnalysisFilter.all) 0 else 1) + (if (company == null) 0 else 1)
+    val activeFilters = (if (filter == AnalysisFilter.all) 0 else 1) + (if (company == null) 0 else 1) + (if (preset == null) 0 else 1)
     val visible = all.filter { row ->
-        row.matches(query) && (company == null || row.companyName == company) && when (filter) {
+        row.matches(query) && (company == null || row.companyName == company) &&
+            preset.let { it == null || (it.includes(row.createdAt) && it.isMine(row.createdBy)) } && when (filter) {
             AnalysisFilter.all -> true; AnalysisFilter.critical -> row.highestBand == "critical"
             AnalysisFilter.unassigned -> row.isUnassigned; AnalysisFilter.unreviewed -> !row.isReviewed
         }
@@ -174,6 +186,7 @@ fun NovaAnalysisListScreen(client: NovaAnalysisListClient, onOpen: (String) -> U
                 "analysis.list.filter") { menu = "filter" }
             CompactControl("arrow.up.arrow.down", sort.title, false, "analysis.list.sort") { menu = "sort" }
         }
+        preset?.let { NovaListPresetChip(it) { preset = null; onPresetCleared() } }
         if (filter != AnalysisFilter.all || company != null) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             if (filter != AnalysisFilter.all) RemovableFilter(filter.title) { filter = AnalysisFilter.all }
             company?.let { RemovableFilter(it) { company = null } }
@@ -227,7 +240,7 @@ fun NovaAnalysisListScreen(client: NovaAnalysisListClient, onOpen: (String) -> U
                         }
                     }
                     // Only on the account's own unfiltered order: filtering one page client-side would hide rows a later page holds.
-                    if (hasMore && query.isEmpty() && company == null && filter == AnalysisFilter.all) Row(Modifier.fillMaxWidth().heightIn(min = 44.dp)
+                    if (hasMore && query.isEmpty() && company == null && filter == AnalysisFilter.all && preset == null) Row(Modifier.fillMaxWidth().heightIn(min = 44.dp)
                         .novaRowPress(enabled = !loadingMore) {
                             loadingMore = true
                             coroutines.launch {

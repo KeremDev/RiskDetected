@@ -17,6 +17,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
 import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -63,6 +65,44 @@ data class NovaForYouCard(
         /** Only the member's own records (organization sessions). */
         val mine: Boolean? = null,
     )
+}
+
+/**
+ * What a "Senin İçin" card asks the list it opens to show: exactly the records the card counted
+ * (iOS `NovaListPreset`). The list shows the card's own words as a removable filter.
+ */
+data class NovaListPreset(
+    /** The card's title, shown on the filter chip. */
+    val title: String,
+    val status: String?,
+    /** Inclusive Istanbul days ("yyyy-MM-dd"). */
+    val from: String?,
+    val to: String?,
+    /** Only records this member made (organization sessions). */
+    val mine: String?,
+) {
+    fun includes(day: String): Boolean = (from == null || day >= from) && (to == null || day <= to)
+
+    /** Whether the moment falls on one of the preset's days in Istanbul. */
+    fun includes(moment: Instant?): Boolean {
+        if (from == null && to == null) return true
+        return moment != null && includes(istanbulDay(moment))
+    }
+
+    /** Whether a list ordered newest first can stop reading here: everything after it is older than the first day. */
+    fun isBefore(moment: Instant?): Boolean = from != null && moment != null && istanbulDay(moment) < from
+
+    fun isMine(creator: String?): Boolean = mine == null || creator.equals(mine, ignoreCase = true)
+
+    companion object {
+        fun of(title: String, target: NovaForYouCard.Target, actor: String) =
+            NovaListPreset(title, target.status, target.from, target.to, if (target.mine == true) actor else null)
+
+        fun istanbulDay(moment: Instant): String = moment.atZone(ZoneId.of("Europe/Istanbul")).toLocalDate().toString()
+
+        /** A server timestamp, with or without fractional seconds. */
+        fun moment(value: String?): Instant? = value?.let { runCatching { OffsetDateTime.parse(it).toInstant() }.getOrNull() }
+    }
 }
 
 /**

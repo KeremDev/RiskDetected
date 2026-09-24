@@ -122,6 +122,9 @@ data class NovaNonconformityRow(
     val verifications: List<NovaVerificationRecord>? = null,
     @SerialName("evidence_asset_ids") val evidenceAssetIds: List<String>? = null,
     @SerialName("evidence_downloads") val evidenceDownloads: List<NovaEvidenceDownload>? = null,
+    /** When and by whom the record was written; list rows carry them so a home card can narrow the list. */
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("created_by_user_id") val createdByUserId: String? = null,
 ) {
     val cameFromFinding: Boolean get() = sourceKind == "legacy_finding" || sourceKind == "analysis_finding"
     val cameFromExpertItem: Boolean get() = sourceKind == "legacy_expert_item" || sourceKind == "analysis_expert_item"
@@ -182,20 +185,24 @@ fun novaFold(value: String): String = Normalizer.normalize(value.lowercase(Local
 
 data class NovaNonconformityFilter(val companyId: String? = null, val state: NovaNonconformityState? = null,
                                    val kind: NovaNonconformityRecordKind? = null, val query: String = "",
-                                   val overdueOnly: Boolean = false) {
-    val isEmpty: Boolean get() = companyId == null && state == null && kind == null && !overdueOnly && query.isBlank()
+                                   val overdueOnly: Boolean = false,
+                                   /** What a "Senin İçin" card counted: overdue, draft or recorded nonconformities. */
+                                   val preset: NovaListPreset? = null) {
+    val isEmpty: Boolean get() = companyId == null && state == null && kind == null && !overdueOnly && query.isBlank() && preset == null
 }
 
 /** One row of the cross-company board: the record plus its company. */
 data class NovaNonconformityEntry(val row: NovaNonconformityRow, val companyId: String, val companyName: String,
                                   val workplaceName: String?) {
     val id: String get() = row.id
+    /** A draft is not being worked on yet, so it is never overdue; the deadline board and the home page count the same way. */
     fun isOverdue(today: String): Boolean {
         val due = row.dueOn ?: return false
         // ISO day strings compare correctly as text; no time zone can shift the answer.
-        return row.state !in setOf("closed", "cancelled") && due < today
+        return row.state !in setOf("draft", "closed", "cancelled") && due < today
     }
     fun matches(filter: NovaNonconformityFilter, today: String): Boolean {
+        if (filter.preset != null && !matches(filter.preset, today)) return false
         if (filter.companyId != null && filter.companyId != companyId) return false
         if (filter.state != null && filter.state.name != row.state) return false
         if (filter.kind != null && filter.kind != row.kind) return false
@@ -204,6 +211,16 @@ data class NovaNonconformityEntry(val row: NovaNonconformityRow, val companyId: 
         if (needle.isEmpty()) return true
         val folded = novaFold(needle)
         return listOf(row.title, companyName, workplaceName.orEmpty()).any { novaFold(it).contains(folded) }
+    }
+    /** The records a home card counted, by the same rules the server used. */
+    fun matches(preset: NovaListPreset, today: String): Boolean {
+        if (row.kind != NovaNonconformityRecordKind.nonconformity || !preset.isMine(row.createdByUserId)) return false
+        return when (preset.status) {
+            "overdue" -> isOverdue(today)
+            "draft" -> row.state == "draft"
+            "recorded" -> row.state !in setOf("draft", "cancelled") && preset.includes(NovaListPreset.moment(row.createdAt))
+            else -> true
+        }
     }
 }
 

@@ -111,6 +111,9 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
     var pendingRiskRecord by remember(identity) { mutableStateOf<String?>(null) }
     var pendingRiskWizard by remember(identity) { mutableStateOf(false) }
     var pendingEmergencyWizard by remember(identity) { mutableStateOf(false) }
+    var pendingRecord by remember(identity) { mutableStateOf<NovaRecordTarget?>(null) }
+    var pendingChecklistRun by remember(identity) { mutableStateOf<String?>(null) }
+    var pendingListPreset by remember(identity) { mutableStateOf<NovaListPreset?>(null) }
     val routes = forYouRoutes(state.navigation, state.isWorkspaceExpert)
     fun openForYou(card: NovaForYouCard) {
         val target = card.target
@@ -145,6 +148,22 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             "work_permit_forms" -> navigate(NovaDestination.workPermits)
             "ppe_form" -> navigate(NovaDestination.ppeHandovers)
             "company_create" -> if (!state.isWorkspaceExpert) navigate(NovaDestination.newCompany)
+            "nonconformity" -> {
+                val id = target.id; val company = target.companyId
+                if (id != null && company != null) pendingRecord = NovaRecordTarget(id, company)
+                navigate(NovaDestination.findings)
+            }
+            "checklist_run" -> { pendingChecklistRun = target.id; navigate(NovaDestination.checklists) }
+            // The list opens on exactly the records the card counted, under the card's own words.
+            "nonconformities", "analyses", "trainings" -> {
+                pendingListPreset = NovaListPreset.of(NovaForYouCopy.make(card)?.title.orEmpty(), target, identity.userId)
+                navigate(when (target.route) {
+                    "nonconformities" -> NovaDestination.findings
+                    "analyses" -> NovaDestination.analyses
+                    else -> NovaDestination.training
+                })
+            }
+            "checklists" -> navigate(NovaDestination.checklists)
         }
     }
     // The notebook is offered only when the server's personal_notes rollout says so (iOS NotebookUIRelease).
@@ -211,7 +230,13 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             }
             NovaDestination.findings -> if (state.overviewFailed) NovaPilotStatusPage(destination, state, onWorkspaceSwitch, viewModel::reload) {
                 navigate(NovaDestination.home)
-            } else NovaFindingsDestination(identity, NovaFindingsSurface.board, state.writable, navigate, workspace?.selection)
+            } else {
+                DisposableEffect(Unit) { onDispose { pendingListPreset = null } }
+                NovaFindingsDestination(identity, NovaFindingsSurface.board, state.writable, navigate, workspace?.selection,
+                    initialRecord = pendingRecord, onInitialRecordOpened = { pendingRecord = null },
+                    onRecordFailed = { viewModel.showMessage("Kayıt açılamadı. Yeniden deneyin.") },
+                    initialPreset = pendingListPreset, onPresetCleared = { pendingListPreset = null })
+            }
             NovaDestination.newFinding -> NovaFindingsDestination(identity, NovaFindingsSurface.addFinding, state.writable, navigate)
             NovaDestination.companies, NovaDestination.newCompany -> key(destination) {
                 CompaniesDestination(services, identity, state, workspace, workspaceStore, navigate, viewModel::reload,
@@ -250,8 +275,11 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                     onBack = { navigate(NovaDestination.home) }, initialStatus = pendingFollowupStatus)
             }
             NovaDestination.training, NovaDestination.newTraining -> key(destination) {
+                DisposableEffect(Unit) { onDispose { pendingListPreset = null } }
                 NovaTrainingScreen(services.trainingClient(identity, state.userName), state.writable, onBack = { navigate(NovaDestination.home) },
-                    createOnOpen = destination == NovaDestination.newTraining)
+                    createOnOpen = destination == NovaDestination.newTraining,
+                    initialPreset = if (destination == NovaDestination.training) pendingListPreset else null,
+                    onPresetCleared = { pendingListPreset = null })
             }
             NovaDestination.statistics -> if (state.overviewFailed) NovaPilotStatusPage(destination, state, onWorkspaceSwitch, viewModel::reload) {
                 navigate(NovaDestination.home)
@@ -270,9 +298,17 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             NovaDestination.reportArchive -> NovaReportArchive(services.reportClient(identity), slots.analysisReports,
                 onBack = { navigate(NovaDestination.reports) })
             NovaDestination.memory -> NovaReportArchive(services.reportClient(identity), slots.analysisReports, onBack = { navigate(NovaDestination.home) })
-            NovaDestination.analyses -> AnalysesDestination(services, identity, workspace, state.writable, navigate, pendingAnalysis) { pendingAnalysis = null }
+            NovaDestination.analyses -> {
+                DisposableEffect(Unit) { onDispose { pendingListPreset = null } }
+                AnalysesDestination(services, identity, workspace, state.writable, navigate, pendingAnalysis, { pendingAnalysis = null },
+                    initialPreset = pendingListPreset, onPresetCleared = { pendingListPreset = null })
+            }
             NovaDestination.newAnalysis -> PhotoAnalysisDestination(services, identity, workspace, state.writable, navigate)
-            NovaDestination.checklists -> NovaChecklistScreen(services.checklistClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
+            NovaDestination.checklists -> {
+                DisposableEffect(Unit) { onDispose { pendingChecklistRun = null } }
+                NovaChecklistScreen(services.checklistClient(identity), state.writable, onBack = { navigate(NovaDestination.home) },
+                    initialRunId = pendingChecklistRun)
+            }
         }
     }
     noticeRecord?.let { row ->
@@ -357,7 +393,8 @@ private object AnalysisCanvasTier {
  */
 @Composable
 private fun AnalysesDestination(services: NovaRootServices, identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiState?, canWrite: Boolean,
-                                navigate: (NovaDestination) -> Unit, initialAnalysis: String? = null, onInitialOpened: () -> Unit = {}) {
+                                navigate: (NovaDestination) -> Unit, initialAnalysis: String? = null, onInitialOpened: () -> Unit = {},
+                                initialPreset: NovaListPreset? = null, onPresetCleared: () -> Unit = {}) {
     var reports by rememberSaveable { mutableStateOf(false) }
     var open by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(initialAnalysis) { initialAnalysis?.let { open = it; onInitialOpened() } }
@@ -374,7 +411,8 @@ private fun AnalysesDestination(services: NovaRootServices, identity: IsgWorkspa
     if (reports) NovaAnalysisReportsScreen(load = { offset -> services.analysis.reports(identity, offset = offset) },
         download = { entry -> services.analysis.downloadReport(entry, identity, context) }, onBack = { reports = false }, onOpenAnalysis = { open = it })
     else NovaAnalysisListScreen(remember(identity, context) { services.analysisListClient(identity, context, method) }, onOpen = { open = it },
-        onBack = { navigate(NovaDestination.findings) }, onNewPhotoAnalysis = { navigate(NovaDestination.newAnalysis) }, onReports = { reports = true })
+        onBack = { navigate(NovaDestination.findings) }, onNewPhotoAnalysis = { navigate(NovaDestination.newAnalysis) }, onReports = { reports = true },
+        initialPreset = initialPreset, onPresetCleared = onPresetCleared)
 }
 
 /** Opens the module record a followup row or a file link points at (iOS `NovaFollowupDestination`). */
@@ -600,7 +638,7 @@ private fun forYouNextAction(feed: NovaForYouFeed?, open: (NovaForYouCard) -> Un
 
 /**
  * Targets this session can open with every filter the card carries (iOS `forYouRoutes`). A card whose target is
- * missing here is never sent by the server; the list and record targets follow once their screens take a card filter.
+ * missing here is never sent by the server.
  */
 internal fun forYouRoutes(navigation: NovaNavigationState, workspaceExpert: Boolean): List<String> = listOf(
     "followup_record" to null, "followup" to NovaDestination.documentChecklist,
@@ -610,8 +648,13 @@ internal fun forYouRoutes(navigation: NovaNavigationState, workspaceExpert: Bool
     "nonconformity_create" to NovaDestination.newFinding, "equipment" to NovaDestination.periodicChecks,
     "personnel" to NovaDestination.companies, "work_permit_forms" to NovaDestination.workPermits,
     "ppe_form" to NovaDestination.ppeHandovers, "company_create" to NovaDestination.newCompany,
+    "nonconformity" to NovaDestination.findings, "checklist_run" to NovaDestination.checklists,
+    "nonconformities" to NovaDestination.findings, "analyses" to NovaDestination.analyses,
+    "trainings" to NovaDestination.training, "checklists" to NovaDestination.checklists,
 ).mapNotNull { (route, destination) ->
-    route.takeIf { !(route == "company_create" && workspaceExpert) && (destination == null || navigation.canOpen(destination)) }
+    // An organization's check list holds every member's runs and has no "mine" filter, so it cannot show what the card counted.
+    route.takeIf { !((route == "company_create" || route == "checklists") && workspaceExpert) &&
+        (destination == null || navigation.canOpen(destination)) }
 }
 
 private fun dashboardData(state: NovaPilotUiState, equipment: NovaEquipmentBoard?): NovaDashboardData {

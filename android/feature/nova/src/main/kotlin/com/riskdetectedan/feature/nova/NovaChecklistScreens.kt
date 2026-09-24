@@ -170,7 +170,9 @@ internal fun ChecklistBottomAction(content: @Composable ColumnScope.() -> Unit) 
 
 /** Kontroller (iOS `NovaChecklistScreen`). */
 @Composable
-fun NovaChecklistScreen(client: NovaChecklistClient, canWrite: Boolean, onBack: () -> Unit, initialCompany: String? = null, headingOverride: String? = null) {
+fun NovaChecklistScreen(client: NovaChecklistClient, canWrite: Boolean, onBack: () -> Unit, initialCompany: String? = null, headingOverride: String? = null,
+                        /** A run to open as soon as the screen appears ("Senin İçin" continues an open check). */
+                        initialRunId: String? = null) {
     val coroutines = rememberCoroutineScope()
     var board by remember { mutableStateOf<NovaChecklistBoard?>(null) }
     var companies by remember { mutableStateOf<List<NovaCompanyOption>>(emptyList()) }
@@ -232,7 +234,11 @@ fun NovaChecklistScreen(client: NovaChecklistClient, canWrite: Boolean, onBack: 
         })
         return
     }
-    LaunchedEffect(Unit) { sync(); load(true) }
+    LaunchedEffect(Unit) {
+        sync()
+        initialRunId?.let { id -> runCatching { client.detail(id) }.getOrNull()?.let { detail = it } }
+        load(true)
+    }
     LaunchedEffect(query.search) { delay(280); if (board != null) load(true) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {

@@ -33,6 +33,8 @@ fun String.sameId(other: String?) = other != null && equals(other, ignoreCase = 
     val id: String, @SerialName("owner_id") val ownerId: String, val title: String, val trainer: String = "", val method: String = "face_to_face",
     @SerialName("held_on") val heldOn: String = "", val location: String = "", val notes: String = "", val version: Long,
     val companies: List<Company>, val education: NovaEducationRecord? = null,
+    /** Who recorded the session; an organization's "mine" filter reads it. */
+    @SerialName("created_by_user_id") val createdByUserId: String? = null,
 ) {
     @Serializable data class Company(
         val id: String, @SerialName("company_id") val companyId: String, @SerialName("owner_id") val ownerId: String,

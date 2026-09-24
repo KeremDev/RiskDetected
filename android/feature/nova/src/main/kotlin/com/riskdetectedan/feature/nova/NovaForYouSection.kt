@@ -23,12 +23,29 @@ import com.riskdetectedan.core.data.nova.NovaForYouCard
 import com.riskdetectedan.core.data.nova.NovaForYouEvent
 import com.riskdetectedan.core.data.nova.NovaForYouFeed
 import com.riskdetectedan.core.data.nova.NovaFollowupPage
+import com.riskdetectedan.core.data.nova.NovaListPreset
 import com.riskdetectedan.core.designsystem.isg.*
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+
+/** One company record a home card asked a list surface to open (iOS `NovaRecordTarget`). */
+data class NovaRecordTarget(val id: String, val companyId: String)
+
+/** The filter a home card put on a list, in the card's own words; removing it shows the whole list again (iOS `NovaListPresetChip`). */
+@Composable
+fun NovaListPresetChip(preset: NovaListPreset, onClear: () -> Unit) {
+    val ink = NovaColorToken.accentInk.color()
+    Row(Modifier.heightIn(min = 40.dp).clip(CircleShape).background(NovaColorToken.statusSuccessBg.color()).novaRowPress(onClick = onClear)
+        .padding(horizontal = 12.dp, vertical = 6.dp).semantics { contentDescription = "${preset.title} filtresini kaldır" }
+        .testTag("foryou.list.preset"), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        NovaIcon("sparkles", 11.dp, tint = ink)
+        NovaText(preset.title, Modifier.weight(1f, fill = false), NovaTypeToken.micro, color = ink, maxLines = 2)
+        NovaIcon("xmark", 8.dp, tint = ink)
+    }
+}
 
 /** Words for one card (iOS `NovaForYouCopy`). An unknown key yields null and the card is skipped. */
 internal data class NovaForYouCopy(val label: String, val title: String, val detail: String, val action: String, val symbol: String) {

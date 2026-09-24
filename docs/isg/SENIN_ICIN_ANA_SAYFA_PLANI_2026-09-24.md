@@ -2,7 +2,7 @@
 
 Güncelleme: **24.09.2026** (iki inceleme turunun düzeltmeleri işlendi)  
 Kaynak: `ISGADA_Senin_Icin_Akilli_Ana_Sayfa_Plani.md` (ürün planı)  
-Durum: Plan onaylandı. Sunucu staging'de iki migration ile çalışıyor: `20260924183727_isg_home_feed` ve kart sayılarını açılan listelerle birebir eşleyen `20260924195143_isg_home_feed_lists`. Yerel veritabanında 14 senaryo geçiyor; staging'de kart ve liste sayılarının eşitliği gerçek hesapla ölçüldü. iOS bağlantısı, hedef eşlemesi ve liste filtreleri tamam; derleme ve sözleşme testi yeşil. Android bağlantısı temel hedeflerle tamam (derleme ve birim testleri yeşil); kayıt ve liste hedefleri, liste ekranlarının yeni tasarımı bittikten sonra eklenecek. Telefonda uçtan uca kontrol henüz yapılmadı.
+Durum: Plan onaylandı. Sunucu staging'de iki migration ile çalışıyor: `20260924183727_isg_home_feed` ve kart sayılarını açılan listelerle birebir eşleyen `20260924195143_isg_home_feed_lists`. Yerel veritabanında 14 senaryo geçiyor; staging'de kart ve liste sayılarının eşitliği gerçek hesapla ölçüldü. iOS bağlantısı, hedef eşlemesi ve liste filtreleri tamam; derleme ve sözleşme testi yeşil. Android bağlantısı da tamam: kayıt ve liste hedefleri iOS'takiyle aynı kart filtresiyle açılıyor (derleme ve birim testleri yeşil). Telefonda uçtan uca kontrol henüz yapılmadı.
 
 Bu belge ürün planının mevcut sisteme nasıl oturduğunu, hangi verinin nereden geldiğini ve hangi sırayla yapılacağını takip etmek içindir. Ürün planıyla çelişen veya bugünkü veriyle doğru çalışmayacak maddeler 6. bölümde gerekçesiyle düzeltildi.
 
@@ -400,7 +400,7 @@ Kaldırılanlar: kişisel ve uzman ana sayfasındaki Özet şeridi (`NovaMetricI
 - [x] iOS: yerel taslak özeti (eğitim taslağı kimliği ve zamanı, yarım firma kaydı)
 - [x] iOS: özellik kullanımı çağrıları; menü kartı; üst alan sayacı metni; L10N-018 kilidi
 - [x] Android: servis, olay kuyruğu, son yanıtın bellekte tutulması, yükleme öncesi kuyruk gönderimi, ana sayfa yuvası, menü kartı, üst alan metni, özellik kullanımı çağrıları, temel hedefler (`followup_record`, `followup`, `analysis`, `risk_assessment`, sihirbazlar, oluşturma ve modül hedefleri). HEAD üzerinde derleme; `core:designsystem` 520 ve `core:data` 674 birim testi geçiyor (JDK 17)
-- [ ] Android: `nonconformity`, `checklist_run` ve liste hedefleri (`nonconformities`, `analyses`, `trainings`, `checklists`); diğer oturumun liste ekranı yeniden tasarımı bitince
+- [x] Android: `nonconformity`, `checklist_run` ve liste hedefleri (`nonconformities`, `analyses`, `trainings`, `checklists` yalnız kişisel oturumda); liste kartın filtresiyle ve kartın cümlesiyle açılır (`NovaListPreset`, `NovaListPresetChip`). `NovaListPresetTest` 6 test; `core:data` 680, `core:designsystem` 520 test geçiyor
 - [x] Sözleşme testi iOS ve Android'i birlikte denetliyor (`node --test scripts/home/contract.test.mjs`, 6 test)
 - [ ] Testler: iOS birim + kabuk UI testi, Android Robolectric, L10N kapıları, Android İngilizce kontrolü
 - [ ] Emülatör ve simülatörde uçtan uca kontrol (yeni hesap, orta hesap, firmasız hesap, OSGB uzmanı)
