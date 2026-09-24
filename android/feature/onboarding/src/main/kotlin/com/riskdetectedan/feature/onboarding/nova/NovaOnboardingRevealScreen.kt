@@ -10,6 +10,14 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.unit.offset
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,8 +39,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -185,25 +191,31 @@ private fun RevealActions(controller: NovaOnboardingController, onLogin: () -> U
  * The endless card column. There is no timer: every row plays the same looping track offset by
  * `index × step` — the prototype's `isgSlotN` / `isgHaloN` phase model — so the loop never jumps
  * or restarts and the wrap happens fully transparent. Reduce Motion holds the first frame.
+ *
+ * The clock is read only in the layout and draw phases, and each frame's row styles and halo
+ * opacities are computed once, so the loop never recomposes the rows.
  */
 @Composable
 private fun RevealStage(modifier: Modifier) {
     val reduceMotion = rememberNovaReduceMotion()
     val cycle = revealRows.size * REVEAL_STEP
     val clock = rememberInfiniteTransition(label = "reveal-loop")
-    val running by clock.animateFloat(0f, cycle, infiniteRepeatable(tween((cycle * 1000).roundToInt(), easing = LinearEasing),
+    val running = clock.animateFloat(0f, cycle, infiniteRepeatable(tween((cycle * 1000).roundToInt(), easing = LinearEasing),
         RepeatMode.Restart), label = "reveal-clock")
-    val elapsed = if (reduceMotion) 0f else running
+    val frame = remember(reduceMotion) {
+        derivedStateOf {
+            val elapsed = if (reduceMotion) 0f else running.value
+            RevealFrame(
+                revealRows.mapIndexed { index, row -> revealStyle(revealPhase(elapsed, index, cycle), row.color) },
+                revealRows.indices.map { revealHaloOpacity(revealPhase(elapsed, it, cycle)) },
+            )
+        }
+    }
     Box(modifier) {
         Box(Modifier.fillMaxWidth().wrapContentHeight(Alignment.Top, unbounded = true).height(REVEAL_LIST_HEIGHT.dp)
-            .offset(y = (-24).dp).clipToBounds(), contentAlignment = Alignment.Center) {
+            .offset(y = (-24).dp).clipToBounds().drawBehind { drawHalos(frame.value.halos) }, contentAlignment = Alignment.Center) {
             revealRows.forEachIndexed { index, row ->
-                val opacity = revealHaloOpacity(revealPhase(elapsed, index, cycle))
-                if (opacity > 0f) RevealHalo(Color(row.color), opacity)
-            }
-            revealRows.forEachIndexed { index, row ->
-                val style = revealStyle(revealPhase(elapsed, index, cycle), row.color)
-                RevealRow(row, style, Modifier.zIndex(style.zIndex))
+                RevealRow(row) { frame.value.styles[index] }
             }
             Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(26.dp).zIndex(6f)
                 .background(Brush.verticalGradient(listOf(revealPage, revealPage.copy(alpha = 0f)))))
@@ -211,49 +223,85 @@ private fun RevealStage(modifier: Modifier) {
     }
 }
 
-@Composable
-private fun RevealHalo(color: Color, opacity: Float) {
-    val base = Modifier.offset(y = (REVEAL_LIST_HEIGHT * (0.44f - 0.5f)).dp).size(380.dp, 260.dp).zIndex(0f)
-        .graphicsLayer { alpha = opacity }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        Box(base.blur(60.dp, BlurredEdgeTreatment.Unbounded).drawBehind { drawOval(color) })
-    } else {
-        // No RenderEffect before Android 12: a radial falloff stands in for the blurred oval.
-        Box(base.drawBehind {
-            scale(1f, size.height / size.width, center) {
-                drawCircle(Brush.radialGradient(listOf(color, color.copy(alpha = 0f)), center, size.width / 2 + 60.dp.toPx()),
-                    radius = size.width / 2 + 60.dp.toPx())
-            }
-        })
+private class RevealFrame(val styles: List<RevealRowStyle>, val halos: List<Float>)
+
+/**
+ * The tinted glow behind the active card. The prototype blurs a 380×260 oval by 60px; a radial
+ * falloff with the same reach draws it without an offscreen layer, so it can never be cut into a
+ * box and costs nothing per frame. It fades out before the stage's top edge.
+ */
+private fun DrawScope.drawHalos(opacities: List<Float>) {
+    val center = Offset(size.width / 2, size.height * 0.44f)
+    val radiusX = 250.dp.toPx()
+    val radiusY = min(170.dp.toPx(), center.y - 4.dp.toPx())
+    opacities.forEachIndexed { index, opacity ->
+        if (opacity <= 0.002f) return@forEachIndexed
+        val color = Color(revealRows[index].color)
+        scale(1f, radiusY / radiusX, center) {
+            drawCircle(Brush.radialGradient(
+                0f to color.copy(alpha = opacity), 0.35f to color.copy(alpha = opacity * 0.82f),
+                0.6f to color.copy(alpha = opacity * 0.45f), 0.8f to color.copy(alpha = opacity * 0.16f),
+                1f to color.copy(alpha = 0f), center = center, radius = radiusX), radiusX, center)
+        }
     }
 }
 
 @Composable
-private fun RevealRow(row: RevealRowData, style: RevealRowStyle, modifier: Modifier) {
-    Row(modifier.fillMaxWidth().padding(horizontal = 24.dp)
-        .graphicsLayer {
-            translationY = style.offsetY.dp.toPx()
-            scaleX = style.scale; scaleY = style.scale
-            alpha = style.opacity
+private fun RevealRow(row: RevealRowData, style: () -> RevealRowStyle) {
+    val icon = remember(row.icon) { row.icon.split("|").map(ObSvgPath::segment) }
+    Row(Modifier
+        // The active card rides above its neighbours; the order changes without recomposing.
+        .layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) { placeable.place(0, 0, zIndex = style().zIndex) }
         }
-        .then(if (style.blur > 0f) Modifier.blur(style.blur.dp, BlurredEdgeTreatment.Unbounded) else Modifier)
+        .fillMaxWidth().padding(horizontal = 24.dp)
+        .graphicsLayer {
+            val current = style()
+            translationY = current.offsetY.dp.toPx()
+            scaleX = current.scale; scaleY = current.scale
+            alpha = current.opacity
+            // A blur needs an offscreen layer, which would cut the card's shadow and ring at its bounds;
+            // it only applies while the card casts neither. Quantised so the effect is rebuilt only
+            // when it visibly changes.
+            val blur = (current.blur * 4).roundToInt() / 4f
+            val blurred = blur > 0f && current.opacity > 0.01f && current.shadowAlpha < 0.01f && current.ring < 0.05f &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            renderEffect = if (blurred) BlurEffect(blur.dp.toPx(), blur.dp.toPx(), TileMode.Decal) else null
+            // Without a blur, opacity is applied per draw call, so nothing is clipped to a box.
+            compositingStrategy = if (blurred) CompositingStrategy.Auto else CompositingStrategy.ModulateAlpha
+        }
         .drawBehind {
+            val current = style()
+            if (current.opacity <= 0.01f) return@drawBehind
             val radius = 16.dp.toPx()
-            if (style.ring > 0f) {
+            if (current.ring > 0f) {
                 // `box-shadow: 0 0 0 Npx` — a solid ring outside the border box.
-                val ring = style.ring.dp.toPx()
-                drawRoundRect(style.ringColor.color, Offset(-ring, -ring), Size(size.width + ring * 2, size.height + ring * 2),
+                val ring = current.ring.dp.toPx()
+                drawRoundRect(current.ringColor.color, Offset(-ring, -ring), Size(size.width + ring * 2, size.height + ring * 2),
                     CornerRadius(radius + ring))
             }
-            drawShadowedRoundRect(Offset.Zero, size, radius, style.background.color,
-                Color(0xFF18263A).copy(alpha = style.shadowAlpha), style.shadowBlur.dp.toPx(), style.shadowY.dp.toPx())
+            drawShadowedRoundRect(Offset.Zero, size, radius, current.background.color,
+                Color(0xFF18263A).copy(alpha = current.shadowAlpha), current.shadowBlur.dp.toPx(), current.shadowY.dp.toPx())
             val stroke = 1.dp.toPx()
-            drawRoundRect(style.border.color, Offset(stroke / 2, stroke / 2), Size(size.width - stroke, size.height - stroke),
+            drawRoundRect(current.border.color, Offset(stroke / 2, stroke / 2), Size(size.width - stroke, size.height - stroke),
                 CornerRadius(radius - stroke / 2), style = Stroke(stroke))
         }
-        .padding(horizontal = 16.dp, vertical = style.verticalPadding.dp),
+        .layout { measurable, constraints ->
+            // Padding 16 × (12…14): the active card grows by relayout only.
+            val horizontal = 16.dp.roundToPx()
+            val vertical = style().verticalPadding.dp.roundToPx()
+            val placeable = measurable.measure(constraints.offset(-horizontal * 2, -vertical * 2))
+            layout(placeable.width + horizontal * 2, placeable.height + vertical * 2) { placeable.place(horizontal, vertical) }
+        },
         horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-        ObIcon(row.icon, 19f, style.icon.color, 1.7f)
+        Canvas(Modifier.size(19.dp)) {
+            val color = style().icon.color
+            val factor = size.width / 24f
+            scale(factor, factor, pivot = Offset.Zero) {
+                icon.forEach { drawPath(it, color, style = Stroke(1.7f, cap = StrokeCap.Round, join = StrokeJoin.Round)) }
+            }
+        }
         Text(row.name, Modifier.weight(1f), style = obStyle(13.5f, 600, Color(0xFF1B242E)), maxLines = 1, overflow = TextOverflow.Ellipsis)
         ObText(row.meta, 12f, weight = 600, color = Color(0xFF7A848E), maxLines = 1)
         Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
