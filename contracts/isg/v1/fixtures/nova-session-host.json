@@ -13257,6 +13257,6810 @@
           }
         }
       ]
+    },
+    {
+      "id": "destination-activity-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "activity"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "activity"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "activity",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "activity",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "activity",
+            "overlay": null,
+            "available": [
+              "activity",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-activity-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "activity"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "activity",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-activity-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "activity"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "activity",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-activity-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "activity"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "activity"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "activity",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "activity",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "activity",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-notebook-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "notebook"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "notebook"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notebook",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "notebook",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "notebook",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notebook",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-notebook-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "notebook"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "notebook",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-notebook-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "notebook"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "notebook",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-notebook-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "notebook"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "notebook"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notebook",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "notebook",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notebook",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newNote-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newNote"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "newNote"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newNote",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newNote",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "newNote",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newNote",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newNote-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "newNote"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newNote",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newNote-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newNote"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newNote",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newNote-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newNote"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "newNote"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newNote",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newNote",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newNote",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-riskAssessments-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "riskAssessments"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "riskAssessments"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "riskAssessments",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "riskAssessments",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "riskAssessments",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "riskAssessments",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-riskAssessments-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "riskAssessments"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "riskAssessments",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-riskAssessments-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "riskAssessments"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "riskAssessments",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-riskAssessments-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "riskAssessments"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "riskAssessments"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "riskAssessments",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "riskAssessments",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "riskAssessments",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-checklists-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "checklists"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "checklists"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "checklists",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "checklists",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "checklists",
+            "overlay": null,
+            "available": [
+              "checklists",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-checklists-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "checklists"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "checklists",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-checklists-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "checklists"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "checklists",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-checklists-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "checklists"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "checklists"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "checklists",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "checklists",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "checklists",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-emergencyPlans-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "emergencyPlans"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "emergencyPlans"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "emergencyPlans",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "emergencyPlans",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "emergencyPlans",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "emergencyPlans",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-emergencyPlans-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "emergencyPlans"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "emergencyPlans",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-emergencyPlans-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "emergencyPlans"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "emergencyPlans",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-emergencyPlans-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "emergencyPlans"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "emergencyPlans"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "emergencyPlans",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "emergencyPlans",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "emergencyPlans",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-drills-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "drills"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "drills"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "drills",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "drills",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "drills",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "drills",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-drills-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "drills"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "drills",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-drills-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "drills"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "drills",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-drills-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "drills"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "drills"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "drills",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "drills",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "drills",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-ppeHandovers-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "ppeHandovers"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "ppeHandovers"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "ppeHandovers",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "ppeHandovers",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "ppeHandovers",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "ppeHandovers",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-ppeHandovers-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "ppeHandovers"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "ppeHandovers",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-ppeHandovers-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "ppeHandovers"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "ppeHandovers",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-ppeHandovers-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "ppeHandovers"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "ppeHandovers"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "ppeHandovers",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "ppeHandovers",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "ppeHandovers",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-appointments-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "appointments"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "appointments"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "appointments",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "appointments",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "appointments",
+            "overlay": null,
+            "available": [
+              "appointments",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-appointments-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "appointments"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "appointments",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-appointments-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "appointments"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "appointments",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-appointments-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "appointments"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "appointments"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "appointments",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "appointments",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "appointments",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-katipContracts-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "katipContracts"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "katipContracts"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "katipContracts",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "katipContracts",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "katipContracts",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "katipContracts",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-katipContracts-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "katipContracts"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "katipContracts",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-katipContracts-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "katipContracts"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "katipContracts",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-katipContracts-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "katipContracts"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "katipContracts"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "katipContracts",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "katipContracts",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "katipContracts",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-annualWorkPlans-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "annualWorkPlans"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "annualWorkPlans"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "annualWorkPlans",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "annualWorkPlans",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "annualWorkPlans",
+            "overlay": null,
+            "available": [
+              "annualWorkPlans",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-annualWorkPlans-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "annualWorkPlans"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "annualWorkPlans",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-annualWorkPlans-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "annualWorkPlans"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "annualWorkPlans",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-annualWorkPlans-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "annualWorkPlans"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "annualWorkPlans"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "annualWorkPlans",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "annualWorkPlans",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "annualWorkPlans",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-boardMeetings-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "boardMeetings"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "boardMeetings"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "boardMeetings",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "boardMeetings",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "boardMeetings",
+            "overlay": null,
+            "available": [
+              "boardMeetings",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-boardMeetings-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "boardMeetings"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "boardMeetings",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-boardMeetings-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "boardMeetings"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "boardMeetings",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-boardMeetings-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "boardMeetings"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "boardMeetings"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "boardMeetings",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "boardMeetings",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "boardMeetings",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-workPermits-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "workPermits"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "workPermits"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits",
+              "workPermits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "workPermits",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "workPermits",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits",
+              "workPermits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-workPermits-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "workPermits"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "workPermits",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-workPermits-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "workPermits"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "workPermits",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-workPermits-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "workPermits"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "workPermits"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits",
+              "workPermits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "workPermits",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits",
+              "workPermits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-contractors-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "contractors"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "contractors"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "contractors",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "contractors",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "contractors",
+            "overlay": null,
+            "available": [
+              "companies",
+              "contractors",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-contractors-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "contractors"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "contractors",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-contractors-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "contractors"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "contractors",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-contractors-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "contractors"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "contractors"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "contractors",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "contractors",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "contractors",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
     }
   ]
 }

@@ -44,7 +44,7 @@ Bu helper tek epoch içindeki şirket A/B, arama sorgusu veya ardışık sayfala
 
 ## Test korpusu
 
-`fixtures/nova-session-host.json`: 88 senaryo / 399 adım. 17 hedef × açık / yerelde uygulanmamış / kapalı / stale = 68; kalan 20 yaşam döngüsü senaryosu. Her adım phase, current, overlay, available, pending, görünür scoped value ve epoch değişimini açık oracle olarak taşır. Swift veya Kotlin reducer çıktısından oracle üretilmez.
+`fixtures/nova-session-host.json`: 160 senaryo / 705 adım. 35 hedef × açık / yerelde uygulanmamış / kapalı / stale = 140; kalan 20 yaşam döngüsü senaryosu. Her adım phase, current, overlay, available, pending, görünür scoped value ve epoch değişimini açık oracle olarak taşır. Swift veya Kotlin reducer çıktısından oracle üretilmez.
 
 Swift `NovaSessionHostCorpus.swift`, Kotlin `NovaSessionHostTest.kt` aynı JSON'u çalıştırır. Gradle input tracking ve CI Swift koşusu vardır. Node testleri hedef/yaşam döngüsü kapsamını ve kaynak izolasyonunu denetler; bu metinsel kontroller native testlerin yerine geçmez.
 
