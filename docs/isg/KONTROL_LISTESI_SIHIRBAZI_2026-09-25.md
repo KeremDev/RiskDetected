@@ -36,7 +36,7 @@ Kaynaklar ve bakım yolu: [content/isg/checklist_wizard/README.md](../../content
 - iOS: `NovaRiskWizardScreen(mode: "checklist")`, sayfalar `NovaChecklistWizardViews.swift`. Android: `NovaRiskWizardScreen(mode = "checklist")`, sayfalar `NovaChecklistWizardPages.kt`.
 - Kaydetme mevcut `draft_template` / `copy_items` / `set_item` / `publish_template` eylemleriyle yapılır.
 
-## Sunucu uzantı kataloğu (hazırlandı, uygulanmadı)
+## Sunucu uzantı kataloğu (staging'de uygulandı)
 
 `supabase/migrations/20260925002500_checklist_catalog_extension_v1.sql`:
 
@@ -47,6 +47,8 @@ Kaynaklar ve bakım yolu: [content/isg/checklist_wizard/README.md](../../content
 - Canlı proje bu zinciri taşımıyor ve temel katalog v1 de canlıda yok. Bu migration geliştirme zinciri ve staging içindir.
 
 Uygulama tarafı migration'a bağlı değildir. Uygulandığı sunucuda genişleme soruları doğrulama yöntemi ve açıklamasıyla kopyalanır. Uygulanmadığı sunucuda sunucu bu şablonları reddeder; kaydedici bir denemeden sonra bu soruları kendi soru olarak yazar.
+
+**Staging (`qlymhrrlhklcudveknih`), 25.09.2026:** dosya olduğu gibi (SHA-256 `56c2eebbf6db4eda66612a48377dc7cdb9d9bd5a4f51ae704f2f21b62b00db81`) Management API `database/query` ile, kendi transaction'ı içinde uygulandı ve aynı transaction'da `supabase_migrations.schema_migrations` tablosuna repo sürümüyle (`20260925002500`, `checklist_catalog_extension_v1`) kaydedildi. MCP `apply_migration` 372 KB'lık tek satırlı seed'i güvenle taşıyamadığı için bu yol seçildi. Önce staging'deki `read_checklists_company_v3` tanımının `20260921114500` gövdesiyle birebir aynı olduğu doğrulandı (md5 `01749f9be8b2956f17ec1fdd51944bc4`); sonrası `e9aa99b4407da8afae57b5eee02aa683`. Şablon, sürüm ve madde tablolarının kısıtları yerel fixture ile aynı; tetik yok. Üretim projesine yazılmadı.
 
 ## Doğrulama (25.09.2026)
 
@@ -63,13 +65,14 @@ Uygulama tarafı migration'a bağlı değildir. Uygulandığı sunucuda genişle
 | Word / Excel | ZIP ve XML ayrıştırması geçti; Word ilk sayfası görsel olarak incelendi |
 | Uzantı migration'ı (yerel Postgres, `db/run_database.mjs`) | Geçti. Gerçek v1 DDL ve seed ile onay migration'ı üzerinde: temel 200/2.000 değişmedi; uzantı 39/390; kütüphane ve başlatma kataloğu 239 şablon okuyor; sektör/tür filtreleri ve soru araması uzantıyı buluyor; ikinci uygulama hiçbir şeyi değiştirmiyor. Docker kapalı olduğu için tam Supabase zinciri tekrar oynatılmadı |
 | Kaydedici, iki sunucu durumu | iOS ve Android testlerinde: uzantı varken 390 soru kopyalanıyor, yokken tek red sonrası kendi soru olarak yazılıyor; revizyonlar ve konumlar kesintisiz |
+| Staging (uygulama sonrası) | Veri: temel 200/2.000 ve `approved` değişmedi; uzantı 39 şablon / 390 madde / 390 atomik soru / 39 paket, kaynakların tamamı kayıtlı, 39 çalışma şablonu yayımlı ve `pending`. Pilot hesabıyla (`p05`, ücretli plan) RPC üzerinden, geri alınan tek transaction'da: kütüphane 239, `catalog_versions` iki sürüm, forklift/sondaj araması ve DPO sektör filtresi (8), başlatma kataloğu 239 ürün şablonu; sihirbaz kaydı `draft_template` → temel `copy_items` → uzantı `copy_items` (2 soru) → `set_item` → `publish_template` geçti ve uzantı soruları yöntem (`K`, `G`), açıklama ve konu başlığıyla kopyalandı. Staging'de iz kalmadı |
 | Yerelleştirme kapıları | Tek yeni anahtar (`localizable.nova.checklist.wizard.open`) için L10N-018 kilidi güncellendi. Katalog kapıları 23/25; kalan iki kırmızı (L10N-004, L10N-013) HEAD'de aynı listeyle kırmızı. Hard-coded kontrol tabanla aynı. `localization_inventory --check` HEAD'de zaten eski |
 
 ## Açık işler
 
 - [ ] Gerçek staging hesabıyla Listelerim'e kaydetme, tekrar kaydetme (başlık çakışması) ve **Kontrolü başlat** geçişi.
 - [x] Genişleme paketlerini sunucu kataloğuna alan migration hazırlandı (`20260925002500`).
-- [ ] Migration'ı staging'e uygulamak ve kütüphane, başlatma ve sihirbaz kaydını gerçek hesapla denemek.
+- [x] Migration staging'e uygulandı; kütüphane, başlatma kataloğu ve sihirbaz kaydı pilot hesabıyla sunucu tarafında denendi (geri alınan transaction).
 - [ ] Canlıya taşımak: canlıda katalog v1 de yok; ikisi birlikte, kırpılmış bir pilot paketi olarak hazırlanmalı.
 - [ ] Yeni 390 sorunun alan uzmanı incelemesi (sunucu kataloğundaki 1.169 soru için pilot onayı var; yenileri için yok).
 - [ ] Uygulama içinde yarım kalan sihirbaz oturumunu kaydetme (şu an ekran kapanınca cevaplar kaybolur; diğer sihirbazlarla aynı).
