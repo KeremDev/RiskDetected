@@ -135,9 +135,18 @@ class NovaDocumentTrackingService @Inject constructor(private val transport: Nov
     @Serializable private data class PortfolioEnvelope(val rows: List<ObligationRow>, val companies: List<CompanyRow>,
         val counts: Map<String, Int>,
         val total: Int, @SerialName("has_more") val hasMore: Boolean, val today: String)
+    @Serializable private data class DetailEnvelope(val row: ObligationRow)
 
     private fun statuses(raw: Map<String, Int>) =
         raw.mapNotNull { (key, value) -> NovaDocumentStatus.entries.firstOrNull { it.wire == key }?.let { it to value } }.toMap()
+
+    private fun obligation(row: ObligationRow) = NovaDocumentObligation(
+        row.id, row.companyId, row.companyName, row.workplaceId, row.kindCode, row.title,
+        NovaDocumentBasis.of(row.basis), row.legalRef, row.validityDays, row.noticeDays,
+        row.responsibleContact, row.note, row.isArchived, row.version,
+        NovaDocumentStatus.of(row.status), row.latestIssuedOn, row.latestValidUntil,
+        row.records.map { NovaDocumentCopy(it.id, it.issuedOn, it.validUntil, it.documentNo, it.locationNote, it.recordedAt) },
+        row.fileStored)
 
     /** The whole account in one call; it is not company-scoped, so the session is checked on both sides. */
     suspend fun portfolio(identity: IsgWorkspaceIdentity, request: NovaDocumentQuery): NovaDocumentPortfolio {
@@ -164,14 +173,25 @@ class NovaDocumentTrackingService @Inject constructor(private val transport: Nov
         return NovaDocumentPortfolio(
             counts = statuses(envelope.counts),
             companies = envelope.companies.map { NovaDocumentCompanySummary(it.id, it.name, it.total, statuses(it.counts)) },
-            rows = envelope.rows.map { row ->
-                NovaDocumentObligation(row.id, row.companyId, row.companyName, row.workplaceId, row.kindCode, row.title,
-                    NovaDocumentBasis.of(row.basis), row.legalRef, row.validityDays, row.noticeDays, row.responsibleContact, row.note,
-                    row.isArchived, row.version, NovaDocumentStatus.of(row.status), row.latestIssuedOn, row.latestValidUntil,
-                    row.records.map { NovaDocumentCopy(it.id, it.issuedOn, it.validUntil, it.documentNo, it.locationNote, it.recordedAt) },
-                    row.fileStored)
-            },
+            rows = envelope.rows.map(::obligation),
             total = envelope.total, hasMore = envelope.hasMore, today = envelope.today,
         )
+    }
+
+    suspend fun detail(identity: IsgWorkspaceIdentity, company: String, id: String): NovaDocumentObligation {
+        if (transport.identityNow() != identity) throw NovaDocumentFailure(NovaDocumentFailure.Reason.denied)
+        val data = try {
+            transport.execute("isg_document_tracking_read_v1", buildJsonObject {
+                put("p_company", company); put("p_kind", "detail"); put("p_id", id)
+                put("p_query", JsonNull); put("p_status", JsonNull); put("p_workplace", JsonNull)
+            })
+        } catch (failure: NovaExpertFailure) {
+            currentCoroutineContext().ensureActive()
+            throw NovaDocumentFailure(if (failure.code in setOf("AUTH_REQUIRED", "ACCESS_DENIED"))
+                NovaDocumentFailure.Reason.denied else NovaDocumentFailure.Reason.unavailable)
+        }
+        if (transport.identityNow() != identity) throw NovaDocumentFailure(NovaDocumentFailure.Reason.denied)
+        return obligation(runCatching { novaJson.decodeFromJsonElement(DetailEnvelope.serializer(), data) }.getOrNull()?.row
+            ?: throw NovaDocumentFailure(NovaDocumentFailure.Reason.unavailable))
     }
 }

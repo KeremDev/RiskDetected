@@ -13,15 +13,16 @@ struct NovaPilotDocumentGate: View {
     /// Opened from a company page: the tracker starts on that company, and on
     /// that heading's own document kinds when one was named.
     var initialCompany: UUID?
+    var initialRecordID: UUID?
     var initialKinds: [String]?
     var headingOverride: String?
 
     private var service: NovaDocumentTrackingService { .live(currentScope: currentScope) }
 
     var body: some View {
-        NovaFollowupScreen(identity: identity, initialCompany: initialCompany, canWrite: canWrite, onBack: onBack, legacy: { company in
-            AnyView(NovaDocumentTrackingScreen(client: client, onBack: onBack, canWrite: false,
-                initialCompany: company, initialKinds: initialKinds,
+        NovaFollowupScreen(identity: identity, initialCompany: initialCompany, canWrite: canWrite, onBack: onBack, legacy: { row, close in
+            AnyView(NovaDocumentTrackingScreen(client: client, onBack: close, canWrite: false,
+                initialCompany: row.company_id, initialRecordID: row.record_id, initialKinds: initialKinds,
                 headingOverride: RDLocalization.string("localizable.nova.document.previous.title", table: .localizable,
                     fallback: "Önceki Evrak Kayıtları")))
         })
@@ -48,7 +49,7 @@ struct NovaPilotDocumentGate: View {
     }
 
     private var client: NovaDocumentTrackingClient {
-        .init(
+        var result = NovaDocumentTrackingClient(
             portfolio: { request in
                 try await service.portfolio(identity, query: request.query, status: request.status,
                     company: request.company, kinds: request.kinds,
@@ -66,5 +67,9 @@ struct NovaPilotDocumentGate: View {
             removeCopy: { row, copy in
                 try await service.removeCopy(try await scoped(row), obligation: row, copy: copy)
             })
+        result.detail = { company, record in
+            try await service.detail(try await waitForScope(company), obligation: record)
+        }
+        return result
     }
 }

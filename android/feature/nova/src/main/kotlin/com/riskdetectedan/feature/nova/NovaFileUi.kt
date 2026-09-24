@@ -79,6 +79,7 @@ object NovaFileWords {
 class NovaFileClient(private val service: NovaFileLibraryService, private val identity: IsgWorkspaceIdentity) {
     suspend fun catalogue() = service.catalogue(identity)
     suspend fun library(query: NovaFileQuery) = service.library(identity, query)
+    suspend fun detail(id: String) = service.detail(identity, id)
     suspend fun file(company: String?, draft: NovaFileDraft, data: ByteArray) = service.file(identity, company, draft, data)
     suspend fun rename(entry: NovaFileEntry, title: String, category: String, note: String) = service.rename(identity, entry, title, category, note)
     suspend fun archive(entry: NovaFileEntry) = service.archive(identity, entry)
@@ -313,4 +314,3 @@ fun <C> NovaCompanyCreateFlow(title: String, companies: suspend () -> List<NovaC
         }
     }
 }
-

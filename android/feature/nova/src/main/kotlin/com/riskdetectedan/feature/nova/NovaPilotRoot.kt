@@ -68,6 +68,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
     val notices = state.notices
     // iOS reads one equipment page for the menu and home counters, again whenever the page changes.
     var equipmentBoard by remember(identity) { mutableStateOf<NovaEquipmentBoard?>(null) }
+    var homePendingActionCount by remember(identity) { mutableStateOf<Int?>(null) }
     LaunchedEffect(identity, workspaceId, state.navigation.selected) {
         equipmentBoard = try { services.equipmentSummary(identity) }
             catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled } catch (_: Exception) { equipmentBoard }
@@ -89,7 +90,8 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 viewModel.showMessage("Bildirim kaydı açılamadı. Yeniden deneyin.")
             }
         } else noticeRecord = NovaFollowupPage.Row(if (entry.kind == NovaNoticeKind.drill) "completed_drill" else entry.kind.wire, company,
-            entry.companyName.orEmpty(), record, record, entry.title, entry.dueOn, if (entry.severity == NovaNoticeSeverity.overdue) "expired" else "soon")
+            entry.companyName.orEmpty(), record, record, entry.title, null, entry.dueOn,
+            if (entry.severity == NovaNoticeSeverity.overdue) "expired" else "soon")
     }
     // iOS home: the six newest analyses under the expert's own method, reread on each workspace/overview change.
     var recentAnalyses by remember(identity) { mutableStateOf<List<NovaRecentAnalysis>>(emptyList()) }
@@ -113,6 +115,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
         profileAvatar = state.avatar, menuRoleTitle = "İSG Uzmanı", notebookAvailable = notebookAvailable,
         menuStats = menuStats(state, equipmentBoard), menuNextAction = nextAction(state, equipmentBoard),
         hasUnread = notices.unread > 0, unreadCount = notices.unread,
+        pendingActionCount = homePendingActionCount,
         notices = notices.rows.map(::noticeItem),
         noticeNote = if (notices.rows.isEmpty()) "" else NovaNoticeWords.dismissNote,
         connectionLabel = status(state),
@@ -141,7 +144,8 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 onOpenAnalysis = { id -> pendingAnalysis = id; navigate(NovaDestination.analyses) },
                 tracking = {
                     NovaHomeDeadlineBoard({ status, offset -> services.followup(identity, null, status, "", offset) },
-                        recordChanges, scopeKey = workspaceId, onOpen = { row -> noticeRecord = row })
+                        recordChanges, scopeKey = workspaceId, onPendingActionCount = { homePendingActionCount = it },
+                        onOpen = { row -> noticeRecord = row })
                 })
             NovaDestination.notifications -> NovaNoticeCenterScreen(services.noticeClient(identity),
                 onOpen = { raw -> NovaDestination.entries.firstOrNull { it.name == raw }?.let(navigate) },
@@ -183,7 +187,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                     sources = { entry -> services.fileSources(identity, entry) }, openSource = recordOpener(services, identity, state.writable, state.userName),
                     startInAddMode = destination == NovaDestination.newDocument)
             }
-            NovaDestination.documentChecklist -> NovaFollowupScreen({ company, status, query, offset -> services.followup(identity, company, status, query, offset) },
+            NovaDestination.documentChecklist -> NovaFollowupScreen({ company, status, kind, query, offset -> services.followup(identity, company, status, query, offset, kind) },
                 services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable, state.userName),
                 onBack = { navigate(NovaDestination.home) })
             NovaDestination.training, NovaDestination.newTraining -> key(destination) {
@@ -194,7 +198,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 navigate(NovaDestination.home)
             } else NovaStatisticsScreen(services.statisticsClient(identity), onBack = { navigate(NovaDestination.home) },
                 onNavigate = navigate, openTracked = trackedOpener(services, identity, state.writable)) { company, onBack ->
-                NovaFollowupScreen({ selected, status, query, offset -> services.followup(identity, selected, status, query, offset) },
+                NovaFollowupScreen({ selected, status, kind, query, offset -> services.followup(identity, selected, status, query, offset, kind) },
                     services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable, state.userName),
                     onBack = onBack, initialCompany = company)
             }
@@ -319,12 +323,19 @@ internal fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIden
     when (row.kind) {
         "completed_drill", "personnel_certificate", "katip_contract", "approved_notebook", "site_visit", "board", "board_decision", "annual_work_item" ->
             NovaProcessEditor(services.processClient(identity), row.kind, row.companyId, null, row.recordId, canWrite, onBack)
-        "risk_assessment" -> NovaRiskScreen(services.riskClient(identity), canWrite, onBack, initialCompany = row.companyId)
-        "equipment" -> NovaEquipmentScreen(services.equipmentClient(identity), canWrite, onBack, initialCompany = row.companyId)
-        "emergency_plan" -> NovaEmergencyScreen(services.emergencyClient(identity), canWrite, onBack, initialCompany = row.companyId)
-        "appointment" -> NovaAppointmentScreen(services.appointmentClient(identity), canWrite, onBack, initialCompany = row.companyId)
+        "risk_assessment" -> NovaRiskScreen(services.riskClient(identity), canWrite, onBack,
+            initialCompany = row.companyId, initialRecordId = row.recordId)
+        "equipment" -> NovaEquipmentScreen(services.equipmentClient(identity), canWrite, onBack,
+            initialCompany = row.companyId, initialRecordId = row.recordId)
+        "emergency_plan" -> NovaEmergencyScreen(services.emergencyClient(identity), canWrite, onBack,
+            initialCompany = row.companyId, initialRecordId = row.recordId)
+        "appointment" -> NovaAppointmentScreen(services.appointmentClient(identity), canWrite, onBack,
+            initialCompany = row.companyId, initialRecordId = row.recordId)
         "training" -> NovaTrainingRecordScreen(services.trainingClient(identity, userName), row.sourceId, row.companyId, canWrite, onBack)
-        "document" -> NovaDocumentTrackingScreen(services.documentClient(identity), row.companyId, "Önceki Evrak Kayıtları", onBack)
+        "document" -> NovaDocumentTrackingScreen(services.documentClient(identity), row.companyId,
+            "Önceki Evrak Kayıtları", onBack, initialRecordId = row.recordId)
+        "file" -> NovaFileLibraryScreen(services.fileClient(identity), services.companyOptions(identity), canWrite, onBack,
+            initialCompany = row.companyId, initialEntryId = row.recordId)
         else -> NovaFileLibraryScreen(services.fileClient(identity), services.companyOptions(identity), canWrite, onBack, initialCompany = row.companyId)
     }
 }
@@ -422,7 +433,7 @@ private fun ActivityDestination(services: NovaRootServices, identity: IsgWorkspa
             "assignment" to "appointment", "training_session" to "training")[detail.entityType]
         val record = detail.entityId
         if (!companyOnly && record != null && kind != null) {
-            source = NovaFollowupPage.Row(kind, company, "", record, record, NovaActivityWords.title(detail.action), null, "active")
+            source = NovaFollowupPage.Row(kind, company, "", record, record, NovaActivityWords.title(detail.action), null, null, "active")
         } else navigate(if (companyOnly) NovaDestination.companies else mapOf("nonconformity" to NovaDestination.findings,
             "training" to NovaDestination.training, "file" to NovaDestination.documents, "checklist" to NovaDestination.checklists,
             "ppe" to NovaDestination.ppeHandovers, "permit" to NovaDestination.workPermits, "plan" to NovaDestination.annualWorkPlans)[detail.entityType]
@@ -619,7 +630,8 @@ class NovaRootServices @javax.inject.Inject constructor(
         }
     }
     fun documentClient(identity: IsgWorkspaceIdentity) =
-        NovaDocumentTrackingClient(portfolio = { documents.portfolio(identity, it) }, companies = companies(identity))
+        NovaDocumentTrackingClient(portfolio = { documents.portfolio(identity, it) }, companies = companies(identity),
+            detail = { company, id -> documents.detail(identity, company, id) })
     val analysis: NovaAnalysisService get() = analyses
 
     /** The analysis list over the account's (or organization's) analyses, read under [method]. */
@@ -706,8 +718,8 @@ class NovaRootServices @javax.inject.Inject constructor(
         NovaServiceTrainingClient(training, identity, companies(identity), userName, people(identity))
     fun checklistClient(identity: IsgWorkspaceIdentity) = NovaServiceChecklistClient(checklists, checklistQueue, files, identity, companies(identity))
     fun companyOptions(identity: IsgWorkspaceIdentity) = companies(identity)
-    suspend fun followup(identity: IsgWorkspaceIdentity, company: String?, status: String?, query: String, offset: Int) =
-        followups.load(identity, company, status, query, offset)
+    suspend fun followup(identity: IsgWorkspaceIdentity, company: String?, status: String?, query: String, offset: Int, kind: String? = null) =
+        followups.load(identity, company, status, kind, query, offset)
     suspend fun fileSources(identity: IsgWorkspaceIdentity, entry: NovaFileEntry) = followups.fileSources(identity, entry)
     /** This account's record changes, as the iOS `isgada.records.changed` notification. */
     fun changes(identity: IsgWorkspaceIdentity) = events.changed.filter { it.userId == identity.userId }.map { }

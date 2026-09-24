@@ -348,7 +348,7 @@ private fun KatipContractSheet(initial: NovaKatipDraft, catalogue: NovaKatipCata
     var didSave by remember { mutableStateOf(false) }
     var confirmingExit by remember { mutableStateOf(false) }
     val placeTitle = workplaces.firstOrNull { it.id == draft.workplaceId }?.name ?: "İşyeri seçin"
-    val canSave = draft.workplaceId != null && draft.counterparty.isNotBlank() && draft.expertContact.isNotBlank() && draft.scope.isNotBlank()
+    val canSave = (workplaces.isEmpty() || draft.workplaceId != null) && draft.counterparty.isNotBlank() && draft.expertContact.isNotBlank() && draft.scope.isNotBlank()
     if (didSave) {
         NovaTaskSuccessView("Sözleşme kaydedildi", "Sözleşme kaydı seçili firmanın İSG-KATİP arşivine eklendi.", "Sözleşmelere dön", onClose)
         return
@@ -368,10 +368,10 @@ private fun KatipContractSheet(initial: NovaKatipDraft, catalogue: NovaKatipCata
         when (step) {
             KatipStep.scope -> {
                 NovaText("Firma bağlamı akış boyunca korunur.")
-                if (workplaces.size <= 1) NovaCard(Modifier.fillMaxWidth(), padding = 13) {
+                if (workplaces.size == 1) NovaCard(Modifier.fillMaxWidth(), padding = 13) {
                     NovaText("İşyeri", style = NovaTypeToken.label)
-                    NovaText(if (workplaces.isEmpty()) "Bu firmada kayıt açılacak bir işyeri yok." else placeTitle, style = NovaTypeToken.bodyStrong)
-                } else {
+                    NovaText(placeTitle, style = NovaTypeToken.bodyStrong)
+                } else if (workplaces.size > 1) {
                     NovaChooserButton("İşyeri", placeTitle, "nova.katip.form.workplace", open = choosing) { choosing = !choosing }
                     if (choosing) NovaChooserPanel(workplaces.map { NovaChooserOption(it.id, it.name) }, draft.workplaceId, "nova.katip.form.workplace.panel") {
                         draft = draft.copy(workplaceId = it); choosing = false

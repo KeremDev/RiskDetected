@@ -259,6 +259,7 @@ struct NovaStatusPill: View {
     let label: String
     let status: NovaStatus
     var showsDot = true
+    var compact = false
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
@@ -270,7 +271,8 @@ struct NovaStatusPill: View {
             }
             NovaText(text: label, style: .badge, color: tone.ink.color(in: scheme))
         }
-        .padding(.vertical, 6).padding(.horizontal, 10)
+        .padding(.vertical, compact ? 4 : 6).padding(.horizontal, compact ? 9 : 10)
+        .frame(minHeight: compact ? 30 : 0)
         .background(tone.background.color(in: scheme), in: Capsule())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: label))

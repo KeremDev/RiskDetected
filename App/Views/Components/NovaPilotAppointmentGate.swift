@@ -6,6 +6,7 @@ struct NovaPilotAppointmentGate: View {
     let identity: NovaSessionIdentity
     let canWrite: Bool
     var initialCompany: UUID?
+    var initialRecordID: UUID?
     var headingOverride: String?
     var startInAddMode = false
     let onBack: () -> Void
@@ -15,7 +16,8 @@ struct NovaPilotAppointmentGate: View {
 
     var body: some View {
         NovaAppointmentScreen(client: client, onBack: onBack, canWrite: canWrite,
-            initialCompany: initialCompany, headingOverride: headingOverride, startInAddMode: startInAddMode,
+            initialCompany: initialCompany, initialRecordID: initialRecordID,
+            headingOverride: headingOverride, startInAddMode: startInAddMode,
             management: { company, record in AnyView(NovaModuleEditor(identity: identity, module: "appointment", company: company, record: record, fileClient: fileClient)) })
     }
 

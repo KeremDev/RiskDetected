@@ -29,7 +29,8 @@ typealias NovaRecordOpener = @Composable (NovaFollowupPage.Row, () -> Unit) -> U
 @Composable
 fun NovaFileLibraryScreen(client: NovaFileClient, companiesSource: suspend () -> List<NovaCompanyOption>, canWrite: Boolean, onBack: () -> Unit,
                           sources: (suspend (NovaFileEntry) -> List<NovaFollowupPage.Row>)? = null, openSource: NovaRecordOpener? = null,
-                          initialCompany: String? = null, initialCategories: List<String>? = null, headingOverride: String? = null,
+                          initialCompany: String? = null, initialEntryId: String? = null,
+                          initialCategories: List<String>? = null, headingOverride: String? = null,
                           startInAddMode: Boolean = false) {
     var board by remember { mutableStateOf<NovaFileLibraryPage?>(null) }
     var catalogue by remember { mutableStateOf<NovaFileLibraryService.Catalogue?>(null) }
@@ -58,6 +59,11 @@ fun NovaFileLibraryScreen(client: NovaFileClient, companiesSource: suspend () ->
     LaunchedEffect(Unit) {
         companies = runCatching { companiesSource() }.getOrDefault(emptyList())
         catalogue = runCatching { client.catalogue() }.getOrNull()
+    }
+    LaunchedEffect(initialEntryId) {
+        if (initialEntryId != null) runCatching { client.detail(initialEntryId) }
+            .onSuccess { inspecting = it }
+            .onFailure { error = "Dosya detayı açılamadı. Yeniden deneyin." }
     }
     LaunchedEffect(reload, company, group, category, shown) {
         error = null; loading = true
@@ -338,7 +344,7 @@ private fun FileRenameSheet(entry: NovaFileEntry, categories: List<NovaFileCateg
 
 /** Evrak Takibi (iOS `NovaFollowupScreen`): every dated record across the modules, opened at its source. */
 @Composable
-fun NovaFollowupScreen(load: suspend (company: String?, status: String?, query: String, offset: Int) -> NovaFollowupPage,
+fun NovaFollowupScreen(load: suspend (company: String?, status: String?, kind: String?, query: String, offset: Int) -> NovaFollowupPage,
                        companiesSource: suspend () -> List<NovaCompanyOption>, events: kotlinx.coroutines.flow.Flow<Unit>, openSource: NovaRecordOpener,
                        onBack: () -> Unit, initialCompany: String? = null) {
     val coroutines = rememberCoroutineScope()
@@ -348,6 +354,7 @@ fun NovaFollowupScreen(load: suspend (company: String?, status: String?, query: 
     var rows by remember { mutableStateOf<List<NovaFollowupPage.Row>>(emptyList()) }
     var query by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
+    var kind by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var failure by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<NovaFollowupPage.Row?>(null) }
@@ -357,50 +364,62 @@ fun NovaFollowupScreen(load: suspend (company: String?, status: String?, query: 
         busy = true; failure = false
         if (!more) { rows = emptyList(); page = null }
         try {
-            val result = load(company, status, query, if (more) rows.size else 0)
+            val result = load(company, status, kind, query, if (more) rows.size else 0)
             page = result; rows = if (more) rows + result.rows else result.rows
         } catch (_: Exception) { failure = true }
         busy = false
     }
     LaunchedEffect(Unit) { companies = runCatching { companiesSource() }.getOrDefault(emptyList()) }
-    LaunchedEffect(company, status, revision) { fetch(false) }
+    LaunchedEffect(company, status, kind, revision) { fetch(false) }
     LaunchedEffect(Unit) { events.collect { revision++ } }
     val open = selected
     if (open != null) { openSource(open) { selected = null; revision++ }; return }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         NovaPageHeading("Evrak Takibi", onBack = onBack)
-        NovaHelpHint("Süreler ilgili modüldeki kayıttan otomatik gelir. Bir kaydı açarak kaynağındaki bilgileri düzenleyebilirsiniz.")
-        if (initialCompany == null) {
-            NovaChooserButton("Firma", companies.firstOrNull { it.id == company }?.name ?: "Tüm firmalar", "followup.company", open = chooser == "company") {
+        NovaHelpHint("Eklenen evrakları firma ve türe göre izleyin. Kayıt tarihi ve varsa geçerlilik süresi kaynağından gelir; karta dokunarak belge detayını açın.")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (initialCompany == null) NovaChooserButton("Firma", companies.firstOrNull { it.id == company }?.name ?: "Tüm firmalar",
+                "followup.company", Modifier.weight(1f), open = chooser == "company") {
                 chooser = if (chooser == "company") null else "company"
             }
-            if (chooser == "company") NovaChooserPanel(listOf(NovaChooserOption(null, "Tüm firmalar")) + companies.map { NovaChooserOption(it.id, it.name) }, company,
-                "followup.company.options") { company = it; chooser = null }
+            NovaChooserButton("Durum", status?.let(NovaFollowupPage::statusTitle) ?: "Tüm durumlar",
+                "followup.status", Modifier.weight(1f), open = chooser == "status") {
+                chooser = if (chooser == "status") null else "status"
+            }
+        }
+        if (chooser == "company") NovaChooserPanel(listOf(NovaChooserOption(null, "Tüm firmalar")) + companies.map { NovaChooserOption(it.id, it.name) }, company,
+            "followup.company.options") { company = it; chooser = null }
+        if (chooser == "status") NovaChooserPanel(listOf(NovaChooserOption(null, "Tüm durumlar")) +
+            listOf("current", "soon", "expired", "undated").map { NovaChooserOption(it, NovaFollowupPage.statusTitle(it)) }, status, "followup.status.options") {
+            status = it; chooser = null
+        }
+        NovaChooserButton("Evrak türü", NovaFollowupPage.kindTitle(kind), "followup.kind", open = chooser == "kind") {
+            chooser = if (chooser == "kind") null else "kind"
+        }
+        if (chooser == "kind") NovaChooserPanel(listOf(NovaChooserOption(null, "Tüm evrak türleri")) +
+            NovaFollowupPage.kindOptions.map { NovaChooserOption(it.first, it.second) }, kind, "followup.kind.options") {
+            kind = it; chooser = null
         }
         page?.let { shown ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NovaListStat("Güncel", "checkmark.circle", shown.current, Modifier.weight(1f))
                 NovaListStat("Yaklaşıyor", "clock", shown.soon, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NovaListStat("Süresi doldu", "exclamationmark.triangle", shown.expired, Modifier.weight(1f))
+                NovaListStat("Tarih yok", "calendar", shown.undated, Modifier.weight(1f))
             }
         }
         NovaSearchCapsule(query, "Evrak veya firma ara", "followup.search") { query = it }
         LaunchedEffect(query) { kotlinx.coroutines.delay(350); if (page != null) revision++ }
-        NovaChooserButton("Durum", status?.let(NovaFollowupPage::statusTitle) ?: "Tüm durumlar", "followup.status", open = chooser == "status") {
-            chooser = if (chooser == "status") null else "status"
-        }
-        if (chooser == "status") NovaChooserPanel(listOf(NovaChooserOption(null, "Tüm durumlar")) +
-            listOf("current", "soon", "expired", "undated").map { NovaChooserOption(it, NovaFollowupPage.statusTitle(it)) }, status, "followup.status.options") {
-            status = it; chooser = null
-        }
         if (busy && rows.isEmpty()) NovaLoadingView("Evraklar yükleniyor…", Modifier.heightIn(max = 200.dp))
         if (failure) {
             NovaText("Evrak takibi alınamadı.", style = NovaTypeToken.meta)
             NovaButton("Yeniden dene", { revision++ }, variant = NovaButtonVariant.Surface, symbol = "arrow.clockwise")
         }
-        if (!busy && !failure && rows.isEmpty()) NovaEmptyState("Bu filtrede kayıt yok",
-            "Süreli kayıtlar ilgili modüllere eklendiğinde yaklaşan ve geciken işler burada tek listede görünür.")
+        if (!busy && !failure && rows.isEmpty()) NovaEmptyState("Bu filtrede evrak yok",
+            "Firma, evrak türü veya durum filtresini değiştirin.")
         NovaListEntrance(rows.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 rows.forEachIndexed { index, row ->
@@ -410,8 +429,10 @@ fun NovaFollowupScreen(load: suspend (company: String?, status: String?, query: 
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 NovaIcon("doc.text", 14.dp); NovaText(row.title, Modifier.weight(1f), NovaTypeToken.cardTitle); NovaIcon("chevron.right", 10.dp)
                             }
-                            NovaText("${row.companyName} · ${row.typeTitle}", style = NovaTypeToken.meta)
-                            NovaText(NovaFollowupPage.statusTitle(row.status) + (row.dueOn?.let { " · ${NovaDay.label(it)}" } ?: ""), style = NovaTypeToken.meta)
+                            NovaText("${row.companyName} · ${row.fileCategory?.let(NovaFileWords::category) ?: row.typeTitle}", style = NovaTypeToken.meta)
+                            row.recordedOn?.let { NovaText("Kayıt: ${NovaDay.label(it)}", style = NovaTypeToken.metaQuiet) }
+                            NovaText(row.dueOn?.let { "Geçerlilik: ${NovaDay.label(it)} · ${NovaFollowupPage.statusTitle(row.status)}" }
+                                ?: "Geçerlilik tarihi yok", style = NovaTypeToken.meta)
                         }
                     }
                 }

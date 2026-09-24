@@ -200,9 +200,11 @@ private fun fixedChoices(field: String): List<Pair<String, String>>? = when (fie
 @Composable
 private fun DirectoryEditor(scope: NovaPersonnelScope, kind: NovaDirectoryKind, parent: UUID?, parentVersion: Long, original: NovaDirectoryRow?, history: List<NovaDirectoryRow>, client: NovaDirectoryClient, onBack: () -> Unit, onSaved: () -> Unit) {
     val inPopup = LocalNovaPopup.current
-    val definition = remember(kind) { directoryFields(kind) }
     var fields by remember { mutableStateOf(original?.fields?.mapValues { (_, v) -> (v as? NovaDirectoryValue.Text)?.value ?: "" }.orEmpty()) }
     var options by remember { mutableStateOf(emptyMap<String, List<NovaDirectoryRow>>()) }
+    val definition = directoryFields(kind).map { field ->
+        if (field.id == "workplace_id" && options["workplace_id"]?.isEmpty() == true) field.copy(nullable = true) else field
+    }
     var cursors by remember { mutableStateOf(emptyMap<String, UUID?>()) }
     var more by remember { mutableStateOf<String?>(null) }
     var expanded by remember { mutableStateOf<String?>(null) }
@@ -281,7 +283,7 @@ private fun DirectoryEditor(scope: NovaPersonnelScope, kind: NovaDirectoryKind, 
                 NovaText("Önceki dönemi seçerseniz bu kayıt başlangıç tarihinde bölünür; eski bilgiler korunur. Bitiş günü döneme dahil değildir.", style = NovaTypeToken.metaQuiet)
             }
             if (kind == NovaDirectoryKind.engagements && original != null) NovaText("Firma, işyeri ve başlangıç değişmez. Bitişi ve açıklamayı düzenleyebilirsiniz.", style = NovaTypeToken.metaQuiet)
-            definition.forEach { field -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            definition.filterNot { it.id == "workplace_id" && options["workplace_id"]?.isEmpty() == true }.forEach { field -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 DirectoryLabel(field.label, field.choices?.symbol ?: "pencil")
                 val editable = pending == null && !(kind == NovaDirectoryKind.engagements && original != null && field.id in setOf("organization_id", "workplace_id", "starts_on"))
                 val fixed = fixedChoices(field.id)

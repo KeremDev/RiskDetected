@@ -38,8 +38,20 @@ struct NovaHeaderContext {
     let userName: String
     let unreadCount: Int
     let hasUnread: Bool
+    let pendingActionCount: Int?
+    let pageSummary: NovaHeaderSummary?
+    let setPageSummary: (NovaHeaderSummary?) -> Void
+    let pageBackAction: (() -> Void)?
+    let setPageBackAction: ((() -> Void)?) -> Void
     let notificationsAvailable: Bool
     let send: (NovaNavigationEvent) -> Void
+}
+
+/// Small, page-specific counts shown beside the menu in the shell header.
+struct NovaHeaderSummary: Equatable {
+    let title: String
+    let recordCount: Int
+    let upcomingCount: Int
 }
 private struct NovaHeaderContextKey: EnvironmentKey { static let defaultValue: NovaHeaderContext? = nil }
 extension EnvironmentValues {
@@ -56,7 +68,9 @@ struct NovaStandaloneHeader: View {
         if let context {
             NovaShellTopBar(current: context.current, userName: context.userName,
                 hasUnread: context.hasUnread, unreadCount: context.unreadCount,
-                canGoBack: false, notificationsAvailable: context.notificationsAvailable, send: context.send)
+                pendingActionCount: context.pendingActionCount,
+                canGoBack: false, notificationsAvailable: context.notificationsAvailable, send: context.send,
+                pageSummary: context.pageSummary, pageBackAction: context.pageBackAction)
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.style.consistency.isgada.be46a6b6", table: .localizable, fallback: "İSGADA"), style: .brand).frame(maxWidth: .infinity).padding(.vertical, 8)
         }

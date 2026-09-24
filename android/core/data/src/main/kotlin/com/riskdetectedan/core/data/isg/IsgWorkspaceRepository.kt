@@ -162,7 +162,7 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
         }
 
     /** Files one workspace analysis item as a nonconformity; returns whether a new record was created. */
-    suspend fun fileAnalysisItem(context: IsgWorkspaceContext, mutationId: String, companyId: String, workplaceId: String, analysisId: String,
+    suspend fun fileAnalysisItem(context: IsgWorkspaceContext, mutationId: String, companyId: String, workplaceId: String?, analysisId: String,
                                  itemKind: String, itemId: String, severity: String?, openedOn: String): Boolean = inScope(context, companyId) {
         gateway.fileAnalysisItem(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, context.canOperate,
             mutationId, companyId, workplaceId, "workspace", analysisId, itemKind, itemId, severity, openedOn, null)["created"]!!.jsonPrimitive.boolean
@@ -404,14 +404,8 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
             })
     }
 
-    /** The company's workplaces, creating its default one first when it has none (iOS `initializePersonnel`). */
+    /** Return real workplaces only; a company with none remains company scoped. */
     suspend fun ensuredWorkplaces(context: IsgWorkspaceContext, companyId: String): List<Pair<String, String>> {
-        val existing = directory(context, companyId, "workplaces")
-        if (existing.isNotEmpty() || !context.canOperate) return existing
-        inScope(context, companyId) {
-            gateway.initializePersonnel(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
-                context.canOperate, companyId)
-        }
         return directory(context, companyId, "workplaces")
     }
 

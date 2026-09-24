@@ -86,9 +86,10 @@ enum class NovaStatus(val background: NovaColorToken, val ink: NovaColorToken) {
 }
 
 @Composable
-fun NovaStatusPill(label: String, status: NovaStatus, modifier: Modifier = Modifier, showsDot: Boolean = true) {
+fun NovaStatusPill(label: String, status: NovaStatus, modifier: Modifier = Modifier, showsDot: Boolean = true, compact: Boolean = false) {
     Row(modifier.background(status.background.color(), CircleShape)
-        .padding(horizontal = 10.dp, vertical = 6.dp)
+        .padding(horizontal = if (compact) 9.dp else 10.dp, vertical = if (compact) 4.dp else 6.dp)
+        .then(if (compact) Modifier.heightIn(min = 30.dp) else Modifier)
         .clearAndSetSemantics { contentDescription = label },
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         if (showsDot) Box(Modifier.size(6.dp).background(status.ink.color(), CircleShape))

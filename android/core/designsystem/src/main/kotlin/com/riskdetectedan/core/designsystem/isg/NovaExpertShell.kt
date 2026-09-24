@@ -52,16 +52,20 @@ import com.riskdetectedan.core.designsystem.R
 
 /** Standalone destinations keep the same functioning header as shell destinations. */
 data class NovaHeaderContext(val current: NovaDestination, val userName: String, val unreadCount: Int,
-                             val hasUnread: Boolean, val notificationsAvailable: Boolean,
+                             val hasUnread: Boolean, val pendingActionCount: Int?, val notificationsAvailable: Boolean,
+                             val pageSummary: NovaHeaderSummary?, val setPageSummary: (NovaHeaderSummary?) -> Unit,
+                             val pageBackAction: (() -> Unit)?, val setPageBackAction: ((() -> Unit)?) -> Unit,
                              val send: (NovaNavigationEvent) -> Unit)
+
+data class NovaHeaderSummary(val title: String, val recordCount: Int, val upcomingCount: Int)
 
 val LocalNovaHeaderContext = staticCompositionLocalOf<NovaHeaderContext?> { null }
 
 @Composable
 fun NovaStandaloneHeader() {
     val context = LocalNovaHeaderContext.current
-    if (context != null) NovaShellTopBar(context.current, context.hasUnread, context.unreadCount,
-        context.notificationsAvailable, context.send)
+    if (context != null) NovaShellTopBar(context.current, context.userName, context.hasUnread, context.unreadCount, context.pendingActionCount,
+        context.notificationsAvailable, context.send, context.pageSummary, context.pageBackAction)
     else NovaText("İSGADA", Modifier.fillMaxWidth().padding(vertical = 8.dp), NovaTypeToken.brand, textAlign = TextAlign.Center)
 }
 
@@ -107,20 +111,30 @@ fun NovaExpertShell(state: NovaNavigationState, userName: String, onEvent: (Nova
                     modifier: Modifier = Modifier, notebookAvailable: Boolean = false,
                     profileAvatar: ImageBitmap? = null, menuRoleTitle: String = "İSG Uzmanı",
                     menuStats: List<NovaMenuStat> = emptyList(), menuNextAction: NovaMenuNextAction? = null,
-                    hasUnread: Boolean = false, unreadCount: Int = 0, notices: List<NovaNotice> = emptyList(),
+                    hasUnread: Boolean = false, unreadCount: Int = 0, pendingActionCount: Int? = null, notices: List<NovaNotice> = emptyList(),
                     noticeNote: String = "", connectionLabel: String = "Bağlantı bilgisi yok",
                     isManager: Boolean = false, actions: NovaShellActions = NovaShellActions(),
                     content: @Composable (NovaDestination) -> Unit) {
     val epoch = state.epoch
     val send: (NovaNavigationEvent) -> Unit = { onEvent(it, epoch) }
+    var pageSummary by remember { mutableStateOf<NovaHeaderSummary?>(null) }
+    var pageBackAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    LaunchedEffect(state.current) {
+        if (state.current != NovaDestination.riskAssessments) {
+            pageSummary = null
+            pageBackAction = null
+        }
+    }
     BackHandler(enabled = state.canGoBack) { send(NovaNavigationEvent.Back) }
     key(epoch) {
         val saved = rememberSaveableStateHolder()
         LaunchedEffect(state.available) {
             NovaDestination.entries.filterNot(state::canOpen).forEach { saved.removeState(it.name) }
         }
-        val header = NovaHeaderContext(state.current, userName, unreadCount, hasUnread,
-            state.canOpen(NovaDestination.notifications), send)
+        val header = NovaHeaderContext(state.current, userName, unreadCount, hasUnread, pendingActionCount,
+            state.canOpen(NovaDestination.notifications), pageSummary,
+            { summary -> if (state.current == NovaDestination.riskAssessments) pageSummary = summary }, pageBackAction,
+            { action -> if (state.current == NovaDestination.riskAssessments) pageBackAction = action }, send)
         val keyboardOpen = WindowInsets.isImeVisible
         CompositionLocalProvider(LocalNovaHeaderContext provides header) {
             Box(modifier.fillMaxSize().background(NovaColorToken.canvas.color())) {
@@ -128,8 +142,8 @@ fun NovaExpertShell(state: NovaNavigationState, userName: String, onEvent: (Nova
                     .blur(if (state.overlay == NovaOverlay.quickAdd) NovaPopupStyle.sourceBlur else 0.dp)
                     .then(if (state.overlay != null) Modifier.clearAndSetSemantics {} else Modifier)) {
                     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-                        NovaShellTopBar(state.current, hasUnread, unreadCount,
-                            state.canOpen(NovaDestination.notifications), send)
+                        NovaShellTopBar(state.current, userName, hasUnread, unreadCount, pendingActionCount,
+                            state.canOpen(NovaDestination.notifications), send, pageSummary, pageBackAction)
                         NovaShellContent(state, saved, content)
                     }
                     AnimatedVisibility(!keyboardOpen, Modifier.align(Alignment.BottomCenter),
@@ -176,11 +190,34 @@ private fun NovaShellContent(state: NovaNavigationState, saved: androidx.compose
 }
 
 @Composable
-fun NovaShellTopBar(current: NovaDestination, hasUnread: Boolean, unreadCount: Int,
-                    notificationsAvailable: Boolean, send: (NovaNavigationEvent) -> Unit) {
+fun NovaShellTopBar(current: NovaDestination, userName: String, hasUnread: Boolean, unreadCount: Int, pendingActionCount: Int?,
+                    notificationsAvailable: Boolean, send: (NovaNavigationEvent) -> Unit,
+                    pageSummary: NovaHeaderSummary? = null, pageBackAction: (() -> Unit)? = null) {
     Row(Modifier.fillMaxWidth().padding(horizontal = NovaDimensionToken.spaceScreenX.value.dp).padding(top = 8.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         NovaShellIconButton("line.3.horizontal", "Menüyü aç", "nova.menu") { send(NovaNavigationEvent.Open(NovaOverlay.drawer)) }
+        if (current == NovaDestination.riskAssessments && pageBackAction != null) {
+            NovaShellIconButton("chevron.left", "Geri", "nova.risk.back", onClick = pageBackAction)
+        }
+        if (current == NovaDestination.home) {
+            Column(Modifier.height(48.dp), verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)) {
+                NovaText("Merhaba, ${userName.split(' ').firstOrNull()?.takeIf(String::isNotBlank) ?: "İSGADA"}",
+                    style = NovaTypeToken.cardTitle, color = NovaColorToken.text.color(), maxLines = 1)
+                NovaText(pendingActionCount?.let { if (it == 0) "Bugün bekleyen işlem yok" else "Bugün $it işlem bekliyor" } ?: "İşlemler yükleniyor…",
+                    style = NovaTypeToken.metaQuiet, color = NovaColorToken.textMuted.color(), maxLines = 1)
+            }
+        } else if (current == NovaDestination.riskAssessments) {
+            Column(Modifier.height(48.dp), verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically)) {
+                NovaText(pageSummary?.title ?: NovaDestination.riskAssessments.title,
+                    style = NovaTypeToken.cardTitle, color = NovaColorToken.text.color(), maxLines = 1)
+                pageSummary?.let { summary ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        HeaderPageStat("circle.fill", summary.recordCount, "Kayıt")
+                        HeaderPageStat("list.bullet", summary.upcomingCount, "Yaklaşan")
+                    }
+                }
+            }
+        }
         Spacer(Modifier.weight(1f))
         Box {
             NovaShellIconButton("bell", if (hasUnread) "Bildirimler, yeni bildirim var" else "Bildirimler",
@@ -192,6 +229,15 @@ fun NovaShellTopBar(current: NovaDestination, hasUnread: Boolean, unreadCount: I
             } else if (hasUnread) Box(Modifier.align(Alignment.TopEnd).padding(7.dp).size(8.dp).background(dot, CircleShape))
         }
         NovaShellIconButton("person.fill", "Hesabım", "nova.profile") { send(NovaNavigationEvent.Select(NovaTab.profile)) }
+    }
+}
+
+@Composable
+private fun HeaderPageStat(symbol: String, value: Int, label: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
+        NovaIcon(symbol, if (symbol == "circle.fill") 6.dp else 9.dp, tint = NovaColorToken.text.color())
+        NovaSizedText(value.toString(), 10f, FontWeight.Bold, NovaColorToken.text.color(), maxLines = 1)
+        NovaSizedText(label, 10f, FontWeight.Normal, NovaColorToken.text.color(), maxLines = 1)
     }
 }
 
@@ -225,7 +271,7 @@ fun NovaShellTabBar(selected: NovaTab, current: NovaDestination, canOpen: (NovaD
             enter = fadeIn(NovaMotion.easeOut()) + scaleIn(NovaMotion.easeOut(), 0.9f),
             exit = fadeOut(NovaMotion.easeOut()) + scaleOut(NovaMotion.easeOut(), 0.9f)) {
             Box(Modifier.size(62.dp).shadow(18.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.07f))
-                .clip(CircleShape).background(Color.Black, CircleShape)
+                .clip(CircleShape).background(Color(0xFF0B2F53), CircleShape)
                 .border(1.dp, Color.White.copy(alpha = 0.35f), CircleShape)
                 .novaPress(scale = 0.93f, pressedAlpha = 0.72f) {
                     haptics.impact()
@@ -790,4 +836,3 @@ fun NovaGlyph(imageVector: ImageVector, contentDescription: String?, modifier: M
     }
     Icon(if (source == null) imageVector else ImageVector.vectorResource(source), contentDescription, modifier, tint)
 }
-

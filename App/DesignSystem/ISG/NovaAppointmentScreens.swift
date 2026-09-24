@@ -100,6 +100,7 @@ struct NovaAppointmentScreen: View {
     let onBack: () -> Void
     var canWrite: Bool = true
     var initialCompany: UUID?
+    var initialRecordID: UUID?
     var headingOverride: String?
     /// Opened from the company page's own empty-state "Ekle" action.
     var startInAddMode = false
@@ -158,6 +159,10 @@ struct NovaAppointmentScreen: View {
             }
         }
         .task { await load(reset: true) }
+        .task(id: initialRecordID) {
+            guard let initialRecordID else { return }
+            detail = try? await client.detail(initialRecordID)
+        }
         .novaPopup(item: $detail) { row in
             NovaAppointmentDetailSheet(entry: row, canWrite: canWrite, fileClient: client.fileClient,
                 onEnd: {

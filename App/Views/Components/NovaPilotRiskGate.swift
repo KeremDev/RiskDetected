@@ -7,6 +7,7 @@ struct NovaPilotRiskGate: View {
     let canWrite: Bool
     /// Opened from a company page: the module starts on that company.
     var initialCompany: UUID?
+    var initialRecordID: UUID?
     var headingOverride: String?
     var showBackButton = true
     var startInAddMode = false
@@ -17,7 +18,8 @@ struct NovaPilotRiskGate: View {
 
     var body: some View {
         NovaRiskScreen(client: client, onBack: onBack, canWrite: canWrite,
-            initialCompany: initialCompany, headingOverride: headingOverride, showBackButton: showBackButton,
+            initialCompany: initialCompany, initialRecordID: initialRecordID,
+            headingOverride: headingOverride, showBackButton: showBackButton,
             startInAddMode: startInAddMode)
     }
 

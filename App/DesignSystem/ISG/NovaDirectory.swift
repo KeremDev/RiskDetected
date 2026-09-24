@@ -110,7 +110,8 @@ enum NovaDirectoryFormRules {
         }
         return rows.filter { row in
             if ["parent_id", "department_id"].contains(field) {
-                return !row.isArchived && !blocked.contains(row.id) && row.fields["workplace_id"]?.text?.lowercased() == workplace?.lowercased()
+                return !row.isArchived && !blocked.contains(row.id) &&
+                    (row.fields["workplace_id"]?.text?.lowercased() ?? "") == (workplace?.lowercased() ?? "")
             }
             return !row.isArchived
         }

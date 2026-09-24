@@ -150,6 +150,15 @@ import Foundation
                      fileStorageAvailable: envelope.file_storage_available)
     }
 
+    func detail(_ scope: NovaPersonnelScope, obligation id: UUID) async throws -> NovaDocumentObligation {
+        try check(scope)
+        let data = try await rpc("isg_document_tracking_read_v1", [
+            "p_company": .id(scope.companyID), "p_kind": .string("detail"),
+            "p_query": .null, "p_status": .null, "p_workplace": .null, "p_id": .id(id)])
+        try check(scope)
+        return obligation(try JSONDecoder().decode(MutationEnvelope.self, from: data).row)
+    }
+
     func kinds(_ scope: NovaPersonnelScope) async throws -> [NovaDocumentKind] {
         try check(scope)
         let data = try await rpc("isg_document_tracking_read_v1", [

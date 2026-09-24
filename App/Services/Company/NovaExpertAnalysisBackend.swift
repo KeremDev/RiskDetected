@@ -91,17 +91,32 @@ import CryptoKit
             highestBand: method == .fineKinney ? $0.highest_band_fk : $0.highest_band_m5,
             isReviewed: true, createdAt: NovaAnalysisWorkspace.date($0.created_at)) }, page.has_more)
     }
-    func reports(limit: Int) async throws -> [NovaAnalysisReportEntry] {
+    func reports(limit: Int, offset: Int = 0) async throws -> (rows: [NovaAnalysisReportEntry], hasMore: Bool) {
         struct Row: Decodable {
             let id: UUID; let analysis_id: UUID; let title: String; let company_name: String
             let format: String; let file_name: String; let created_at: String; let file_size: Int?
+            let asset_id: UUID?; let download_bucket: String?; let download_path: String?
         }
-        struct Page: Decodable { let rows: [Row] }
-        let page: Page = try await call("reports", ["limit": .number(Int64(limit))])
-        return page.rows.map { .init(id: $0.id, title: $0.title, fileName: $0.file_name,
+        struct Page: Decodable { let rows: [Row]; let has_more: Bool? }
+        let page: Page = try await call("reports", ["limit": .number(Int64(limit)), "offset": .number(Int64(offset))])
+        // Older pilot deployments returned only `rows` and ignored offset.
+        // Read one expanded page there so the UI never repeats the first ten.
+        if page.has_more == nil && offset > 0 {
+            let expanded: Page = try await call("reports", ["limit": .number(Int64(min(offset + limit, 100))), "offset": .number(0)])
+            let sliced = Array(expanded.rows.dropFirst(offset).prefix(limit))
+            return (sliced.map { .init(id: $0.id, title: $0.title, fileName: $0.file_name,
+                createdOn: NovaAnalysisWorkspace.day($0.created_at), companyName: $0.company_name,
+                format: $0.format, methodLabel: "", kindLabel: "İSG Analizi", fileSize: $0.file_size,
+                analysisID: $0.analysis_id, createdAt: NovaAnalysisWorkspace.date($0.created_at),
+                assetID: $0.asset_id, downloadBucket: $0.download_bucket, downloadPath: $0.download_path) },
+                expanded.rows.count > offset + limit)
+        }
+        return (page.rows.map { .init(id: $0.id, title: $0.title, fileName: $0.file_name,
             createdOn: NovaAnalysisWorkspace.day($0.created_at), companyName: $0.company_name,
             format: $0.format, methodLabel: "", kindLabel: "İSG Analizi", fileSize: $0.file_size,
-            analysisID: $0.analysis_id, createdAt: NovaAnalysisWorkspace.date($0.created_at)) }
+            analysisID: $0.analysis_id, createdAt: NovaAnalysisWorkspace.date($0.created_at),
+            assetID: $0.asset_id, downloadBucket: $0.download_bucket, downloadPath: $0.download_path) },
+            page.has_more ?? (page.rows.count == limit))
     }
     func mutate(_ action: String, analysis: UUID, item: UUID? = nil,
                 extra: [String: PersonnelRPCValue] = [:]) async throws {
@@ -191,7 +206,7 @@ import CryptoKit
         else if request.section.isScored || value.expert_items.contains(where: { $0.id == request.item.id && $0.kind == "unscored_finding" }) { kind = "finding" }
         else { kind = "expert_item" }
         let result: Receipt = try await call("file", ["analysis_id": .id(analysis), "item_id": .id(request.item.id),
-            "workplace_id": .id(request.workplaceID), "mutation_id": .id(UUID()), "item_kind": .string(kind),
+            "workplace_id": request.workplaceID.map(PersonnelRPCValue.id) ?? .null, "mutation_id": .id(UUID()), "item_kind": .string(kind),
             "record_kind": .string(request.recordKind.rawValue),
             "severity": (request.severity?.rawValue ?? request.band).map(PersonnelRPCValue.string) ?? .null])
         let scope = NovaPersonnelScope(ownerID: ticket.access.identity.userID, sessionID: ticket.access.identity.sessionID,

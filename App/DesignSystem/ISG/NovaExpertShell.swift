@@ -16,6 +16,7 @@ struct NovaExpertShell<Content: View>: View {
     var onInvite: (() -> Void)? = nil
     var hasUnread = false
     var unreadCount = 0
+    var pendingActionCount: Int? = nil
     var notificationItems: [NovaNotice] = []
     /// The bell's own note, shown under the list. Empty hides it.
     var noticeNote = ""
@@ -38,6 +39,8 @@ struct NovaExpertShell<Content: View>: View {
     var onDestination: ((NovaDestination) -> Void)?
     var onLogout: (() -> Void)?
     @ViewBuilder let content: (NovaDestination) -> Content
+    @State private var pageSummary: NovaHeaderSummary?
+    @State private var pageBackAction: (() -> Void)?
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @StateObject private var keyboard = KeyboardObserver()
@@ -51,9 +54,10 @@ struct NovaExpertShell<Content: View>: View {
                     VStack(spacing: 0) {
                     if navigation.current != .profile {
                         NovaShellTopBar(current: navigation.current, userName: userName, hasUnread: hasUnread,
-                            unreadCount: unreadCount,
+                            unreadCount: unreadCount, pendingActionCount: pendingActionCount,
                             canGoBack: !(navigation.paths[navigation.selected] ?? []).isEmpty,
-                            notificationsAvailable: navigation.canOpen(.notifications), send: send)
+                            notificationsAvailable: navigation.canOpen(.notifications), send: send,
+                            pageSummary: pageSummary, pageBackAction: pageBackAction)
                     }
                     TabView(selection: Binding(get: { navigation.selected }, set: { send(.select($0)) })) {
                         ForEach(NovaTab.allCases, id: \.self) { tab in
@@ -79,7 +83,7 @@ struct NovaExpertShell<Content: View>: View {
                             .allowsHitTesting(navigation.overlay == nil)
                             .padding(.horizontal, NovaDimensionToken.layoutTabBarInset.value)
                             .padding(.top, 8)
-                            .padding(.bottom, max(10, geometry.safeAreaInsets.bottom + 6))
+                            .padding(.bottom, max(8, geometry.safeAreaInsets.bottom - 12))
                             .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
                 }
@@ -114,11 +118,27 @@ struct NovaExpertShell<Content: View>: View {
         .environment(\.novaPresentationEpoch, epoch)
         .environment(\.novaHeaderContext, NovaHeaderContext(current: navigation.current,
             userName: userName, unreadCount: unreadCount, hasUnread: hasUnread,
+            pendingActionCount: pendingActionCount, pageSummary: pageSummary,
+            setPageSummary: { summary in
+                guard navigation.current == .riskAssessments else { return }
+                if pageSummary != summary { pageSummary = summary }
+            },
+            pageBackAction: pageBackAction,
+            setPageBackAction: { action in
+                guard navigation.current == .riskAssessments else { return }
+                pageBackAction = action
+            },
             notificationsAvailable: navigation.canOpen(.notifications), send: { event in
                 guard navigation.epoch == epoch else { return }
                 NotificationCenter.default.post(name: Notification.Name("isgada.shell.navigate"), object: epoch)
                 send(event)
             }))
+        .onChange(of: navigation.current) { destination in
+            if destination != .riskAssessments {
+                pageSummary = nil
+                pageBackAction = nil
+            }
+        }
     }
 
     private func guarded(_ action: (() -> Void)?, epoch: String) -> (() -> Void)? {
@@ -142,9 +162,12 @@ struct NovaShellTopBar: View {
     let userName: String
     let hasUnread: Bool
     var unreadCount = 0
+    var pendingActionCount: Int? = nil
     let canGoBack: Bool
     let notificationsAvailable: Bool
     let send: (NovaNavigationEvent) -> Void
+    var pageSummary: NovaHeaderSummary? = nil
+    var pageBackAction: (() -> Void)? = nil
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var expandedDrawerGroup: String?
@@ -154,6 +177,39 @@ struct NovaShellTopBar: View {
         HStack(spacing: 10) {
             icon("line.3.horizontal", label: RDLocalization.string("localizable.nova.shell.open.menu", table: .localizable,
                 fallback: "Menüyü aç"), id: "nova.menu") { send(.open(.drawer)) }
+            if current == .riskAssessments, let pageBackAction {
+                icon("chevron.left", label: "Geri", id: "nova.risk.back", action: pageBackAction)
+            }
+            if current == .home {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(RDLocalization.format("localizable.nova.shell.greeting", table: .localizable, fallback: "Merhaba, %@",
+                        arguments: [userName.split(separator: " ").first.map(String.init) ?? "İSGADA"]))
+                        .font(NovaFont.font(.cardTitle))
+                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                    Text(pendingActionCount.map { $0 == 0 ? "Bugün bekleyen işlem yok" : "Bugün \($0) işlem bekliyor" } ?? "İşlemler yükleniyor…")
+                        .font(NovaFont.font(.metaQuiet))
+                        .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(height: 44, alignment: .leading)
+                .accessibilityElement(children: .combine)
+            } else if current == .riskAssessments {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(pageSummary?.title ?? NovaDestination.riskAssessments.title)
+                        .font(NovaFont.font(.cardTitle))
+                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                        .lineLimit(1).minimumScaleFactor(0.78)
+                    if let pageSummary {
+                        HStack(spacing: 10) {
+                            headerStat(symbol: "circle.fill", value: pageSummary.recordCount, label: RDLocalization.string("localizable.nova.expert.shell.kayit.61b90e4a", table: .localizable, fallback: "Kayıt"))
+                            headerStat(symbol: "list.bullet", value: pageSummary.upcomingCount, label: RDLocalization.string("localizable.nova.expert.shell.yaklasan.63111b59", table: .localizable, fallback: "Yaklaşan"))
+                        }
+                    }
+                }
+                .frame(height: 44, alignment: .leading)
+                .accessibilityElement(children: .combine)
+            }
             Spacer(minLength: 0)
             icon("bell", label: hasUnread ? RDLocalization.string("localizable.nova.shell.notifications.with.new", table: .localizable, fallback: "Bildirimler, yeni bildirim var") : RDLocalization.string("localizable.nova.shell.notifications", table: .localizable, fallback: "Bildirimler"), id: "nova.notifications") {
                 send(.open(.notifications))
@@ -169,6 +225,18 @@ struct NovaShellTopBar: View {
             }.buttonStyle(NovaPressStyle()).accessibilityLabel(RDLocalization.string("localizable.nova.expert.shell.hesabim.f6d2ed00", table: .localizable, fallback: "Hesabım")).accessibilityIdentifier("nova.profile")
         }
         }.padding(.horizontal, NovaDimensionToken.spaceScreenX.value).padding(.top, 8).padding(.bottom, 2)
+    }
+
+    private func headerStat(symbol: String, value: Int, label: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: symbol)
+                .font(.system(size: symbol == "circle.fill" ? 5 : 8, weight: .semibold))
+                .accessibilityHidden(true)
+            (Text(verbatim: String(value)).fontWeight(.bold) + Text(" \(label)").fontWeight(.regular))
+                .font(.system(size: 10, weight: .regular))
+                .lineLimit(1)
+        }
+        .foregroundStyle(NovaColorToken.text.color(in: scheme))
     }
 
     /// A count when there is one, a plain dot when there is only a flag. Both
@@ -213,14 +281,19 @@ struct NovaShellTabBar: View {
     var body: some View {
         Group {
             if #available(iOS 26.0, *) {
-                GlassEffectContainer(spacing: 10) {
+                GlassEffectContainer(spacing: 18) {
                     HStack(spacing: 10) {
                         strip
                             .padding(5)
-                            .glassEffect(.regular.interactive(), in: Capsule())
+                            .glassEffect(.clear.interactive(), in: Capsule())
+                            .overlay {
+                                Capsule().strokeBorder(
+                                    LinearGradient(colors: [Color.white.opacity(0.9), Color.white.opacity(0.24)],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
+                            }
                         if current != .analyses {
                             quickAdd
-                                .background(Circle().fill(Color.black))
+                                .background(Circle().fill(Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255)))
                                 .glassEffect(.clear.interactive(), in: Circle())
                         }
                     }
@@ -240,7 +313,7 @@ struct NovaShellTabBar: View {
                         .overlay(Capsule().strokeBorder(Color.white.opacity(0.78), lineWidth: 1))
                     if current != .analyses {
                         quickAdd
-                            .background(Circle().fill(Color.black))
+                            .background(Circle().fill(Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255)))
                             .overlay(Circle().strokeBorder(Color.white.opacity(0.35), lineWidth: 1))
                     }
                 }
@@ -306,22 +379,37 @@ struct NovaShellTabStrip: View {
         } label: {
             ZStack {
                 if isSelected {
-                    Capsule()
-                        .fill(Color.white.opacity(scheme == .dark ? 0.18 : 0.82))
-                        .overlay(Capsule().strokeBorder(Color.white.opacity(0.86), lineWidth: 0.8))
-                        .matchedGeometryEffect(id: "nova-tab-selection", in: selectionHighlight)
+                    if #available(iOS 26.0, *) {
+                        Capsule()
+                            .glassEffect(.clear.interactive(), in: Capsule())
+                            .mask { Capsule().stroke(Color.white, lineWidth: 2) }
+                            .overlay {
+                                Capsule().strokeBorder(
+                                    LinearGradient(colors: [Color.white.opacity(0.96),
+                                        Color.white.opacity(0.32), Color.white.opacity(0.72)],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.8)
+                            }
+                            .shadow(color: Color.black.opacity(0.025), radius: 3, y: 1)
+                            .matchedGeometryEffect(id: "nova-tab-selection", in: selectionHighlight)
+                    } else {
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .mask { Capsule().stroke(Color.white, lineWidth: 2) }
+                            .overlay(Capsule().strokeBorder(Color.white.opacity(0.78), lineWidth: 0.8))
+                            .matchedGeometryEffect(id: "nova-tab-selection", in: selectionHighlight)
+                    }
                 }
                 HStack(spacing: 7) {
                     Image(systemName: symbol(tab))
                         .font(.system(size: 20, weight: isSelected ? .semibold : .regular))
                         .symbolRenderingMode(.monochrome)
                     if isSelected {
-                        NovaSizedText(text: tab.title, size: 12.5, weight: "Bold", color: Color.black)
+                        NovaSizedText(text: tab.title, size: 12.5, weight: "Bold", color: NovaColorToken.text.color(in: scheme))
                             .lineLimit(1).minimumScaleFactor(0.82)
                             .transition(.opacity.combined(with: .scale(scale: 0.92)))
                     }
                 }
-                .foregroundStyle(Color.black)
+                .foregroundStyle(NovaColorToken.text.color(in: scheme))
                 .padding(.horizontal, isSelected ? 14 : 9)
             }
             .frame(width: isSelected ? 116 : 45, height: 48)
@@ -1023,7 +1111,9 @@ struct NovaCompanyItem: Identifiable {
     let detail: String
     var progressCompleted: Int = 0
     var progressTotal: Int = 8
+    var logoPath: String? = nil
 }
+typealias NovaCompanyLogoLoader = @MainActor (String, String?) async -> UIImage?
 struct NovaMetricItem: Identifiable {
     let id: String
     let value: String
@@ -1144,6 +1234,7 @@ struct NovaDashboardScreen: View {
     var trackingIdentity: NovaSessionIdentity?
     var trackingCanWrite = false
     var trackingScope: UUID?
+    var onPendingActionCount: (Int?) -> Void = { _ in }
     /// Optional workspace-specific controls rendered inside the same scroll
     /// surface. This keeps OSGB company selection/actions on the shared home
     /// page instead of creating a second dashboard layout.
@@ -1159,15 +1250,11 @@ struct NovaDashboardScreen: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                // Keep the shell header visually separate from the greeting
-                // card; the top bar is a control surface, not part of the
-                // dashboard card stack.
-                welcome.padding(.horizontal, 20).padding(.top, 10).padding(.bottom, 20)
                 HStack {
                     NovaText(text: RDLocalization.string("localizable.nova.expert.shell.ozet.79587bac", table: .localizable, fallback: "Özet"), style: .sectionTitle)
                     Spacer()
                     NovaText(text: RDLocalization.string("localizable.nova.dashboard.current", table: .localizable, fallback: "Güncel"), style: .meta, color: muted)
-                }.padding(.horizontal, 20).padding(.bottom, 9)
+                }.padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 9)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 8) {
                         ForEach(data.metrics) { metric in
@@ -1222,7 +1309,7 @@ struct NovaDashboardScreen: View {
                 }
                 if let trackingIdentity {
                     NovaHomeDeadlineBoard(identity: trackingIdentity, canWrite: trackingCanWrite,
-                        scopeID: trackingScope)
+                        scopeID: trackingScope, onPendingActionCount: onPendingActionCount)
                         .padding(.horizontal, 20).padding(.top, 22)
                 }
                 if let footer {
@@ -1234,41 +1321,6 @@ struct NovaDashboardScreen: View {
         }.background(NovaColorToken.canvas.color(in: scheme)).accessibilityIdentifier("nova.home.scroll")
     }
 
-    private var welcome: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(LinearGradient(
-                        colors: [
-                            NovaColorToken.surface.color(in: scheme),
-                            NovaColorToken.surface.color(in: scheme).opacity(0.94),
-                            NovaColorToken.accent.color(in: scheme).opacity(scheme == .dark ? 0.48 : 0.38)
-                        ], startPoint: .topLeading, endPoint: .bottomTrailing))
-                NovaSafetyIconPattern()
-                greeting
-                    .frame(width: geometry.size.width * (typeSize.isAccessibilitySize ? 0.94 : 0.78), alignment: .leading)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            }
-        }
-        .frame(height: typeSize.isAccessibilitySize ? 92 : 72)
-        .clipShape(RoundedRectangle(cornerRadius: 22))
-        .overlay(RoundedRectangle(cornerRadius: 22)
-            .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-    }
-    private var greeting: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 7) {
-                NovaIcon(symbol: "helmet", size: 18)
-                NovaSizedText(text: String(format: RDLocalization.string("localizable.nova.shell.greeting", table: .localizable, fallback: "Merhaba, %@"), data.firstName), size: 15.5, weight: "Bold")
-                    .lineLimit(1).minimumScaleFactor(0.85)
-            }.lineLimit(1)
-            NovaText(text: data.summaryMessage ?? data.openCount.map { String(format: RDLocalization.string("localizable.nova.shell.open.nonconformities.today", table: .localizable, fallback: "Bugün %@ açık uygunsuzluk var."), String($0)) } ?? RDLocalization.string("localizable.nova.shell.summary.loading", table: .localizable, fallback: "Özet yükleniyor…"),
-                     style: .metaQuiet, color: muted)
-                .lineLimit(1).minimumScaleFactor(0.85)
-        }.frame(maxWidth: .infinity, alignment: .leading)
-    }
     private var activity: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
@@ -1644,6 +1696,7 @@ struct NovaCompaniesScreen: View {
     let onBack: () -> Void
     let onRetry: () -> Void
     var onCreate: (() -> Void)? = nil
+    var loadLogo: NovaCompanyLogoLoader? = nil
     @State private var search = ""
     @Environment(\.colorScheme) private var scheme
     private var filtered: [NovaCompanyItem] {
@@ -1695,42 +1748,97 @@ struct NovaCompaniesScreen: View {
                     Label(search.isEmpty ? (isOwnedList ? RDLocalization.string("localizable.nova.shell.no.company.added", table: .localizable, fallback: "Henüz firma eklenmedi.") : RDLocalization.string("localizable.nova.shell.no.company.assigned", table: .localizable, fallback: "Hesabına atanmış firma yok.")) : RDLocalization.string("localizable.nova.shell.company.not.found", table: .localizable, fallback: "Firma bulunamadı"), systemImage: "building.2")
                         .padding(14)
                 } else {
-                    ForEach(filtered) { company in
-                        Button { onSelect(company.id) } label: {
-                            HStack(spacing: 11) {
-                                NovaText(text: novaInitials(company.name), style: .cardTitle, color: .white)
-                                    .frame(width: 38, height: 38)
-                                    .background(LinearGradient(colors: [Color(red: 1, green: 0.42, blue: 0.37), Color(red: 0.89, green: 0.2, blue: 0.16)],
-                                                              startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 13))
-                                VStack(alignment: .leading, spacing: 3) {
-                                    NovaText(text: company.name, style: .cardTitle)
-                                    NovaText(text: company.detail, style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
-                                    HStack(spacing: 8) {
-                                        GeometryReader { proxy in
-                                            Capsule()
-                                                .fill(NovaColorToken.surfaceMuted.color(in: scheme))
-                                                .overlay(alignment: .leading) {
-                                                    Capsule()
-                                                        .fill(NovaColorToken.accent.color(in: scheme))
-                                                        .frame(width: proxy.size.width * CGFloat(min(max(company.progressCompleted, 0), max(company.progressTotal, 1))) / CGFloat(max(company.progressTotal, 1)))
-                                                }
-                                        }
-                                        .frame(height: 5)
-                                        NovaText(text: String(min(max(company.progressCompleted, 0), max(company.progressTotal, 1))) + "/" + String(max(company.progressTotal, 1)), style: .micro,
-                                                 color: NovaColorToken.textMuted.color(in: scheme))
-                                            .fixedSize()
-                                    }
-                                }
-                                Spacer(minLength: 0)
-                                Image(systemName: "chevron.right").font(.system(size: 13)).foregroundStyle(NovaColorToken.borderStrong.color(in: scheme))
-                            }.padding(14).frame(maxWidth: .infinity, minHeight: 82, alignment: .leading)
-                                .novaControlBackground(cornerRadius: 22)
-                        }.accessibilityIdentifier("nova.company.\(company.id)")
+                    LazyVStack(spacing: 10) {
+                        ForEach(filtered) { company in
+                            NovaCompanyListRow(company: company, loadLogo: loadLogo) {
+                                onSelect(company.id)
+                            }
+                            .accessibilityIdentifier("nova.company.\(company.id)")
+                        }
                     }
                 }
             }.padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 24)
         }.buttonStyle(NovaRowPressStyle()).background(NovaColorToken.canvas.color(in: scheme))
             .novaEdgeBackGesture(action: onBack)
+    }
+}
+
+private struct NovaCompanyListRow: View {
+    let company: NovaCompanyItem
+    let loadLogo: NovaCompanyLogoLoader?
+    let onSelect: () -> Void
+    @Environment(\.colorScheme) private var scheme
+    @State private var logo: UIImage?
+
+    private var total: Int { max(company.progressTotal, 1) }
+    private var completed: Int { min(max(company.progressCompleted, 0), total) }
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 11) {
+                companyMark
+                VStack(alignment: .leading, spacing: 4) {
+                    NovaText(text: company.name, style: .cardTitle)
+                    NovaText(text: company.detail, style: .meta,
+                        color: NovaColorToken.textMuted.color(in: scheme))
+                    HStack(spacing: 8) {
+                        HStack(spacing: 2) {
+                            ForEach(0..<total, id: \.self) { step in
+                                Capsule()
+                                    .fill(step < completed
+                                        ? stepColor(step)
+                                        : NovaColorToken.surfaceMuted.color(in: scheme))
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+                        .frame(height: 5)
+                        .accessibilityHidden(true)
+                        NovaText(text: "\(completed)/\(total)", style: .micro,
+                            color: NovaColorToken.textMuted.color(in: scheme))
+                            .fixedSize()
+                    }
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13)).foregroundStyle(NovaColorToken.borderStrong.color(in: scheme))
+            }
+            .padding(14).frame(maxWidth: .infinity, minHeight: 82, alignment: .leading)
+            .novaControlBackground(cornerRadius: 22)
+        }
+        .buttonStyle(NovaRowPressStyle())
+        .task(id: "\(company.id):\(company.logoPath ?? "")") {
+            guard let loadLogo else { logo = nil; return }
+            let loaded = await loadLogo(company.id, company.logoPath)
+            guard !Task.isCancelled else { return }
+            logo = loaded
+        }
+        .accessibilityLabel(RDLocalization.format("localizable.nova.expert.shell.1.ilerleme.2.3.04701ca7", table: .localizable, fallback: "%1$@, ilerleme %2$@/%3$@", arguments: [String(describing: company.name), String(describing: completed), String(describing: total)]))
+    }
+
+    @ViewBuilder private var companyMark: some View {
+        if let logo {
+            Image(uiImage: logo)
+                .resizable().scaledToFit().padding(4)
+                .frame(width: 38, height: 38)
+                .background(NovaColorToken.surface.color(in: scheme),
+                    in: RoundedRectangle(cornerRadius: 13))
+                .overlay(RoundedRectangle(cornerRadius: 13)
+                    .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+                .accessibilityLabel(RDLocalization.string("localizable.nova.expert.shell.firma.logosu.aaf56663", table: .localizable, fallback: "Firma logosu"))
+        } else {
+            NovaText(text: novaInitials(company.name), style: .cardTitle, color: .white)
+                .frame(width: 38, height: 38)
+                .background(LinearGradient(colors: [Color(red: 1, green: 0.42, blue: 0.37),
+                    Color(red: 0.89, green: 0.2, blue: 0.16)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing),
+                    in: RoundedRectangle(cornerRadius: 13))
+        }
+    }
+
+    private func stepColor(_ step: Int) -> Color {
+        if step < 2 { return NovaColorToken.statusWarningDot.color(in: scheme) }
+        if step < 5 { return Color(red: 0.96, green: 0.48, blue: 0.16) }
+        return NovaColorToken.accent.color(in: scheme)
     }
 }
 

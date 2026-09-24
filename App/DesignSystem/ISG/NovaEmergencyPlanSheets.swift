@@ -257,7 +257,7 @@ struct NovaEmergencyPlanSheet: View {
     }
 
     private var stepNumber: Int { (Step.allCases.firstIndex(of: currentStep) ?? 0) + 1 }
-    private var scopeReady: Bool { draft.workplaceID != nil }
+    private var scopeReady: Bool { (catalogue?.workplaces.isEmpty ?? true) || draft.workplaceID != nil }
     private var datesReady: Bool {
         guard let prepared = NovaDayField.date(draft.preparedOn),
               let until = NovaDayField.date(draft.validUntil) else { return false }
@@ -321,15 +321,13 @@ struct NovaEmergencyPlanSheet: View {
     private var scopeStep: some View {
         VStack(alignment: .leading, spacing: 12) {
             let workplaces = catalogue?.workplaces ?? []
-            NovaCard(padding: 12) {
+            if !workplaces.isEmpty { NovaCard(padding: 12) {
                 fieldIcon("building.2") {
                     if draft.isRenewal || workplaces.count == 1 {
                         VStack(alignment: .leading, spacing: 4) {
                             NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.isyeri.b018b168", table: .localizable, fallback: "İşyeri"), style: .label)
                             NovaText(text: workplaceTitle, style: .cardTitle)
                         }
-                    } else if workplaces.isEmpty {
-                        NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.bu.firmada.kayit.acilacak.bir.isyeri.yok.4d56b127", table: .localizable, fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .metaQuiet)
                     } else {
                         VStack(alignment: .leading, spacing: 4) {
                             NovaFileChooserButton(label: RDLocalization.string("localizable.nova.emergency.plan.sheets.isyeri.2cb75cfe", table: .localizable, fallback: "İşyeri"), value: workplaceTitle,
@@ -347,7 +345,7 @@ struct NovaEmergencyPlanSheet: View {
                         }
                     }
                 }
-            }
+            } }
         }
     }
 

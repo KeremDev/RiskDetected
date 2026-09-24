@@ -20,10 +20,14 @@ import javax.inject.Singleton
 ) {
     @Serializable data class Row(val kind: String, @SerialName("company_id") val companyId: String, @SerialName("company_name") val companyName: String,
                                  @SerialName("record_id") val recordId: String, @SerialName("source_id") val sourceId: String? = null, val title: String,
-                                 @SerialName("due_on") val dueOn: String? = null, val status: String) {
+                                 @SerialName("recorded_on") val recordedOn: String? = null,
+                                 @SerialName("due_on") val dueOn: String? = null, val status: String,
+                                 @SerialName("file_category") val fileCategory: String? = null,
+                                 @SerialName("equipment_type") val equipmentType: String? = null,
+                                 @SerialName("equipment_type_label") val equipmentTypeLabel: String? = null) {
         val key: String get() = kind + recordId
         val typeTitle: String get() = when (kind) {
-            "training" -> "Eğitim"; "equipment" -> "Periyodik kontrol"; "risk_assessment" -> "Risk değerlendirmesi"
+            "training" -> "Eğitim"; "equipment" -> "Periyodik kontrol"; "risk_assessment" -> "Risk analizi"
             "emergency_plan" -> "Acil durum planı"; "appointment" -> "Atama"; "document" -> "Önceki evrak kaydı"; "file" -> "Dosya"
             else -> NovaProcessKind.get(kind).title
         }
@@ -31,6 +35,13 @@ import javax.inject.Singleton
 
     companion object {
         fun statusTitle(status: String) = mapOf("current" to "Güncel", "soon" to "Yaklaşıyor", "expired" to "Süresi doldu", "undated" to "Süre takibi yok")[status] ?: status
+        val kindOptions = listOf(
+            "risk_assessment" to "Risk analizi", "training" to "Eğitim", "equipment" to "Periyodik kontrol",
+            "emergency_plan" to "Acil durum planı", "file" to "Yüklenen dosya", "document" to "Önceki evrak kaydı",
+            "personnel_certificate" to "Personel belgesi", "completed_drill" to "Tatbikat",
+            "appointment" to "Atama", "katip_contract" to "İSG-KATİP sözleşmesi",
+        )
+        fun kindTitle(kind: String?) = kindOptions.firstOrNull { it.first == kind }?.second ?: "Tüm evrak türleri"
     }
 }
 
@@ -51,13 +62,15 @@ class NovaFollowupService @Inject constructor(private val transport: NovaExpertT
     }
 
     /** A page that does not answer for this owner and company is refused rather than shown. */
-    suspend fun load(identity: IsgWorkspaceIdentity, company: String?, status: String? = null, query: String = "", offset: Int = 0): NovaFollowupPage {
-        val data = call(identity, "isg_pilot_followup_v1", buildJsonObject {
+    suspend fun load(identity: IsgWorkspaceIdentity, company: String?, status: String? = null,
+                     kind: String? = null, query: String = "", offset: Int = 0): NovaFollowupPage {
+        val data = call(identity, "isg_pilot_followup_v2", buildJsonObject {
             put("p_company", company?.let(::JsonPrimitive) ?: JsonNull); put("p_status", status?.let(::JsonPrimitive) ?: JsonNull)
+            put("p_kind", kind?.let(::JsonPrimitive) ?: JsonNull)
             put("p_query", query); put("p_offset", offset)
         })
         val page = runCatching { novaJson.decodeFromJsonElement(NovaFollowupPage.serializer(), data) }.getOrNull() ?: throw NovaFollowupException()
-        if (page.schemaVersion != 1 || !page.ownerId.equals(identity.userId, true) || !page.companyId.equals(company, true)) throw NovaFollowupException()
+        if (page.schemaVersion != 2 || !page.ownerId.equals(identity.userId, true) || !page.companyId.equals(company, true)) throw NovaFollowupException()
         return page
     }
 

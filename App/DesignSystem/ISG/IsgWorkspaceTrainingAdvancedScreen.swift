@@ -249,7 +249,8 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
         case .linkCurriculum:
             trainingPicker(plannedOnly: true); curriculumPicker
         case .planCreate:
-            field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.plan.adi.1752444f", table: .localizable, fallback: "Plan adı"), text: $title); workplacePicker
+            field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.plan.adi.1752444f", table: .localizable, fallback: "Plan adı"), text: $title)
+            if !workplaces.isEmpty { workplacePicker }
             Stepper("Plan yılı: \(number)", value: $number, in: 2000...2200)
         case .planItemCreate:
             field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.faaliyet.adi.79713109", table: .localizable, fallback: "Faaliyet adı"), text: $title); field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.hedef.grup.8771f71b", table: .localizable, fallback: "Hedef grup"), text: $secondary)

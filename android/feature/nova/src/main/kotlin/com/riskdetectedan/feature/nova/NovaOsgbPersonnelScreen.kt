@@ -190,11 +190,11 @@ private fun DirectoryEditor(scope: NovaOsgbScope, route: PersonnelRoute.Director
         NovaPopupHeading(if (entry == null) "$title ekle" else "Kaydı düzenle", if (route.entity == "workplace") "building.2" else "square.grid.2x2")
         NovaTextField("Kod", code, { code = it }, identifier = "osgb.directory.code")
         NovaTextField("Ad", name, { name = it }, identifier = "osgb.directory.name")
-        if (route.entity == "department") OsgbPicker("İşyerleri", workplaces.map { it.id }, workplaceId, "osgb.directory.workplace",
+        if (route.entity == "department" && workplaces.isNotEmpty()) OsgbPicker("İşyerleri", workplaces.map { it.id }, workplaceId, "osgb.directory.workplace",
             workplaces.associate { it.id to it.name }) { workplaceId = it }
         error?.let { NovaHelpHint(it) }
         NovaCompactActionButton(if (working) "Kaydediliyor…" else "Kaydet", "checkmark", prominent = true,
-            enabled = !working && code.isNotBlank() && name.isNotBlank() && (route.entity == "workplace" || workplaceId != null)) {
+            enabled = !working && code.isNotBlank() && name.isNotBlank() && (route.entity == "workplace" || workplaces.isEmpty() || workplaceId != null)) {
             mutate(if (entry == null) "create" else "edit")
         }
         if (entry != null) NovaCompactActionButton("Arşivle", "archivebox", enabled = !working) { mutate("archive") }
@@ -285,7 +285,7 @@ private fun AdvancedEditor(scope: NovaOsgbScope, route: PersonnelRoute.Advanced,
     val canSave = when (section) {
         NovaOsgbPersonnelSection.jobRole -> code.isNotBlank() && name.isNotBlank()
         NovaOsgbPersonnelSection.contractor -> name.isNotBlank()
-        NovaOsgbPersonnelSection.engagement -> contractorId != null && workplaceId != null && details.isNotBlank()
+        NovaOsgbPersonnelSection.engagement -> contractorId != null && (workplaces.isEmpty() || workplaceId != null) && details.isNotBlank()
         NovaOsgbPersonnelSection.assignment -> employeeId != null && (departmentId != null || jobRoleId != null || engagementId != null)
         else -> false
     }
@@ -341,7 +341,7 @@ private fun AdvancedEditor(scope: NovaOsgbScope, route: PersonnelRoute.Advanced,
             }
             section == NovaOsgbPersonnelSection.engagement && entry == null -> {
                 picker("Dış firma", contractors.map { it.id.lowercase() to it.title }, contractorId, "osgb.engagement.contractor") { contractorId = it }
-                picker("İşyeri", workplaces.map { it.id to it.name }, workplaceId, "osgb.engagement.workplace") { workplaceId = it }
+                if (workplaces.isNotEmpty()) picker("İşyeri", workplaces.map { it.id to it.name }, workplaceId, "osgb.engagement.workplace") { workplaceId = it }
                 NovaTextField("İşin kapsamı", details, { details = it }, identifier = "osgb.engagement.scope", multiline = true)
                 NovaDayField("Başlangıç", startsOn, { startsOn = it }, "osgb.engagement.start")
             }

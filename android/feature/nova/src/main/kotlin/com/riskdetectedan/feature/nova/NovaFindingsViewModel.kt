@@ -91,7 +91,7 @@ class NovaFindingsViewModel @Inject constructor(
     /** Returns null when the record was opened and verified on the list, the reason otherwise. */
     suspend fun saveManual(identity: IsgWorkspaceIdentity, draft: NovaManualDraft, photos: List<Bitmap>): String? {
         val company = draft.companyId ?: return NovaNonconformityWords.failure(NovaNonconformityFailure.validation)
-        val workplace = draft.workplaceId ?: return NovaNonconformityWords.failure(NovaNonconformityFailure.validation)
+        val workplace = draft.workplaceId
         var evidence = emptyList<String>()
         if (photos.isNotEmpty()) {
             evidence = files.fileEvidence(identity, company, photos.map { novaJpeg(it) }, "Uygunsuzluk fotoğrafı",

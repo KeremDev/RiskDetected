@@ -14,7 +14,7 @@ extension NovaCompanySection {
         case .board: return RDLocalization.string("localizable.nova.workspace.board", table: .localizable, fallback: "İSG Kurulu")
         case .training: return RDLocalization.string("localizable.nova.workspace.training", table: .localizable, fallback: "Eğitimler")
         case .files: return RDLocalization.string("localizable.nova.workspace.files", table: .localizable, fallback: "Dosyalarım")
-        case .handover: return RDLocalization.string("localizable.nova.workspace.handover", table: .localizable, fallback: "Zimmet Formları")
+        case .handover: return RDLocalization.string("localizable.nova.company.progress.views.kkd.zimmet.formu.ornegi.b2da8b88", table: .localizable, fallback: "KKD Zimmet Formu Örneği")
         }
     }
     var symbol: String {

@@ -507,9 +507,7 @@ private struct NovaReportCreateFlow: View {
                 .init(id: "site_visit", title: "Ziyaretler", symbol: "figure.walk"),
                 .init(id: "annual_work_plan", title: RDLocalization.string("reports.nova.report.center.yillik.calisma.planlari.2e90a4ec", table: .reports, fallback: "Yıllık çalışma planları"), symbol: "calendar"),
                 .init(id: "board", title: RDLocalization.string("reports.nova.report.center.kurul.ve.toplantilar.384e377e", table: .reports, fallback: "Kurul ve toplantılar"), symbol: "person.3"),
-                .init(id: "katip_contract", title: RDLocalization.string("reports.nova.report.center.isg.katip.sozlesmeleri.279f78c6", table: .reports, fallback: "İSG-KATİP sözleşmeleri"), symbol: "doc.text"),
-                .init(id: "work_permit", title: RDLocalization.string("reports.nova.report.center.calisma.izinleri.fcc7c02e", table: .reports, fallback: "Çalışma izinleri"), symbol: "doc.badge.gearshape"),
-                .init(id: "ppe", title: RDLocalization.string("reports.nova.report.center.kkd.zimmetleri.fbb5a361", table: .reports, fallback: "KKD zimmetleri"), symbol: "shield")
+                .init(id: "katip_contract", title: RDLocalization.string("reports.nova.report.center.isg.katip.sozlesmeleri.279f78c6", table: .reports, fallback: "İSG-KATİP sözleşmeleri"), symbol: "doc.text")
             ]
         }
     }

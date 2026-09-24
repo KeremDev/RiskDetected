@@ -105,6 +105,8 @@ struct NovaAnalysisListScreen: View {
     /// One page, from an offset; the screen owns paging so the caller only
     /// answers the one question it is asked.
     let load: (Int) async throws -> (rows: [NovaAnalysisSummary], hasMore: Bool)
+    /// Account or company totals are read separately from the paged rows.
+    let loadStats: () async throws -> NovaAnalysisListStats
     /// The first picture of one analysis. A missing picture is simply absent.
     let thumbnail: (UUID) async -> UIImage?
     let onOpen: (UUID) -> Void
@@ -113,6 +115,8 @@ struct NovaAnalysisListScreen: View {
     var onReports: (() -> Void)?
     @Environment(\.colorScheme) private var scheme
     @State private var rows: [NovaAnalysisSummary]?
+    @State private var totals: NovaAnalysisListStats?
+    @State private var statsError: String?
     @State private var hasMore = false
     @State private var loadingMore = false
     @State private var images: [UUID: UIImage] = [:]
@@ -150,7 +154,6 @@ struct NovaAnalysisListScreen: View {
     }
 
     private var all: [NovaAnalysisSummary] { rows ?? [] }
-    private var stats: NovaAnalysisListStats { .init(all) }
     private var companyNames: [String] { Array(Set(all.compactMap(\.companyName))).sorted() }
     private var activeFilterCount: Int { (filter == .all ? 0 : 1) + (company == nil ? 0 : 1) }
 
@@ -195,6 +198,7 @@ struct NovaAnalysisListScreen: View {
                 VStack(alignment: .leading, spacing: 11) {
                     header
                     overview
+                    statsStatus
                     search
                     filterControls
                     activeFilters
@@ -204,6 +208,7 @@ struct NovaAnalysisListScreen: View {
             }
         }
         .task(id: reload) { await refresh() }
+        .task(id: reload) { await refreshStats() }
     }
 
     private var header: some View {
@@ -241,15 +246,13 @@ struct NovaAnalysisListScreen: View {
         }
     }
 
-    /// The counters are taken from the rows this page actually read, so the
-    /// caption says how many that was rather than implying an account total.
     private var overview: some View {
         HStack(spacing: 0) {
-            summaryMetric(rows == nil ? "—" : String(stats.total), "analiz")
+            summaryMetric(totals.map { String($0.total) } ?? "—", "analiz")
             divider
-            summaryMetric(rows == nil ? "—" : String(stats.critical), "kritik", status: .danger)
+            summaryMetric(totals.map { String($0.critical) } ?? "—", "kritik", status: .danger)
             divider
-            summaryMetric(rows == nil ? "—" : String(stats.findings), "bulgu")
+            summaryMetric(totals.map { String($0.findings) } ?? "—", "bulgu")
         }
         .padding(.horizontal, 4)
         .frame(minHeight: 48)
@@ -257,6 +260,21 @@ struct NovaAnalysisListScreen: View {
         .overlay(RoundedRectangle(cornerRadius: 16)
             .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder private var statsStatus: some View {
+        if let statsError {
+            HStack(spacing: 6) {
+                Image(systemName: "exclamationmark.circle")
+                NovaText(text: statsError, style: .micro, color: NovaColorToken.statusDangerInk.color(in: scheme))
+                Spacer(minLength: 0)
+                Button("Yenile") { reload = UUID() }
+                    .font(NovaFont.font(.buttonSm))
+                    .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+            }
+            .padding(.horizontal, 3)
+            .accessibilityIdentifier("analysis.list.stats.error")
+        }
     }
 
     private var divider: some View {
@@ -528,6 +546,17 @@ struct NovaAnalysisListScreen: View {
             rows = []; hasMore = false
             self.error = RDLocalization.string("localizable.nova.analysis.list.failed", table: .localizable,
                 fallback: "Analizler alınamadı. Bağlantınızı kontrol edip tekrar deneyin.")
+        }
+    }
+
+    private func refreshStats() async {
+        statsError = nil
+        do {
+            totals = try await loadStats()
+        } catch is CancellationError {
+        } catch {
+            totals = nil
+            statsError = "Toplam istatistikler alınamadı."
         }
     }
     private func loadMore() async {

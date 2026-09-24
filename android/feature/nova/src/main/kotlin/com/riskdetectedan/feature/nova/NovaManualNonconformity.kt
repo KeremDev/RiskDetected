@@ -136,7 +136,7 @@ fun NovaManualNonconformityScreen(companies: List<NovaCompanyOption>, workplaces
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     NovaText("${draft.completedCount}/${NovaManualStep.entries.size} başlık tamamlandı", Modifier.weight(1f), NovaTypeToken.label)
-                    if (draft.canSave) NovaStatusPill("Kaydedilebilir", NovaStatus.Success) else NovaStatusPill("Zorunlu alan eksik", NovaStatus.Warning)
+                    if (draft.canSave && !loadingPlaces && (places.isEmpty() || draft.workplaceId != null)) NovaStatusPill("Kaydedilebilir", NovaStatus.Success) else NovaStatusPill("Zorunlu alan eksik", NovaStatus.Warning)
                 }
                 val progress by animateFloatAsState(draft.progress, NovaMotion.easeOut(NovaMotion.Duration.progress), label = "manual")
                 Box(Modifier.fillMaxWidth().height(6.dp).background(NovaColorToken.borderMuted.color(), CircleShape)) {
@@ -162,17 +162,16 @@ fun NovaManualNonconformityScreen(companies: List<NovaCompanyOption>, workplaces
                                 coroutines.launch {
                                     places = runCatching { workplaces(company.id) }.getOrDefault(emptyList())
                                     loadingPlaces = false
-                                    // The record lands on a real workplace; the first one is used and named.
-                                    draft = draft.copy(workplaceId = places.firstOrNull()?.id)
+                                    draft = draft.copy(workplaceId = places.singleOrNull()?.id)
                                 }
                             }
                         }
                         if (draft.companyId != null) {
                             Box(Modifier.fillMaxWidth().height(1.dp).background(NovaColorToken.hairline.color()))
-                            NovaText("İşyeri / departman · isteğe bağlı", style = NovaTypeToken.label, color = NovaColorToken.textTertiary.color())
+                            if (loadingPlaces || places.isNotEmpty()) NovaText("İşyeri / departman", style = NovaTypeToken.label, color = NovaColorToken.textTertiary.color())
                             when {
                                 loadingPlaces -> NovaText("İşyerleri yükleniyor…", style = NovaTypeToken.metaQuiet)
-                                places.isEmpty() -> NovaText("Bu firmada kayıt açılacak bir işyeri yok.", style = NovaTypeToken.metaQuiet)
+                                places.isEmpty() -> Unit
                                 places.size == 1 -> NovaText("Kayıt ${places[0].name} işyerine açılacak.", style = NovaTypeToken.micro,
                                     color = NovaColorToken.textTertiary.color())
                                 else -> {
@@ -224,7 +223,7 @@ fun NovaManualNonconformityScreen(companies: List<NovaCompanyOption>, workplaces
                 error = save(draft, photos.toList())
                 saving = false
             }
-        }, Modifier.testTag("manual.save"), symbol = "checkmark", enabled = draft.canSave && !saving, loading = saving)
+        }, Modifier.testTag("manual.save"), symbol = "checkmark", enabled = draft.canSave && !loadingPlaces && (places.isEmpty() || draft.workplaceId != null) && !saving, loading = saving)
     }
     NovaChoiceDialog(choosing, "Fotoğrafı nereden ekleyelim?", listOf(
         Triple("Kamera", "camera") { launchCamera() },

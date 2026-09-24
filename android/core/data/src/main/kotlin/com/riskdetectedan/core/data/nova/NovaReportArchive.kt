@@ -27,8 +27,7 @@ enum class NovaGeneratedReportKind(val title: String, val detail: String, val sy
             Triple("equipment", "Periyodik kontroller", "checkmark.shield"), Triple("nonconformity", "Uygunsuzluklar", "exclamationmark.triangle"),
             Triple("training", "Eğitimler", "graduationcap"), Triple("site_visit", "Ziyaretler", "figure.walk"),
             Triple("annual_work_plan", "Yıllık çalışma planları", "calendar"), Triple("board", "Kurul ve toplantılar", "person.3"),
-            Triple("katip_contract", "İSG-KATİP sözleşmeleri", "doc.text"), Triple("work_permit", "Çalışma izinleri", "doc.badge.gearshape"),
-            Triple("ppe", "KKD zimmetleri", "shield"))
+            Triple("katip_contract", "İSG-KATİP sözleşmeleri", "doc.text"))
     }
 }
 

@@ -13,6 +13,8 @@ struct IsgWorkspaceAnalysisScreen: View {
     let companyID: UUID
     let companyName: String
     let canOperate: Bool
+    let initialAnalysisID: UUID?
+    let onInitialAnalysisOpened: (() -> Void)?
     let onBack: () -> Void
     @State private var selectedAnalysis: AnalysisTarget?
     @State private var creatingAnalysis: Bool
@@ -25,13 +27,18 @@ struct IsgWorkspaceAnalysisScreen: View {
 
     init(store: IsgWorkspaceStore, companyID: UUID, companyName: String,
          canOperate: Bool, startInCreateMode: Bool = false,
+         initialAnalysisID: UUID? = nil,
+         onInitialAnalysisOpened: (() -> Void)? = nil,
          onBack: @escaping () -> Void) {
         self.store = store
         self.companyID = companyID
         self.companyName = companyName
         self.canOperate = canOperate
+        self.initialAnalysisID = initialAnalysisID
+        self.onInitialAnalysisOpened = onInitialAnalysisOpened
         self.onBack = onBack
         _creatingAnalysis = State(initialValue: startInCreateMode)
+        _selectedAnalysis = State(initialValue: initialAnalysisID.map { AnalysisTarget(id: $0) })
     }
 
     var body: some View {
@@ -44,7 +51,10 @@ struct IsgWorkspaceAnalysisScreen: View {
                         creatingAnalysis = false
                     })
             } else {
-                NovaAnalysisListScreen(load: load, thumbnail: { _ in nil },
+                NovaAnalysisListScreen(load: load, loadStats: {
+                    guard let identity = novaCurrentSessionIdentity() else { throw NovaPersonnelFailure.denied }
+                    return try await NovaAnalysisWorkspace.summaryStats(identity: identity, method: nil, companyID: companyID)
+                }, thumbnail: { _ in nil },
                     onOpen: { selectedAnalysis = .init(id: $0) }, onBack: onBack,
                     onNewPhotoAnalysis: canOperate ? { creatingAnalysis = true } : nil)
                     .id(listRevision)
@@ -85,6 +95,14 @@ struct IsgWorkspaceAnalysisScreen: View {
             Button(RDLocalization.string("localizable.nova.bridge.alert.ok", table: .localizable,
                                          fallback: "Tamam")) { notice = nil }
         }
+        .onAppear { openInitialAnalysisIfNeeded() }
+        .onChange(of: initialAnalysisID) { _ in openInitialAnalysisIfNeeded() }
+    }
+
+    private func openInitialAnalysisIfNeeded() {
+        guard !creatingAnalysis, let initialAnalysisID else { return }
+        selectedAnalysis = .init(id: initialAnalysisID)
+        onInitialAnalysisOpened?()
     }
 
     private func startPhotoAnalysis() {
@@ -93,7 +111,7 @@ struct IsgWorkspaceAnalysisScreen: View {
     }
 
     private func load(offset: Int) async throws -> (rows: [NovaAnalysisSummary], hasMore: Bool) {
-        let page = try await store.analyses(companyID: companyID, offset: offset, limit: 30)
+        let page = try await store.analyses(companyID: companyID, offset: offset, limit: 10)
         return (page.rows.map(summary), page.hasMore)
     }
 
@@ -115,11 +133,7 @@ struct IsgWorkspaceAnalysisScreen: View {
             assign: { _ in throw IsgWorkspaceAPIFailure.invalidRequest },
             workplaces: { requestedCompany in
                 guard requestedCompany == companyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
-                var rows = try await store.directory(.workplace, companyID: companyID)
-                if rows.isEmpty {
-                    try await store.initializePersonnel(companyID: companyID)
-                    rows = try await store.directory(.workplace, companyID: companyID)
-                }
+                let rows = try await store.directory(.workplace, companyID: companyID)
                 return rows.map {
                     .init(id: $0.id, name: $0.name, needs_review: false)
                 }
@@ -186,7 +200,7 @@ struct IsgWorkspaceAnalysisScreen: View {
             var attempt = mutationAttempt
             let openedOn = day(Date())
             let mutationID = attempt.id(namespace: "analysis.file", components: [
-                companyID.uuidString, request.workplaceID.uuidString, analysisID.uuidString,
+                companyID.uuidString, request.workplaceID?.uuidString ?? "firma", analysisID.uuidString,
                 itemKind, request.item.id.uuidString, request.severity?.rawValue ?? "", openedOn
             ])
             mutationAttempt = attempt

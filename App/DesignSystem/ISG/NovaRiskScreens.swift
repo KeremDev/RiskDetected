@@ -11,7 +11,7 @@ struct NovaRiskClient {
     let board: (NovaRiskQuery) async throws -> NovaRiskBoard
     let companies: () async throws -> [NovaAnalysisCompanyOption]
     let detail: (UUID) async throws -> NovaRiskRow
-    let open: (UUID, UUID) async throws -> NovaRiskRow?
+    let open: (UUID, UUID?) async throws -> NovaRiskRow?
     let draft: (UUID, NovaRiskVersionDraft) async throws -> NovaRiskRow?
     let finalize: (UUID, NovaRiskFinalizeDraft) async throws -> NovaRiskRow?
     var cancelDraft: (UUID, NovaRiskRow, NovaRiskVersion, String) async throws -> NovaRiskRow? = { _,_,_,_ in throw NovaRiskFailure.unavailable }
@@ -43,7 +43,7 @@ struct NovaRiskStatCard: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(statusInk)
                     Text(verbatim: String(value))
-                        .font(.custom("PlusJakartaSans-SemiBold", size: 19, relativeTo: .body))
+                        .font(.custom("PlusJakartaSans-SemiBold", size: 16, relativeTo: .body))
                         .foregroundStyle(NovaColorToken.text.color(in: scheme))
                         .lineLimit(1).minimumScaleFactor(0.8)
                 }
@@ -83,10 +83,16 @@ struct NovaRiskRowCard: View {
         }
     }
 
+    private var metadata: [String] {
+        [row.validUntil.map(NovaStatisticsSnapshot.dayLabel),
+         row.periodYears.map { "\($0) yıl" },
+         row.currentVersion > 0 ? "v\(row.currentVersion)" : nil].compactMap { $0 }
+    }
+
     var body: some View {
         Button(action: onTap) {
             NovaCard(padding: 14) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 7) {
                     HStack(alignment: .top, spacing: 8) {
                         VStack(alignment: .leading, spacing: 2) {
                             NovaText(text: row.companyName ?? row.workplaceName ?? "İşyeri", style: .cardTitle)
@@ -103,21 +109,22 @@ struct NovaRiskRowCard: View {
                             .accessibilityElement()
                             .accessibilityLabel(Text(verbatim: NovaRiskWords.state(row.state)))
                     }
-                    HStack(spacing: 10) {
-                        if let until = row.validUntil {
-                            fact("calendar", RDLocalization.string("localizable.nova.risk.row.until",
-                                table: .localizable, fallback: "Geçerlilik"), NovaStatisticsSnapshot.dayLabel(until))
+                    HStack(spacing: 6) {
+                        ForEach(Array(metadata.enumerated()), id: \.offset) { index, value in
+                            if index > 0 {
+                                Text(verbatim: "·")
+                                    .font(.custom("PlusJakartaSans-Medium", size: 12, relativeTo: .caption))
+                                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                            }
+                            Text(verbatim: value)
+                                .font(.custom("PlusJakartaSans-Medium", size: 12, relativeTo: .caption))
+                                .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
+                                .lineLimit(1)
                         }
-                        if let years = row.periodYears {
-                            fact("clock.arrow.circlepath", RDLocalization.string("localizable.nova.risk.row.period",
-                                table: .localizable, fallback: "Süre"),
-                                String(format: RDLocalization.string("localizable.nova.risk.row.years",
-                                    table: .localizable, fallback: "%d yıl"), years))
-                        }
-                        if row.currentVersion > 0 {
-                            fact("number", RDLocalization.string("localizable.nova.risk.row.version",
-                                table: .localizable, fallback: "Sürüm"), "v\(row.currentVersion)")
-                        }
+                        Spacer(minLength: 2)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(NovaColorToken.textSubtle.color(in: scheme))
                     }
                     // Everything that needs the expert's eye, said plainly and
                     // never folded into the state pill.
@@ -145,17 +152,6 @@ struct NovaRiskRowCard: View {
         .accessibilityIdentifier("nova.risk.row.\(row.id.uuidString)")
     }
 
-    @ViewBuilder private func fact(_ symbol: String, _ label: String, _ value: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
-            VStack(alignment: .leading, spacing: 0) {
-                NovaSizedText(text: label, size: 9, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                NovaSizedText(text: value, size: 11, weight: "Bold")
-            }
-        }
-    }
 }
 
 /// The Risk Değerlendirmesi surface. The page answers the whole account in one
@@ -165,6 +161,7 @@ struct NovaRiskScreen: View {
     let onBack: () -> Void
     var canWrite: Bool = true
     var initialCompany: UUID?
+    var initialRecordID: UUID?
     var headingOverride: String?
     /// Kept for source compatibility; list headings always provide back navigation.
     var showBackButton = true
@@ -172,6 +169,7 @@ struct NovaRiskScreen: View {
     var startInAddMode = false
 
     @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var showingWizard = false
     @State private var board: NovaRiskBoard?
     @State private var catalogue: NovaRiskCatalogue?
     @State private var companies: [NovaAnalysisCompanyOption] = []
@@ -185,6 +183,9 @@ struct NovaRiskScreen: View {
     @State private var finalizing: NovaRiskFinalizeDraft?
     @State private var opening = false
     @State private var creating = false
+    @State private var showingPeriodInfo = false
+    @State private var sortAscending = true
+    @Environment(\.novaHeaderContext) private var headerContext
     @Environment(\.colorScheme) private var scheme
 
     private var allCompanies: String {
@@ -199,14 +200,24 @@ struct NovaRiskScreen: View {
         // second sheet — the create flow itself, alone, is the entire cover,
         // so it blurs the real company page behind it instead of an empty
         // intermediate screen. See NovaPopup's own doc comment.
-        if startInAddMode {
+        if showingWizard {
+            NovaRiskWizardScreen(companiesSource: client.companies,
+                workplacesSource: { company in try await client.catalogue(company).workplaces.map { .init(id: $0.id, name: $0.name) } },
+                files: client.fileClient, initialCompany: query.company ?? initialCompany,
+                onBack: { showingWizard = false })
+        } else if startInAddMode {
             addFlow
         } else {
             NovaPageSurface(onEdgeBack: onBack) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
-                        header
-                        NovaHelpHint(text: RDLocalization.format("localizable.nova.risk.screens.firmanin.risk.analizini.kapsamini.ve.dosyasini.k.6fbda573", table: .localizable, fallback: "Firmanın risk analizini, kapsamını ve dosyasını kaydedin; güncel sürümünü takip edin. %1$@", arguments: [String(describing: NovaRiskWords.periodAttribution)]))
+                        if headerContext?.current != .riskAssessments {
+                            NovaBackButton(action: onBack)
+                        }
+                        if canWrite {
+                            actionButtons
+                        }
+                        riskPeriodHint
                         if let board { counters(board) }
                         filters
                         if loading && board == nil {
@@ -225,6 +236,12 @@ struct NovaRiskScreen: View {
                 }
             }
             .task { await load(reset: true) }
+            .onAppear { headerContext?.setPageBackAction(onBack) }
+            .onDisappear { headerContext?.setPageBackAction(nil) }
+            .task(id: initialRecordID) {
+                guard let initialRecordID else { return }
+                detail = try? await client.detail(initialRecordID)
+            }
             .novaFullScreenCover(isPresented: $creating, onDismiss: { Task { await load(reset: true) } }) { addFlow }
             .novaPopup(item: $detail) { row in
             NovaRiskDetailSheet(row: row, canWrite: canWrite,
@@ -257,9 +274,19 @@ struct NovaRiskScreen: View {
                 catch { return NovaRiskFailure.unavailable.message }
             }
         }
-        .novaPopup(item: $finalizing) { draft in
+            .novaPopup(item: $finalizing) { draft in
             NovaRiskFinalizeSheet(draft: draft, catalogue: catalogue,
                 onSave: { edited in await confirm(edited) }, onClose: { finalizing = nil })
+        }
+        .novaPopup(isPresented: $showingPeriodInfo) {
+            VStack(alignment: .leading, spacing: 14) {
+                NovaPopupHeading(text: RDLocalization.string("localizable.nova.risk.screens.gecerlilik.suresi.837569e6", table: .localizable, fallback: "Geçerlilik süresi"), symbol: "info.circle")
+                NovaText(text: RDLocalization.string("localizable.nova.risk.screens.gecerlilik.suresi.her.kayit.icin.ayri.belirlenir.06fdf90b", table: .localizable, fallback: "Geçerlilik süresi her kayıt için ayrı belirlenir. Uzmanın belirlediği süre mevzuat gereği sabit bir süre olarak sunulmaz. Süre kaynağını ve tarihi kaydın detayında görebilirsiniz."),
+                    style: .body, color: NovaColorToken.textSecondary.color(in: scheme))
+                    .fixedSize(horizontal: false, vertical: true)
+                NovaButton(label: RDLocalization.string("localizable.nova.risk.screens.anladim.943447c4", table: .localizable, fallback: "Anladım"), variant: .primary) { showingPeriodInfo = false }
+            }
+            .padding(20).novaPopupContentSize()
         }
         }
     }
@@ -272,12 +299,70 @@ struct NovaRiskScreen: View {
         }
     }
 
-    private var header: some View {
-        NovaListHeading(title: headingOverride ?? NovaDestination.riskAssessments.title, onBack: onBack) {
-            if canWrite {
-                NovaButton(label: RDLocalization.string("localizable.nova.risk.screens.kayit.ekle.b9721dfb", table: .localizable, fallback: "Kayıt Ekle"), symbol: "plus", compact: true) { creating = true }
+    private var actionButtons: some View {
+        GeometryReader { geometry in
+            let gap: CGFloat = 8
+            let availableWidth = max(0, geometry.size.width - gap)
+            HStack(spacing: gap) {
+                riskActionButton(title: RDLocalization.string("localizable.nova.risk.screens.kayit.ekle.a2079ece", table: .localizable, fallback: "Kayıt Ekle"), symbol: "plus",
+                    fill: Color(red: 234.0 / 255, green: 241.0 / 255, blue: 247.0 / 255),
+                    ink: Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255),
+                    border: Color(red: 213.0 / 255, green: 225.0 / 255, blue: 235.0 / 255),
+                    identifier: "nova.risk.create") { creating = true }
+                    .frame(width: availableWidth * 0.4)
+                riskActionButton(title: RDLocalization.string("localizable.nova.risk.screens.sihirbaz.ile.olustur.e59b1788", table: .localizable, fallback: "Sihirbaz ile Oluştur"), symbol: "sparkles",
+                    fill: Color(red: 255.0 / 255, green: 247.0 / 255, blue: 222.0 / 255),
+                    ink: Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255),
+                    border: Color(red: 239.0 / 255, green: 227.0 / 255, blue: 188.0 / 255),
+                    identifier: "nova.risk.wizard",
+                    symbolTint: Color(red: 216.0 / 255, green: 149.0 / 255, blue: 0.0 / 255)) { showingWizard = true }
+                    .frame(width: availableWidth * 0.6)
             }
         }
+        .frame(height: 46)
+    }
+
+    private var riskPeriodHint: some View {
+        NovaCard(padding: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "lightbulb")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(NovaColorToken.statusWarningInk.color(in: scheme))
+                Text(verbatim: "Geçerlilik süresi kayıt bazında belirlenir.")
+                    .font(.custom("PlusJakartaSans-Regular", size: 12, relativeTo: .caption))
+                    .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Detay") { showingPeriodInfo = true }
+                    .font(.custom("PlusJakartaSans-SemiBold", size: 12, relativeTo: .caption))
+                    .foregroundStyle(Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255))
+                    .buttonStyle(NovaRowPressStyle())
+                    .accessibilityIdentifier("nova.risk.period.info.open")
+            }
+        }
+    }
+
+    private func riskActionButton(title: String, symbol: String, fill: Color, ink: Color,
+                                  border: Color, identifier: String,
+                                  symbolTint: Color? = nil,
+                                  action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: symbol)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(symbolTint ?? ink)
+                Text(title)
+                    .font(NovaFont.font(.buttonSm))
+                    .foregroundStyle(ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(fill, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(border, lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(NovaPressStyle())
+        .accessibilityIdentifier(identifier)
     }
 
     @ViewBuilder private func counters(_ board: NovaRiskBoard) -> some View {
@@ -296,21 +381,28 @@ struct NovaRiskScreen: View {
     /// Side by side, and the list opens below what was tapped.
     @ViewBuilder private var filters: some View {
         VStack(spacing: 8) {
+            NovaAnalysisSearchField(
+                text: $query.search,
+                placeholder: RDLocalization.string("localizable.nova.risk.screens.firma.veya.isyeri.ara.d2e43ceb", table: .localizable, fallback: "Firma veya işyeri ara"),
+                identifier: "nova.risk.search")
+                .onSubmit { Task { await load(reset: true) } }
             HStack(spacing: 8) {
-                NovaFileChooserButton(
-                    label: RDLocalization.string("localizable.nova.risk.filter.company", table: .localizable, fallback: "Firma"),
+                riskFilterButton(
+                    title: "Firma",
                     value: companies.first { $0.id == query.company }?.name ?? allCompanies,
                     isOpen: openChooser == "company",
                     identifier: "nova.risk.chooser.company") {
                     openChooser = openChooser == "company" ? nil : "company"
                 }
-                NovaFileChooserButton(
-                    label: RDLocalization.string("localizable.nova.risk.filter.state", table: .localizable, fallback: "Durum"),
+                riskFilterButton(
+                    title: "Durum",
                     value: stateTitle,
                     isOpen: openChooser == "state",
+                    isSelected: query.state != nil,
                     identifier: "nova.risk.chooser.state") {
                     openChooser = openChooser == "state" ? nil : "state"
                 }
+                riskSortButton
             }
             if openChooser == "company" {
                 NovaFileChooserPanel(options: companyOptions, selected: query.company?.uuidString,
@@ -328,13 +420,50 @@ struct NovaRiskScreen: View {
                     Task { await load(reset: true) }
                 }
             }
-            NovaAnalysisSearchField(
-                text: $query.search,
-                placeholder: RDLocalization.string("localizable.nova.risk.search", table: .localizable,
-                    fallback: "İşyeri veya firma ara"),
-                identifier: "nova.risk.search")
-                .onSubmit { Task { await load(reset: true) } }
         }
+    }
+
+    private func riskFilterButton(title: String, value: String, isOpen: Bool, isSelected: Bool = false, identifier: String,
+                                  action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Text(verbatim: value)
+                    .font(.custom(isSelected ? "PlusJakartaSans-SemiBold" : "PlusJakartaSans-Medium", size: 12, relativeTo: .body))
+                    .foregroundStyle(isSelected ? Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255) : NovaColorToken.text.color(in: scheme))
+                    .lineLimit(1).minimumScaleFactor(0.76)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                    .rotationEffect(.degrees(isOpen ? 180 : 0))
+            }
+            .padding(.horizontal, 9).frame(maxWidth: .infinity, minHeight: 44)
+            .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
+            .overlay(RoundedRectangle(cornerRadius: 13)
+                .strokeBorder((isOpen || isSelected) ? Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255).opacity(isSelected ? 0.62 : 0.42) : NovaColorToken.border.color(in: scheme), lineWidth: 1))
+        }
+        .buttonStyle(NovaRowPressStyle())
+        .accessibilityLabel("\(title): \(value)")
+        .accessibilityIdentifier(identifier)
+    }
+
+    private var riskSortButton: some View {
+        Button { sortAscending.toggle() } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.up.arrow.down")
+                    .font(.system(size: 11, weight: .semibold))
+                Text(verbatim: "Sırala")
+                    .font(.custom("PlusJakartaSans-Medium", size: 12, relativeTo: .body))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
+            .padding(.horizontal, 8).frame(maxWidth: .infinity, minHeight: 44)
+            .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
+            .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+        }
+        .buttonStyle(NovaRowPressStyle())
+        .accessibilityLabel(RDLocalization.string("localizable.nova.risk.screens.gecerlilik.tarihine.gore.sirala.f39e41f8", table: .localizable, fallback: "Geçerlilik tarihine göre sırala"))
+        .accessibilityValue(sortAscending ? "En eski önce" : "En yeni önce")
+        .accessibilityIdentifier("nova.risk.sort")
     }
 
     private var stateTitle: String {
@@ -358,24 +487,43 @@ struct NovaRiskScreen: View {
     }
 
     @ViewBuilder private func list(_ board: NovaRiskBoard) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(verbatim: "Risk Değerlendirmeleri")
+                    .font(.custom("PlusJakartaSans-SemiBold", size: 21, relativeTo: .title3))
+                    .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                Spacer()
+                Text(verbatim: "\(board.total) kayıt")
+                    .font(.custom("PlusJakartaSans-Regular", size: 14, relativeTo: .subheadline))
+                    .foregroundStyle(NovaColorToken.textSubtle.color(in: scheme))
+            }
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.risk.empty.title", table: .localizable,
                 fallback: "Kayıt yok"),
                 message: RDLocalization.string("localizable.nova.risk.screens.risk.degerlendirmesi.ekleyerek.surumleri.gecerli.61dc9388", table: .localizable, fallback: "Risk değerlendirmesi ekleyerek sürümleri, geçerlilik tarihini ve bağlı dosyayı tek yerden takip edebilirsiniz."))
         } else {
             VStack(spacing: 10) {
-                ForEach(board.rows) { row in
+                ForEach(sortedRows(board.rows)) { row in
                     NovaRiskRowCard(row: row) { Task { await openDetail(row) } }
                 }
-                NovaText(text: String(format: RDLocalization.string("localizable.nova.risk.count",
-                    table: .localizable, fallback: "%d / %d kayıt"), board.rows.count, board.total),
-                    style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
                 if board.hasMore {
                     NovaButton(label: RDLocalization.string("localizable.nova.risk.more", table: .localizable,
                         fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface) {
                         Task { await load(reset: false) }
                     }
                 }
+            }
+        }
+        }
+    }
+
+    private func sortedRows(_ rows: [NovaRiskRow]) -> [NovaRiskRow] {
+        rows.sorted { left, right in
+            switch (left.validUntil, right.validUntil) {
+            case let (lhs?, rhs?): return sortAscending ? lhs < rhs : lhs > rhs
+            case (_?, nil): return true
+            case (nil, _?): return false
+            case (nil, nil): return (left.companyName ?? left.workplaceName ?? "") < (right.companyName ?? right.workplaceName ?? "")
             }
         }
     }
@@ -394,6 +542,11 @@ struct NovaRiskScreen: View {
                               companies: answer.companies, total: answer.total,
                               hasMore: answer.hasMore, offset: answer.offset,
                               noticeDays: answer.noticeDays)
+            }
+            if let board {
+                headerContext?.setPageSummary(.init(title: headingOverride ?? NovaDestination.riskAssessments.title,
+                    recordCount: board.total,
+                    upcomingCount: board.count(.dueSoon)))
             }
         } catch let error as NovaRiskFailure {
             failure = error.message
@@ -489,7 +642,7 @@ private struct NovaRiskQuickCreateSheet: View {
     private var hasOpenDraft: Bool { row?.hasOpenDraft ?? false }
     private var stepNumber: Int { (Step.allCases.firstIndex(of: currentStep) ?? 0) + 1 }
     private var detailsReady: Bool {
-        guard workplaceID != nil, row != nil, kindChosen else { return false }
+        guard (workplaces.isEmpty || workplaceID != nil), row != nil, kindChosen else { return false }
         if kind == .full, !(Int(periodYears).map { $0 > 0 } ?? false) { return false }
         if kind.needsScope && scope.isEmpty { return false }
         if kind.needsReason && reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
@@ -529,9 +682,7 @@ private struct NovaRiskQuickCreateSheet: View {
                                 total: Step.allCases.count, stepTitle: stepTitle(currentStep), onClose: { confirmingExit = true })
                             if let openError { NovaTaskErrorSummary(message: openError) }
                             if let saveError { NovaTaskErrorSummary(message: saveError) }
-                            if workplaces.isEmpty {
-                                NovaEmptyState(title: RDLocalization.string("localizable.nova.risk.screens.isyeri.bulunamadi.40699456", table: .localizable, fallback: "İşyeri bulunamadı"), message: RDLocalization.string("localizable.nova.risk.screens.once.firma.bilgilerinden.isyeri.ekleyin.5424d52f", table: .localizable, fallback: "Önce firma bilgilerinden işyeri ekleyin."))
-                            } else if opening || row == nil {
+                            if opening || row == nil {
                                 NovaLoadingView(message: RDLocalization.string("localizable.nova.risk.screens.isyeri.ve.risk.surumu.hazirlaniyor.10b0fcd8", table: .localizable, fallback: "İşyeri ve risk sürümü hazırlanıyor…"))
                             } else {
                                 stepContent(currentStep)
@@ -539,7 +690,7 @@ private struct NovaRiskQuickCreateSheet: View {
                         }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 28)
                     }.scrollDismissesKeyboard(.interactively)
                     .safeAreaInset(edge: .bottom) {
-                        if !workplaces.isEmpty && !opening && row != nil {
+                        if !opening && row != nil {
                             NovaTaskStickyActions(primaryTitle: currentStep == .review ? "Kaydet" : "Devam",
                                 primarySymbol: currentStep == .review ? "checkmark" : "arrow.right",
                                 isWorking: saving, canGoBack: currentStep != .details,
@@ -551,6 +702,7 @@ private struct NovaRiskQuickCreateSheet: View {
         }
         .task {
             if workplaces.count == 1 { workplaceID = workplaces[0].id }
+            if workplaces.isEmpty { Task { await open() } }
         }
         .onChange(of: workplaceID) { _ in Task { await open() } }
         .confirmationDialog(RDLocalization.string("localizable.nova.risk.screens.risk.degerlendirmesi.akisindan.cikilsin.mi.55a3824f", table: .localizable, fallback: "Risk değerlendirmesi akışından çıkılsın mı?"), isPresented: $confirmingExit,
@@ -780,7 +932,7 @@ private struct NovaRiskQuickCreateSheet: View {
     }
 
     private func open() async {
-        guard let workplaceID else { return }
+        guard workplaces.isEmpty || workplaceID != nil else { return }
         opening = true; openError = nil
         defer { opening = false }
         do {

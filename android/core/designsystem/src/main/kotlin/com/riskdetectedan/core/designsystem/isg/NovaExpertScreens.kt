@@ -70,8 +70,7 @@ fun NovaDashboardScreen(data: NovaDashboardData, onNavigate: (NovaDestination) -
     val wide = LocalDensity.current.fontScale >= 1.5f
     Column(Modifier.fillMaxSize().background(NovaColorToken.canvas.color()).verticalScroll(rememberScrollState())
         .testTag("nova.home.scroll").padding(bottom = 122.dp)) {
-        NovaWelcomeCard(data, Modifier.padding(horizontal = 20.dp).padding(top = 10.dp, bottom = 20.dp))
-        Row(Modifier.padding(horizontal = 20.dp).padding(bottom = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 9.dp), verticalAlignment = Alignment.CenterVertically) {
             NovaText("Özet", Modifier.weight(1f), NovaTypeToken.sectionTitle)
             NovaText("Güncel", style = NovaTypeToken.meta, color = muted)
         }
@@ -429,4 +428,3 @@ private fun NovaCompanyRow(company: NovaCompanyItem, loadLogo: NovaCompanyLogoLo
         NovaIcon("chevron.right", 14.dp, tint = NovaColorToken.borderStrong.color())
     }
 }
-

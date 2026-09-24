@@ -92,7 +92,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
     private var wizardVisibleStep: Int { wizardStep - minimumWizardStep + 1 }
     private var wizardVisibleTotal: Int { wizardTotal - minimumWizardStep }
     private var scopeNeedsInput: Bool {
-        (needsWorkplace && workplaces.count != 1) || needsEmployee || domain == .drill
+        (needsWorkplace && workplaces.count > 1) || needsEmployee || domain == .drill
     }
 
     private var wizardStepTitle: String {
@@ -126,10 +126,10 @@ struct IsgWorkspaceDomainCreateEditor: View {
     }
 
     @ViewBuilder private var scopeFields: some View {
-        if needsWorkplace { workplacePicker }
+        if needsWorkplace && !workplaces.isEmpty { workplacePicker }
         if needsEmployee { employeePicker }
         if domain == .drill { planPicker }
-        if !needsWorkplace && !needsEmployee && domain != .drill {
+        if (!needsWorkplace || workplaces.isEmpty) && !needsEmployee && domain != .drill {
             NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.domain.create.editor.firma.kapsami.6f235188", table: .localizable, fallback: "Firma kapsamı"), symbol: "building.2") {
                 NovaText(text: RDLocalization.string("localizable.isg.workspace.domain.create.editor.secili.firma.5b67c3a1", table: .localizable, fallback: "Seçili firma"), style: .bodyStrong)
             }
@@ -208,7 +208,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
 
     private var wizardStepValid: Bool {
         if wizardStep == 0 {
-            if needsWorkplace && workplaceID == nil { return false }
+            if needsWorkplace && !workplaces.isEmpty && workplaceID == nil { return false }
             if needsEmployee && employeeID == nil { return false }
             if domain == .drill && planID == nil { return false }
         }
@@ -332,9 +332,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
     }
 
     @ViewBuilder private var workplacePicker: some View {
-        if workplaces.isEmpty {
-            NovaTaskErrorSummary(message: RDLocalization.string("localizable.isg.workspace.domain.create.editor.firma.icin.isyeri.kaydi.hazirlanamadi.yeniden.de.27fdfc26", table: .localizable, fallback: "Firma için işyeri kaydı hazırlanamadı. Yeniden deneyin veya firma ayrıntılarından işyeri ekleyin."))
-        } else if workplaces.count == 1 {
+        if workplaces.count == 1 {
             NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.domain.create.editor.isyeri.45f96142", table: .localizable, fallback: "İşyeri"), symbol: "building") {
                 NovaText(text: workplaces[0].name, style: .bodyStrong)
             }
@@ -639,7 +637,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
             ?? Calendar.current.date(byAdding: .year, value: 1, to: firstDate) ?? firstDate
     }
     private var canSave: Bool {
-        if needsWorkplace && workplaceID == nil { return false }
+        if needsWorkplace && !workplaces.isEmpty && workplaceID == nil { return false }
         if needsEmployee && employeeID == nil { return false }
         if domain == .drill && planID == nil { return false }
         switch domain {
@@ -672,13 +670,6 @@ struct IsgWorkspaceDomainCreateEditor: View {
         do {
             if needsWorkplace {
                 workplaces = try await store.directory(.workplace)
-                if workplaces.isEmpty {
-                    // A zero-workplace company uses one invisible/default
-                    // operational scope. The user must not be asked to create
-                    // or choose it before every module action.
-                    try await store.initializePersonnel()
-                    workplaces = try await store.directory(.workplace)
-                }
                 workplaceID = workplaces.count == 1 ? workplaces.first?.id : nil
             }
             if needsEmployee { employees = try await store.employees(); employeeID = employees.first?.id }

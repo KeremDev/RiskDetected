@@ -782,7 +782,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 6_312, "Turkish localized-unit count");
+  assert.equal(rows.length, 6_410, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
@@ -813,7 +813,10 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // -> "İSGADA" (matches INFOPLIST_KEY_CFBundleDisplayName since 7fa86431)
     // and the history search prompt "Analiz ara" -> "Analiz, firma veya
     // sektör ara".
-    "e2d0224a2e00a77c3966e0ea93eae59ddfee0ca22ee82c973fab046a9555e54d",
+    // 2026-09-25: reviewed against b5d911e1: 98 new units (Localizable 96,
+    // Analysis 2) for the risk/emergency document wizard, the PPE sample form,
+    // follow-up v2 and the report download error; none removed or changed.
+    "ccb7ee501175da7e6a48c31d20e3abba7fb25cc8c8f3af3ebfe542d64a87d20f",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

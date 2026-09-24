@@ -254,7 +254,7 @@ struct NovaKatipContractSheet: View {
                 fallback: "İşyeri seçin")
     }
     private var canSave: Bool {
-        draft.workplaceID != nil
+        ((catalogue?.workplaces.isEmpty ?? true) || draft.workplaceID != nil)
             && !draft.counterparty.trimmingCharacters(in: .whitespaces).isEmpty
             && !draft.expertContact.trimmingCharacters(in: .whitespaces).isEmpty
             && !draft.scope.trimmingCharacters(in: .whitespaces).isEmpty
@@ -304,14 +304,14 @@ struct NovaKatipContractSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             NovaText(text: RDLocalization.string("localizable.nova.katip.sheets.firma.baglami.akis.boyunca.korunur.bd3cbecf", table: .localizable, fallback: "Firma bağlamı akış boyunca korunur."), style: .body)
             let workplaces = catalogue?.workplaces ?? []
-            if workplaces.count <= 1 {
+            if workplaces.count == 1 {
                 NovaCard(padding: 13) {
                     VStack(alignment: .leading, spacing: 3) {
                         NovaText(text: RDLocalization.string("localizable.nova.katip.sheets.isyeri.9f919aca", table: .localizable, fallback: "İşyeri"), style: .label)
-                        NovaText(text: workplaces.isEmpty ? "Bu firmada kayıt açılacak bir işyeri yok." : placeTitle, style: .bodyStrong)
+                        NovaText(text: placeTitle, style: .bodyStrong)
                     }
                 }
-            } else {
+            } else if workplaces.count > 1 {
                 NovaFileChooserButton(label: RDLocalization.string("localizable.nova.katip.sheets.isyeri.75ca2ad2", table: .localizable, fallback: "İşyeri"), value: placeTitle, isOpen: openChooser,
                     identifier: "nova.katip.form.workplace") { openChooser.toggle() }
                 if openChooser {

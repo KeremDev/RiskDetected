@@ -2,6 +2,29 @@ import SwiftUI
 import PhotosUI
 import UIKit
 
+private extension IsgWorkspaceCompany {
+    var profileCompletionCount: Int {
+        let textValues = [sector, email, address, responsibleName, responsiblePhone,
+                          responsibleEmail, hazardClass]
+        let textCount = textValues.compactMap { value -> String? in
+            guard let value else { return nil }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }.count
+        return textCount + (declaredEmployeeCount == nil ? 0 : 1)
+    }
+}
+
+@MainActor
+private func loadNovaWorkspaceCompanyLogo(store: IsgWorkspaceStore, companyID: UUID) async -> UIImage? {
+    guard let files = try? await store.domain(.files, companyID: companyID, limit: 100),
+          let logo = files.rows.first(where: { row in
+              row.facts.contains { $0.0 == "category" && $0.1 == "company_logo" }
+          }),
+          let download = try? await store.downloadFile(logo, companyID: companyID) else { return nil }
+    return UIImage(data: download.data)
+}
+
 /// Private device build only. This UUID is a presentation selector, NOT authority.
 /// Ordinary Debug/Release builds execute exactly the existing MainTabView route.
 struct NovaPilotMainGate: View {
@@ -289,6 +312,8 @@ private struct IsgOSGBWorkspaceRoot: View {
     @State private var companyLogoLinkAttempt = IsgWorkspaceMutationAttempt()
     @State private var expertDashboard: IsgWorkspaceDashboard?
     @State private var recentAnalyses: [NovaAnalysisSummary] = []
+    @State private var pendingDashboardAnalysisID: UUID?
+    @State private var homePendingActionCount: Int?
     @State private var profileAvatarImage: Image?
     /// A company can be created successfully even if a following assignment
     /// request loses its response. Keep the same receipt IDs and start instant
@@ -372,6 +397,7 @@ private struct IsgOSGBWorkspaceRoot: View {
             menuRoleTitle: canManageCompanies ? RDLocalization.string("localizable.nova.pilot.main.gate.osgb.yetkilisi.9bc4f19d", table: .localizable, fallback: "OSGB Yetkilisi") : RDLocalization.string("localizable.nova.pilot.main.gate.isg.uzmani.b416a08b", table: .localizable, fallback: "İSG Uzmanı"),
             menuStats: menuStats, menuNextAction: menuNextAction,
             onInvite: { app.requestProfileDestination(.referral); navigate(.profile) },
+            pendingActionCount: homePendingActionCount,
             connectionLabel: context.map { "\($0.name) · \(role($0.membership.role))" } ?? "",
             onCompanyCreate: canManageCompanies ? { editor = .create } : nil,
             isManager: canManageCompanies,
@@ -395,7 +421,9 @@ private struct IsgOSGBWorkspaceRoot: View {
             case .reportArchive: NovaProcessArchive(identity: identity, onBack: { navigate(.reports) })
             case .findings: domain(.nonconformity)
             case .newFinding: domain(.nonconformity, startInAddMode: true)
-            case .analyses: analyses()
+            case .analyses:
+                analyses(initialAnalysisID: pendingDashboardAnalysisID,
+                    onInitialAnalysisOpened: { pendingDashboardAnalysisID = nil })
             case .newAnalysis: analyses(startInCreateMode: true)
             case .training: domain(.training)
             case .newTraining: domain(.training, startInAddMode: true)
@@ -411,7 +439,10 @@ private struct IsgOSGBWorkspaceRoot: View {
             case .visits: domain(.visit)
             case .workPermits: domain(.workPermit)
             case .periodicChecks: domain(.equipment)
-            case .documentChecklist, .documents: domain(.files)
+            case .documentChecklist:
+                NovaFollowupScreen(identity: identity, canWrite: context?.canOperate == true,
+                    onBack: { navigate(.home) })
+            case .documents: domain(.files)
             case .newDocument: domain(.files, startInAddMode: true)
             case .newVisit: domain(.visit, startInAddMode: true)
             case .newCompany: companies
@@ -538,13 +569,17 @@ private struct IsgOSGBWorkspaceRoot: View {
             NovaDashboardScreen(data: osgbDashboardData,
                 onNavigate: navigate,
                 onPhoto: { navigate(.newAnalysis) },
-                onAssistant: { },
+                analysisThumbnail: { await NovaAnalysisWorkspace.thumbnail(analysisID: $0) },
+                onOpenAnalysis: { id in
+                    pendingDashboardAnalysisID = id
+                    navigate(.analyses)
+                },
                 trackingIdentity: context.map { _ in identity },
                 trackingCanWrite: context?.canOperate == true,
                 trackingScope: context?.workspaceID,
+                onPendingActionCount: { homePendingActionCount = $0 },
                 footer: isExpert ? nil : AnyView(osgbHomeFooter),
-                showsPhotoCapture: true,
-                showsAssistant: !isExpert)
+                showsPhotoCapture: true)
         }
     }
 
@@ -756,7 +791,7 @@ private struct IsgOSGBWorkspaceRoot: View {
             NovaCompaniesScreen(
                 companies: store.companies.map { company in
                         NovaCompanyItem(id: company.id.uuidString, name: company.name,
-                        detail: companySummary(company), progressCompleted: companyProfileProgress(company), progressTotal: 8)
+                        detail: companySummary(company), progressCompleted: company.profileCompletionCount, progressTotal: 8)
                 },
                 isLoading: store.phase == .loading && store.companies.isEmpty,
                 isOwnedList: !isExpert,
@@ -770,7 +805,11 @@ private struct IsgOSGBWorkspaceRoot: View {
                 },
                 onBack: { navigate(.home) },
                 onRetry: { store.refresh() },
-                onCreate: canManageCompanies ? { editor = .create } : nil)
+                onCreate: canManageCompanies ? { editor = .create } : nil,
+                loadLogo: { rawID, _ in
+                    guard let companyID = UUID(uuidString: rawID) else { return nil }
+                    return await loadNovaWorkspaceCompanyLogo(store: store, companyID: companyID)
+                })
         }
     }
 
@@ -978,11 +1017,12 @@ private struct IsgOSGBWorkspaceRoot: View {
             companyCategory(RDLocalization.string("localizable.nova.pilot.main.gate.diger.kayitlar.069ffbb5", table: .localizable, fallback: "Diğer kayıtlar")) {
                 companyDomainRow(.annualPlan)
                 companyDomainRow(.visit)
-                companyDomainRow(.ppe)
             }
             companyCategory(RDLocalization.string("localizable.nova.pilot.main.gate.ornek.formlar.04277afc", table: .localizable, fallback: "Örnek formlar")) {
                 companyPlainRow(title: IsgWorkspaceDomain.workPermit.title, subtitle: RDLocalization.string("localizable.nova.pilot.main.gate.56.indirilebilir.word.ornegi.69a20f3d", table: .localizable, fallback: "56 indirilebilir Word örneği"),
                     symbol: IsgWorkspaceDomain.workPermit.symbol, status: nil) { companyWorkspaceDomain = .workPermit }
+                companyPlainRow(title: IsgWorkspaceDomain.ppe.title, subtitle: RDLocalization.string("localizable.nova.pilot.main.gate.duzenlenebilir.word.ornegi.82144808", table: .localizable, fallback: "Düzenlenebilir Word örneği"),
+                    symbol: IsgWorkspaceDomain.ppe.symbol, status: nil) { companyWorkspaceDomain = .ppe }
             }
         }
     }
@@ -1280,7 +1320,9 @@ private struct IsgOSGBWorkspaceRoot: View {
 
     @ViewBuilder private func domain(_ value: IsgWorkspaceDomain, startInAddMode: Bool = false,
                                      onBack: (() -> Void)? = nil) -> some View {
-        if value == .workPermit {
+        if value == .ppe {
+            NovaPPEExampleScreen(onBack: onBack ?? { navigate(.home) })
+        } else if value == .workPermit {
             NovaWorkPermitLibraryScreen(onBack: onBack ?? { navigate(.home) })
         } else if let company = selectedCompany {
             if value == .personnel {
@@ -1331,11 +1373,15 @@ private struct IsgOSGBWorkspaceRoot: View {
     }
 
     @ViewBuilder private func analyses(startInCreateMode: Bool = false,
+                                       initialAnalysisID: UUID? = nil,
+                                       onInitialAnalysisOpened: (() -> Void)? = nil,
                                        onBack: (() -> Void)? = nil) -> some View {
         if let company = selectedCompany {
             IsgWorkspaceAnalysisScreen(store: store, companyID: company.id,
                 companyName: company.name, canOperate: context?.canOperate == true,
                 startInCreateMode: startInCreateMode,
+                initialAnalysisID: initialAnalysisID,
+                onInitialAnalysisOpened: onInitialAnalysisOpened,
                 onBack: onBack ?? { navigate(.findings) })
                 .id("\(company.id):analyses:\(startInCreateMode)")
         } else {
@@ -1462,15 +1508,6 @@ private struct IsgOSGBWorkspaceRoot: View {
         if let sector = company.sector, !sector.isEmpty { parts.append(sector) }
         if let count = company.declaredEmployeeCount { parts.append(RDLocalization.format("localizable.nova.pilot.main.gate.1.calisan.b8421177", table: .localizable, fallback: "%1$@ çalışan", arguments: [String(describing: count)])) }
         return parts.joined(separator: " · ")
-    }
-    private func companyProfileProgress(_ company: IsgWorkspaceCompany) -> Int {
-        func present(_ value: String?) -> String? {
-            guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-            return value
-        }
-        return [present(company.sector), company.declaredEmployeeCount.map(String.init),
-            present(company.email), present(company.address), present(company.responsibleName),
-            present(company.responsiblePhone), present(company.responsibleEmail), present(company.hazardClass)].compactMap { $0 }.count
     }
     private func symbol(_ kind: String) -> String {
         switch kind { case "employee": return "person"; case "equipment": return "shippingbox"; case "training": return "graduationcap"; case "file": return "doc"; default: return "checklist" }
@@ -2148,6 +2185,8 @@ struct NovaPilotRoot: View {
     @State private var overview: [NovaPilotCompanySummary]?
     @State private var overviewFailed = false
     @State private var recentAnalyses: [NovaAnalysisSummary] = []
+    @State private var pendingDashboardAnalysisID: UUID?
+    @State private var homePendingActionCount: Int?
     @State private var sceneRevalidation = NovaSceneRevalidation()
     /// The account's equipment standing, for the home page's own summary. One
     /// read, and the card says nothing until it answers.
@@ -2270,6 +2309,7 @@ struct NovaPilotRoot: View {
             menuStats: menuStats, menuNextAction: menuNextAction,
             onInvite: { app.requestProfileDestination(.referral); navigate(.profile) },
             hasUnread: notices.unread > 0, unreadCount: notices.unread,
+            pendingActionCount: homePendingActionCount,
             notificationItems: notices.rows.map(noticeItem),
             noticeNote: notices.rows.isEmpty ? "" : NovaNoticeWords.dismissNote,
             onReadNotice: { key in Task { await markNotices { try await NovaNoticeService.live().read(identity, key: key) } } },
@@ -2305,9 +2345,15 @@ struct NovaPilotRoot: View {
                             ? RDLocalization.string("localizable.nova.pilot.main.gate.atandiginiz.firmalardaki.toplam.guncel.kayitlar.ab9e9ae8", table: .localizable, fallback: "Atandığınız firmalardaki toplam güncel kayıtlar.")
                             : activeCompanies != nil ? RDLocalization.string("localizable.nova.pilot.main.gate.pilot.firmalarinizin.guncel.kayitlari.01d48da7", table: .localizable, fallback: "Pilot firmalarınızın güncel kayıtları.") : overviewFailed ? RDLocalization.string("localizable.nova.pilot.main.gate.ozet.alinamadi.yenileyerek.tekrar.deneyin.9b6a6077", table: .localizable, fallback: "Özet alınamadı. Yenileyerek tekrar deneyin.") : RDLocalization.string("localizable.nova.pilot.main.gate.ozet.verileri.henuz.bagli.degil.4508136e", table: .localizable, fallback: "Özet verileri henüz bağlı değil.")),
                         onNavigate: navigate,
-                        onPhoto: { navigate(.newAnalysis) }, onAssistant: unavailable,
+                        onPhoto: { navigate(.newAnalysis) },
+                        analysisThumbnail: { await NovaAnalysisWorkspace.thumbnail(analysisID: $0) },
+                        onOpenAnalysis: { id in
+                            pendingDashboardAnalysisID = id
+                            navigate(.analyses)
+                        },
                         trackingIdentity: ready ? identity : nil,
-                        trackingCanWrite: controller.canWrite)
+                        trackingCanWrite: controller.canWrite,
+                        onPendingActionCount: { homePendingActionCount = $0 })
                 }
             case .statistics:
                 if ready {
@@ -2328,7 +2374,8 @@ struct NovaPilotRoot: View {
             case .findings:
                 nonconformities(.board)
             case .analyses:
-                nonconformities(.analyses)
+                nonconformities(.analyses, initialAnalysisID: pendingDashboardAnalysisID,
+                    onInitialAnalysisOpened: { pendingDashboardAnalysisID = nil })
             case .newAnalysis:
                 nonconformities(.newAnalysis)
             case .newFinding:
@@ -2589,12 +2636,7 @@ struct NovaPilotRoot: View {
     }
 
     @ViewBuilder private var ppe: some View {
-        if ready {
-            NovaPilotPPEGate(identity: identity, canWrite: writable,
-                onBack: { navigate(.home) })
-        } else {
-            NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
-        }
+        NovaPPEExampleScreen(onBack: { navigate(.home) })
     }
 
     @ViewBuilder private var appointments: some View {
@@ -2637,11 +2679,14 @@ struct NovaPilotRoot: View {
     }
 
     /// Each menu entry lands on exactly one page; the surface says which.
-    @ViewBuilder private func nonconformities(_ surface: NovaFindingsSurface) -> some View {
+    @ViewBuilder private func nonconformities(_ surface: NovaFindingsSurface,
+        initialAnalysisID: UUID? = nil,
+        onInitialAnalysisOpened: (() -> Void)? = nil) -> some View {
         if ready {
             NovaPilotFindingsGate(identity: identity, scope: controller.scope, canWrite: controller.canWrite,
                 select: controller.select, currentScope: { controller.scope }, surface: surface,
-                onNavigate: navigate, onCompanies: { navigate(.companies) }, onHome: { navigate(.home) })
+                onNavigate: navigate, onCompanies: { navigate(.companies) }, onHome: { navigate(.home) },
+                initialAnalysisID: initialAnalysisID, onInitialAnalysisOpened: onInitialAnalysisOpened)
                 .id("\(controller.host.navigation.epoch):\(surface)")
         } else {
             ScrollView {
@@ -2678,7 +2723,8 @@ struct NovaPilotRoot: View {
                     companies: workspaceStore.companies.map {
                         NovaCompanyItem(id: $0.id.uuidString.lowercased(), name: $0.name,
                             detail: [IsgWorkspaceDisplayText.value($0.hazardClass), $0.sector]
-                                .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
+                                .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "),
+                            progressCompleted: $0.profileCompletionCount, progressTotal: 8)
                     },
                     isLoading: workspaceStore.phase == .loading && workspaceStore.companies.isEmpty,
                     error: workspaceStore.phase == .failed
@@ -2693,14 +2739,22 @@ struct NovaPilotRoot: View {
                         controller.select(companyID)
                     },
                     onBack: { navigate(.home) },
-                    onRetry: { workspaceStore.refresh() })
+                    onRetry: { workspaceStore.refresh() },
+                    loadLogo: { rawID, _ in
+                        guard let companyID = UUID(uuidString: rawID) else { return nil }
+                        return await loadNovaWorkspaceCompanyLogo(store: workspaceStore, companyID: companyID)
+                    })
                     .id("workspace-companies:\(workspaceStore.selection?.workspaceID.uuidString ?? "none")")
             } else {
                 VStack(spacing: 0) {
                     NovaCompanyDestination(host: Binding(get: { controller.host }, set: { _ in }),
                         loadCompanies: { try await loadNovaPilotCompanies(identity: identity, includeArchived: $0) },
                         includeArchived: true, onSelect: controller.select,
-                        onBack: { navigate(.home) }, onCreate: { showingCreate = true })
+                        onBack: { navigate(.home) }, onCreate: { showingCreate = true },
+                        loadLogo: { _, path in
+                            guard let path else { return nil }
+                            return try? await CompanyService.shared.logoImage(path: path)
+                        })
                         .id(listRevision)
                 }
             }
@@ -2741,7 +2795,7 @@ struct NovaPilotRoot: View {
         } else {
             noticeSource = .init(kind: entry.kind == .drill ? "completed_drill" : entry.kind.rawValue, company_id: company,
                 company_name: entry.companyName ?? "", record_id: record, source_id: record, title: entry.title,
-                due_on: entry.dueOn, status: entry.severity == .overdue ? "expired" : "soon")
+                recorded_on: nil, due_on: entry.dueOn, status: entry.severity == .overdue ? "expired" : "soon")
         }
     }
 
@@ -2757,7 +2811,8 @@ struct NovaPilotRoot: View {
                        "risk": "risk_assessment", "equipment": "equipment", "emergency": "emergency_plan",
                        "assignment": "appointment", "training_session": "training"][detail.entity_type] {
             noticeSource = .init(kind: kind, company_id: company, company_name: "", record_id: record,
-                source_id: record, title: BusinessActivityItem.title(action: detail.action), due_on: nil, status: "active")
+                source_id: record, title: BusinessActivityItem.title(action: detail.action),
+                recorded_on: nil, due_on: nil, status: "active")
         } else {
             controller.select(company)
             navigate(companyOnly ? .companies : ["nonconformity": .findings, "training": .training,

@@ -184,6 +184,7 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
     var showingSearch by rememberSaveable { mutableStateOf(false) }
     // A home deadline opens its record in place of the dashboard (iOS NovaHomeDeadlineBoard popup).
     var homeRecord by remember(identity) { mutableStateOf<NovaFollowupPage.Row?>(null) }
+    var homePendingActionCount by remember(identity) { mutableStateOf<Int?>(null) }
     val homeRecordChanges = remember(identity) { services.changes(identity) }
     var dashboardDomain by remember { mutableStateOf<IsgWorkspaceDomain?>(null) }
     var companyPage by remember { mutableStateOf<String?>(null) }
@@ -219,7 +220,8 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
     }
 
     @Composable fun domain(value: IsgWorkspaceDomain, onBack: () -> Unit = { navigate(NovaDestination.home) }, startInAddMode: Boolean = false) {
-        if (value == IsgWorkspaceDomain.WORK_PERMIT) NovaWorkPermitLibraryScreen(onBack)
+        if (value == IsgWorkspaceDomain.PPE) NovaPPEExampleScreen(onBack)
+        else if (value == IsgWorkspaceDomain.WORK_PERMIT) NovaWorkPermitLibraryScreen(onBack)
         else if (selected == null || domainClient == null) CompanyRequired(value.title, onBack)
         else if (value == IsgWorkspaceDomain.PERSONNEL) personnel(onBack)
         else key(selected.id, value, startInAddMode) {
@@ -256,6 +258,7 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
     NovaExpertShell(state.navigation, state.userName, viewModel::apply, profileAvatar = state.avatar,
         menuRoleTitle = if (canManage) "OSGB Yetkilisi" else "İSG Uzmanı",
         menuStats = managerMenuStats(board), menuNextAction = managerNextAction(workspace, board, state.personnel, canManage),
+        pendingActionCount = homePendingActionCount,
         connectionLabel = "${context.name} · ${managerRole(context.membership.role)}", isManager = canManage,
         actions = NovaShellActions(
             onCompanyCreate = createCompany,
@@ -276,7 +279,8 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
                     onPhoto = { navigate(NovaDestination.newAnalysis) },
                     tracking = {
                         NovaHomeDeadlineBoard({ status, offset -> services.followup(identity, null, status, "", offset) },
-                            homeRecordChanges, scopeKey = context.workspaceId, onOpen = { row -> homeRecord = row })
+                            homeRecordChanges, scopeKey = context.workspaceId,
+                            onPendingActionCount = { homePendingActionCount = it }, onOpen = { row -> homeRecord = row })
                     }) {
                     ManagerHomeFooter(workspace, selected, canManage, context.canManageMembers, store, onSearch = { showingSearch = true },
                         onEdit = { editor = ManagerEditor(it) }, onMembers = { showingMembers = true },
@@ -333,7 +337,12 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
             NovaDestination.newVisit -> domain(IsgWorkspaceDomain.VISIT, startInAddMode = true)
             NovaDestination.workPermits -> domain(IsgWorkspaceDomain.WORK_PERMIT)
             NovaDestination.periodicChecks -> domain(IsgWorkspaceDomain.EQUIPMENT)
-            NovaDestination.documentChecklist, NovaDestination.documents -> domain(IsgWorkspaceDomain.FILES)
+            NovaDestination.documentChecklist -> NovaFollowupScreen(
+                { company, status, kind, query, offset -> services.followup(identity, company, status, query, offset, kind) },
+                services.companyOptions(identity), services.changes(identity),
+                recordOpener(services, identity, context.canOperate, state.userName),
+                onBack = { navigate(NovaDestination.home) })
+            NovaDestination.documents -> domain(IsgWorkspaceDomain.FILES)
             NovaDestination.newDocument -> domain(IsgWorkspaceDomain.FILES, startInAddMode = true)
             NovaDestination.analyses, NovaDestination.newAnalysis -> analyses({ navigate(NovaDestination.findings) }, destination == NovaDestination.newAnalysis)
             NovaDestination.contractors -> personnel({ navigate(NovaDestination.home) }, NovaOsgbPersonnelSection.contractor)
@@ -799,12 +808,15 @@ private fun NovaOsgbCompanyOverview(context: IsgWorkspaceContext, company: NovaW
                         .forEach { DomainRow(it, snapshots, ::subtitle, onDomain) }
                 }
                 Category("Diğer kayıtlar") {
-                    listOf(IsgWorkspaceDomain.ANNUAL_PLAN, IsgWorkspaceDomain.VISIT, IsgWorkspaceDomain.PPE)
+                    listOf(IsgWorkspaceDomain.ANNUAL_PLAN, IsgWorkspaceDomain.VISIT)
                         .forEach { DomainRow(it, snapshots, ::subtitle, onDomain) }
                 }
                 Category("Örnek formlar") {
                     CategoryRow(NovaDestination.workPermits.title, "56 indirilebilir Word örneği", NovaDestination.workPermits.symbol, null) {
                         onDomain(IsgWorkspaceDomain.WORK_PERMIT)
+                    }
+                    CategoryRow(NovaDestination.ppeHandovers.title, "Düzenlenebilir Word örneği", NovaDestination.ppeHandovers.symbol, null) {
+                        onDomain(IsgWorkspaceDomain.PPE)
                     }
                 }
             }

@@ -243,8 +243,7 @@ class NovaKatipService @Inject constructor(@ApplicationContext context: Context,
     }
 
     suspend fun record(identity: IsgWorkspaceIdentity, company: String, draft: NovaKatipDraft): NovaKatipContract? {
-        val workplace = draft.workplaceId
-        if (workplace == null || !isDay(draft.startsOn) || draft.counterparty.isBlank() || draft.expertContact.isBlank() || draft.scope.isBlank())
+        if (!isDay(draft.startsOn) || draft.counterparty.isBlank() || draft.expertContact.isBlank() || draft.scope.isBlank())
             throw NovaKatipException(NovaKatipFailure.validation)
         val end = draft.endsBefore.trim()
         val minutesText = draft.declaredMonthlyMinutes.trim()
@@ -253,7 +252,7 @@ class NovaKatipService @Inject constructor(@ApplicationContext context: Context,
             throw NovaKatipException(NovaKatipFailure.validation)
         if (end.isNotEmpty() && end <= draft.startsOn) throw NovaKatipException(NovaKatipFailure.endsBeforeStart)
         return mutate(identity, company, "record_contract", buildJsonObject {
-            put("workplace_id", workplace); put("counterparty", draft.counterparty.trim()); put("expert_contact", draft.expertContact.trim())
+            put("workplace_id", draft.workplaceId?.let(::JsonPrimitive) ?: JsonNull); put("counterparty", draft.counterparty.trim()); put("expert_contact", draft.expertContact.trim())
             put("scope", draft.scope.trim()); put("starts_on", draft.startsOn)
             if (end.isNotEmpty()) put("ends_before", end)
             minutes?.let { put("declared_monthly_minutes", it) }

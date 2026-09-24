@@ -8,6 +8,7 @@ struct NovaPilotFileGate: View {
     /// Opened from a company page: the archive starts on that company, and on
     /// that heading's own categories when one was named.
     var initialCompany: UUID?
+    var initialEntryID: UUID?
     var initialCategories: [String]?
     var headingOverride: String?
     var startInAddMode = false
@@ -17,7 +18,7 @@ struct NovaPilotFileGate: View {
 
     var body: some View {
         NovaFileLibraryScreen(client: client, onBack: onBack, canWrite: canWrite,
-            initialCompany: initialCompany, initialCategories: initialCategories,
+            initialCompany: initialCompany, initialEntryID: initialEntryID, initialCategories: initialCategories,
             headingOverride: headingOverride, startInAddMode: startInAddMode)
     }
 
@@ -25,7 +26,7 @@ struct NovaPilotFileGate: View {
     /// both sides. There is no workspace scope to borrow: the archive spans
     /// every company the account owns and each row names its own.
     private var client: NovaFileLibraryClient {
-        .init(
+        var result = NovaFileLibraryClient(
             catalogue: { try await service.catalogue(identity) },
             library: { request in try await service.library(identity, query: request) },
             companies: { try await NovaAnalysisWorkspace.companyOptions(identity: identity) },
@@ -40,6 +41,8 @@ struct NovaPilotFileGate: View {
             recheck: { entry in try await service.recheck(identity, entry: entry) },
             contents: { entry in try await service.contents(identity, entry: entry) },
             download: { bucket, path in try await service.download(identity, bucket: bucket, path: path) })
+        result.detail = { id in try await service.detail(identity, entry: id) }
+        return result
     }
 }
 
@@ -47,7 +50,7 @@ struct NovaPilotFileGate: View {
 extension NovaFileLibraryClient {
     @MainActor static func pilot(_ identity: NovaSessionIdentity) -> NovaFileLibraryClient {
         let service = NovaFileLibraryService.live()
-        return .init(
+        var result = NovaFileLibraryClient(
             catalogue: { try await service.catalogue(identity) },
             library: { request in try await service.library(identity, query: request) },
             companies: { try await NovaAnalysisWorkspace.companyOptions(identity: identity) },
@@ -62,5 +65,7 @@ extension NovaFileLibraryClient {
             recheck: { entry in try await service.recheck(identity, entry: entry) },
             contents: { entry in try await service.contents(identity, entry: entry) },
             download: { bucket, path in try await service.download(identity, bucket: bucket, path: path) })
+        result.detail = { id in try await service.detail(identity, entry: id) }
+        return result
     }
 }

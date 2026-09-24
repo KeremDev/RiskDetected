@@ -439,7 +439,7 @@ struct NovaDocumentObligationForm: View {
                     VStack(alignment: .leading, spacing: 10) {
                         field(RDLocalization.string("localizable.nova.document.field.title", table: .localizable, fallback: "Kayıt adı"),
                               $draft.title, id: "title")
-                        scopePicker
+                        if !places.isEmpty { scopePicker }
                         field(RDLocalization.string("localizable.nova.document.field.responsible", table: .localizable, fallback: "Sorumlu"),
                               $draft.responsibleContact, id: "responsible")
                         HStack(spacing: 9) {

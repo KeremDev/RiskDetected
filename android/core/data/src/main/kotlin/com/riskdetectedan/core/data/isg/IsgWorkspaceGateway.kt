@@ -402,15 +402,6 @@ class IsgWorkspaceGateway(
         return result
     }
 
-    /** Creates the invisible default workplace of a company that has none yet. */
-    suspend fun initializePersonnel(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean, companyId: String) {
-        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
-        val result = invoke("isg_workspace_personnel_initialize_v1", buildJsonObject { put("p_workspace", workspaceId); put("p_company", companyId) })
-        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
-        requireEnvelope(result, workspaceId, companyId)
-        if (result.text("workplace_id") == null) fail()
-    }
-
     /** Creates, edits or archives a workplace or department (`isg_workspace_directory_mutate_v1`). */
     suspend fun mutateDirectory(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean, mutationId: String,
                                 companyId: String, entity: String, action: String, entryId: String?, expectedVersion: Long,
@@ -723,7 +714,7 @@ class IsgWorkspaceGateway(
 
     suspend fun fileAnalysisItem(workspaceId: String, membershipId: String, permissionRevision: Long,
                                  canOperate: Boolean, mutationId: String, companyId: String,
-                                 workplaceId: String, sourceScope: String, analysisId: String,
+                                 workplaceId: String?, sourceScope: String, analysisId: String,
                                  itemKind: String, itemId: String, severity: String?, openedOn: String,
                                  dueOn: String?): JsonObject {
         checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
@@ -732,7 +723,7 @@ class IsgWorkspaceGateway(
             !validDay(openedOn) || dueOn?.let { !validDay(it) } == true) validation()
         val result = invoke("isg_workspace_analysis_file_v1", buildJsonObject {
             put("p_mutation", mutationId); put("p_workspace", workspaceId); put("p_company", companyId)
-            put("p_workplace", workplaceId); put("p_source_scope", sourceScope); put("p_analysis", analysisId)
+            put("p_workplace", workplaceId?.let(::JsonPrimitive) ?: JsonNull); put("p_source_scope", sourceScope); put("p_analysis", analysisId)
             put("p_item_kind", itemKind); put("p_item", itemId)
             put("p_severity", severity?.let(::JsonPrimitive) ?: JsonNull); put("p_opened_on", openedOn)
             put("p_due_on", dueOn?.let(::JsonPrimitive) ?: JsonNull)

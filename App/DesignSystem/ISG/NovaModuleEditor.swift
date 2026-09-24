@@ -85,7 +85,7 @@ struct NovaModuleEditor: View {
     @ViewBuilder private func fields(_ data: Envelope) -> some View {
         switch module {
         case "emergency_plan":
-            options("İşyeri", "workplace_id", data.workplaces)
+            if !data.workplaces.isEmpty { options("İşyeri", "workplace_id", data.workplaces) }
             field("Kapsam", "scope"); field(RDLocalization.string("localizable.nova.module.editor.hazirlik.tarihi.yyyy.aa.gg.6d1b9360", table: .localizable, fallback: "Hazırlık tarihi (YYYY-AA-GG)"), "prepared_on")
             field(RDLocalization.string("localizable.nova.module.editor.gecerlilik.tarihi.istege.bagli.94672036", table: .localizable, fallback: "Geçerlilik tarihi (isteğe bağlı)"), "valid_until"); field(RDLocalization.string("localizable.nova.module.editor.dayanak.aciklama.0050bdb6", table: .localizable, fallback: "Dayanak / açıklama"), "review_note")
             teamFields
@@ -105,7 +105,8 @@ struct NovaModuleEditor: View {
             field(RDLocalization.string("localizable.nova.module.editor.kkd.adi.edbe0088", table: .localizable, fallback: "KKD adı"), "item")
             field(RDLocalization.string("localizable.nova.module.editor.teslim.tarihi.yyyy.aa.gg.66ea918f", table: .localizable, fallback: "Teslim tarihi (YYYY-AA-GG)"), "handed_on"); field(RDLocalization.string("localizable.nova.module.editor.belgenin.bulundugu.yer.939f74a6", table: .localizable, fallback: "Belgenin bulunduğu yer"), "signed_copy_location")
         default:
-            options("Personel", "employee_id", data.employees); options("İşyeri", "scope_workplace_id", data.workplaces)
+            options("Personel", "employee_id", data.employees)
+            if !data.workplaces.isEmpty { options("İşyeri", "scope_workplace_id", data.workplaces) }
             choices("Görev", "kind", [("representative","Çalışan temsilcisi"),("support_staff","Destek elemanı"),("team_member","Ekip üyesi"),("first_aid","İlk yardımcı"),("fire_team","Yangın ekibi")])
             field(RDLocalization.string("localizable.nova.module.editor.baslangic.tarihi.yyyy.aa.gg.f1dfb36f", table: .localizable, fallback: "Başlangıç tarihi (YYYY-AA-GG)"), "starts_on"); field(RDLocalization.string("localizable.nova.module.editor.bitis.tarihi.istege.bagli.eca58d2b", table: .localizable, fallback: "Bitiş tarihi (isteğe bağlı)"), "ends_before")
             choices("Dayanak", "basis", [("elected","Seçim"),("appointed","Atama")])

@@ -57,7 +57,8 @@ func loadNovaOwnedCompanies(includeArchived: Bool) async throws -> [NovaOwnedCom
             company.defaultResponsible].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }.count
         return NovaOwnedCompany(id: company.id, ownerID: company.userID, name: company.name,
-            detail: detail, isArchived: company.isArchived, progressCompleted: progressCompleted, progressTotal: 8)
+            detail: detail, isArchived: company.isArchived, progressCompleted: progressCompleted,
+            progressTotal: 8, logoPath: company.logoPath)
     }
 }
 
@@ -96,7 +97,8 @@ extension NovaPilotCompanyService {
         if capability.can_read {
             result.append(.init(id: row.id, ownerID: row.ownerID, name: capability.company_name ?? row.name,
                 detail: row.detail, isArchived: capability.is_archived ?? row.isArchived,
-                progressCompleted: 0, progressTotal: 8))
+                progressCompleted: row.progressCompleted, progressTotal: row.progressTotal,
+                logoPath: row.logoPath))
         }
     }
     // Also recheck the account gate, including the zero-company case.

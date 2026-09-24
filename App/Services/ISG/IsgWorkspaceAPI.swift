@@ -966,7 +966,7 @@ struct IsgWorkspaceAdvancedRecord: Identifiable, Equatable {
     }
 
     func fileAnalysisItem(selection: NovaWorkspaceSelection, mutationID: UUID, companyID: UUID,
-                          workplaceID: UUID, sourceScope: String, analysisID: UUID,
+                          workplaceID: UUID?, sourceScope: String, analysisID: UUID,
                           itemKind: String, itemID: UUID, severity: String?, openedOn: String,
                           dueOn: String?) async throws -> IsgWorkspaceFilingResult {
         try require(selection, operate: true)
@@ -977,7 +977,7 @@ struct IsgWorkspaceAdvancedRecord: Identifiable, Equatable {
         }
         let data = try await rpc("isg_workspace_analysis_file_v1", ["p_mutation": .id(mutationID),
             "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
-            "p_workplace": .id(workplaceID), "p_source_scope": .string(sourceScope),
+            "p_workplace": workplaceID.map(IsgWorkspaceRPCValue.id) ?? .null, "p_source_scope": .string(sourceScope),
             "p_analysis": .id(analysisID), "p_item_kind": .string(itemKind), "p_item": .id(itemID),
             "p_severity": severity.map(IsgWorkspaceRPCValue.string) ?? .null,
             "p_opened_on": .string(openedOn), "p_due_on": dueOn.map(IsgWorkspaceRPCValue.string) ?? .null])
@@ -1168,18 +1168,6 @@ struct IsgWorkspaceAdvancedRecord: Identifiable, Equatable {
             throw IsgWorkspaceAPIFailure.invalidResponse
         }
         return .init(suggestions: suggestions, rules: rules)
-    }
-
-    func initializePersonnel(selection: NovaWorkspaceSelection, companyID: UUID) async throws {
-        try require(selection, operate: true)
-        let data = try await rpc("isg_workspace_personnel_initialize_v1", [
-            "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID)
-        ])
-        try require(selection, operate: true)
-        guard data.count <= 32_768,
-              let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              try validScope(root, workspaceID: selection.workspaceID, companyID: companyID),
-              root["workplace_id"] as? String != nil else { throw IsgWorkspaceAPIFailure.invalidResponse }
     }
 
     func directory(selection: NovaWorkspaceSelection, companyID: UUID,

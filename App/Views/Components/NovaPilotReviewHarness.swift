@@ -227,7 +227,8 @@ struct NovaPilotReviewHarness: View {
                     }
                 }
         case .analyses:
-            NovaAnalysisListScreen(load: { _ in (reviewSummaries, false) }, thumbnail: { _ in Self.fixturePhoto },
+            NovaAnalysisListScreen(load: { _ in (reviewSummaries, false) },
+                loadStats: { NovaAnalysisListStats(reviewSummaries) }, thumbnail: { _ in Self.fixturePhoto },
                 onOpen: { _ in showingReviewDetail = true }, onBack: {},
                 onReports: { showingReviewReports = true })
                 .novaFullScreenCover(isPresented: $showingReviewDetail) {
@@ -235,7 +236,9 @@ struct NovaPilotReviewHarness: View {
                         onBack: { showingReviewDetail = false })
                 }
                 .novaFullScreenCover(isPresented: $showingReviewReports) {
-                    NovaAnalysisReportsScreen(load: { reviewReports },
+                    NovaAnalysisReportsScreen(load: { _ in (reviewReports, false) }, download: { _ in
+                        FileManager.default.temporaryDirectory.appendingPathComponent("review-report.pdf")
+                    },
                         onBack: { showingReviewReports = false })
                 }
         case .newAnalysis:

@@ -235,7 +235,7 @@ import Foundation
     /// so it skips the Keychain-backed mutation journal — a fresh id pair
     /// every call is enough, and one less thing that can fail before the
     /// request even reaches the network.
-    func open(_ identity: NovaSessionIdentity, company: UUID, workplace: UUID) async throws -> NovaRiskRow? {
+    func open(_ identity: NovaSessionIdentity, company: UUID, workplace: UUID?) async throws -> NovaRiskRow? {
         try check(identity)
         let data = try await rpc("isg_risk_versions_mutate_v1", [
             "p_company": .id(company), "p_action": .string("open_assessment"),

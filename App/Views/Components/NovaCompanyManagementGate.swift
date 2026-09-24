@@ -26,7 +26,12 @@ struct NovaCompanyManagementGate<Fallback: View>: View {
                     } else {
                         VStack(spacing: 0) {
                             NovaCompanyDestination(host: Binding(get: { controller.host }, set: { _ in }),
-                                loadCompanies: { try await loadNovaOwnedCompanies(includeArchived: $0) }, includeArchived: true, onSelect: controller.select, onBack: onClose)
+                                loadCompanies: { try await loadNovaOwnedCompanies(includeArchived: $0) }, includeArchived: true,
+                                onSelect: controller.select, onBack: onClose,
+                                loadLogo: { _, path in
+                                    guard let path else { return nil }
+                                    return try? await CompanyService.shared.logoImage(path: path)
+                                })
                             NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.firma.ekle.duzenle.005d0121", table: .localizable, fallback: "Firma ekle / düzenle"), symbol: "building.2", variant: .surface) { legacyRequested = true }.padding(18)
                         }.background(NovaColorToken.canvas.color(in: .light))
                     }
@@ -622,7 +627,10 @@ struct NovaCompanyWorkspace: View {
                 // evrak-takip/dosya-arşivi strips every other heading gets —
                 // those track a different, unrelated document obligation.
                 let hasDedicatedRow = moduleKind(section) != nil || section == .risk || section == .accidents
-                if section == .personnel {
+                if section == .handover {
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.company.management.gate.duzenlenebilir.ornek.formu.word.olarak.indirin.b.55d047ec", table: .localizable, fallback: "Düzenlenebilir örnek formu Word olarak indirin. Burada zimmet kaydı oluşturulmaz."))
+                    NovaCompactActionButton(title: RDLocalization.string("localizable.nova.company.management.gate.ornek.word.formunu.ac.9cc34739", table: .localizable, fallback: "Örnek Word formunu aç"), symbol: "arrow.down.doc") { processKind = "ppe" }
+                } else if section == .personnel {
                     personnelSection
                 } else if section == .representative || section == .support {
                     let board = section == .representative ? representativeAppointment : supportAppointment
@@ -666,7 +674,7 @@ struct NovaCompanyWorkspace: View {
                     NovaCompactActionButton(title: RDLocalization.string("localizable.nova.workspace.section.training.open", table: .localizable,
                         fallback: "Eğitimleri aç"), symbol: "graduationcap") { sheet = .training }
                 }
-                if let kind = moduleKind(section), section != .representative, section != .support {
+                if let kind = moduleKind(section), section != .representative, section != .support, section != .handover {
                     if let row = processTracking?.summaries.first(where: { $0.id == kind }), row.available {
                         trackingStats(row, identifier: "company.section.\(section.rawValue).stats")
                         if row.total > 0 {
@@ -1173,6 +1181,7 @@ struct NovaCompanyWorkspace: View {
     }
 
     private func simpleStatus(_ section: NovaCompanySection) -> (String, NovaStatus)? {
+        if section == .handover { return nil }
         if let kind = moduleKind(section), let row = processTracking?.summaries.first(where: { $0.id == kind }) {
             if row.overdue > 0 { return ("Dikkat", .danger) }
             if row.upcoming > 0 { return (RDLocalization.string("localizable.nova.document.status.due.soon", table: .localizable, fallback: "Yaklaşıyor"), .warning) }
@@ -1211,6 +1220,7 @@ struct NovaCompanyWorkspace: View {
     }
 
     private func simpleDetail(_ section: NovaCompanySection) -> String {
+        if section == .handover { return RDLocalization.string("localizable.nova.company.management.gate.duzenlenebilir.word.ornegi.d513f2d1", table: .localizable, fallback: "Düzenlenebilir Word örneği") }
         let loading = RDLocalization.string("localizable.nova.components.loading", table: .localizable, fallback: "Yükleniyor…")
         if section == .risk { return riskBoard.map { String(format: RDLocalization.string(
             "localizable.nova.company.record.count", table: .localizable, fallback: "%d kayıt"), $0.total) } ?? loading }

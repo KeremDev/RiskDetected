@@ -10,6 +10,7 @@ struct NovaOwnedCompany: Equatable {
     let isArchived: Bool
     var progressCompleted: Int = 0
     var progressTotal: Int = 8
+    var logoPath: String? = nil
 }
 
 enum NovaCompanyListPhase: String { case idle, loading, loaded, failed }

@@ -200,6 +200,13 @@ struct NovaAnalysisListStats: Equatable {
     let critical: Int
     let findings: Int
 
+    init(total: Int, critical: Int, findings: Int) {
+        self.total = max(0, total)
+        self.thisWeek = 0
+        self.critical = max(0, critical)
+        self.findings = max(0, findings)
+    }
+
     init(_ rows: [NovaAnalysisSummary], now: Date = Date()) {
         total = rows.count
         let boundary = now.addingTimeInterval(-7 * 24 * 60 * 60)
@@ -224,6 +231,13 @@ struct NovaAnalysisReportEntry: Equatable, Identifiable {
     let fileSize: Int?
     let analysisID: UUID?
     var createdAt: Date?
+    /// Personal archive reports keep their Supabase storage path. Workspace
+    /// exports instead point at a filed workspace asset.
+    var storagePath: String? = nil
+    var mimeType: String? = nil
+    var assetID: UUID? = nil
+    var downloadBucket: String? = nil
+    var downloadPath: String? = nil
 
     var isSpreadsheet: Bool { format.lowercased().contains("xls") || format.lowercased() == "excel" }
 
@@ -267,7 +281,7 @@ struct NovaAnalysisFileRequest: Equatable {
     var companyID: UUID? = nil
     let item: NovaAnalysisItem
     let section: NovaAnalysisSectionKind
-    let workplaceID: UUID
+    let workplaceID: UUID?
     let recordKind: NovaNonconformityRecordKind
     /// The band under the method the expert is reading the analysis with. Nil
     /// for every unscored section, and the server maps it only when no

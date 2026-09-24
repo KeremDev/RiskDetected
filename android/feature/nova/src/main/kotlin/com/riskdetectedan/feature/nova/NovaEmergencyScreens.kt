@@ -98,7 +98,8 @@ private fun EmergencyPlanCard(plan: NovaEmergencyPlan, modifier: Modifier, onCli
 /** Acil Durum Planları (iOS `NovaEmergencyPlanScreen`). */
 @Composable
 fun NovaEmergencyScreen(client: NovaEmergencyClient, canWrite: Boolean, onBack: () -> Unit, initialCompany: String? = null,
-                        headingOverride: String? = null, startInAddMode: Boolean = false) {
+                        headingOverride: String? = null, startInAddMode: Boolean = false, initialRecordId: String? = null) {
+    var showingWizard by remember { mutableStateOf(false) }
     val coroutines = rememberCoroutineScope()
     var board by remember { mutableStateOf<NovaEmergencyBoard?>(null) }
     var catalogue by remember { mutableStateOf<NovaEmergencyCatalogue?>(null) }
@@ -112,6 +113,13 @@ fun NovaEmergencyScreen(client: NovaEmergencyClient, canWrite: Boolean, onBack: 
     var draftCompany by remember { mutableStateOf<String?>(null) }
     // A draft the expert set aside; it is never published and never listed.
     var savedDraft by remember { mutableStateOf<NovaEmergencyPlanDraft?>(null) }
+    if (showingWizard) {
+        NovaDocumentWizardScreen("emergency", client.companies,
+            { company -> client.catalogue(company).workplaces.map { NovaWizardWorkplace(it.id, it.name) } },
+            client.files, query.company ?: initialCompany) { showingWizard = false }
+        return
+    }
+
     suspend fun load(reset: Boolean) {
         query = if (reset) query.copy(offset = 0) else query.copy(offset = query.offset + query.limit)
         loading = true; failure = null
@@ -146,6 +154,9 @@ fun NovaEmergencyScreen(client: NovaEmergencyClient, canWrite: Boolean, onBack: 
         return
     }
     LaunchedEffect(Unit) { load(true) }
+    LaunchedEffect(initialRecordId) {
+        if (initialRecordId != null) detail = runCatching { client.detail(initialRecordId) }.getOrNull()
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         NovaListHeading(headingOverride ?: NovaDestination.emergencyPlans.title, onBack) {
@@ -153,6 +164,7 @@ fun NovaEmergencyScreen(client: NovaEmergencyClient, canWrite: Boolean, onBack: 
                 draftCompany = null; drafting = savedDraft ?: NovaEmergencyPlanDraft(preparedOn = NovaDay.today())
             }, symbol = "plus", compact = true)
         }
+        if (canWrite) NovaButton("Sihirbaz ile taslak oluştur", { showingWizard = true }, symbol = "sparkles", variant = NovaButtonVariant.Surface)
         NovaHelpHint("Firmanın acil durum planını ve dosyasını ekleyin; geçerlilik tarihini buradan takip edin.")
         board?.let { shown ->
             val columns = if (novaFontScaleIsAccessibility()) 2 else 4
@@ -382,7 +394,7 @@ private fun EmergencyPlanSheet(initial: NovaEmergencyPlanDraft, catalogue: NovaE
     fun advance() {
         failure = null
         val valid = when (step) {
-            EmergencyStep.scope -> draft.workplaceId != null
+            EmergencyStep.scope -> workplaces.isEmpty() || draft.workplaceId != null
             EmergencyStep.dates -> {
                 val prepared = NovaDay.parse(draft.preparedOn); val until = NovaDay.parse(draft.validUntil)
                 prepared != null && until != null && until.isAfter(prepared)
@@ -406,14 +418,13 @@ private fun EmergencyPlanSheet(initial: NovaEmergencyPlanDraft, catalogue: NovaE
             AnimatedContent(step, transitionSpec = { fadeIn(NovaMotion.easeInOut(0.2)) togetherWith fadeOut(NovaMotion.easeInOut(0.2)) }, label = "emergencyStep") { current ->
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     when (current) {
-                        EmergencyStep.scope -> NovaCard(Modifier.fillMaxWidth(), padding = 12) {
+                        EmergencyStep.scope -> if (workplaces.isNotEmpty()) NovaCard(Modifier.fillMaxWidth(), padding = 12) {
                             FieldIcon("building.2") {
                                 when {
                                     draft.isRenewal || workplaces.size == 1 -> {
                                         NovaText("İşyeri", style = NovaTypeToken.label)
                                         NovaText(workplaceTitle, style = NovaTypeToken.cardTitle)
                                     }
-                                    workplaces.isEmpty() -> NovaText("Bu firmada kayıt açılacak bir işyeri yok.", style = NovaTypeToken.metaQuiet)
                                     else -> {
                                         NovaChooserButton("İşyeri", workplaceTitle, "nova.emergency.form.workplace", open = choosingWorkplace) {
                                             choosingWorkplace = !choosingWorkplace

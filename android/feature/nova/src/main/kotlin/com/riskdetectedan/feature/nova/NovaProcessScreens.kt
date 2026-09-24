@@ -233,7 +233,7 @@ fun NovaProcessEditor(client: NovaProcessClient, kind: String, company: String, 
     val valid = run {
         if (kind == "personnel_certificate" && (!automaticDeadline || text("due_override") == "true") && text("valid_until").isEmpty()) return@run false
         if (kind == "site_visit" && text("duration_minutes").isNotEmpty() && text("duration_minutes").toIntOrNull()?.let { it in 1..1440 } != true) return@run false
-        spec.fields.filter { it.required }.all { field ->
+        spec.fields.filter { it.required && !(it.type == "workplaces" && catalogue?.workplaces?.isEmpty() == true) }.all { field ->
             when (val value = values[field.id]) { is JsonArray -> value.isNotEmpty(); else -> value.novaText().isNotBlank() }
         }
     }
@@ -362,7 +362,7 @@ fun NovaProcessEditor(client: NovaProcessClient, kind: String, company: String, 
         kind == "site_visit" -> {
             val stepTitle = listOf("İşyeri", "Tarih ve süre", "Ziyaret ayrıntıları", "Dosya ve kontrol")[visitStep]
             val stepValid = when (visitStep) {
-                0 -> text("workplace_id").isNotEmpty()
+                0 -> catalogue?.workplaces?.isEmpty() == true || text("workplace_id").isNotEmpty()
                 1 -> text("visited_on").isNotEmpty() && (text("duration_minutes").isEmpty() || text("duration_minutes").toIntOrNull()?.let { it in 1..1440 } == true)
                 2 -> text("expert_note").isNotBlank()
                 else -> valid
@@ -385,9 +385,9 @@ fun NovaProcessEditor(client: NovaProcessClient, kind: String, company: String, 
                 else if (loadedCatalogue == null) NovaTaskErrorSummary(failure ?: "Ziyaret formu hazırlanamadı.")
                 else when (visitStep) {
                     0 -> {
-                        NovaText("İşyeri", style = NovaTypeToken.sectionTitle)
-                        NovaHelpHint("Ziyaretin yapıldığı işyerini seçin. Bu seçim sonraki adımlara otomatik taşınır.")
-                        spec.fields.firstOrNull { it.id == "workplace_id" }?.let { ProcessFieldRow(it, loadedCatalogue, fieldContext) }
+                        NovaText(if (loadedCatalogue.workplaces.isEmpty()) "Firma kapsamı" else "İşyeri", style = NovaTypeToken.sectionTitle)
+                        NovaHelpHint(if (loadedCatalogue.workplaces.isEmpty()) "Ziyaret seçili firma kapsamında kaydedilecek." else "Ziyaretin yapıldığı işyerini seçin. Bu seçim sonraki adımlara otomatik taşınır.")
+                        if (loadedCatalogue.workplaces.isNotEmpty()) spec.fields.firstOrNull { it.id == "workplace_id" }?.let { ProcessFieldRow(it, loadedCatalogue, fieldContext) }
                     }
                     1 -> {
                         NovaText("Tarih, saat ve süre", style = NovaTypeToken.sectionTitle)
@@ -411,7 +411,7 @@ fun NovaProcessEditor(client: NovaProcessClient, kind: String, company: String, 
                         NovaCard(Modifier.fillMaxWidth(), padding = 14) {
                             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                                 NovaText("Ziyaret özeti", style = NovaTypeToken.bodyStrong)
-                                SummaryRow("İşyeri", loadedCatalogue.workplaces.firstOrNull { it.id.equals(text("workplace_id"), true) }?.name ?: "—")
+                                SummaryRow(if (loadedCatalogue.workplaces.isEmpty()) "Firma" else "İşyeri", loadedCatalogue.workplaces.firstOrNull { it.id.equals(text("workplace_id"), true) }?.name ?: if (loadedCatalogue.workplaces.isEmpty()) "Firma geneli" else "—")
                                 SummaryRow("Tarih", text("visited_on").ifEmpty { null }?.let(NovaDay::label) ?: "—")
                                 SummaryRow("Süre", text("duration_minutes").ifEmpty { null }?.let { "$it dk" } ?: "Belirtilmedi")
                                 SummaryRow("Görüşülen kişi", text("responsible_contact").ifEmpty { "Belirtilmedi" })
@@ -427,7 +427,7 @@ fun NovaProcessEditor(client: NovaProcessClient, kind: String, company: String, 
             onPrimary = {
                 failure = null
                 when {
-                    processStep == 0 && !visibleFields.filter { it.type in scopeTypes && it.required }.all { text(it.id).isNotEmpty() } -> failure = "Kapsam seçimini tamamlayın."
+                    processStep == 0 && !visibleFields.filter { it.type in scopeTypes && it.required && !(it.type == "workplaces" && catalogue?.workplaces?.isEmpty() == true) }.all { text(it.id).isNotEmpty() } -> failure = "Kapsam seçimini tamamlayın."
                     processStep == 3 && !valid -> failure = "Zorunlu alanları ve tarihleri kontrol edin."
                     processStep == 3 -> save()
                     else -> processStep++
@@ -440,8 +440,8 @@ fun NovaProcessEditor(client: NovaProcessClient, kind: String, company: String, 
                 0 -> {
                     NovaText("Kapsam", style = NovaTypeToken.sectionTitle)
                     NovaHelpHint("Firma seçimi korunur; işyeri ve ilgili kapsam sonraki adımlara otomatik taşınır.")
-                    visibleFields.filter { it.type in scopeTypes }.forEach { ProcessFieldRow(it, loadedCatalogue, fieldContext) }
-                    if (visibleFields.none { it.type in scopeTypes }) NovaFormValueRow("Firma kapsamı", "building.2") { NovaText("Seçili firma", style = NovaTypeToken.bodyStrong) }
+                    visibleFields.filter { it.type in scopeTypes && !(it.type == "workplaces" && loadedCatalogue.workplaces.isEmpty()) }.forEach { ProcessFieldRow(it, loadedCatalogue, fieldContext) }
+                    if (visibleFields.none { it.type in scopeTypes && !(it.type == "workplaces" && loadedCatalogue.workplaces.isEmpty()) }) NovaFormValueRow("Firma kapsamı", "building.2") { NovaText("Seçili firma", style = NovaTypeToken.bodyStrong) }
                 }
                 1 -> {
                     NovaText("Kayıt bilgileri", style = NovaTypeToken.sectionTitle)
@@ -481,11 +481,11 @@ fun NovaProcessEditor(client: NovaProcessClient, kind: String, company: String, 
                 val loadedCatalogue = catalogue
                 if (loading) NovaLoadingView("Kayıt yükleniyor…", Modifier.heightIn(max = 200.dp))
                 if (loadedCatalogue != null && !loading) {
-                    val ordered = when (kind) {
+                    val ordered = (when (kind) {
                         // Company scope and meeting date first.
                         "board" -> visibleFields.sortedBy { when (it.id) { "workplace_id" -> 0; "planned_on" -> 1; else -> 2 } }
                         else -> visibleFields
-                    }
+                    }).filterNot { it.type == "workplaces" && loadedCatalogue.workplaces.isEmpty() }
                     if (automaticDeadline) NovaHelpHint(deadlineHint(kind, text(if (kind == "completed_drill") "held_on" else "issued_on"), row))
                     if (kind == "katip_contract") {
                         ordered.filter { it.id !in setOf("starts_on", "ends_before") && ordered.indexOf(it) < ordered.indexOfFirst { f -> f.id == "starts_on" } }
@@ -649,7 +649,8 @@ private fun ProcessControl(field: NovaProcessField, catalogue: NovaProcessPage, 
         "workplaces", "organizations" -> {
             val options = if (field.type == "workplaces") catalogue.workplaces else catalogue.organizations
             // No workplace to choose from, or exactly one: nothing to ask.
-            if (field.type == "workplaces" && options.size <= 1) NovaText(options.firstOrNull()?.name ?: "Bu firmada kayıt açılacak bir işyeri yok.", style = NovaTypeToken.cardTitle)
+                    if (field.type == "workplaces" && options.isEmpty()) Unit
+                    else if (field.type == "workplaces" && options.size == 1) NovaText(options[0].name, style = NovaTypeToken.cardTitle)
             else {
                 NovaChooserButton(field.title, options.firstOrNull { it.id.equals(value, true) }?.name ?: "Seçin", "process.${field.type}.${field.id}", open = open) { open = !open }
                 if (open) NovaChooserPanel(options.map { NovaChooserOption(it.id, it.name) }, options.firstOrNull { it.id.equals(value, true) }?.id,

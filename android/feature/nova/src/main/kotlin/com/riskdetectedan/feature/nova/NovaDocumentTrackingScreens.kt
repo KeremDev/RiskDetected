@@ -21,6 +21,7 @@ import kotlinx.coroutines.CancellationException
 class NovaDocumentTrackingClient(
     val portfolio: suspend (NovaDocumentQuery) -> NovaDocumentPortfolio,
     val companies: suspend () -> List<NovaCompanyOption>,
+    val detail: (suspend (String, String) -> NovaDocumentObligation)? = null,
 )
 
 /**
@@ -29,7 +30,8 @@ class NovaDocumentTrackingClient(
  * locked company). The list is a tally of tracked documents, never a verdict about the company.
  */
 @Composable
-internal fun NovaDocumentTrackingScreen(client: NovaDocumentTrackingClient, company: String, heading: String, onBack: () -> Unit) {
+internal fun NovaDocumentTrackingScreen(client: NovaDocumentTrackingClient, company: String, heading: String, onBack: () -> Unit,
+                                       initialRecordId: String? = null) {
     var board by remember { mutableStateOf<NovaDocumentPortfolio?>(null) }
     var companies by remember { mutableStateOf(emptyList<NovaCompanyOption>()) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -41,6 +43,9 @@ internal fun NovaDocumentTrackingScreen(client: NovaDocumentTrackingClient, comp
     var reload by remember { mutableIntStateOf(0) }
     BackHandler(onBack = onBack)
     LaunchedEffect(Unit) { companies = runCatching { client.companies() }.getOrDefault(emptyList()) }
+    LaunchedEffect(initialRecordId) {
+        if (initialRecordId != null) inspecting = runCatching { client.detail?.invoke(company, initialRecordId) }.getOrNull()
+    }
     LaunchedEffect(reload, status, company, shown) {
         error = null; loading = true
         try {

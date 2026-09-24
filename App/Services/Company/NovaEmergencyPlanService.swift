@@ -177,11 +177,11 @@ import Foundation
     /// publishing the next version, and the one before it keeps everything.
     func publish(_ identity: NovaSessionIdentity, company: UUID,
                  draft: NovaEmergencyPlanDraft) async throws -> NovaEmergencyPlan? {
-        guard let workplace = draft.workplaceID, !draft.team.isEmpty else {
+        guard !draft.team.isEmpty else {
             throw NovaEmergencyFailure.validation
         }
         var payload: [String: PersonnelRPCValue] = [
-            "workplace_id": .id(workplace),
+            "workplace_id": draft.workplaceID.map(PersonnelRPCValue.id) ?? .null,
             "scope": .string(draft.scope.trimmingCharacters(in: .whitespacesAndNewlines)),
             "prepared_on": .string(draft.preparedOn),
             // Only the three keys the server's snapshot check accepts.

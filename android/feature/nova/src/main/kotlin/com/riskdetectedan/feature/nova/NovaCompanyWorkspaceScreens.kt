@@ -261,6 +261,7 @@ fun NovaCompanyWorkspaceScreen(client: NovaCompanyWorkspaceClient, companyId: St
         }
         val loading = "Yükleniyor…"
         fun status(section: NovaCompanySection): Pair<String, NovaStatus>? {
+            if (section == NovaCompanySection.handover) return null
             sectionKind(section)?.let { kind ->
                 trackingSummary(tracking, kind)?.let { row ->
                     return when {
@@ -295,6 +296,7 @@ fun NovaCompanyWorkspaceScreen(client: NovaCompanyWorkspaceClient, companyId: St
             return null
         }
         fun detail(section: NovaCompanySection): String = when {
+            section == NovaCompanySection.handover -> "Düzenlenebilir Word örneği"
             section == NovaCompanySection.risk -> risk?.let { "${it.total} kayıt" } ?: loading
             section == NovaCompanySection.inspections -> equipment?.let { "${it.total} ekipman" } ?: loading
             section == NovaCompanySection.training -> completedTrainings?.let { "$it tamamlanan eğitim" } ?: loading
@@ -345,10 +347,10 @@ fun NovaCompanyWorkspaceScreen(client: NovaCompanyWorkspaceClient, companyId: St
         CompanyCategory("Eğitim ve organizasyon") { sectionRow(NovaCompanySection.training); sectionRow(NovaCompanySection.board) }
         CompanyCategory("Diğer kayıtlar") {
             sectionRow(NovaCompanySection.files)
-            sectionRow(NovaCompanySection.handover)
             directoryRow(NovaDirectoryKind.jobs, "briefcase")
             directoryRow(NovaDirectoryKind.contractors, "building.2")
         }
+        CompanyCategory("Örnek formlar") { sectionRow(NovaCompanySection.handover) }
         if (!canWrite) NovaHelpHint("Salt okunur · kayıtlarınız korunuyor. Yeni kayıt ve düzenleme şu anda kullanılamıyor.")
     }
 }

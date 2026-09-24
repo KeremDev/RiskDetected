@@ -244,11 +244,11 @@ import Foundation
     func register(_ identity: NovaSessionIdentity, company: UUID,
                   draft: NovaEquipmentDraft) async throws -> NovaEquipmentItem {
         try check(identity)
-        guard draft.isReady, let type = draft.equipmentType, let workplace = draft.workplaceID else {
+        guard draft.isReady, let type = draft.equipmentType else {
             throw NovaEquipmentFailure.validation
         }
         var payload: [String: PersonnelRPCValue] = [
-            "workplace_id": .id(workplace), "equipment_type": .string(type),
+            "workplace_id": .id(draft.workplaceID), "equipment_type": .string(type),
             "serial_tag": .string(draft.serialTag.trimmingCharacters(in: .whitespacesAndNewlines))]
         payload["acquired_on"] = Self.trimmed(draft.acquiredOn).map { .string($0) } ?? .null
         payload["location_note"] = Self.trimmed(draft.locationNote).map { .string($0) } ?? .null

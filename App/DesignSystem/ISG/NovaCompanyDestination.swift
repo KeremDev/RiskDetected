@@ -9,6 +9,7 @@ struct NovaCompanyDestination: View {
     let onSelect: (UUID) -> Void
     let onBack: () -> Void
     var onCreate: (() -> Void)? = nil
+    var loadLogo: NovaCompanyLogoLoader? = nil
     @State private var state = NovaCompanyListState()
     @State private var refresh = UUID()
 
@@ -17,7 +18,7 @@ struct NovaCompanyDestination: View {
         let current = state.content(host: host, includeArchived: includeArchived)
         let epoch = host.navigation.epoch
         NovaCompaniesScreen(companies: current.rows.map { .init(id: $0.id.uuidString.lowercased(), name: $0.name, detail: $0.detail,
-            progressCompleted: $0.progressCompleted, progressTotal: $0.progressTotal) },
+            progressCompleted: $0.progressCompleted, progressTotal: $0.progressTotal, logoPath: $0.logoPath) },
             isLoading: current.phase == .loading || current.phase == .idle,
             error: current.phase == .failed ? RDLocalization.string("localizable.nova.company.error.companies.not.loaded", table: .localizable, fallback: "Firmalar yüklenemedi. Lütfen tekrar deneyin.") : nil,
             isOwnedList: true,
@@ -25,7 +26,8 @@ struct NovaCompanyDestination: View {
                 guard let id = UUID(uuidString: raw), let selected = state.select(id, requestID: current.requestID, host: host, includeArchived: includeArchived) else { return }
                 onSelect(selected.id)
             }, onBack: { if host.isCurrent(epoch) { onBack() } },
-            onRetry: { if host.isCurrent(epoch) { refresh = UUID() } }, onCreate: onCreate)
+            onRetry: { if host.isCurrent(epoch) { refresh = UUID() } }, onCreate: onCreate,
+            loadLogo: loadLogo)
         .id(epoch) // The previous account's search text/focus must not survive the host boundary.
         .task(id: LoadKey(epoch: epoch, archived: includeArchived, refresh: refresh)) {
             guard let ticket = state.begin(host: host, includeArchived: includeArchived) else { return }

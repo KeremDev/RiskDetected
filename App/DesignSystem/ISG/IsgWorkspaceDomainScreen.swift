@@ -1183,12 +1183,12 @@ private struct IsgWorkspaceDomainActionEditor: View {
             picker("Durum", values: ["reusable", "worn", "damaged", "lost"])
             textField("Not", text: $note)
         case .equipmentEdit:
-            Picker(RDLocalization.string("localizable.isg.workspace.domain.screen.isyeri.54980c69", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
+            if !workplaces.isEmpty { Picker(RDLocalization.string("localizable.isg.workspace.domain.screen.isyeri.54980c69", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
                 Text(RDLocalization.string("localizable.isg.workspace.domain.screen.isyeri.secin.506239f3", table: .localizable, fallback: "İşyeri seçin")).tag(Optional<UUID>.none)
                 ForEach(workplaces.keys.sorted { (workplaces[$0] ?? "") < (workplaces[$1] ?? "") }, id: \.self) { id in
                     Text(workplaces[id] ?? id.uuidString).tag(Optional(id))
                 }
-            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14) }
             textField("Seri / kod", text: $serialTag)
             textField("Konum (isteğe bağlı)", text: $locationNote)
             compactDate("Edinme tarihi", selection: $date, limitToToday: true)
@@ -1359,7 +1359,7 @@ private struct IsgWorkspaceDomainActionEditor: View {
         case .equipmentInspect:
             return row.version != nil && equipmentStepComplete(.control) && equipmentStepComplete(.details)
         case .equipmentEdit:
-            return row.version != nil && workplaceID != nil && !serialTag.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && date <= Date()
+            return row.version != nil && (workplaces.isEmpty || workplaceID != nil) && !serialTag.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && date <= Date()
         case .equipmentRule:
             return !fact("equipment_type", default: "").isEmpty && (1...240).contains(number) &&
                 (option != "unapproved_fixture" || note.trimmingCharacters(in: .whitespacesAndNewlines).count >= 10)
@@ -1656,7 +1656,6 @@ private struct IsgWorkspaceDomainActionEditor: View {
                            "katip_declared": .bool(katipDeclared),
                            "katip_note": katipDeclared && !katipNote.isEmpty ? .string(katipNote) : .null])
         case .equipmentEdit:
-            guard let workplaceID else { return nil }
             return merged(["action": .string("update"), "workplace_id": .id(workplaceID),
                            "serial_tag": .string(serialTag.trimmingCharacters(in: .whitespacesAndNewlines)),
                            "acquired_on": .string(Self.day(date)),

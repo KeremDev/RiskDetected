@@ -1156,18 +1156,10 @@ struct NovaEquipmentAddSheet: View {
         }
     }
 
-    // A company with no workplace has nothing to ask, and one with exactly
-    // one gets it silently — only a real choice among several is shown.
+    // Company-only records have no workplace control. When workplaces exist,
+    // show the selected one and let the user change it.
     @ViewBuilder private var workplacePicker: some View {
-        if workplaces.count <= 1 {
-            VStack(alignment: .leading, spacing: 4) {
-                NovaText(text: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
-                    style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-                NovaText(text: workplaces.first?.name
-                    ?? RDLocalization.string("localizable.nova.equipment.noworkplace", table: .localizable,
-                        fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .cardTitle)
-            }
-        } else {
+        if !workplaces.isEmpty {
             NovaFileChooserButton(
                 label: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
                 value: workplaces.first { $0.id == draft.workplaceID }?.name
@@ -1236,11 +1228,13 @@ struct NovaEquipmentEditSheet: View {
                 // The type is what the period hangs on, so it is shown and not
                 // edited: a different type is a different item.
                 NovaText(text: NovaEquipmentWords.type(item.equipmentType), style: .metaQuiet)
-                NovaFileChooserButton(
-                    label: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
-                    value: workplaces.first { $0.id == draft.workplaceID }?.name ?? "—",
-                    symbol: "building.2", isOpen: choosing, identifier: "equipment.edit.workplace") { choosing.toggle() }
-                if choosing {
+                if !workplaces.isEmpty {
+                    NovaFileChooserButton(
+                        label: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
+                        value: workplaces.first { $0.id == draft.workplaceID }?.name ?? "Firma geneli",
+                        symbol: "building.2", isOpen: choosing, identifier: "equipment.edit.workplace") { choosing.toggle() }
+                }
+                if choosing && !workplaces.isEmpty {
                     NovaFileChooserPanel(
                         options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
                         selected: draft.workplaceID?.uuidString, identifier: "equipment.edit.workplace") { picked in

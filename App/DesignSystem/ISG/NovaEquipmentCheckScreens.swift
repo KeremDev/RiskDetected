@@ -50,6 +50,7 @@ struct NovaEquipmentCheckScreen: View {
     var canWrite = true
     /// Opened from a company page: that company is already the answer.
     var initialCompany: UUID?
+    var initialRecordID: UUID?
     /// Opened from the company page's own "Ekipman ekle" action: skip
     /// straight to the add sheet instead of landing on the inventory first.
     var startInAddMode = false
@@ -125,6 +126,10 @@ struct NovaEquipmentCheckScreen: View {
             }
         }
         .task(id: reload) { await refresh() }
+        .task(id: initialRecordID) {
+            guard let initialRecordID else { return }
+            inspecting = try? await client.detail(initialRecordID)
+        }
         .onChange(of: group) { _ in shown = NovaEquipmentQuery().limit; reload = UUID() }
         .onChange(of: equipmentType) { _ in shown = NovaEquipmentQuery().limit; reload = UUID() }
         .onChange(of: company) { value in

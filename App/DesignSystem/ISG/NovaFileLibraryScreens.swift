@@ -23,6 +23,7 @@ struct NovaFileLibraryClient {
     /// The same download, for a caller that only has a bucket/path a module's
     /// own row resolved rather than a whole library entry.
     let download: (String, String) async throws -> Data
+    var detail: ((UUID) async throws -> NovaFileEntry)? = nil
 }
 
 /// One counter, in the same shape the home page uses for its summary: a toned
@@ -186,6 +187,8 @@ struct NovaFileLibraryScreen: View {
     var canWrite = true
     /// Opened from a company page: that company is already the answer.
     var initialCompany: UUID?
+    /// A tracker row opens this exact archive entry, even when it is beyond the first page.
+    var initialEntryID: UUID?
     /// Opens onto one heading of the company page, such as periodic checks.
     var initialCategories: [String]?
     var headingOverride: String?
@@ -264,6 +267,11 @@ struct NovaFileLibraryScreen: View {
             }
         }
         .task(id: reload) { await refresh() }
+        .task(id: initialEntryID) {
+            guard let initialEntryID, let detail = client.detail else { return }
+            do { inspecting = try await detail(initialEntryID) }
+            catch { self.error = "Dosya detayı açılamadı. Yeniden deneyin." }
+        }
         .onChange(of: group) { _ in shown = NovaFileQuery().limit; reload = UUID() }
         .onChange(of: category) { _ in shown = NovaFileQuery().limit; reload = UUID() }
         .onChange(of: company) { _ in

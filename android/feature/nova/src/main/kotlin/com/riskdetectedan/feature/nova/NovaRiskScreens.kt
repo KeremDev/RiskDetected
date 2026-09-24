@@ -4,13 +4,11 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.selected
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,10 +17,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -39,7 +40,7 @@ interface NovaRiskClient {
     suspend fun catalogue(company: String?): NovaRiskCatalogue
     suspend fun board(query: NovaRiskQuery): NovaRiskBoard
     suspend fun detail(id: String): NovaRiskRow
-    suspend fun open(company: String, workplace: String): NovaRiskRow?
+    suspend fun open(company: String, workplace: String?): NovaRiskRow?
     suspend fun draft(company: String, draft: NovaRiskVersionDraft): NovaRiskRow?
     suspend fun finalize(company: String, draft: NovaRiskFinalizeDraft): NovaRiskRow?
     suspend fun cancelDraft(company: String, row: NovaRiskRow, version: NovaRiskVersion, reason: String): NovaRiskRow?
@@ -50,7 +51,7 @@ class NovaServiceRiskClient(private val service: NovaRiskService, private val id
     override suspend fun catalogue(company: String?) = service.catalogue(identity, company)
     override suspend fun board(query: NovaRiskQuery) = service.board(identity, query)
     override suspend fun detail(id: String) = service.detail(identity, id)
-    override suspend fun open(company: String, workplace: String) = service.open(identity, company, workplace)
+    override suspend fun open(company: String, workplace: String?) = service.open(identity, company, workplace)
     override suspend fun draft(company: String, draft: NovaRiskVersionDraft) = service.draft(identity, company, draft)
     override suspend fun finalize(company: String, draft: NovaRiskFinalizeDraft) = service.finalize(identity, company, draft)
     override suspend fun cancelDraft(company: String, row: NovaRiskRow, version: NovaRiskVersion, reason: String) =
@@ -92,9 +93,25 @@ private fun RiskStatCard(group: NovaRiskGroup, value: Int, modifier: Modifier = 
         verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
             NovaIcon(group.symbol, 12.dp, tint = tint)
-            NovaSizedText(value.toString(), 19f, FontWeight.SemiBold, NovaColorToken.text.color(), maxLines = 1)
+            NovaSizedText(value.toString(), 16f, FontWeight.SemiBold, NovaColorToken.text.color(), maxLines = 1)
         }
         NovaSizedText(group.title, 11f, FontWeight.Medium, NovaColorToken.textSecondary.color(), maxLines = 2)
+    }
+}
+
+@Composable
+private fun RiskFilterButton(label: String, value: String, identifier: String, modifier: Modifier = Modifier,
+                             open: Boolean = false, selected: Boolean = false, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(13.dp)
+    Row(modifier.heightIn(min = 44.dp).clip(shape).novaControlBackground(13.dp)
+        .border(1.dp, if (selected || open) Color(0xFF0B2F53).copy(alpha = if (selected) 0.62f else 0.42f) else NovaColorToken.border.color(), shape)
+        .novaRowPress(onClick = onClick).testTag(identifier)
+        .semantics { contentDescription = "$label: $value"; stateDescription = value }
+        .padding(horizontal = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+        NovaSizedText(value, 12f, if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            if (selected) Color(0xFF0B2F53) else NovaColorToken.text.color(), Modifier.weight(1f), maxLines = 1)
+        NovaIcon(if (open) "chevron.up" else "chevron.down", 12.dp, tint = NovaColorToken.textTertiary.color())
     }
 }
 
@@ -103,7 +120,7 @@ private fun RiskStatCard(group: NovaRiskGroup, value: Int, modifier: Modifier = 
 @Composable
 private fun RiskRowCard(row: NovaRiskRow, modifier: Modifier, onClick: () -> Unit) {
     NovaCard(modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).novaRowPress(onClick = onClick).testTag("nova.risk.row.${row.id}"), padding = 14) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     NovaText(row.companyName ?: row.workplaceName ?: "İşyeri", style = NovaTypeToken.cardTitle)
@@ -113,10 +130,15 @@ private fun RiskRowCard(row: NovaRiskRow, modifier: Modifier, onClick: () -> Uni
                 Box(Modifier.size(8.dp).background(row.group.statusDot(), CircleShape)
                     .semantics { contentDescription = row.state.title })
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                row.validUntil?.let { RiskFact("calendar", "Geçerlilik", NovaDay.label(it)) }
-                row.periodYears?.let { RiskFact("clock.arrow.circlepath", "Süre", "$it yıl") }
-                if (row.currentVersion > 0) RiskFact("number", "Sürüm", "v${row.currentVersion}")
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                val metadata = listOfNotNull(row.validUntil?.let { NovaDay.label(it) }, row.periodYears?.let { "$it yıl" },
+                    row.currentVersion.takeIf { it > 0 }?.let { "v$it" })
+                metadata.forEachIndexed { index, item ->
+                    if (index > 0) NovaText("·", style = NovaTypeToken.metaQuiet)
+                    NovaText(item, style = NovaTypeToken.metaQuiet, maxLines = 1)
+                }
+                Spacer(Modifier.weight(1f))
+                NovaIcon("chevron.right", 12.dp, tint = NovaColorToken.textSubtle.color())
             }
             // Everything that needs the expert's eye, never folded into the state pill.
             if (row.hasOpenDraft || row.sourceDrift || row.dateNeedsReview) FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -140,11 +162,28 @@ private fun RiskFact(symbol: String, label: String, value: String) {
     }
 }
 
+@Composable
+private fun RiskActionButton(label: String, symbol: String, fill: Color, ink: Color,
+                             modifier: Modifier = Modifier, accessibilityLabel: String = label,
+                             border: Color, symbolTint: Color = ink, onClick: () -> Unit) {
+    Row(modifier.height(44.dp).clip(RoundedCornerShape(14.dp)).background(fill)
+        .border(1.dp, border, RoundedCornerShape(14.dp))
+        .novaPress(onClickLabel = accessibilityLabel, onClick = onClick)
+        .semantics(mergeDescendants = true) { contentDescription = accessibilityLabel }
+        .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically) {
+        NovaIcon(symbol, 16.dp, tint = symbolTint)
+        NovaSizedText(label, 12f, FontWeight.SemiBold, ink, maxLines = 1)
+    }
+}
+
 /** Risk Değerlendirmesi: the whole account in one read, narrowed to a company on request. */
 @Composable
 fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit, initialCompany: String? = null,
-                   headingOverride: String? = null, startInAddMode: Boolean = false) {
+                   headingOverride: String? = null, startInAddMode: Boolean = false, initialRecordId: String? = null) {
     if (startInAddMode) { RiskAddFlow(client, initialCompany, onBack); return }
+    var showingWizard by remember { mutableStateOf(false) }
     val coroutines = rememberCoroutineScope()
     var board by remember { mutableStateOf<NovaRiskBoard?>(null) }
     var catalogue by remember { mutableStateOf<NovaRiskCatalogue?>(null) }
@@ -153,11 +192,27 @@ fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit
     var loading by remember { mutableStateOf(true) }
     var failure by remember { mutableStateOf<String?>(null) }
     var chooser by remember { mutableStateOf<String?>(null) }
+    var showingPeriodInfo by remember { mutableStateOf(false) }
+    var sortAscending by remember { mutableStateOf(true) }
     var detail by remember { mutableStateOf<NovaRiskRow?>(null) }
     var newVersion by remember { mutableStateOf<NovaRiskVersionDraft?>(null) }
     var cancelling by remember { mutableStateOf<NovaRiskRow?>(null) }
     var finalizing by remember { mutableStateOf<NovaRiskFinalizeDraft?>(null) }
     var creating by remember { mutableStateOf(false) }
+    val headerContext = LocalNovaHeaderContext.current
+    DisposableEffect(headerContext?.current) {
+        if (headerContext?.current == NovaDestination.riskAssessments) headerContext.setPageBackAction(onBack)
+        onDispose {
+            if (headerContext?.current == NovaDestination.riskAssessments) headerContext.setPageBackAction(null)
+        }
+    }
+    if (showingWizard) {
+        NovaRiskWizardScreen(client.companies,
+            { company -> client.catalogue(company).workplaces.map { NovaWizardWorkplace(it.id, it.name) } },
+            { client.files }, query.company ?: initialCompany) { showingWizard = false }
+        return
+    }
+
     suspend fun load(reset: Boolean) {
         query = if (reset) query.copy(offset = 0) else query.copy(offset = query.offset + query.limit)
         loading = true; failure = null
@@ -167,19 +222,40 @@ fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit
             val answer = client.board(query)
             board = if (reset || board == null) answer else board!!.copy(rows = board!!.rows + answer.rows, counts = answer.counts,
                 companies = answer.companies, total = answer.total, hasMore = answer.hasMore, offset = answer.offset)
+            headerContext?.setPageSummary(NovaHeaderSummary(headingOverride ?: NovaDestination.riskAssessments.title,
+                answer.total, answer.count(NovaRiskGroup.dueSoon)))
         } catch (error: Exception) { failure = riskMessage(error) }
         loading = false
     }
     fun reload() = coroutines.launch { load(true) }
     LaunchedEffect(Unit) { load(true) }
+    LaunchedEffect(initialRecordId) {
+        if (initialRecordId != null) detail = runCatching { client.detail(initialRecordId) }.getOrNull()
+    }
     if (creating) { RiskAddFlow(client, null) { creating = false; reload() }; return }
     val companyOf: (String?) -> String? = { assessment -> query.company ?: board?.rows?.firstOrNull { it.id == assessment }?.companyId }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        NovaListHeading(headingOverride ?: NovaDestination.riskAssessments.title, onBack) {
-            if (canWrite) NovaButton("Kayıt Ekle", { creating = true }, symbol = "plus", compact = true)
+        if (headerContext?.current != NovaDestination.riskAssessments) NovaBackButton(onClick = onBack)
+        if (canWrite) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            RiskActionButton("Kayıt Ekle", "plus", Color(0xFFEAF1F7), Color(0xFF0B2F53),
+                Modifier.weight(0.4f).testTag("nova.risk.create"), "Kayıt Ekle", Color(0xFFD5E1EB)) { creating = true }
+            RiskActionButton("Sihirbaz ile Oluştur", "sparkles", Color(0xFFFFF7DE), Color(0xFF0B2F53),
+                Modifier.weight(0.6f).testTag("nova.risk.wizard"), "Sihirbaz ile oluştur", Color(0xFFEFE3BC), Color(0xFFD89500)) {
+                showingWizard = true
+            }
         }
-        NovaHelpHint("Firmanın risk analizini, kapsamını ve dosyasını kaydedin; güncel sürümünü takip edin. ${NovaRiskWords.periodAttribution}")
+        NovaCard(Modifier.fillMaxWidth(), padding = 10) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                NovaIcon("lightbulb", 14.dp, tint = NovaColorToken.statusWarningInk.color())
+                NovaText("Geçerlilik süresi kayıt bazında belirlenir.", Modifier.weight(1f), NovaTypeToken.metaQuiet,
+                    NovaColorToken.textSecondary.color())
+                Box(Modifier.heightIn(min = 32.dp).novaRowPress { showingPeriodInfo = true }
+                    .testTag("nova.risk.period.info.open"), contentAlignment = Alignment.Center) {
+                    NovaText("Detay", style = NovaTypeToken.meta, color = Color(0xFF0B2F53))
+                }
+            }
+        }
         board?.let { current ->
             val columns = if (novaFontScaleIsAccessibility()) 2 else 4
             NovaRiskGroup.entries.chunked(columns).forEach { chunk ->
@@ -193,12 +269,24 @@ fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit
                 }
             }
         }
+        NovaSearchCapsule(query.search, "Firma veya işyeri ara", "nova.risk.search") { query = query.copy(search = it) }
+        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NovaChooserButton("Firma", companies.firstOrNull { it.id == query.company }?.name ?: "Tüm firmalar", "nova.risk.chooser.company",
+            RiskFilterButton("Firma", companies.firstOrNull { it.id == query.company }?.name ?: "Tüm firmalar", "nova.risk.chooser.company",
                 Modifier.weight(1f), open = chooser == "company") { chooser = if (chooser == "company") null else "company" }
             val stateTitle = query.state?.let { value -> NovaRiskGroup.ofWire(value)?.title ?: NovaRiskState.of(value)?.title } ?: "Tüm durumlar"
-            NovaChooserButton("Durum", stateTitle, "nova.risk.chooser.state", Modifier.weight(1f), open = chooser == "state") {
+            RiskFilterButton("Durum", stateTitle, "nova.risk.chooser.state", Modifier.weight(1f),
+                open = chooser == "state", selected = query.state != null) {
                 chooser = if (chooser == "state") null else "state"
+            }
+            Row(Modifier.weight(1f).heightIn(min = 44.dp).clip(RoundedCornerShape(13.dp))
+                .novaControlBackground(13.dp).border(1.dp, NovaColorToken.border.color(), RoundedCornerShape(13.dp))
+                .novaRowPress { sortAscending = !sortAscending }.testTag("nova.risk.sort")
+                .semantics { contentDescription = "Geçerlilik tarihine göre sırala"; stateDescription = if (sortAscending) "En eski önce" else "En yeni önce" }
+                .padding(horizontal = 9.dp), horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                NovaIcon("arrow.up.arrow.down", 12.dp, tint = NovaColorToken.textSecondary.color())
+                NovaSizedText("Sırala", 12f, FontWeight.Medium, NovaColorToken.textSecondary.color(), maxLines = 1)
             }
         }
         if (chooser == "company") NovaChooserPanel(listOf(NovaChooserOption(null, "Tüm firmalar")) + companies.map { NovaChooserOption(it.id, it.name) },
@@ -209,26 +297,40 @@ fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit
                 .map { NovaChooserOption(it.wire, it.title, board?.counts?.get(it.wire)) }, query.state, "nova.risk.panel.state") {
             query = query.copy(state = it); chooser = null; reload()
         }
-        NovaSearchCapsule(query.search, "İşyeri veya firma ara", "nova.risk.search") { query = query.copy(search = it) }
-        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         val current = board
         when {
             loading && current == null -> Box(Modifier.fillMaxWidth().padding(vertical = 30.dp), contentAlignment = Alignment.Center) {
                 NovaSpinner(NovaColorToken.text.color(), size = 24.dp)
             }
             failure != null -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText(failure!!, color = NovaColorToken.statusDangerInk.color()) }
-            current != null && current.rows.isEmpty() -> NovaEmptyState("Henüz risk değerlendirmesi kaydı yok",
-                "Risk değerlendirmesi ekleyerek sürümleri, geçerlilik tarihini ve bağlı dosyayı tek yerden takip edebilirsiniz.")
-            current != null -> NovaListEntrance(current.rows.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    current.rows.forEachIndexed { index, row ->
-                        RiskRowCard(row, Modifier.novaRowEntrance(index)) {
-                            coroutines.launch { detail = runCatching { client.detail(row.id) }.getOrDefault(row) }
+            current != null -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    NovaSizedText("Risk Değerlendirmeleri", 21f, FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    NovaSizedText("${current.total} kayıt", 14f, FontWeight.Normal, NovaColorToken.textSubtle.color())
+                }
+                if (current.rows.isEmpty()) NovaEmptyState("Henüz risk değerlendirmesi kaydı yok",
+                    "Risk değerlendirmesi ekleyerek sürümleri, geçerlilik tarihini ve bağlı dosyayı tek yerden takip edebilirsiniz.")
+                else NovaListEntrance(current.rows.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        val sortedRows = current.rows.sortedWith { left, right ->
+                            val leftDate = left.validUntil
+                            val rightDate = right.validUntil
+                            when {
+                                leftDate == null && rightDate == null -> (left.companyName ?: left.workplaceName.orEmpty()).compareTo(right.companyName ?: right.workplaceName.orEmpty())
+                                leftDate == null -> 1
+                                rightDate == null -> -1
+                                sortAscending -> leftDate.compareTo(rightDate)
+                                else -> rightDate.compareTo(leftDate)
+                            }
                         }
+                        sortedRows.forEachIndexed { index, row ->
+                            RiskRowCard(row, Modifier.novaRowEntrance(index)) {
+                                coroutines.launch { detail = runCatching { client.detail(row.id) }.getOrDefault(row) }
+                            }
+                        }
+                        if (current.hasMore) NovaButton("Daha fazla göster", { coroutines.launch { load(false) } }, variant = NovaButtonVariant.Surface,
+                            symbol = "chevron.down")
                     }
-                    NovaText("${current.rows.size} / ${current.total} kayıt", style = NovaTypeToken.meta, color = NovaColorToken.textMuted.color())
-                    if (current.hasMore) NovaButton("Daha fazla göster", { coroutines.launch { load(false) } }, variant = NovaButtonVariant.Surface,
-                        symbol = "chevron.down")
                 }
             }
         }
@@ -275,6 +377,14 @@ fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit
         if (finalizeDraft != null) RiskFinalizeSheet(finalizeDraft, catalogue, onClose = { finalizing = null }) { edited ->
             val company = companyOf(edited.assessmentId) ?: return@RiskFinalizeSheet NovaRiskFailure.validation.message
             try { client.finalize(company, edited); finalizing = null; load(true); null } catch (error: Exception) { riskMessage(error) }
+        }
+    }
+    NovaPopup(showingPeriodInfo, { showingPeriodInfo = false }, identifier = "nova.risk.period.info") {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            NovaPopupHeading("Geçerlilik süresi", "info.circle")
+            NovaText("Geçerlilik süresi her kayıt için ayrı belirlenir. Uzmanın belirlediği süre mevzuat gereği sabit bir süre olarak sunulmaz. Süre kaynağını ve tarihi kaydın detayında görebilirsiniz.",
+                style = NovaTypeToken.body, color = NovaColorToken.textSecondary.color())
+            NovaButton("Anladım", { showingPeriodInfo = false }, variant = NovaButtonVariant.Primary)
         }
     }
 }
@@ -525,7 +635,7 @@ private fun RiskQuickCreate(client: NovaRiskClient, company: String, catalogue: 
     val suggested = workplaces.firstOrNull { it.id == workplaceId }?.suggestedPeriodYears
     val hasOpenDraft = row?.hasOpenDraft ?: false
     fun primeSuggested() { if (periodYears.isEmpty()) periodYears = (suggested ?: 1).toString() }
-    val detailsReady = workplaceId != null && row != null && kindChosen &&
+    val detailsReady = (workplaces.isEmpty() || workplaceId != null) && row != null && kindChosen &&
         !(kind == NovaRiskKind.full && (periodYears.toIntOrNull() ?: 0) <= 0) &&
         !(kind.needsScope && scope.isEmpty()) && !(kind.needsReason && reason.isBlank())
     val validUntil = run {
@@ -536,10 +646,10 @@ private fun RiskQuickCreate(client: NovaRiskClient, company: String, catalogue: 
     }
     val validity = validUntil ?: "Geçerlilik bilgisi daha sonra kesinleştirilecek"
     LaunchedEffect(workplaceId) {
-        val place = workplaceId ?: return@LaunchedEffect
+        if (workplaces.isNotEmpty() && workplaceId == null) return@LaunchedEffect
         opening = true; openError = null
         try {
-            val opened = client.open(company, place)
+            val opened = client.open(company, workplaceId)
             row = opened
             val draft = opened?.versions?.firstOrNull { it.isDraft }
             if (draft != null) { kind = draft.kind; assessmentOn = draft.assessmentOn; scope = draft.scope; reason = draft.reason.orEmpty(); kindChosen = true }
@@ -579,7 +689,6 @@ private fun RiskQuickCreate(client: NovaRiskClient, company: String, catalogue: 
             openError?.let { NovaTaskErrorSummary(it) }
             saveError?.let { NovaTaskErrorSummary(it) }
             when {
-                workplaces.isEmpty() -> NovaEmptyState("İşyeri bulunamadı", "Önce firma bilgilerinden işyeri ekleyin.")
                 workplaces.size > 1 && workplaceId == null -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     NovaText("İşyeri seçin", style = NovaTypeToken.cardTitle)
                     workplaces.forEach { place ->
@@ -633,7 +742,7 @@ private fun RiskQuickCreate(client: NovaRiskClient, company: String, catalogue: 
                 }
             }
         }
-        if (workplaces.isNotEmpty() && !opening && row != null) NovaTaskStickyActions(
+        if (!opening && row != null) NovaTaskStickyActions(
             if (step == RiskStep.review) "Kaydet" else "Devam", onBack = {
                 saveError = null
                 if (step.ordinal > 0) step = RiskStep.entries[step.ordinal - 1]
@@ -664,4 +773,3 @@ internal fun ReviewRow(label: String, value: String) {
         NovaText(value, style = NovaTypeToken.bodyStrong)
     }
 }
-

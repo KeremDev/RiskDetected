@@ -420,7 +420,7 @@ struct NovaPilotCompanyCreateView: View {
         if let error = error as? PostgrestError {
             switch error.message {
             case "company_limit_exceeded": return RDLocalization.string("localizable.nova.pilot.company.create.view.firma.limitinize.ulastiniz.5ac4ff54", table: .localizable, fallback: "Firma limitinize ulaştınız.")
-            case "PAID_PLAN_REQUIRED": return RDLocalization.string("localizable.nova.pilot.company.create.view.firma.olusturmak.icin.aktif.plus.veya.pro.abonel.f9d9f9e9", table: .localizable, fallback: "Firma oluşturmak için aktif Plus veya Pro aboneliği gerekiyor.")
+            case "PAID_PLAN_REQUIRED": return RDLocalization.string("localizable.nova.pilot.company.create.view.firma.olusturma.erisimi.dogrulanamadi.lutfen.tek.4846b605", table: .localizable, fallback: "Firma oluşturma erişimi doğrulanamadı. Lütfen tekrar deneyin.")
             case "FEATURE_UNAVAILABLE", "ACCESS_DENIED": return RDLocalization.string("localizable.nova.pilot.company.create.view.pilot.yazma.erisimi.acik.degil.veya.suresi.dolmu.69e73a00", table: .localizable, fallback: "Pilot yazma erişimi açık değil veya süresi dolmuş.")
             case "IDEMPOTENCY_CONFLICT": return RDLocalization.string("localizable.nova.pilot.company.create.view.bekleyen.islemin.icerigi.uyusmuyor.yeni.kayit.ac.2532144b", table: .localizable, fallback: "Bekleyen işlemin içeriği uyuşmuyor. Yeni kayıt açılmadı.")
             default: break

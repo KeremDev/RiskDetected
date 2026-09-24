@@ -15,6 +15,7 @@ struct NovaDocumentTrackingClient {
     let archive: (NovaDocumentObligation) async throws -> Void
     let recordCopy: (NovaDocumentObligation, NovaDocumentCopyDraft) async throws -> NovaDocumentObligation
     let removeCopy: (NovaDocumentObligation, NovaDocumentCopy) async throws -> NovaDocumentObligation
+    var detail: ((UUID, UUID) async throws -> NovaDocumentObligation)? = nil
 }
 
 /// A day, typed as a calendar rather than as free text, and carried as the same
@@ -87,6 +88,7 @@ struct NovaDocumentTrackingScreen: View {
     var canWrite = true
     /// Opened from a company page: that company is already the answer.
     var initialCompany: UUID?
+    var initialRecordID: UUID?
     /// Opens onto one heading of the company page, such as periodic checks.
     var initialKinds: [String]?
     var headingOverride: String?
@@ -150,6 +152,10 @@ struct NovaDocumentTrackingScreen: View {
             }
         }
         .task(id: reload) { await refresh() }
+        .task(id: initialRecordID) {
+            guard let initialCompany, let initialRecordID, let detail = client.detail else { return }
+            inspecting = try? await detail(initialCompany, initialRecordID)
+        }
         // Filters re-read the page rather than trimming what is already here,
         // so the row count on screen is always the server's own answer.
         .onChange(of: status) { _ in shown = NovaDocumentQuery().limit; reload = UUID() }

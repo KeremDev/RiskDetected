@@ -98,7 +98,7 @@ struct NovaManualNonconformityScreen: View {
                     NovaText(text: String(format: RDLocalization.string("localizable.nova.manual.progress", table: .localizable,
                         fallback: "%1$d/%2$d başlık tamamlandı"), draft.completedCount, NovaManualStep.allCases.count), style: .label)
                     Spacer(minLength: 0)
-                    if draft.canSave {
+                    if draft.canSave && scopeReady {
                         NovaStatusPill(label: RDLocalization.string("localizable.nova.manual.ready", table: .localizable, fallback: "Kaydedilebilir"), status: .success)
                     } else {
                         NovaStatusPill(label: RDLocalization.string("localizable.nova.manual.pending", table: .localizable, fallback: "Zorunlu alan eksik"), status: .warning)
@@ -222,17 +222,14 @@ struct NovaManualNonconformityScreen: View {
                     .accessibilityIdentifier("manual.company.\(company.id.uuidString.lowercased())")
             }
         }
-        if draft.companyID != nil {
+        if draft.companyID != nil && (loadingPlaces || !places.isEmpty) {
             Divider()
-            NovaText(text: RDLocalization.string("localizable.nova.manual.workplace.optional", table: .localizable,
-                fallback: "İşyeri / departman · isteğe bağlı"), style: .label,
+            NovaText(text: RDLocalization.string("localizable.nova.manual.workplace.label", table: .localizable,
+                fallback: "İşyeri / departman"), style: .label,
                 color: NovaColorToken.textTertiary.color(in: scheme))
             if loadingPlaces {
                 NovaText(text: RDLocalization.string("localizable.nova.manual.workplace.loading", table: .localizable,
                     fallback: "İşyerleri yükleniyor…"), style: .metaQuiet)
-            } else if places.isEmpty {
-                NovaText(text: RDLocalization.string("localizable.nova.bridge.no.workplace", table: .localizable,
-                    fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .metaQuiet)
             } else if places.count == 1 {
                 // One workplace is not a choice; it is already selected.
                 NovaText(text: String(format: RDLocalization.string("localizable.nova.manual.workplace.used", table: .localizable,
@@ -251,9 +248,7 @@ struct NovaManualNonconformityScreen: View {
                     }.buttonStyle(NovaRowPressStyle())
                         .accessibilityIdentifier("manual.workplace.\(place.id.uuidString.lowercased())")
                 }
-                // The record has to land on a workplace, so the first one is
-                // taken when the expert does not choose. The screen names it
-                // instead of filing the record somewhere unseen.
+                // Name the selected workplace before filing the record.
                 if let chosen = places.first(where: { $0.id == draft.workplaceID }) {
                     NovaText(text: String(format: RDLocalization.string("localizable.nova.manual.workplace.used", table: .localizable,
                         fallback: "Kayıt %@ işyerine açılacak."), chosen.name), style: .micro,
@@ -271,7 +266,7 @@ struct NovaManualNonconformityScreen: View {
         do { places = try await workplaces(company.id) }
         catch { places = [] }
         loadingPlaces = false
-        draft.workplaceID = places.first?.id
+        draft.workplaceID = places.count == 1 ? places.first?.id : nil
     }
 
     @ViewBuilder private var hazardStep: some View {
@@ -317,9 +312,13 @@ struct NovaManualNonconformityScreen: View {
         }
     }
 
+    private var scopeReady: Bool {
+        !loadingPlaces && (places.isEmpty || draft.workplaceID != nil)
+    }
+
     private var saveButton: some View {
         NovaButton(label: RDLocalization.string("localizable.nova.manual.save", table: .localizable, fallback: "Kaydı aç"),
-            symbol: "checkmark", isEnabled: draft.canSave && !saving, isLoading: saving) {
+            symbol: "checkmark", isEnabled: draft.canSave && scopeReady && !saving, isLoading: saving) {
             Task {
                 saving = true; error = nil
                 if let company = draft.companyID, !photos.isEmpty {

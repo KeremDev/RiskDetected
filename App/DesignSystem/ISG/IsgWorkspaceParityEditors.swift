@@ -585,7 +585,7 @@ struct IsgWorkspaceManualNonconformityEditor: View {
     @Environment(\.novaCelebrate) private var celebrate
 
     private var canSave: Bool {
-        workplaceID != nil && !title.trimmed.isEmpty && !hazard.trimmed.isEmpty &&
+        (workplaces.isEmpty || workplaceID != nil) && !title.trimmed.isEmpty && !hazard.trimmed.isEmpty &&
         !control.trimmed.isEmpty && dueOn >= openedOn && (score.isEmpty || score.isComplete)
     }
     private var completed: Int { Step.allCases.filter(isComplete).count }
@@ -622,17 +622,14 @@ struct IsgWorkspaceManualNonconformityEditor: View {
                     IsgWorkspaceInlineAttachmentField(
                         title: RDLocalization.string("localizable.isg.workspace.parity.editors.fotograf.veya.kanit.ekle.istege.bagli.8d857ece", table: .localizable, fallback: "Fotoğraf veya kanıt ekle (isteğe bağlı)"), attachment: $attachment)
                 case .workplace:
-                    if workplaces.isEmpty {
-                        NovaEmptyState(title: RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.bulunamadi.6e665de2", table: .localizable, fallback: "İşyeri bulunamadı"),
-                            message: RDLocalization.string("localizable.isg.workspace.parity.editors.uygunsuzluk.eklemek.icin.once.firmaya.bir.isyeri.aed96996", table: .localizable, fallback: "Uygunsuzluk eklemek için önce firmaya bir işyeri ekleyin."))
-                    } else {
+                    if !workplaces.isEmpty {
                         Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.e1bb9871", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
                             ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
                         }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
-                        HStack(spacing: 10) {
-                            compactDate("Kayıt tarihi", selection: $openedOn)
-                            compactDate("Termin", selection: $dueOn)
-                        }
+                    }
+                    HStack(spacing: 10) {
+                        compactDate("Kayıt tarihi", selection: $openedOn)
+                        compactDate("Termin", selection: $dueOn)
                     }
                 case .hazard:
                     field(RDLocalization.string("localizable.isg.workspace.parity.editors.tehlike.basligi.15c51da5", table: .localizable, fallback: "Tehlike başlığı"), text: $title, symbol: "text.cursor")
@@ -667,7 +664,7 @@ struct IsgWorkspaceManualNonconformityEditor: View {
     private func isComplete(_ step: Step) -> Bool {
         switch step {
         case .attachment: return attachment != nil
-        case .workplace: return workplaceID != nil && dueOn >= openedOn
+        case .workplace: return (workplaces.isEmpty || workplaceID != nil) && dueOn >= openedOn
         case .hazard: return !title.trimmed.isEmpty && !hazard.trimmed.isEmpty && !control.trimmed.isEmpty
         case .scoring: return score.isComplete
         case .legislation: return !legislation.trimmed.isEmpty
@@ -715,7 +712,7 @@ struct IsgWorkspaceManualNonconformityEditor: View {
     }
 
     private func save() {
-        guard canSave, let workplaceID else { return }
+        guard canSave else { return }
         let create: [String: IsgWorkspaceRPCValue] = [
             "action": .string("create"), "workplace_id": .id(workplaceID),
             "source_kind": .string("manual"), "source_ref": .null,
@@ -843,8 +840,7 @@ struct IsgWorkspaceRiskCreateEditor: View {
     @Environment(\.novaCelebrate) private var celebrate
 
     private var assessment: IsgWorkspaceDomainRecord? {
-        guard let workplaceID else { return nil }
-        return assessments.first { fact("workplace_id", in: $0)?.lowercased() == workplaceID.uuidString.lowercased() }
+        return assessments.first { fact("workplace_id", in: $0)?.lowercased() == workplaceID?.uuidString.lowercased() }
     }
     private var needsReason: Bool { assessment != nil && ["partial", "metadata"].contains(kind) }
     private var needsScope: Bool { kind == "partial" }
@@ -911,9 +907,9 @@ struct IsgWorkspaceRiskCreateEditor: View {
 
     private var detailsStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.2cdb4091", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
+            if !workplaces.isEmpty { Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.2cdb4091", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
                 ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14) }
             if assessment == nil {
                 NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.parity.editors.surum.turu.b94a9c4c", table: .localizable, fallback: "Sürüm türü"), symbol: "square.stack.3d.up") {
                     NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.tam.degerlendirme.d82127f4", table: .localizable, fallback: "Tam değerlendirme"), style: .bodyStrong)
@@ -945,7 +941,7 @@ struct IsgWorkspaceRiskCreateEditor: View {
             NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.kaydetmeden.once.kontrol.edin.627f8ada", table: .localizable, fallback: "Kaydetmeden önce kontrol edin"), style: .sectionTitle)
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 12) {
-                    reviewRow("İşyeri", workplaces.first(where: { $0.id == workplaceID })?.name ?? "Belirtilmedi")
+                    if !workplaces.isEmpty { reviewRow("İşyeri", workplaces.first(where: { $0.id == workplaceID })?.name ?? "Belirtilmedi") }
                     reviewRow("Sürüm", IsgWorkspaceDisplayText.value(kind))
                     reviewRow(kind == "full" ? "Değerlendirme" : "Revizyon", Self.day(date))
                     if needsScope { reviewRow("Kapsam", scope.trimmed) }
@@ -966,7 +962,7 @@ struct IsgWorkspaceRiskCreateEditor: View {
     private func isComplete(_ step: Step) -> Bool {
         switch step {
         case .details:
-            return workplaceID != nil && date <= Date() && (!needsScope || !scope.trimmed.isEmpty)
+            return (workplaces.isEmpty || workplaceID != nil) && date <= Date() && (!needsScope || !scope.trimmed.isEmpty)
                 && (!needsReason || reason.trimmed.count >= 10)
         case .file: return true
         case .review: return isComplete(.details)
@@ -1009,7 +1005,7 @@ struct IsgWorkspaceRiskCreateEditor: View {
     }
     private func configureKind() { kind = "full"; reason = ""; scope = "" }
     private func save() {
-        guard completed == Step.allCases.count, let workplaceID else { return }
+        guard completed == Step.allCases.count else { return }
         let current = assessment.flatMap { fact("current_version", in: $0) }.flatMap(Int.init) ?? 0
         let baseDate = assessment.flatMap { fact("base_assessment_on", in: $0) } ?? Self.day(date)
         let payload: [String: IsgWorkspaceRPCValue] = [
@@ -1125,9 +1121,9 @@ struct IsgWorkspaceEquipmentCreateEditor: View {
                     }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
                     if typeCode == "other_equipment" { field(RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.turu.acf583e3", table: .localizable, fallback: "Ekipman türü"), text: $customType, symbol: "shippingbox") }
                 case .identity:
-                    Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.f1e6629d", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
+                    if !workplaces.isEmpty { Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.f1e6629d", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
                         ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-                    }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+                    }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14) }
                     field(RDLocalization.string("localizable.isg.workspace.parity.editors.seri.kod.istege.bagli.9f07a640", table: .localizable, fallback: "Seri / kod (isteğe bağlı)"), text: $serial, symbol: "number")
                     field(RDLocalization.string("localizable.isg.workspace.parity.editors.konum.istege.bagli.7814e4d4", table: .localizable, fallback: "Konum (isteğe bağlı)"), text: $location, symbol: "mappin.and.ellipse")
                 case .period:
@@ -1152,7 +1148,7 @@ struct IsgWorkspaceEquipmentCreateEditor: View {
     private func isComplete(_ step: Step) -> Bool {
         switch step {
         case .type: return !typeCode.isEmpty && !typeLabel.isEmpty
-        case .identity: return workplaceID != nil
+        case .identity: return workplaces.isEmpty || workplaceID != nil
         case .period: return acquiredOn <= Date()
         case .attachment: return true
         }
@@ -1175,7 +1171,7 @@ struct IsgWorkspaceEquipmentCreateEditor: View {
         loading = false
     }
     private func save() {
-        guard completed == Step.allCases.count, let workplaceID else { return }
+        guard completed == Step.allCases.count else { return }
         let payload: [String: IsgWorkspaceRPCValue] = [
             "action": .string("register"), "workplace_id": .id(workplaceID), "equipment_type": .string(typeCode),
             "equipment_type_label": .string(typeLabel),

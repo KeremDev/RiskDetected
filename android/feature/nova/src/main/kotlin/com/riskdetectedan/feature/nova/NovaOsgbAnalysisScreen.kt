@@ -166,7 +166,7 @@ private fun detailClient(scope: NovaOsgbScope, analysisId: String, attempt: IsgW
                 }
                 val kind = if (request.section == NovaAnalysisSectionKind.riskAnalysis || unscored) "finding" else "expert_item"
                 val openedOn = java.time.LocalDate.now(java.time.ZoneOffset.UTC).toString()
-                val mutation = attempt.id("analysis.file", companyId, request.workplaceId, analysisId, kind, request.item.id, request.severity?.name.orEmpty(), openedOn)
+                val mutation = attempt.id("analysis.file", companyId, request.workplaceId.orEmpty(), analysisId, kind, request.item.id, request.severity?.name.orEmpty(), openedOn)
                 val created = repository.fileAnalysisItem(context, mutation, companyId, request.workplaceId, analysisId, kind, request.item.id,
                     request.severity?.name, openedOn)
                 celebrate(if (created) "Bulgu uygunsuzluk olarak kaydedildi." else "Bu bulgunun uygunsuzluğu zaten vardı.")

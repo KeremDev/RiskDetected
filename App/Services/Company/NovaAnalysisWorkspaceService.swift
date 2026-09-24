@@ -1,6 +1,17 @@
 import Foundation
 import UIKit
 
+private struct NovaAnalysisListStatsResponse: Decodable {
+    let schema_version: Int
+    let owner_id: UUID
+    let workspace_id: UUID?
+    let company_id: UUID?
+    let method: String?
+    let total: Int
+    let critical: Int
+    let findings: Int
+}
+
 /// Composition between the İSGADA analysis screens and the services the product
 /// already ships. Nothing here re-implements the analysis pipeline, the report
 /// renderer or the nonconformity boundary; it only carries them.
@@ -43,7 +54,7 @@ enum NovaAnalysisWorkspace {
     /// server's own signal (a full page came back), never a guess from a
     /// count this call never asked for.
     static func summaries(identity: NovaSessionIdentity, method: RiskMethod,
-                          limit: Int = 50, offset: Int = 0) async throws -> (rows: [NovaAnalysisSummary], hasMore: Bool) {
+                          limit: Int = 10, offset: Int = 0) async throws -> (rows: [NovaAnalysisSummary], hasMore: Bool) {
         if let backend = try NovaExpertAnalysisBackend.current() {
             return try await backend.summaries(method: method, limit: limit, offset: offset)
         }
@@ -69,6 +80,31 @@ enum NovaAnalysisWorkspace {
         return (summaries, rows.count == limit)
     }
 
+    /// Compact lifetime counts come from the server aggregate, never from the
+    /// ten rows currently displayed. The same workspace ticket guards both
+    /// the request and its response against an account or workspace switch.
+    static func summaryStats(identity: NovaSessionIdentity, method: RiskMethod?,
+                             companyID: UUID? = nil) async throws -> NovaAnalysisListStats {
+        let ticket = NovaExpertTransport.shared.capture()
+        guard novaCurrentSessionIdentity() == identity,
+              ticket == nil || ticket?.access.identity == identity else { throw NovaPersonnelFailure.denied }
+        let data = try await NovaExpertTransport.shared.execute("isg_analysis_list_stats_v1", params: [
+            "p_method": method.map { PersonnelRPCValue.string($0.rawValue) } ?? .null,
+            "p_company": PersonnelRPCValue.id(companyID)
+        ], ticket: ticket)
+        let response = try JSONDecoder().decode(NovaAnalysisListStatsResponse.self, from: data)
+        guard response.schema_version == 1, response.owner_id == identity.userID,
+              response.workspace_id == ticket?.access.workspaceID,
+              response.company_id == companyID,
+              response.method == method?.rawValue,
+              response.total >= 0, response.critical >= 0,
+              response.critical <= response.total, response.findings >= 0 else {
+            throw NovaPersonnelFailure.denied
+        }
+        try NovaExpertTransport.shared.validate(ticket)
+        return .init(total: response.total, critical: response.critical, findings: response.findings)
+    }
+
     /// The first focus the analysis ran under, as the product names it.
     private static func focusLabel(_ canvas: String) -> String? {
         canvas.split(separator: ",").map(String.init)
@@ -84,12 +120,18 @@ enum NovaAnalysisWorkspace {
 
     /// The reports the account produced from photo analyses. The archive is
     /// the product's own; nothing is recomputed from the analyses here.
-    static func reports(identity: NovaSessionIdentity, limit: Int = 50) async throws -> [NovaAnalysisReportEntry] {
-        if let backend = try NovaExpertAnalysisBackend.current() { return try await backend.reports(limit: limit) }
-        let rows = try await AnalysisService.shared.listReports(limit: limit, photoAnalysesOnly: true)
+    static func reports(identity: NovaSessionIdentity, limit: Int = 10, offset: Int = 0) async throws -> (rows: [NovaAnalysisReportEntry], hasMore: Bool) {
+        if let backend = try NovaExpertAnalysisBackend.current() { return try await backend.reports(limit: limit, offset: offset) }
+        guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
+        let rows: [ReportRow]
+        if offset == 0 {
+            rows = try await AnalysisService.shared.listReports(limit: limit, photoAnalysesOnly: true)
+        } else {
+            rows = try await AnalysisService.shared.listReports(limit: limit, offset: offset, photoAnalysesOnly: true)
+        }
         let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
         let names = Dictionary(uniqueKeysWithValues: companies.map { ($0.id, $0.name) })
-        return rows.map { row in
+        let mapped = rows.map { row in
             let method = RiskMethod(rawValue: row.method)
             return NovaAnalysisReportEntry(id: row.id, title: row.title, fileName: row.fileName,
                 createdOn: day(row.createdAt),
@@ -101,8 +143,34 @@ enum NovaAnalysisWorkspace {
                 kindLabel: row.kind,
                 fileSize: row.fileSize,
                 analysisID: row.analysisID,
-                createdAt: date(row.createdAt))
+                createdAt: date(row.createdAt),
+                storagePath: row.storagePath,
+                mimeType: row.mimeType)
         }
+        return (mapped, rows.count == limit)
+    }
+
+    /// Downloads an archived report into a temporary file so the native share
+    /// sheet can hand it to Files, Mail or another installed app. Both legacy
+    /// personal reports and workspace exports use the same presentation model.
+    static func downloadReport(_ entry: NovaAnalysisReportEntry, identity: NovaSessionIdentity) async throws -> URL {
+        guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
+        let bytes: Data
+        if let backend = try NovaExpertAnalysisBackend.current(), let assetID = entry.assetID {
+            bytes = try await backend.store.downloadAsset(assetID, filename: entry.fileName)
+        } else if let bucket = entry.downloadBucket, let path = entry.downloadPath {
+            bytes = try await NovaFileLibraryService.live().download(identity, bucket: bucket, path: path)
+        } else if let path = entry.storagePath {
+            bytes = try await SupabaseService.shared.client.storage
+                .from(RDConfig.Bucket.reports).download(path: path)
+        } else {
+            throw NovaPersonnelFailure.unavailable
+        }
+        let fallback = "ISGADA_Rapor_\(entry.id.uuidString.prefix(8)).\(entry.isSpreadsheet ? "xlsx" : "pdf")"
+        let name = entry.fileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? fallback : entry.fileName
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+        try bytes.write(to: url, options: .atomic)
+        return url
     }
 
     /// Today in the expert's own time zone, as an ISO day string. Overdue is a
@@ -244,7 +312,7 @@ enum NovaAnalysisWorkspace {
             let names = Dictionary(uniqueKeysWithValues: places.rows.map { ($0.id, $0.name) })
             result.append(contentsOf: list.rows.map { row in
                 .init(row: row, companyID: company.id, companyName: company.name,
-                      workplaceName: names[row.workplace_id])
+                      workplaceName: row.workplace_id.flatMap { names[$0] })
             })
         }
         // Newest first, and stable when two records share a day.

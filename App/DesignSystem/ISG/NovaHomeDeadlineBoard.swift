@@ -6,6 +6,7 @@ struct NovaHomeDeadlineBoard: View {
     let identity: NovaSessionIdentity
     let canWrite: Bool
     let scopeID: UUID?
+    var onPendingActionCount: (Int?) -> Void = { _ in }
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -102,11 +103,11 @@ struct NovaHomeDeadlineBoard: View {
                 ProgressView()
                     .frame(maxWidth: .infinity, minHeight: 66)
             } else if failed {
-                Text("Kayıtlar yüklenemedi")
+                Text(RDLocalization.string("analysis.nova.home.deadline.board.kayitlar.yuklenemedi.ea37c45d", table: .analysis, fallback: "Kayıtlar yüklenemedi"))
                     .font(NovaFont.font(.meta))
                     .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                     .frame(maxWidth: .infinity, minHeight: 66, alignment: .leading)
-                Button("Tekrar dene") { revision += 1 }
+                Button(RDLocalization.string("analysis.nova.home.deadline.board.tekrar.dene.5625a744", table: .analysis, fallback: "Tekrar dene")) { revision += 1 }
                     .font(NovaFont.font(.meta))
                     .foregroundStyle(ink)
             } else if rows.isEmpty {
@@ -153,44 +154,52 @@ struct NovaHomeDeadlineBoard: View {
     }
 
     private func deadlineCard(_ row: NovaFollowupPage.Row, ink: Color) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(row.title)
-                .font(NovaFont.font(.bodyStrong))
-                .foregroundStyle(NovaColorToken.text.color(in: scheme))
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(row.company_name)
-                .font(NovaFont.font(.meta))
-                .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
-                .lineLimit(2)
-            if let date = row.due_on {
-                Label(NovaStatisticsSnapshot.dayLabel(date), systemImage: "calendar")
-                    .font(NovaFont.font(.meta))
-                    .foregroundStyle(ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            Button {
-                if row.kind == "training" { selectedTraining = row }
-                else { selected = row }
-            } label: {
-                HStack(spacing: 4) {
-                    Text("İncele")
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold))
+        let equipmentName = row.equipment_type_label?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let detail = row.kind == "equipment"
+            ? "\((equipmentName?.isEmpty == false ? equipmentName : nil) ?? row.equipment_type.map(NovaEquipmentWords.type) ?? "Ekipman") · \(row.title)"
+            : row.title
+        return Button {
+            if row.kind == "training" { selectedTraining = row }
+            else { selected = row }
+        } label: {
+            HStack(alignment: .center, spacing: 5) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(row.typeTitle)
+                        .font(NovaFont.font(.badge))
+                        .foregroundStyle(ink)
+                        .lineLimit(1)
+                    Text(detail)
+                        .font(NovaFont.font(.bodyStrong))
+                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(row.company_name)
+                        .font(NovaFont.font(.metaQuiet))
+                        .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
+                        .lineLimit(1)
+                    if let date = row.due_on {
+                        Text(NovaStatisticsSnapshot.dayLabel(date))
+                            .font(NovaFont.font(.badge))
+                            .foregroundStyle(ink)
+                            .lineLimit(1)
+                    }
                 }
-                .font(NovaFont.font(.meta))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity, minHeight: 36)
-                .background(ink, in: Capsule())
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(ink)
+                    .frame(width: 26, height: 26)
+                    .background(ink.opacity(0.10), in: Circle())
+                    .accessibilityHidden(true)
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("nova.home.deadline.inspect.\(row.id)")
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
+            .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 15))
-        .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(row.typeTitle), \(detail), \(row.company_name), \(row.due_on.map(NovaStatisticsSnapshot.dayLabel) ?? ""), incele")
+        .accessibilityIdentifier("nova.home.deadline.inspect.\(row.id)")
     }
 
     private func setExpanded(_ bucket: Bucket, _ value: Bool) {
@@ -211,10 +220,14 @@ struct NovaHomeDeadlineBoard: View {
             upcoming = soon.rows
             overdueCount = late.expired
             upcomingCount = soon.soon
+            onPendingActionCount(late.expired + soon.soon)
             overdueHasMore = late.has_more
             upcomingHasMore = soon.has_more
         } catch {
-            if !Task.isCancelled { failed = true }
+            if !Task.isCancelled {
+                failed = true
+                onPendingActionCount(nil)
+            }
         }
         if !Task.isCancelled { loading = false }
     }

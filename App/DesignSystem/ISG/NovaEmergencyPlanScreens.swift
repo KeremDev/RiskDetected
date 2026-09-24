@@ -99,6 +99,7 @@ struct NovaEmergencyPlanScreen: View {
     let onBack: () -> Void
     var canWrite: Bool = true
     var initialCompany: UUID?
+    var initialRecordID: UUID?
     var headingOverride: String?
     /// Opened from the company page's own empty-state "Ekle" action.
     var startInAddMode = false
@@ -106,6 +107,7 @@ struct NovaEmergencyPlanScreen: View {
     @State private var draftCompany: UUID?
 
     @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var showingWizard = false
     @State private var board: NovaEmergencyBoard?
     @State private var catalogue: NovaEmergencyCatalogue?
     @State private var companies: [NovaAnalysisCompanyOption] = []
@@ -132,13 +134,21 @@ struct NovaEmergencyPlanScreen: View {
         // Opened straight into "add": the create flow alone is the entire
         // cover, so it blurs the real company page instead of an empty
         // intermediate board screen. See NovaPopup's own doc comment.
-        if startInAddMode {
+        if showingWizard {
+            NovaDocumentWizardScreen(domain: "emergency", companiesSource: client.companies,
+                workplacesSource: { company in try await client.catalogue(company).workplaces.map { .init(id: $0.id, name: $0.name) } },
+                files: client.fileClient, initialCompany: query.company ?? initialCompany,
+                onBack: { showingWizard = false })
+        } else if startInAddMode {
             addFlow(savedDraft ?? .init(preparedOn: NovaDayField.text(Date())))
         } else {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
+                    if canWrite {
+                        NovaButton(label: RDLocalization.string("localizable.nova.emergency.plan.screens.sihirbaz.ile.taslak.olustur.b4e75540", table: .localizable, fallback: "Sihirbaz ile taslak oluştur"), symbol: "sparkles", variant: .surface) { showingWizard = true }
+                    }
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.emergency.plan.screens.firmanin.acil.durum.planini.ve.dosyasini.ekleyin.69acbe04", table: .localizable, fallback: "Firmanın acil durum planını ve dosyasını ekleyin; geçerlilik tarihini buradan takip edin."))
                     if let board { counters(board) }
                     filters
@@ -158,6 +168,10 @@ struct NovaEmergencyPlanScreen: View {
             }
         }
         .task { await load(reset: true) }
+        .task(id: initialRecordID) {
+            guard let initialRecordID else { return }
+            detail = try? await client.detail(initialRecordID)
+        }
         .novaPopup(item: $detail) { plan in
             NovaEmergencyDetailSheet(plan: plan, canWrite: canWrite, fileClient: client.fileClient,
                 onRenew: {

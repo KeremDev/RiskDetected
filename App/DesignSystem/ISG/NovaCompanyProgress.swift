@@ -16,7 +16,7 @@ struct NovaCompanyProgress: Equatable {
     /// module cannot silently lower the company and no longer blocks the ring
     /// from producing a useful value.
     var measured: [NovaCompanySection] {
-        NovaCompanySection.allCases.filter { states[$0] != nil && states[$0] != .unknown }
+        NovaCompanySection.allCases.filter { $0 != .handover && states[$0] != nil && states[$0] != .unknown }
     }
     var total: Int { measured.count }
     var completed: Int { measured.filter { states[$0] == .complete }.count }

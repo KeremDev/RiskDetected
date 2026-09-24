@@ -78,6 +78,8 @@ private fun HandoverCard(handover: NovaPPEHandover, modifier: Modifier, onClick:
 @Composable
 fun NovaPPEScreen(client: NovaPPEClient, canWrite: Boolean, onBack: () -> Unit, initialCompany: String? = null, headingOverride: String? = null,
                   startInAddMode: Boolean = false) {
+    NovaPPEExampleScreen(onBack)
+    return
     val coroutines = rememberCoroutineScope()
     var board by remember { mutableStateOf<NovaPPEBoard?>(null) }
     var catalogue by remember { mutableStateOf<NovaPPECatalogue?>(null) }

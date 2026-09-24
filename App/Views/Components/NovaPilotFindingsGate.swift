@@ -20,6 +20,8 @@ struct NovaPilotFindingsGate: View {
     let onNavigate: (NovaDestination) -> Void
     let onCompanies: () -> Void
     let onHome: () -> Void
+    var initialAnalysisID: UUID? = nil
+    var onInitialAnalysisOpened: (() -> Void)? = nil
     @EnvironmentObject private var app: AppState
     @Environment(\.colorScheme) private var scheme
 
@@ -92,7 +94,17 @@ struct NovaPilotFindingsGate: View {
         }
         .task { await loadCompanies() }
         .onChange(of: record) { value in if value == nil { boardRevision = UUID() } }
-        .onAppear { if surface == .newAnalysis { route = .photo } }
+        .onAppear {
+            if surface == .newAnalysis { route = .photo }
+            openInitialAnalysisIfNeeded()
+        }
+        .onChange(of: initialAnalysisID) { _ in openInitialAnalysisIfNeeded() }
+    }
+
+    private func openInitialAnalysisIfNeeded() {
+        guard surface == .analyses, let initialAnalysisID else { return }
+        openAnalysis = .init(id: initialAnalysisID)
+        onInitialAnalysisOpened?()
     }
 
     @ViewBuilder private var root: some View {
@@ -289,6 +301,7 @@ struct NovaPilotFindingsGate: View {
     private var analyses: some View {
         NovaAnalysisListScreen(
             load: { offset in try await NovaAnalysisWorkspace.summaries(identity: identity, method: method, offset: offset) },
+            loadStats: { try await NovaAnalysisWorkspace.summaryStats(identity: identity, method: method) },
             thumbnail: { await NovaAnalysisWorkspace.thumbnail(analysisID: $0) },
             onOpen: { openAnalysis = .init(id: $0) }, onBack: { onNavigate(.findings) },
             onNewPhotoAnalysis: { onNavigate(.newAnalysis) },
@@ -298,7 +311,8 @@ struct NovaPilotFindingsGate: View {
     /// The archive of reports produced from photo analyses.
     private var reports: some View {
         NovaAnalysisReportsScreen(
-            load: { try await NovaAnalysisWorkspace.reports(identity: identity) },
+            load: { offset in try await NovaAnalysisWorkspace.reports(identity: identity, offset: offset) },
+            download: { entry in try await NovaAnalysisWorkspace.downloadReport(entry, identity: identity) },
             onBack: { route = .root },
             onOpenAnalysis: { openAnalysis = .init(id: $0) })
     }
@@ -419,13 +433,13 @@ struct NovaPilotFindingsGate: View {
 
     /// Returns nil when the record was opened, and the reason otherwise.
     private func saveManual(_ value: NovaManualDraft) async -> String? {
-        guard let company = value.companyID, let workplace = value.workplaceID else {
+        guard let company = value.companyID else {
             return NovaNonconformityWords.failure(.validation)
         }
         guard let target = try? await waitForScope(company) else {
             return NovaNonconformityWords.failure(.denied)
         }
-        var intent = NovaNonconformityIntent(origin: .detailed, workplaceID: workplace,
+        var intent = NovaNonconformityIntent(origin: .detailed, workplaceID: value.workplaceID,
             title: value.title.trimmingCharacters(in: .whitespacesAndNewlines))
         intent.severity = value.severity
         intent.recordKind = value.recordKind

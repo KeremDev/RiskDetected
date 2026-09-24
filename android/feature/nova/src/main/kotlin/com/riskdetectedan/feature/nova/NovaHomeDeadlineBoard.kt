@@ -18,6 +18,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.riskdetectedan.core.data.nova.NovaFollowupPage
+import com.riskdetectedan.core.data.nova.NovaEquipmentWords
 import com.riskdetectedan.core.designsystem.isg.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -46,7 +47,7 @@ private class DeadlineColumn {
  */
 @Composable
 fun NovaHomeDeadlineBoard(load: suspend (status: String, offset: Int) -> NovaFollowupPage, changes: Flow<Unit>,
-                          scopeKey: Any?, onOpen: (NovaFollowupPage.Row) -> Unit) {
+                          scopeKey: Any?, onPendingActionCount: (Int?) -> Unit = {}, onOpen: (NovaFollowupPage.Row) -> Unit) {
     val columns = remember { DeadlineBucket.entries.associateWith { DeadlineColumn() } }
     var loading by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
@@ -73,11 +74,13 @@ fun NovaHomeDeadlineBoard(load: suspend (status: String, offset: Int) -> NovaFol
                 val (latePage, soonPage) = late.await() to soon.await()
                 columns.getValue(DeadlineBucket.overdue).apply { rows = latePage.rows; count = latePage.expired; hasMore = latePage.hasMore }
                 columns.getValue(DeadlineBucket.upcoming).apply { rows = soonPage.rows; count = soonPage.soon; hasMore = soonPage.hasMore }
+                onPendingActionCount(latePage.expired + soonPage.soon)
             }
         } catch (error: kotlinx.coroutines.CancellationException) {
             throw error
         } catch (_: Exception) {
             failed = true
+            onPendingActionCount(null)
         }
         loading = false
     }
@@ -161,22 +164,24 @@ private fun DeadlineColumnView(bucket: DeadlineBucket, column: DeadlineColumn, l
 
 @Composable
 private fun DeadlineCard(row: NovaFollowupPage.Row, ink: Color, onInspect: () -> Unit) {
-    val shape = RoundedCornerShape(15.dp)
-    Column(Modifier.fillMaxWidth().shadow(3.dp, shape, ambientColor = Color.Black.copy(alpha = 0.04f), spotColor = Color.Black.copy(alpha = 0.04f))
-        .background(NovaColorToken.surface.color(), shape).padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        NovaText(row.title, style = NovaTypeToken.bodyStrong, color = NovaColorToken.text.color(), maxLines = 2)
-        NovaText(row.companyName, style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color(), maxLines = 2)
-        row.dueOn?.let { day ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                NovaIcon("calendar", 12.dp, tint = ink)
-                NovaText(NovaDay.label(day), style = NovaTypeToken.meta, color = ink, maxLines = 1)
+    val equipmentName = row.equipmentTypeLabel?.trim()?.takeIf { it.isNotEmpty() }
+        ?: row.equipmentType?.let(NovaEquipmentWords::type) ?: "Ekipman"
+    val detail = if (row.kind == "equipment") "$equipmentName · ${row.title}" else row.title
+    val shape = RoundedCornerShape(13.dp)
+    Row(Modifier.fillMaxWidth().shadow(3.dp, shape, ambientColor = Color.Black.copy(alpha = 0.04f), spotColor = Color.Black.copy(alpha = 0.04f))
+        .background(NovaColorToken.surface.color(), shape)
+        .novaRowPress(onClick = onInspect).testTag("nova.home.deadline.inspect.${row.key}").padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            NovaText(row.typeTitle, style = NovaTypeToken.badge, color = ink, maxLines = 1)
+            NovaText(detail, style = NovaTypeToken.bodyStrong, color = NovaColorToken.text.color(), maxLines = 2)
+            NovaText(row.companyName, style = NovaTypeToken.metaQuiet, color = NovaColorToken.textSecondary.color(), maxLines = 1)
+            row.dueOn?.let { day ->
+                NovaText(NovaDay.label(day), style = NovaTypeToken.badge, color = ink, maxLines = 1)
             }
         }
-        Row(Modifier.fillMaxWidth().heightIn(min = 36.dp).background(ink, CircleShape).novaRowPress(onClick = onInspect)
-            .testTag("nova.home.deadline.inspect.${row.key}"),
-            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-            NovaText("İncele", style = NovaTypeToken.meta, color = Color.White)
-            NovaIcon("chevron.right", 10.dp, tint = Color.White)
+        Box(Modifier.size(26.dp).background(ink.copy(alpha = 0.10f), CircleShape), contentAlignment = Alignment.Center) {
+            NovaIcon("chevron.right", 10.dp, tint = ink)
         }
     }
 }
