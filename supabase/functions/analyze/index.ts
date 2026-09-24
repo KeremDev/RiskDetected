@@ -7,7 +7,6 @@
  *   canvases     : string[] (all selected; Free supports one, paid plans support multiple)
  *   text_input   : string | null
  *   company_id   : string | null (optional, Plus/Pro owned company)
- *   user_prompt  : string | null (optional, max 100 chars; user focus note)
  *   request_id   : string | null (client trace id)
  *   support_id   : string | null (user-facing support code)
  *   photo_paths  : string[] (Storage paths in "photos" bucket)
@@ -37,6 +36,16 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  sanitizeTextAnalysisHazardForReportLanguage,
+} from "../_shared/text-report-language.ts";
+import {
+  type AnalysisSectorId,
+  analysisSectorLabel,
+  buildActiveSectorPromptBlock,
+  onboardingSectorProfileRule,
+  resolveActiveSectorState,
+} from "./sector-context.ts";
 
 declare const EdgeRuntime: {
   waitUntil: (promise: Promise<unknown>) => void;
@@ -59,11 +68,17 @@ const MODEL_GROQ_FREE_DEFAULT = "meta-llama/llama-4-scout-17b-16e-instruct";
 const MODEL_GROQ_PLUS_PRO_DEFAULT = MODEL_GROQ_FREE_DEFAULT;
 const GROQ_MAX_BASE64_IMAGES = 5;
 const GROQ_MAX_BASE64_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_ANALYSIS_IMAGE_PARTS = 5;
+const MAX_INLINE_PHOTO_BASE64_BYTES = 2_100_000;
+const MAX_INLINE_PHOTO_DECODED_BYTES = 1_500_000;
+const MAX_INLINE_PHOTO_TOTAL_BASE64_BYTES = 4_500_000;
 
 type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
 type CompanyHazardClass = "low" | "medium" | "high";
 type ReferenceMode = "none" | "short" | "full";
+type AIExecutionRoute = "free_legacy" | "free_paid_trial" | "paid_plan";
+type GeminiPoolName = "free" | "paid";
 
 type CompanyRow = {
   id: string;
@@ -91,8 +106,10 @@ type OnboardingContext = {
   auditFrequency: string | null;
 };
 
-const PROMPT_VERSION = "isg-photo-personalized-v2026-05-20";
+const PROMPT_VERSION =
+  "isg-photo-text-report-language-v2026-06-06-twelve-layer-two-measures";
 const PERSONALIZATION_VERSION = "onboarding-v1";
+const BUSINESS_TIME_ZONE = "Europe/Istanbul";
 
 const PLAN_LIMITS: Record<PlanTier, {
   dailyStandardLimit?: number;
@@ -104,14 +121,14 @@ const PLAN_LIMITS: Record<PlanTier, {
   plus: {
     dailyStandardLimit: 10,
     dailyDetailedLimit: 2,
-    minHazards: 11,
-    maxHazards: 14,
+    minHazards: 12,
+    maxHazards: 16,
   },
   pro: {
     dailyStandardLimit: 40,
     dailyDetailedLimit: 10,
-    minHazards: 11,
-    maxHazards: 14,
+    minHazards: 12,
+    maxHazards: 16,
   },
 };
 
@@ -133,14 +150,19 @@ const CORE_ANALYSIS_PROMPT =
 
 GÖREV: Sana verilen görsel veya metin girdisinden, sahada fiziksel olarak bulunan bir denetçinin yakalayacağı tüm İSG tehlikelerini sistematik olarak tespit et ve raporla.
 
-TARAMA PROSEDÜRÜ — Her görseli SIRAYLA şu 7 katmanda tara:
-1. ZEMİN VE SAHA DÜZENİ: ıslaklık, çamur, su birikintisi, boşluk, kot farkı, dağınık malzeme, kablo, hortum, kayma/takılma zeminleri.
-2. ÇALIŞAN(LAR) VE KKD: baret, gözlük, eldiven, ayakkabı, yelek, emniyet kemeri, maske; duruş ve manuel taşıma ergonomisi.
-3. YÜKSEKTE ÇALIŞMA: kenar koruması, korkuluk, iskele bütünlüğü, merdiven açısı, platform, yaşam hattı, ankraj, açık kenar, boşluk, düşen cisim tehlikesi.
-4. ELEKTRİK VE ENERJİ: kablo, pano, fiş, jeneratör, su+elektrik teması, topraklama, geçici tesisat.
-5. MAKİNE, EKİPMAN VE KİMYASAL: hareketli parça, koruma, kaldırma ekipmanı, varil/şişe, etiketleme, depolama, yangın yükü.
-6. ÇEVRE VE ACİL DURUM: işaretleme, acil çıkış, yangın söndürücü, ilk yardım görünürlüğü, trafik, üst yapı, hava koşulu.
-7. EĞİTİM VE YETKİNLİK: Görsel/metin kanıtı destekliyorsa işe özgü eğitim, talimat, yetkilendirme ve mesleki yeterlilik belgesi ihtiyacını "sahada doğrulanmalı" tonuyla sorgula.
+TARAMA PROSEDÜRÜ — Her görseli SIRAYLA şu 12 katmanda tara:
+1. ZEMİN, SAHA DÜZENİ VE DÜZEN-TERTİP: ıslaklık, çamur, su birikintisi, boşluk, kot farkı, dağınık malzeme, kablo/hortum geçişi, kapalı/tıkalı geçiş yolu, kayma/takılma zeminleri.
+2. ÇALIŞAN(LAR) VE KKD: baret, gözlük, eldiven, ayakkabı, yüksek görünürlük yeleği, emniyet kemeri, maske/solunum koruması, kulak koruyucu; KKD'nin mevcudiyeti, uygunluğu ve doğru kullanımı.
+3. YÜKSEKTE ÇALIŞMA: kenar koruması, korkuluk, iskele bütünlüğü, merdiven açısı/sabitliği, platform/MEWP, yaşam hattı, ankraj, açık kenar, döşeme boşluğu, düşen cisim tehlikesi.
+4. ELEKTRİK VE ENERJİ: açık pano, hasarlı/ek yapılmış kablo, fiş, jeneratör, su+elektrik teması, topraklama, geçici tesisat, enerji kesme-kilitleme (LOTO/EKED) izleri.
+5. MAKİNE, EKİPMAN VE İŞ EKİPMANI: hareketli/dönen parça koruyucusu (muhafaza), acil durdurma, sıkışma/ezilme noktası, el aletinin durumu, periyodik kontrol etiketi.
+6. KALDIRMA, TAŞIMA VE İSTİFLEME: vinç/forklift operasyonu, sapan/halat durumu, yük altında çalışan, raf ve istif stabilitesi, devrilme riski.
+7. KİMYASAL VE TEHLİKELİ MADDE: etiketleme/GBF, uygun depolama, dökülme, yetersiz havalandırma, parlayıcı/patlayıcı madde, uyumsuz maddelerin bir arada bulunması.
+8. YANGIN VE PATLAMA: yangın söndürücü erişimi, tıkalı kaçış yolu, tutuşturucu kaynak, sıcak iş (kaynak/kesme), depolanan yanıcı malzeme/yangın yükü.
+9. FİZİKSEL ORTAM ETKENLERİ: aşırı gürültü kaynağı, titreşimli ekipman, toz/duman bulutu, yetersiz aydınlatma, termal konfor (aşırı sıcak/soğuk), yetersiz havalandırma.
+10. ERGONOMİ VE ELLE TAŞIMA: ağır manuel kaldırma, hatalı duruş, tekrarlı hareket, uygunsuz çalışma yüksekliği, taşıma yardımcısı yokluğu.
+11. KAZI, KAPALI ALAN VE ÖZEL İŞLER (saha tipine göre): şev/iksa eksikliği, çökme riski, kapalı alan girişi, malzeme deposu/istif kenarı, su-çamur birikintisi.
+12. ÇEVRE, ACİL DURUM, İŞARETLEME VE YETKİNLİK: atık/dökülme yönetimi, acil çıkış ve toplanma alanı, ilk yardım donanımı görünürlüğü, trafik/üst yapı/hava koşulu, uyarı tabelası/işaretleme; görsel/metin kanıtı destekliyorsa işe özgü eğitim, talimat, yetkilendirme ve mesleki yeterlilik belgesi ihtiyacını "sahada doğrulanmalı" tonuyla sorgula.
 
 Her katmanı gözden geçir; bir katmanda risk yoksa atla, ama tarama atlama.
 
@@ -175,19 +197,29 @@ CONFIDENCE:
 Confidence < 0.50 ise description sonuna "(sahada doğrulanmalı)" ekle.
 
 KALİTE FİLTRESİ — KAÇIN:
-- Genel ifade ("güvenlik önlemleri alınmalı") yerine somut teknik aksiyon yaz.
+- Genel ifade ("güvenlik önlemleri alınmalı") yerine somut önlem / kontrol tedbiri yaz.
 - Görselde olmayan riski uydurma.
 - Aynı kök nedenli riskleri tek bulguda topla.
 - Hassas ölçü uydurma; "yaklaşık 3m" veya "1 kat yüksekliğinde" yaz.
 - "Eğitim verilmeli" jenerik aksiyonundan kaçın; hangi iş/ekipman/risk için ne doğrulanacağını söyle.
 - Kullanıcı profili veya firma bağlamı görsel kanıtı filtrelemez; profili yalnızca ton, öncelik ve açıklama derinliği için kullan.
+- Metin analizinde kullanıcı girdisini rapora alıntı olarak taşıma. "Metinde...", "Kullanıcı...", "ifadesi geçmektedir", "belirtmiştir", tırnak içinde ham metin veya birinci/ikinci şahıs dili kullanma.
+- Metin analizinde tüm bulgu metinlerini işverenle paylaşılabilir, nesnel saha denetimi diliyle yaz; kullanıcı notunu yalnız tehlike arama bağlamı olarak kullan.
+
+ÖNLEM ÜRETİM KURALI:
+Her bulgu için tam 2 önlem ver:
+1. Düzeltici önlem: Sahadaki mevcut tehlikeyi doğrudan gidermeye yönelik somut, anlık aksiyon. Mümkünse riski kaynağında ortadan kaldıran/azaltan teknik müdahale (korkuluk kurulumu, kaynak izolasyonu, ekipman değişimi vb.).
+2. Önleyici kontrol: Aynı riskin tekrarını engelleyecek kalıcı/sistemsel kontrol. Prosedür, izin sistemi (EKED/LOTO), periyodik kontrol, gözetim, işaretleme veya hedeflenmiş eğitim doğrulaması.
+- İki önlem birbirinin tekrarı OLMAMALI; düzeltici önlem "yap", önleyici kontrol "tekrar olmasın" sorusunu yanıtlar.
+- KKD'yi yalnızca üst sıra kontroller yetersiz kaldığında ve ikincil olarak öner.
 
 ÖRNEK BULGU (kopyalama, sadece kalite referansı):
 {
   "title": "Açık kenar — düşmeyi önleyici korkuluk eksikliği",
   "category": "Yüksekte Çalışma",
   "description": "Üst katın doğu kenarında korkuluk yok; çalışan kenara yakın malzeme taşıyor. Yaklaşık 4m yükseklikten ölümcül düşme potansiyeli.",
-  "recommended_action": "Tüm açık kenarlara TS EN 13374 uyumlu korkuluk kur; korkuluk takılana kadar bölgeye giriş kısıtlansın.",
+  "corrective_action": "Açık kenara TS EN 13374 uyumlu korkuluk kur; kurulana kadar bölgeye erişimi durdur.",
+  "preventive_control": "Kenar koruma kontrolünü günlük saha başlangıç formuna ekle ve sorumlu kişiyi belirle.",
   "confidence": 0.92,
   "fk_probability": 6,
   "fk_frequency": 6,
@@ -198,8 +230,10 @@ KALİTE FİLTRESİ — KAÇIN:
 
 ÇIKTI KURALLARI:
 - Yalnızca JSON döndür; önünde/arkasında açıklama yazma.
-- Tüm metin Türkçe.
-- description max 200 karakter; recommended_action max 180 karakter.
+- Tüm metin DEĞERLERİ Türkçe; JSON anahtarları (key) İngilizce ve şemadaki haliyle aynen korunur.
+- description max 200 karakter; corrective_action max 180 karakter; preventive_control max 180 karakter.
+- Her bulguda corrective_action ve preventive_control alanları zorunludur ve boş bırakılamaz.
+- Text mode'da observed_evidence, description, corrective_action, preventive_control ve root_cause kullanıcı cümlesini veya kullanıcıya atıf yapan dili içermemeli; profesyonel saha bulgusu olarak yeniden yazılmalı.
 - Skorları HESAPLAMA, ham girdileri ver — sistem hesaplar.
 - Fine-Kinney ihtimal: 0.2 / 0.5 / 1 / 3 / 6 / 10
 - Fine-Kinney frekans:  0.5 / 1 / 2 / 3 / 6 / 10
@@ -207,8 +241,7 @@ KALİTE FİLTRESİ — KAÇIN:
 - m5_probability: 1-5, m5_severity: 1-5`;
 
 const CANVAS_FOCUS: Record<string, string> = {
-  general:
-    "Görüntüdeki tüm görünür İSG uygunsuzluklarını tara; düşme, çarpma, sıkışma, elektrik, yangın, kimyasal, düzen-temizlik, KKD, işaretleme, acil çıkış ve çalışma alanı risklerini önceliklendir.",
+  general: "Standart saha taraması: ana tarama prosedürünü uygula.",
   ppe:
     "Baret, gözlük/yüz koruma, eldiven, iş ayakkabısı, reflektif yelek, solunum koruması, kulak koruması, emniyet kemeri ve kullanım/uygunluk eksiklerini değerlendir.",
   machine:
@@ -291,6 +324,59 @@ function referenceModeForTier(tier: PlanTier): ReferenceMode {
   return "none";
 }
 
+function safeText(value: unknown, fallback = ""): string {
+  if (value === null || value === undefined) return fallback;
+  return String(value).trim();
+}
+
+function normalizeRecommendedMeasures(
+  hazard: Record<string, unknown>,
+): Array<{ kind: string; title: string; text: string }> {
+  const correctiveAction = safeText(hazard.corrective_action);
+  const preventiveControl = safeText(hazard.preventive_control);
+  const rawMeasures = Array.isArray(hazard.recommended_measures)
+    ? hazard.recommended_measures
+    : [];
+  const normalized = rawMeasures
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const rawKind = safeText(record.kind).toLowerCase();
+      const kind = rawKind === "preventive" ? "preventive" : "corrective";
+      const title = kind === "preventive"
+        ? "Önleyici Kontrol"
+        : "Düzeltici Önlem";
+      const text = safeText(record.text);
+      return text ? { kind, title, text } : null;
+    })
+    .filter((item): item is { kind: string; title: string; text: string } =>
+      item !== null
+    );
+
+  const corrective = correctiveAction
+    ? { kind: "corrective", title: "Düzeltici Önlem", text: correctiveAction }
+    : normalized.find((measure) => measure.kind === "corrective");
+  const preventive = preventiveControl
+    ? { kind: "preventive", title: "Önleyici Kontrol", text: preventiveControl }
+    : normalized.find((measure) => measure.kind === "preventive");
+  const fallback = safeText(hazard.recommended_action);
+
+  return [
+    corrective ?? {
+      kind: "corrective",
+      title: "Düzeltici Önlem",
+      text: fallback ||
+        "Uygunsuzluğu sahada güvenli hale getirecek düzeltici kontrolü uygula.",
+    },
+    preventive ?? {
+      kind: "preventive",
+      title: "Önleyici Kontrol",
+      text:
+        "Tekrarı önlemek için kontrol sorumlusu, periyodik kontrol ve saha doğrulama kaydı tanımla.",
+    },
+  ];
+}
+
 function responseSchema(tier: PlanTier) {
   const includesPaidFields = tier !== "free";
   const hazardProperties: Record<string, unknown> = {
@@ -298,7 +384,8 @@ function responseSchema(tier: PlanTier) {
     category: { type: "STRING" },
     observed_evidence: { type: "STRING" },
     description: { type: "STRING" },
-    recommended_action: { type: "STRING" },
+    corrective_action: { type: "STRING" },
+    preventive_control: { type: "STRING" },
     confidence: { type: "NUMBER" },
     fk_probability: { type: "NUMBER" },
     fk_frequency: { type: "NUMBER" },
@@ -315,7 +402,8 @@ function responseSchema(tier: PlanTier) {
     "category",
     "observed_evidence",
     "description",
-    "recommended_action",
+    "corrective_action",
+    "preventive_control",
     "confidence",
     "fk_probability",
     "fk_frequency",
@@ -361,9 +449,10 @@ function groqResponseSchemaInstruction(tier: PlanTier): string {
     {
       "title": "kısa tehlike başlığı",
       "category": "risk kategorisi",
-      "observed_evidence": "görüntü/metinde görülen kanıt",
+      "observed_evidence": "rapora uygun nesnel saha kanıtı; metin modunda kullanıcı notunu alıntılama",
       "description": "riskin kısa açıklaması",
-      "recommended_action": "kısa uygulanabilir önlem",
+      "corrective_action": "mevcut uygunsuzluğu sahada düzelten kısa uygulanabilir önlem",
+      "preventive_control": "tekrarını önleyen kısa kontrol/prosedür/izleme tedbiri",
       "confidence": 0.0,
       "fk_probability": 1,
       "fk_frequency": 1,
@@ -565,7 +654,7 @@ function normalizeAnalysisMode(
 
 function istanbulDayStartISO(): string {
   const day = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Istanbul",
+    timeZone: BUSINESS_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -577,6 +666,23 @@ function buildSystemPrompt(): string {
   return CORE_ANALYSIS_PROMPT;
 }
 
+function buildUserTextInputBlock(userText: string): string {
+  return `<kullanici_metin_girdisi>
+METİN ANALİZİ TALİMATI:
+- Aşağıdaki metni rapora geçirilecek beyan değil; saha bağlamı, denetim yönlendirmesi ve tehlike arama ipucu olarak değerlendir.
+- Ana system prompttaki 12 katmanlı taramayı metne uyarla: zemin/düzen, KKD, yüksekte çalışma, elektrik/enerji, makine/ekipman, kaldırma/istif, kimyasal, yangın/patlama, fiziksel ortam, ergonomi, özel işler, acil durum/işaretleme/yetkinlik eksenlerini sırayla sorgula.
+- Yalnızca metinde açıkça belirtilen veya güçlü şekilde ima edilen tehlikeleri bulguya dönüştür.
+- Fotoğraf kanıtı olmadığı için belirsiz noktaları uydurma; gerekiyorsa description içinde "(sahada doğrulanmalı)" tonunu kullan.
+- Metindeki iş, ortam, ekipman, yükseklik, kimyasal, çalışan davranışı, firma/alan veya sektör ipuçlarını risk önceliklendirmede kullan.
+- Kullanıcı metni kısa veya eksikse az ama güvenilir bulgu döndür; listeyi doldurmak için risk üretme.
+- Kullanıcı metnini hiçbir alanda aynen alıntılama; tırnak içinde yazma; "metinde", "kullanıcı", "ifadesi", "belirtmiştir", "yazmış", "demiş" gibi kaynak atfı yapan kelimeleri kullanma.
+- observed_evidence ve description alanlarını işverenle paylaşılabilir saha denetimi diliyle yaz. Örnek: "Makine koruyucularının yeterliliği sahada doğrulanmalıdır."
+
+KULLANICI METNİ:
+${userText}
+</kullanici_metin_girdisi>`;
+}
+
 function buildSubscriptionContext(tier: PlanTier): string {
   const minHazards = PLAN_LIMITS[tier].minHazards;
   const maxHazards = PLAN_LIMITS[tier].maxHazards;
@@ -584,14 +690,14 @@ function buildSubscriptionContext(tier: PlanTier): string {
     ? `${minHazards} ile ${maxHazards} arasında tehlike döndür; önem sırasına göre sırala.`
     : maxHazards
     ? `En fazla ${maxHazards} tehlike döndür; önem sırasına göre sırala.`
-    : "6 ile 9 arasında bulgu döndür. Daha azı eksik, daha fazlası odak dağıtır.";
+    : "10 ile 13 arasında bulgu döndür. Daha azı eksik, daha fazlası odak dağıtır.";
 
   if (tier === "free") {
     return `<abonelik_seviyesi tier="free">
 ÇIKTI KAPSAMI:
 - ${hazardCountRule}
 - references ve root_cause alanı üretme; ayrı mevzuat/referans alanı Free'de kapalı.
-- recommended_action alanında kullanıcıya uygulanabilir değer sağlayan standart veya mevzuat adı geçebilir.
+- corrective_action veya preventive_control alanlarında kullanıcıya uygulanabilir değer sağlayan standart veya mevzuat adı geçebilir.
 - RG tarihi, uzun mevzuat dökümü, madde listesi veya ayrı referans açıklaması verme.
 </abonelik_seviyesi>`;
   }
@@ -725,12 +831,13 @@ function frequencyContext(value: string | null): string {
 
 function buildOnboardingContext(
   row: OnboardingAnswersRow | null,
+  hasActiveSector: boolean,
 ): OnboardingContext {
   const certificateClass = typeof row?.certificate_class === "string"
     ? row.certificate_class
     : null;
   const hazardClasses = safeStringArray(row?.hazard_classes);
-  const sectors = safeStringArray(row?.sectors).slice(0, 2);
+  const sectors = safeStringArray(row?.sectors);
   const auditFrequency = typeof row?.audit_frequency === "string"
     ? row.audit_frequency
     : null;
@@ -738,12 +845,17 @@ function buildOnboardingContext(
     certificateClass || hazardClasses.length > 0 || sectors.length > 0 ||
       auditFrequency,
   );
+  const sectorLine = hasActiveSector
+    ? `Onboarding sektörleri (${sectors.length}): ${
+      sectors.length > 0 ? sectors.join(", ") : "belirtilmedi"
+    }. ${onboardingSectorProfileRule(true)}`
+    : sectorContext(sectors);
 
   const block = `<kullanici_profili applied="${applied ? "true" : "false"}">
 Bu profil çıktının tonunu ve önceliklerini şekillendirir; tarama prosedürünü veya görsel/metin kanıtını asla atlatmaz.
 - ${certificateContext(certificateClass)}
 - ${onboardingHazardContext(hazardClasses)}
-- ${sectorContext(sectors)}
+- ${sectorLine}
 - ${frequencyContext(auditFrequency)}
 </kullanici_profili>`;
 
@@ -762,14 +874,23 @@ function buildAnalysisContext(params: {
   tier: PlanTier;
   onboardingContext: OnboardingContext;
   companyContext: string | null;
+  activeSector: AnalysisSectorId | null;
 }): string {
-  const focusLines =
-    params.canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") ||
+  const focusLines = params.canvases
+    .filter((c) => c !== "general")
+    .map((c) => CANVAS_FOCUS[c])
+    .filter(Boolean)
+    .join(" ") ||
     CANVAS_FOCUS["general"];
+  const activeSectorBlock = buildActiveSectorPromptBlock({
+    sector: params.activeSector,
+    outputLanguage: "tr",
+  });
 
   return `<analiz_baglami prompt_version="${PROMPT_VERSION}" personalization_version="${PERSONALIZATION_VERSION}">
 <odak>${focusLines}</odak>
 ${buildSubscriptionContext(params.tier)}
+${activeSectorBlock}
 ${params.onboardingContext.block}
 ${params.companyContext ?? ""}
 KRİTİK ÇELİŞKİ KURALLARI:
@@ -804,7 +925,6 @@ async function callGemini(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   pool: "free" | "paid",
   tier: PlanTier,
@@ -817,14 +937,8 @@ async function callGemini(
   for (const img of imageBase64Parts) {
     parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
   }
-  if (userPrompt) {
-    parts.push({
-      text:
-        `Kullanıcının özel analiz talebi: ${userPrompt}\nBu talebi yalnızca görsel/metin kanıtları destekliyorsa önceliklendir; kanıt yoksa uydurma.`,
-    });
-  }
   if (userText) {
-    parts.push({ text: `Kullanıcı saha/metin girdisi: ${userText}` });
+    parts.push({ text: buildUserTextInputBlock(userText) });
   } else if (imageBase64Parts.length === 0) {
     throw new Error("En az bir fotoğraf veya metin girdisi gerekli.");
   }
@@ -880,13 +994,97 @@ function decodedBase64ByteLength(base64: string): number {
   return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding);
 }
 
+function isValidStandardBase64(value: string): boolean {
+  const normalized = value.replace(/\s/g, "");
+  return normalized.length > 0 &&
+    normalized.length % 4 !== 1 &&
+    /^[A-Za-z0-9+/]*={0,2}$/.test(normalized);
+}
+
+function validateInlinePhotoInput(
+  inlinePhotoParts: unknown,
+  requestedPhotoPaths: string[],
+): { ok: true } | { ok: false; code: string; message: string } {
+  const parts = Array.isArray(inlinePhotoParts) ? inlinePhotoParts : [];
+  const totalImageParts = requestedPhotoPaths.length + parts.length;
+  if (totalImageParts > MAX_ANALYSIS_IMAGE_PARTS) {
+    return {
+      ok: false,
+      code: "too_many_photos",
+      message:
+        `Analiz için en fazla ${MAX_ANALYSIS_IMAGE_PARTS} fotoğraf gönderebilirsin.`,
+    };
+  }
+
+  let totalEncodedBytes = 0;
+  for (const part of parts) {
+    const source = part as {
+      data?: unknown;
+      mime_type?: unknown;
+      mimeType?: unknown;
+    };
+    const data = typeof source?.data === "string"
+      ? source.data.replace(/\s/g, "")
+      : "";
+    if (!isValidStandardBase64(data)) {
+      return {
+        ok: false,
+        code: "invalid_photo_payload",
+        message: "Fotoğraf verisi geçersiz.",
+      };
+    }
+
+    const rawMime = String(source.mime_type ?? source.mimeType ?? "")
+      .toLowerCase();
+    if (
+      rawMime.length > 0 &&
+      !rawMime.includes("jpeg") &&
+      !rawMime.includes("jpg") &&
+      !rawMime.includes("png")
+    ) {
+      return {
+        ok: false,
+        code: "unsupported_photo_type",
+        message: "Fotoğraf formatı JPEG veya PNG olmalı.",
+      };
+    }
+
+    if (data.length > MAX_INLINE_PHOTO_BASE64_BYTES) {
+      return {
+        ok: false,
+        code: "photo_too_large",
+        message: "Fotoğraf dosyası analiz için çok büyük.",
+      };
+    }
+
+    const decodedBytes = decodedBase64ByteLength(data);
+    if (decodedBytes > MAX_INLINE_PHOTO_DECODED_BYTES) {
+      return {
+        ok: false,
+        code: "photo_too_large",
+        message: "Fotoğraf dosyası analiz için çok büyük.",
+      };
+    }
+
+    totalEncodedBytes += data.length;
+    if (totalEncodedBytes > MAX_INLINE_PHOTO_TOTAL_BASE64_BYTES) {
+      return {
+        ok: false,
+        code: "photo_package_too_large",
+        message: "Fotoğraf paketi çok büyük.",
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
 async function callGroq(
   apiKey: string,
   model: string,
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   tier: PlanTier,
   simulation?: AISimulationConfig,
@@ -908,10 +1106,7 @@ async function callGroq(
       text: [
         groqResponseSchemaInstruction(tier),
         analysisContext,
-        userPrompt
-          ? `Kullanıcının özel analiz talebi: ${userPrompt}\nBu talebi yalnızca görsel/metin kanıtları destekliyorsa önceliklendir; kanıt yoksa uydurma.`
-          : null,
-        userText ? `Kullanıcı saha/metin girdisi: ${userText}` : null,
+        userText ? buildUserTextInputBlock(userText) : null,
       ].filter(Boolean).join("\n\n"),
     },
   ];
@@ -1091,14 +1286,57 @@ function plusProGroqModel(): string {
     MODEL_GROQ_PLUS_PRO_DEFAULT;
 }
 
-function geminiKeyPoolForTier(tier: PlanTier): GeminiKeyConfig[] {
-  return tier === "free" ? freeGeminiKeyPool() : paidGeminiKeyPool();
+function freeStandardAnalysisRouteFlag(): "paid_trial" | "free_legacy" {
+  const rawValue = Deno.env.get("FREE_STANDARD_ANALYSIS_AI_ROUTE")?.trim()
+    .toLowerCase();
+  return rawValue === "free_legacy" ? "free_legacy" : "paid_trial";
 }
 
-function geminiRequiredSecretName(tier: PlanTier): string {
-  return tier === "free"
+function resolveAIExecutionRoute(
+  planTier: PlanTier,
+  analysisMode: AnalysisMode,
+): AIExecutionRoute {
+  if (planTier !== "free") return "paid_plan";
+  if (
+    analysisMode === "standard" &&
+    freeStandardAnalysisRouteFlag() === "paid_trial"
+  ) {
+    return "free_paid_trial";
+  }
+  return "free_legacy";
+}
+
+function resolveQualityTier(
+  planTier: PlanTier,
+  aiExecutionRoute: AIExecutionRoute,
+): PlanTier {
+  return aiExecutionRoute === "free_paid_trial" ? "plus" : planTier;
+}
+
+function geminiKeyPoolForRoute(
+  aiExecutionRoute: AIExecutionRoute,
+): GeminiKeyConfig[] {
+  return aiExecutionRoute === "free_legacy"
+    ? freeGeminiKeyPool()
+    : paidGeminiKeyPool();
+}
+
+function expectedGeminiPoolForRoute(
+  aiExecutionRoute: AIExecutionRoute,
+): GeminiPoolName {
+  return aiExecutionRoute === "free_legacy" ? "free" : "paid";
+}
+
+function geminiRequiredSecretNameForRoute(
+  aiExecutionRoute: AIExecutionRoute,
+): string {
+  return aiExecutionRoute === "free_legacy"
     ? "GEMINI_API_KEY_PRIMARY veya GEMINI_API_KEY"
     : "GEMINI_API_KEY_PAID";
+}
+
+function primaryModelForRoute(aiExecutionRoute: AIExecutionRoute): string {
+  return aiExecutionRoute === "free_legacy" ? MODEL_FREE : MODEL_PAID_FAST;
 }
 
 function userFacingAIError(
@@ -1240,23 +1478,53 @@ function geminiAttemptSequence(
   return attempts;
 }
 
+function freePaidTrialPaidGeminiAttemptSequence(
+  keyPool: GeminiKeyConfig[],
+): Array<{ keyConfig: GeminiKeyConfig; model: string }> {
+  const attempts: Array<{ keyConfig: GeminiKeyConfig; model: string }> = [];
+  const paidKeys = keyPool.filter((item) => item.pool === "paid");
+  const primary = paidKeys.find((item) => item.alias === "gemini_paid_primary");
+  const secondary = paidKeys.find((item) =>
+    item.alias === "gemini_paid_secondary"
+  );
+  const knownPaidAliases = new Set([
+    "gemini_paid_primary",
+    "gemini_paid_secondary",
+  ]);
+  const orderedKeys = [
+    primary,
+    secondary,
+    ...paidKeys.filter((item) => !knownPaidAliases.has(item.alias)),
+  ].filter((item): item is GeminiKeyConfig => Boolean(item));
+
+  for (const keyConfig of orderedKeys) {
+    attempts.push({ keyConfig, model: MODEL_PAID_FAST });
+    attempts.push({ keyConfig, model: MODEL_PAID_FAST });
+  }
+  for (const keyConfig of orderedKeys) {
+    attempts.push({ keyConfig, model: MODEL_FLASH_LITE });
+  }
+
+  return attempts;
+}
+
 async function callGeminiWithFallback(
   keyPool: GeminiKeyConfig[],
   preferredModel: string,
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   tier: PlanTier,
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
+  attemptSequence?: Array<{ keyConfig: GeminiKeyConfig; model: string }>,
 ) {
   let lastError: unknown = null;
   let attempt = 0;
   const attemptFailures: GeminiAttemptFailure[] = [];
   for (
-    const { keyConfig, model } of geminiAttemptSequence(
+    const { keyConfig, model } of attemptSequence ?? geminiAttemptSequence(
       keyPool,
       preferredModel,
     )
@@ -1269,7 +1537,6 @@ async function callGeminiWithFallback(
         systemPrompt,
         analysisContext,
         userText,
-        userPrompt,
         imageBase64Parts,
         keyConfig.pool,
         tier,
@@ -1317,7 +1584,6 @@ async function callFreeAIWithFallback(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
@@ -1329,7 +1595,6 @@ async function callFreeAIWithFallback(
       systemPrompt,
       analysisContext,
       userText,
-      userPrompt,
       imageBase64Parts,
       "free",
       simulation,
@@ -1366,7 +1631,6 @@ async function callFreeAIWithFallback(
       systemPrompt,
       analysisContext,
       userText,
-      userPrompt,
       imageBase64Parts,
       "free",
       simulation,
@@ -1388,7 +1652,6 @@ async function callPaidAIWithFallback(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   tier: PlanTier,
   simulation?: AISimulationConfig,
@@ -1401,7 +1664,6 @@ async function callPaidAIWithFallback(
       systemPrompt,
       analysisContext,
       userText,
-      userPrompt,
       imageBase64Parts,
       tier,
       simulation,
@@ -1438,7 +1700,6 @@ async function callPaidAIWithFallback(
       systemPrompt,
       analysisContext,
       userText,
-      userPrompt,
       imageBase64Parts,
       tier,
       simulation,
@@ -1451,6 +1712,118 @@ async function callPaidAIWithFallback(
       attempt: null,
       fallbackSource: `gemini_paid_pool -> ${groqKey.alias}`,
     };
+  }
+}
+
+async function callFreePaidTrialAIWithFallback(
+  paidGeminiKeyPool: GeminiKeyConfig[],
+  freeGeminiKeyPool: GeminiKeyConfig[],
+  preferredModel: string,
+  systemPrompt: string,
+  analysisContext: string,
+  userText: string | null,
+  imageBase64Parts: { mimeType: string; data: string }[],
+  simulation?: AISimulationConfig,
+  trace?: TraceMeta,
+) {
+  try {
+    const out = await callGeminiWithFallback(
+      paidGeminiKeyPool,
+      preferredModel,
+      systemPrompt,
+      analysisContext,
+      userText,
+      imageBase64Parts,
+      "plus",
+      simulation,
+      trace,
+      freePaidTrialPaidGeminiAttemptSequence(paidGeminiKeyPool),
+    );
+    return {
+      ...out,
+      providerUsed: "gemini" as AIProvider,
+      fallbackSource: [
+        out.modelUsed !== preferredModel ? out.modelUsed : null,
+        out.apiKeyAlias && out.apiKeyAlias !== paidGeminiKeyPool[0]?.alias
+          ? out.apiKeyAlias
+          : null,
+      ].filter(Boolean).join(" -> ") || null,
+    };
+  } catch (paidErr) {
+    if (!isRetryableAIError(paidErr) || freeGeminiKeyPool.length === 0) {
+      throw paidErr;
+    }
+
+    console.warn(
+      "Free paid trial Gemini pool exhausted; trying free Gemini continuity fallback",
+      JSON.stringify({
+        free_aliases: freeGeminiKeyPool.map((item) => item.alias),
+        paid_error: safeLogError(paidErr),
+      }),
+    );
+
+    try {
+      const out = await callGeminiWithFallback(
+        freeGeminiKeyPool,
+        MODEL_FREE,
+        systemPrompt,
+        analysisContext,
+        userText,
+        imageBase64Parts,
+        "plus",
+        simulation,
+        trace,
+      );
+      const fallbackDetails = [
+        out.modelUsed !== MODEL_FREE ? out.modelUsed : null,
+        out.apiKeyAlias && out.apiKeyAlias !== freeGeminiKeyPool[0]?.alias
+          ? out.apiKeyAlias
+          : null,
+      ].filter(Boolean);
+      return {
+        ...out,
+        providerUsed: "gemini" as AIProvider,
+        fallbackSource: [
+          "gemini_paid_pool",
+          "gemini_free_pool",
+          ...fallbackDetails,
+        ].join(" -> "),
+      };
+    } catch (freeErr) {
+      if (!isRetryableAIError(freeErr)) throw freeErr;
+
+      const groqKey = freeGroqKeyConfig();
+      if (!groqKey) throw freeErr;
+
+      console.warn(
+        "Free Gemini continuity fallback exhausted; trying free Groq fallback",
+        JSON.stringify({
+          apiKeyAlias: groqKey.alias,
+          model: freeGroqModel(),
+          free_gemini_error: safeLogError(freeErr),
+        }),
+      );
+
+      const out = await callGroq(
+        groqKey.key,
+        freeGroqModel(),
+        systemPrompt,
+        analysisContext,
+        userText,
+        imageBase64Parts,
+        "plus",
+        simulation,
+      );
+      return {
+        ...out,
+        providerUsed: "groq" as AIProvider,
+        modelUsed: freeGroqModel(),
+        apiKeyAlias: groqKey.alias,
+        attempt: null,
+        fallbackSource:
+          `gemini_paid_pool -> gemini_free_pool -> ${groqKey.alias}`,
+      };
+    }
   }
 }
 
@@ -1983,6 +2356,24 @@ async function sendAnalysisCompletePush(params: {
     );
     return;
   }
+  let pushResult: { status?: string } = {};
+  try {
+    pushResult = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    pushResult = {};
+  }
+  if (pushResult.status !== "sent") {
+    console.warn(
+      "Analysis completion push not sent",
+      JSON.stringify({
+        request_id: params.requestID,
+        support_id: params.supportID,
+        analysis_id: params.analysisID,
+        body: safeLogText(responseText),
+      }),
+    );
+    return;
+  }
 
   await params.supabase
     .from("analyses")
@@ -1990,16 +2381,6 @@ async function sendAnalysisCompletePush(params: {
     .eq("id", params.analysisID)
     .eq("user_id", params.userID)
     .is("completion_push_sent_at", null);
-}
-
-function sanitizedUserPrompt(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const cleaned = value
-    .replace(/[\u0000-\u001f\u007f]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 100);
-  return cleaned.length > 0 ? cleaned : null;
 }
 
 // deno-lint-ignore no-explicit-any
@@ -2148,10 +2529,32 @@ serve(async (req: Request) => {
     analysis_mode,
     text_input,
     company_id,
+    analysis_sector,
+    analysis_sector_source,
+    analysis_sector_prompt_version,
     photo_paths = [],
     photo_base64_parts = [],
   } = body;
-  const userPrompt = sanitizedUserPrompt(body.user_prompt);
+  const requestedAnalysisSector = typeof analysis_sector === "string"
+    ? analysis_sector.trim()
+    : "";
+  const requestedSectorPreflight = isWorkerInvocation
+    ? null
+    : resolveActiveSectorState({
+      requestedSector: requestedAnalysisSector,
+      persistedSector: null,
+    });
+  if (requestedSectorPreflight && !requestedSectorPreflight.ok) {
+    return errorResponse(
+      requestedSectorPreflight.status,
+      requestedSectorPreflight.message,
+      {
+        code: requestedSectorPreflight.code,
+        requestID,
+        supportID,
+      },
+    );
+  }
   const requestedCompanyID = typeof company_id === "string"
     ? company_id.trim()
     : "";
@@ -2168,6 +2571,17 @@ serve(async (req: Request) => {
       .map((path) => typeof path === "string" ? path.trim() : "")
       .filter((path) => path.length > 0)
     : [];
+  const inlinePhotoValidation = validateInlinePhotoInput(
+    photo_base64_parts,
+    requestedPhotoPaths,
+  );
+  if (!inlinePhotoValidation.ok) {
+    return errorResponse(400, inlinePhotoValidation.message, {
+      code: inlinePhotoValidation.code,
+      requestID,
+      supportID,
+    });
+  }
 
   console.log(
     "Analyze request started",
@@ -2181,7 +2595,9 @@ serve(async (req: Request) => {
 
   const { data: ownedAnalysis, error: analysisOwnerErr } = await supabase
     .from("analyses")
-    .select("id,user_id,status,worker_attempt_count")
+    .select(
+      "id,user_id,status,worker_attempt_count,analysis_sector,analysis_sector_source,analysis_sector_prompt_version",
+    )
     .eq("id", analysisID)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -2228,50 +2644,45 @@ serve(async (req: Request) => {
       .eq("id", analysisID)
       .eq("user_id", user.id);
 
-  if (!isWorkerInvocation) {
-    try {
-      const { queuedPhotoPaths } = await enqueueAnalysisJob({
-        supabase,
-        supabaseUrl,
-        serviceRoleKey,
-        body,
-        userID: user.id,
-        analysisID,
-        requestID,
-        supportID,
-      });
-      triggerAnalysisWorker({
-        supabaseUrl,
-        serviceRoleKey,
-        requestID,
-        supportID,
-      });
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          status: "queued",
-          analysis_id: analysisID,
-          queued_photo_count: queuedPhotoPaths.length,
-          request_id: requestID,
-          support_id: supportID,
-        }),
-        {
-          status: 202,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    } catch (error) {
+  const activeSectorState = resolveActiveSectorState({
+    requestedSector: requestedAnalysisSector,
+    persistedSector: ownedAnalysis?.analysis_sector,
+    requestedSource: analysis_sector_source,
+    persistedSource: ownedAnalysis?.analysis_sector_source,
+    requestedPromptVersion: analysis_sector_prompt_version,
+    persistedPromptVersion: ownedAnalysis?.analysis_sector_prompt_version,
+    isWorkerInvocation,
+  });
+
+  if (!activeSectorState.ok) {
+    return errorResponse(activeSectorState.status, activeSectorState.message, {
+      code: activeSectorState.code,
+      requestID,
+      supportID,
+    });
+  }
+
+  if (activeSectorState.shouldBackfill) {
+    const { error: sectorBackfillErr } = await updateOwnedAnalysis(
+      activeSectorState.backfillPatch,
+    );
+    if (sectorBackfillErr) {
       console.error(
-        "Analyze enqueue failed",
+        "Active analysis sector backfill failed",
         JSON.stringify({
           request_id: requestID,
           support_id: supportID,
           analysis_id: analysisID,
-          error: safeLogError(error),
+          error: safeLogError(sectorBackfillErr),
         }),
       );
-      return errorResponse(500, "Analiz kuyruğa alınamadı.", {
-        code: "analysis_enqueue_failed",
+      await updateOwnedAnalysis({
+        status: "failed",
+        status_message:
+          `Analiz kapsamı kaydedilemedi. Destek kodu: ${supportID}`,
+      });
+      return errorResponse(500, "Analiz kapsamı kaydedilemedi.", {
+        code: "sector_backfill_failed",
         requestID,
         supportID,
       });
@@ -2319,8 +2730,13 @@ serve(async (req: Request) => {
   }
 
   const planTier = resolvePlanTier(subscription);
-  const geminiKeys = geminiKeyPoolForTier(planTier);
-  const expectedGeminiPool = planTier === "free" ? "free" : "paid";
+  const aiExecutionRoute = resolveAIExecutionRoute(planTier, analysisMode);
+  const qualityTier = resolveQualityTier(planTier, aiExecutionRoute);
+  const geminiKeys = geminiKeyPoolForRoute(aiExecutionRoute);
+  const freeFallbackGeminiKeys = aiExecutionRoute === "free_paid_trial"
+    ? freeGeminiKeyPool()
+    : [];
+  const expectedGeminiPool = expectedGeminiPoolForRoute(aiExecutionRoute);
   let company: CompanyRow | null = null;
   let onboardingAnswers: OnboardingAnswersRow | null = null;
 
@@ -2345,8 +2761,9 @@ serve(async (req: Request) => {
   }
 
   if (
-    geminiKeys.length === 0 ||
-    geminiKeys.some((item) => item.pool !== expectedGeminiPool)
+    isWorkerInvocation &&
+    (geminiKeys.length === 0 ||
+      geminiKeys.some((item) => item.pool !== expectedGeminiPool))
   ) {
     console.error(
       "Gemini key pool misconfigured",
@@ -2354,9 +2771,11 @@ serve(async (req: Request) => {
         request_id: requestID,
         support_id: supportID,
         user_plan: planTier,
+        quality_tier: qualityTier,
+        ai_execution_route: aiExecutionRoute,
         expected_pool: expectedGeminiPool,
         available_aliases: geminiKeys.map((item) => item.alias),
-        required_secret: geminiRequiredSecretName(planTier),
+        required_secret: geminiRequiredSecretNameForRoute(aiExecutionRoute),
       }),
     );
     await updateOwnedAnalysis({
@@ -2557,6 +2976,57 @@ serve(async (req: Request) => {
     );
   }
 
+  if (!isWorkerInvocation) {
+    try {
+      const { queuedPhotoPaths } = await enqueueAnalysisJob({
+        supabase,
+        supabaseUrl,
+        serviceRoleKey,
+        body,
+        userID: user.id,
+        analysisID,
+        requestID,
+        supportID,
+      });
+      triggerAnalysisWorker({
+        supabaseUrl,
+        serviceRoleKey,
+        requestID,
+        supportID,
+      });
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          status: "queued",
+          analysis_id: analysisID,
+          queued_photo_count: queuedPhotoPaths.length,
+          request_id: requestID,
+          support_id: supportID,
+        }),
+        {
+          status: 202,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    } catch (error) {
+      await releaseAnalysisQuota(supabase, analysisID, user.id);
+      console.error(
+        "Analyze enqueue failed",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogError(error),
+        }),
+      );
+      return errorResponse(500, "Analiz kuyruğa alınamadı.", {
+        code: "analysis_enqueue_failed",
+        requestID,
+        supportID,
+      });
+    }
+  }
+
   // Status → analyzing
   await updateOwnedAnalysis({
     status: "analyzing",
@@ -2567,7 +3037,7 @@ serve(async (req: Request) => {
     last_worker_error: null,
   });
 
-  const model = planTier === "free" ? MODEL_FREE : MODEL_PAID_FAST;
+  const model = primaryModelForRoute(aiExecutionRoute);
 
   // Storage → base64
   const imageBase64Parts: { mimeType: string; data: string }[] = [];
@@ -2784,16 +3254,23 @@ serve(async (req: Request) => {
     .map((id) => ({ id, prompt: CANVAS_FOCUS[id] }))
     .filter((item) => Boolean(item.prompt));
   const systemPrompt = buildSystemPrompt();
-  const onboardingContext = buildOnboardingContext(onboardingAnswers);
+  const resolvedActiveSector = activeSectorState.sector;
+  const resolvedActiveSectorSource = activeSectorState.source;
+  const resolvedActiveSectorPromptVersion = activeSectorState.promptVersion;
+  const onboardingContext = buildOnboardingContext(
+    onboardingAnswers,
+    Boolean(resolvedActiveSector),
+  );
   const companyContext = companyPromptContext(company);
   const analysisContext = buildAnalysisContext({
     canvases: resolvedCanvases,
-    tier: planTier,
+    tier: qualityTier,
     onboardingContext,
     companyContext,
+    activeSector: resolvedActiveSector,
   });
   const contextHash = await hashedID(analysisContext);
-  const referenceMode = referenceModeForTier(planTier);
+  const referenceMode = referenceModeForTier(qualityTier);
   const aiSimulation = aiSimulationConfig();
   const inputAudit: Record<string, unknown> = {
     prompt_version: PROMPT_VERSION,
@@ -2802,7 +3279,15 @@ serve(async (req: Request) => {
     certificate_class: onboardingContext.certificateClass,
     hazard_classes: onboardingContext.hazardClasses,
     sectors: onboardingContext.sectors,
+    onboarding_sector_count: onboardingContext.sectors.length,
     audit_frequency: onboardingContext.auditFrequency,
+    active_analysis_sector: resolvedActiveSector,
+    active_analysis_sector_source: resolvedActiveSectorSource,
+    active_analysis_sector_prompt_version: resolvedActiveSectorPromptVersion,
+    active_analysis_sector_label: resolvedActiveSector
+      ? analysisSectorLabel(resolvedActiveSector, "tr")
+      : null,
+    sector_context_applied: Boolean(resolvedActiveSector),
     context_hash: contextHash,
     input_mode: imageBase64Parts.length > 0 ? "photo" : "text",
     inline_photo_count: inlinePhotoCount,
@@ -2813,10 +3298,11 @@ serve(async (req: Request) => {
     photo_persist_errors: photoPersistErrors,
     gemini_image_part_count: imageBase64Parts.length,
     text_input_present: Boolean(text_input),
-    user_prompt_present: Boolean(userPrompt),
-    user_prompt: userPrompt,
     analysis_mode: analysisMode,
     user_plan: planTier,
+    quality_tier: qualityTier,
+    ai_execution_route: aiExecutionRoute,
+    free_standard_analysis_route_flag: freeStandardAnalysisRouteFlag(),
     request_id: requestID,
     support_id: supportID,
     selected_canvas_ids: resolvedCanvases,
@@ -2827,27 +3313,31 @@ serve(async (req: Request) => {
     company_prompt_context: companyContext,
     onboarding_context_sent: onboardingContext.block,
     analysis_context_sent: analysisContext,
-    min_hazards: PLAN_LIMITS[planTier].minHazards ?? null,
-    max_hazards: PLAN_LIMITS[planTier].maxHazards ?? null,
+    min_hazards: PLAN_LIMITS[qualityTier].minHazards ?? null,
+    max_hazards: PLAN_LIMITS[qualityTier].maxHazards ?? null,
     reference_mode: referenceMode,
-    references_requested: planTier !== "free",
-    root_cause_requested: planTier !== "free",
-    response_schema_includes_references: planTier !== "free",
-    response_schema_includes_root_cause: planTier !== "free",
+    references_requested: qualityTier !== "free",
+    root_cause_requested: qualityTier !== "free",
+    response_schema_includes_references: qualityTier !== "free",
+    response_schema_includes_root_cause: qualityTier !== "free",
     system_prompt_sent: systemPrompt,
     model,
     gemini_key_pool: expectedGeminiPool,
     gemini_key_aliases_available: geminiKeys.map((item) => item.alias),
-    groq_free_fallback_configured: planTier === "free"
+    free_gemini_fallback_aliases_available: freeFallbackGeminiKeys.map((item) =>
+      item.alias
+    ),
+    groq_free_fallback_configured: aiExecutionRoute !== "paid_plan"
       ? Boolean(freeGroqKeyConfig())
       : false,
-    groq_free_model: planTier === "free" && freeGroqKeyConfig()
+    groq_free_model: aiExecutionRoute !== "paid_plan" && freeGroqKeyConfig()
       ? freeGroqModel()
       : null,
-    groq_plus_pro_fallback_configured: planTier !== "free"
+    groq_plus_pro_fallback_configured: aiExecutionRoute === "paid_plan"
       ? Boolean(plusProGroqKeyConfig())
       : false,
-    groq_plus_pro_model: planTier !== "free" && plusProGroqKeyConfig()
+    groq_plus_pro_model: aiExecutionRoute === "paid_plan" &&
+        plusProGroqKeyConfig()
       ? plusProGroqModel()
       : null,
     test_simulation_enabled: aiSimulation.enabled,
@@ -2869,14 +3359,25 @@ serve(async (req: Request) => {
   const primaryGeminiAlias = geminiKeys[0]?.alias ?? null;
 
   try {
-    const out = planTier === "free"
+    const out = aiExecutionRoute === "free_legacy"
       ? await callFreeAIWithFallback(
         geminiKeys,
         model,
         systemPrompt,
         analysisContext,
         text_input ?? null,
-        userPrompt,
+        imageBase64Parts,
+        aiSimulation,
+        { requestID, supportID },
+      )
+      : aiExecutionRoute === "free_paid_trial"
+      ? await callFreePaidTrialAIWithFallback(
+        geminiKeys,
+        freeFallbackGeminiKeys,
+        model,
+        systemPrompt,
+        analysisContext,
+        text_input ?? null,
         imageBase64Parts,
         aiSimulation,
         { requestID, supportID },
@@ -2887,7 +3388,6 @@ serve(async (req: Request) => {
         systemPrompt,
         analysisContext,
         text_input ?? null,
-        userPrompt,
         imageBase64Parts,
         planTier,
         aiSimulation,
@@ -2905,7 +3405,7 @@ serve(async (req: Request) => {
     inputAudit.gemini_thinking_config = providerUsed === "gemini"
       ? geminiThinkingConfig(
         out.modelUsed,
-        planTier === "free" ? "free" : "paid",
+        aiExecutionRoute === "free_legacy" ? "free" : "paid",
       )
       : null;
     apiKeyAlias = out.apiKeyAlias;
@@ -2956,6 +3456,8 @@ serve(async (req: Request) => {
       duration_ms: Date.now() - startMs,
       error: aiError,
       user_plan: planTier,
+      quality_tier: qualityTier,
+      ai_execution_route: aiExecutionRoute,
       request_id: requestID,
       support_id: supportID,
       error_code: cleanError.code,
@@ -2981,8 +3483,22 @@ serve(async (req: Request) => {
   const rawHazards = Array.isArray(geminiResult.hazards)
     ? geminiResult.hazards
     : [];
-  const maxHazards = PLAN_LIMITS[planTier].maxHazards;
-  const hazards = maxHazards ? rawHazards.slice(0, maxHazards) : rawHazards;
+  const isTextOnlyAnalysis = imageBase64Parts.length === 0 &&
+    Boolean(text_input);
+  const reportLanguageSafeHazards = isTextOnlyAnalysis
+    ? rawHazards.map((hazard: unknown) =>
+      sanitizeTextAnalysisHazardForReportLanguage(
+        hazard && typeof hazard === "object"
+          ? hazard as Record<string, unknown>
+          : {},
+        text_input ?? "",
+      )
+    )
+    : rawHazards;
+  const maxHazards = PLAN_LIMITS[qualityTier].maxHazards;
+  const hazards = maxHazards
+    ? reportLanguageSafeHazards.slice(0, maxHazards)
+    : reportLanguageSafeHazards;
   let totalScoreFK = 0, totalScoreM5 = 0;
   let highestBandFK: "low" | "medium" | "high" | "critical" = "low";
   let highestBandM5: "low" | "medium" | "high" | "critical" = "low";
@@ -2991,6 +3507,7 @@ serve(async (req: Request) => {
   // user_id REQUIRED, set et.
   // deno-lint-ignore no-explicit-any
   const findingRows = hazards.map((h: any, i: number) => {
+    const recommendedMeasures = normalizeRecommendedMeasures(h);
     const fkP = clampFK(h.fk_probability, FK_PROBABILITY_VALUES);
     const fkF = clampFK(h.fk_frequency, FK_FREQUENCY_VALUES);
     const fkS = clampFK(h.fk_severity, FK_SEVERITY_VALUES);
@@ -3011,9 +3528,10 @@ serve(async (req: Request) => {
       title: h.title,
       category: h.category ?? "",
       description: `${h.observed_evidence}\n\n${h.description}`.trim(),
-      recommended_action: h.recommended_action,
-      references_text: planTier !== "free" ? h.references ?? "" : "",
-      root_cause_text: planTier !== "free" ? h.root_cause ?? "" : "",
+      recommended_action: recommendedMeasures[0]?.text ?? "",
+      recommended_measures: recommendedMeasures,
+      references_text: qualityTier !== "free" ? h.references ?? "" : "",
+      root_cause_text: qualityTier !== "free" ? h.root_cause ?? "" : "",
       confidence: Math.max(0, Math.min(1, h.confidence)),
       fk_probability: fkP,
       fk_frequency: fkF,
@@ -3094,6 +3612,8 @@ serve(async (req: Request) => {
     duration_ms: Date.now() - startMs,
     error: null,
     user_plan: planTier,
+    quality_tier: qualityTier,
+    ai_execution_route: aiExecutionRoute,
     request_id: requestID,
     support_id: supportID,
     error_code: null,

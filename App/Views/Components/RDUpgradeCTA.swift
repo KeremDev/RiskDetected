@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RDUpgradeCTA: View {
     var tier: SubscriptionTier
@@ -38,10 +39,10 @@ struct RDUpgradeCTA: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: icon ?? tier.badgeIcon)
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 Text(title ?? tier.badgeLabel)
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .heavy, design: .rounded))
                     .tracking(title == nil ? 0.7 : 0.1)
                     .foregroundStyle(.white)
             }
@@ -70,6 +71,7 @@ struct RDUpgradeCTA: View {
 struct RDHeaderAccountCTA: View {
     @EnvironmentObject private var app: AppState
     @State private var showMenu = false
+    @State private var avatarImage: UIImage?
     var onUpgrade: () -> Void
 
     var body: some View {
@@ -90,6 +92,7 @@ struct RDHeaderAccountCTA: View {
             } label: {
                 RDAvatar(
                     initials: app.profile?.displayInitials ?? "—",
+                    image: avatarImage,
                     size: 36,
                     tier: app.currentTier
                 )
@@ -120,6 +123,7 @@ struct RDHeaderAccountCTA: View {
                             closeMenu()
                             onUpgrade()
                         },
+                        onSettings: openProfilePreferences,
                         onSignOut: {
                             closeMenu()
                             app.signOut()
@@ -134,6 +138,9 @@ struct RDHeaderAccountCTA: View {
                 }
             }
         }
+        .task(id: app.profile?.avatarURL) {
+            await loadAvatarImage()
+        }
         .zIndex(30)
     }
 
@@ -142,9 +149,29 @@ struct RDHeaderAccountCTA: View {
         app.activeTab = tab
     }
 
+    private func openProfilePreferences() {
+        closeMenu()
+        app.requestProfileDestination(.preferences)
+    }
+
     private func closeMenu() {
         withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
             showMenu = false
+        }
+    }
+
+    private func loadAvatarImage() async {
+        guard let path = app.profile?.avatarURL?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty
+        else {
+            avatarImage = nil
+            return
+        }
+
+        do {
+            avatarImage = try await app.auth.profileAvatarImage(path: path)
+        } catch {
+            avatarImage = nil
         }
     }
 }
@@ -155,6 +182,7 @@ private struct RDHeaderProfileMenu: View {
     let onAnalyses: () -> Void
     let onReports: () -> Void
     let onUpgrade: () -> Void
+    let onSettings: () -> Void
     let onSignOut: () -> Void
     let onToggleTheme: () -> Void
 
@@ -187,6 +215,13 @@ private struct RDHeaderProfileMenu: View {
                     action: onSignOut
                 )
                 iconButton(
+                    icon: "gearshape.fill",
+                    tint: .rdCharcoal,
+                    background: .rdFog,
+                    label: "Ayarlar",
+                    action: onSettings
+                )
+                iconButton(
                     icon: isDarkMode ? "sun.max.fill" : "moon.fill",
                     tint: .rdGreen,
                     background: .rdGreenSoft,
@@ -197,7 +232,7 @@ private struct RDHeaderProfileMenu: View {
             .padding(.top, 2)
         }
         .padding(8)
-        .frame(width: 190)
+        .frame(width: 174)
         .background(Color.rdWhite)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
@@ -211,18 +246,18 @@ private struct RDHeaderProfileMenu: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .frame(width: 28, height: 28)
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .frame(width: 27, height: 27)
                     .foregroundStyle(tint)
                     .background(tint.opacity(0.10))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 7)
             .padding(.vertical, 8)
             .contentShape(Rectangle())
         }
@@ -232,18 +267,18 @@ private struct RDHeaderProfileMenu: View {
     private func menuInfo(icon: String, title: String, tint: Color) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .frame(width: 28, height: 28)
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .frame(width: 27, height: 27)
                 .foregroundStyle(tint)
                 .background(tint.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Text(title)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 7)
         .padding(.vertical, 8)
         .accessibilityLabel(title)
     }
@@ -257,10 +292,10 @@ private struct RDHeaderProfileMenu: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(maxWidth: .infinity)
-                .frame(height: 38)
+                .frame(height: 36)
                 .background(background)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }

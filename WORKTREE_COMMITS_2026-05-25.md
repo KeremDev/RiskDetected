@@ -9,6 +9,38 @@
 - Son kontrol: `main` remote'u takip ediyor.
 - Not: App icon varyantları ve bu handoff dosyaları oluşturulduktan sonra worktree'de untracked/modified görünebilir.
 
+## 2026-05-29 Commit Güncellemesi
+
+- Hash: `9a2beea`
+- Mesaj: `Verify report quotas and polish app UI`
+- Remote: `origin/main` branch'e pushlandı.
+- İçerik özeti:
+  - Free kullanıcı risk analiz tablosu deneme hakkının standart rapor hakkını bozmaması için UI/test kapsamı eklendi.
+  - `testFreeRiskAnalysisTrialDoesNotLockStandardReport` UI testi eklendi ve geçti.
+  - Report sheet, onboarding/paywall, tab bar clearance ve kart derinliği polish değişiklikleri commitlendi.
+  - Account deletion avatar cleanup temp-user destructive QA tamamlandı.
+  - XLSX logo/snapshot/uzun metin QA gerçek local Edge Function çağrısı ve indirilen workbook ile doğrulandı.
+
+- Hash: bu handoff güncellemesini içeren mevcut commit
+- Mesaj: `Disable dark mode card shadows`
+- İçerik özeti:
+  - `App/DesignSystem/RDShadow.swift` merkezi tasarım token'ı güncellendi.
+  - `rdCardShadow` ve `rdRowShadow` dark mode'da gölge basmayacak.
+  - Light mode sağ-alt net gölge sistemi korunacak.
+  - Tasarım kararı: Dark mode'da kart ayrımı shadow yerine yüzey/stroke ile yapılacak.
+  - Doğrulama: iOS Simulator Debug build/run geçti.
+
+## 2026-05-29 Uzun Metin QA Güncellemesi
+
+- Durum: tamamlandı, commit bekliyor.
+- İçerik özeti:
+  - Uzun firma adı, uzun uzman adı ve uzun unvan rapor oluşturma sheet'inde simulator ile kontrol edildi.
+  - PDF risk analiz çıktısı yeniden üretildi ve önizleme ile kontrol edildi.
+  - Bulunan bug: PDF risk analiz bilgi strip'i uzun firma/hazırlayan/unvan alanlarında kırpma riski taşıyordu.
+  - Fix: `App/Services/PDFReportService.swift` cover footer ve risk analiz bilgi strip'i fitting/multi-line text çizimine geçirildi.
+  - PDF text extraction ile uzun firma/uzman/unvan alanlarının çıktıda bulunduğu doğrulandı.
+  - TODO ve handoff dosyaları uzun metin QA tamamlandı olarak güncellendi.
+
 ## 2026-05-27 Commit Güncellemesi
 
 - Hash: `1b000b1`
@@ -28,6 +60,22 @@
   - Firma filtresi UI kartları ve satırları daha sakin font/ölçü düzenine çekildi.
   - `Yeni firma ekle` CTA'sı gri yerine siyah olarak tasarlandı.
   - Simulator build/run geçti ve `Analiz firma filtresi` görsel QA yapıldı.
+
+## 2026-05-29 Time Paywall Tasarım Güncellemesi
+
+- Durum: Tamamlandı, commit bekliyor.
+- İçerik özeti:
+  - `OBTimelinePaywallView` final Time Paywall görsel kararına göre yenilendi.
+  - Eski baret/sallanan hero yerine sade başlık, deneme fiyat alt metni, güven chip'leri, küçük yıllık/aylık segment ve timeline kartı eklendi.
+  - Üstteki yatay mini gün şeridi ve özellik listesi kaldırıldı.
+  - Yıllık planda CTA `₺0,00'ye dene`, aylık planda `Aboneliği başlat` olarak korunuyor.
+  - Satın alma, restore, terms/privacy ve dismiss callback'lerine dokunulmadı.
+  - Paywall yönlendirme audit'i yapıldı; aktif app içi paywall hattı `InAppPaywallView`, onboarding hattı `OBTimelinePaywallView` olarak sabitlendi.
+  - Eski `PaywallV2View` ve `OnboardingPaywallV2View` wrapper'ları eski `PaywallView` yerine yeni doğru ekranlara bağlandı.
+- Doğrulama:
+  - `git diff --check` temiz.
+  - `RiskDetectedUITests/RiskDetectedUITests/testTrialInviteAndTimelinePaywallRenderWithAuthBypass` geçti.
+  - iOS Simulator Debug build/run geçti.
 
 ## 2026-05-26 Commit Güncellemesi
 
@@ -49,15 +97,43 @@
 
 ## Son Commit
 
-- Hash: `1b000b1`
-- Mesaj: `Prevent fallback subscription sync downgrades`
+- Hash: `0c03fbd`
+- Mesaj: `Route free analyses through paid Gemini trial`
 - İçerik özeti:
-  - RevenueCat fallback sync'in aktif backend aboneliğini yanlış downgrade etmesi engellendi.
-  - Plus rapor limiti simulator QA ile doğrulandı.
+  - Free standart analiz route'u `free_paid_trial` olarak paid Gemini key pool'a alındı.
+  - Yetki/kota `planTier=free` olarak korunurken prompt/schema kalitesi `qualityTier=plus` oldu.
+  - Free paid trial fallback sırası maliyet kontrollü hale getirildi:
+    - `gemini-2.5-flash`
+    - tekrar `gemini-2.5-flash`
+    - `gemini-3.1-flash-lite`
+  - `gemini-2.5-pro` free paid trial kapsamından çıkarıldı.
+  - `ai_usage_logs` için `quality_tier` ve `ai_execution_route` telemetry migration'ı eklendi.
+  - Hybrid QA route/quality dağılımını raporlayacak şekilde güncellendi.
+  - Yeni QA scripti eklendi: `scripts/qa_free_paid_ai_routing.mjs`
+  - QA raporu eklendi: `QA/FreePaidAIRouting_QA_2026-05-29.md`
+- Remote/QA:
+  - Remote migration uygulandı.
+  - `analyze` Edge Function remote deploy edildi.
+  - `FREE_STANDARD_ANALYSIS_AI_ROUTE=paid_trial` secret doğrulandı.
+  - Worker bug bulundu ve düzeltildi: `analyze` function `--no-verify-jwt` ile deploy edildi; function içi auth kontrolü korunuyor.
+  - Canlı temp free kullanıcı E2E geçti: `PASS=40`, `WARN=1`, `FAIL=0`.
+  - Telemetry: `user_plan=free`, `quality_tier=plus`, `ai_execution_route=free_paid_trial`, `model=gemini-2.5-flash`, `api_key_alias=gemini_paid_primary`.
+
+- Hash: `9a2beea`
+- Mesaj: `Verify report quotas and polish app UI`
+- İçerik özeti:
+  - Free rapor/risk analiz hakkı QA kapsamı, report flow polish ve UI test doğrulamaları.
 
 ## Son Commit Geçmişi
 
 ```text
+HEAD Remove in-app cookie policy links
+0c03fbd Route free analyses through paid Gemini trial
+9a2beea Verify report quotas and polish app UI
+53f45ec Fix UI test analysis result fixture
+12a7b11 Polish report flows and card depth
+c22c51f Polish company picker sheets
+59bae77 Update handoff and TODO status
 1b000b1 Prevent fallback subscription sync downgrades
 ebc25ed Polish professional progress UI
 c294f0c Add professional progress module
@@ -111,3 +187,35 @@ Eğer bu handoff dosyaları commitlenecekse önerilen commit mesajı:
 ```text
 Add handoff context for next chat
 ```
+
+## 2026-05-31 Commit Notu
+
+Commit:
+
+```text
+Remove in-app cookie policy links
+```
+
+Dahil edilecek dosyalar:
+
+- `App/Views/Auth/AuthView.swift`
+- `App/Views/Legal/LegalInfoSheet.swift`
+- `App/Services/RDConfig.swift`
+- `App/LegalDocuments/Gizlilik-Politikasi.md`
+- `App/LegalDocuments/Kullanim-Kosullari.md`
+- `App/LegalDocuments/Cerez-Politikasi.md` deletion
+- `NEW_CHAT_HANDOFF_2026-05-25.md`
+- `TODO_NEXT_2026-05-25.md`
+- `WORKTREE_COMMITS_2026-05-25.md`
+- `PROJECT_HANDOFF.md`
+
+Bu commit dışında bırakılacak görünen değişiklikler:
+
+- `.agents/skills/app-store-screenshots/**`
+- `AppStoreScreenshots/**`
+- `App/Views/Onboarding/V2/**`
+- `QA/App_Store_Submission_Preparation_2026-05-16.md`
+- `skills-lock.json`
+- `App/Views/Components/LegalAcceptanceNotice.swift`
+- `AppScreenshot/`
+- `output/`

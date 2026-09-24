@@ -25,6 +25,7 @@ type PushRequest = {
 type PushToken = {
   id: string;
   token: string;
+  environment: "sandbox" | "production";
 };
 
 function json(status: number, body: Record<string, unknown>) {
@@ -102,8 +103,12 @@ async function makeProviderToken(): Promise<string> {
   return `${signingInput}.${base64URL(signature)}`;
 }
 
-function apnsHost(): string {
-  return Deno.env.get("APNS_ENV") === "production"
+function fallbackEnvironment(): "sandbox" | "production" {
+  return Deno.env.get("APNS_ENV") === "production" ? "production" : "sandbox";
+}
+
+function apnsHost(environment: "sandbox" | "production"): string {
+  return environment === "production"
     ? "https://api.push.apple.com"
     : "https://api.sandbox.push.apple.com";
 }
@@ -147,7 +152,7 @@ serve(async (req) => {
   const { data: preference } = await supabase
     .from("notification_preferences")
     .select(
-      "enabled, analysis_complete, report_ready, account_updates, marketing, progress_weekly_summary, progress_monthly_summary, progress_milestones",
+      "enabled, analysis_complete, report_ready, account_updates, marketing, trial_reminder, progress_weekly_summary, progress_monthly_summary, progress_milestones",
     )
     .eq("user_id", body.user_id)
     .maybeSingle();
@@ -173,21 +178,33 @@ serve(async (req) => {
     return json(200, { status: "skipped", event_id: event?.id ?? null });
   }
 
-  const environment = Deno.env.get("APNS_ENV") === "production"
-    ? "production"
-    : "sandbox";
   const { data: tokens, error: tokenError } = await supabase
     .from("push_device_tokens")
-    .select("id, token")
+    .select("id, token, environment")
     .eq("user_id", body.user_id)
-    .eq("environment", environment)
     .eq("notifications_enabled", true);
 
   if (tokenError) {
     return json(500, { error: "Failed to load device tokens" });
   }
 
-  const deviceTokens = (tokens ?? []) as PushToken[];
+  const deviceTokens = ((tokens ?? []) as Array<{
+    id: string;
+    token: string;
+    environment?: string | null;
+  }>)
+    .map((token) => ({
+      id: token.id,
+      token: token.token,
+      environment: token.environment === "production" ||
+          token.environment === "sandbox"
+        ? token.environment
+        : fallbackEnvironment(),
+    })) as PushToken[];
+  const environments = [
+    ...new Set(deviceTokens.map((token) => token.environment)),
+  ]
+    .sort();
   const { data: event, error: eventError } = await supabase
     .from("notification_events")
     .insert({
@@ -211,6 +228,7 @@ serve(async (req) => {
       status: "skipped",
       reason: "no_active_device_tokens",
       event_id: event.id,
+      environments,
     });
   }
 
@@ -249,29 +267,38 @@ serve(async (req) => {
   let sent = 0;
   let failed = 0;
   let lastError: string | null = null;
+  const sentEnvironments = new Set<string>();
+  const failedEnvironments = new Set<string>();
 
   for (const token of deviceTokens) {
-    const response = await fetch(`${apnsHost()}/3/device/${token.token}`, {
-      method: "POST",
-      headers: {
-        authorization: `bearer ${providerToken}`,
-        "apns-topic": topic,
-        "apns-push-type": "alert",
-        "content-type": "application/json",
+    const response = await fetch(
+      `${apnsHost(token.environment)}/3/device/${token.token}`,
+      {
+        method: "POST",
+        headers: {
+          authorization: `bearer ${providerToken}`,
+          "apns-topic": topic,
+          "apns-push-type": "alert",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(apnsPayload),
       },
-      body: JSON.stringify(apnsPayload),
-    });
+    );
 
     if (response.ok) {
       sent += 1;
+      sentEnvironments.add(token.environment);
       await supabase
         .from("push_device_tokens")
         .update({ last_success_at: now, last_failure_reason: null })
         .eq("id", token.id);
     } else {
       failed += 1;
+      failedEnvironments.add(token.environment);
       const errorText = await response.text();
-      lastError = `${response.status}: ${safeErrorText(errorText)}`;
+      lastError = `${token.environment} ${response.status}: ${
+        safeErrorText(errorText)
+      }`;
       await supabase
         .from("push_device_tokens")
         .update({ last_failure_at: now, last_failure_reason: lastError })
@@ -295,5 +322,8 @@ serve(async (req) => {
     event_id: event.id,
     sent,
     failed,
+    environments,
+    sent_environments: [...sentEnvironments].sort(),
+    failed_environments: [...failedEnvironments].sort(),
   });
 });

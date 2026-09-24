@@ -8,6 +8,7 @@ import SwiftUI
 struct AnalysisJob: Identifiable {
     let id = UUID()
     let previewImage: UIImage?
+    let presentationMode: AnalysisWaitingPresentationMode
     let work: (@escaping @MainActor (AnalysisProgressUpdate) -> Void) async throws -> AnalysisResultBundle
 }
 
@@ -17,6 +18,7 @@ private struct PaywallPresentation: Identifiable {
 
 private let maxTextInputCharacters = AnalysisService.maxTextInputCharacters
 private let freeQuotaCachePrefix = "rd.home.freeQuota"
+private let analysisSectorSheetHeight: CGFloat = 600
 
 struct HomeView: View {
     @EnvironmentObject var app: AppState
@@ -26,8 +28,8 @@ struct HomeView: View {
     @State private var text: String = ""
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
     @State private var showCanvasSheet = false
-    @State private var showCompanyPicker = false
-    @State private var selectedCompany: Company?
+    @State private var showSectorSheet = false
+    @State private var selectedAnalysisSector: AnalysisSectorID?
     @State private var showAnnotate = false
     @State private var pendingAnnotateRequestID: UUID?
     @State private var showResult = false
@@ -92,12 +94,12 @@ struct HomeView: View {
                         title: "Taramayı Başlat",
                         style: .detect,
                         icon: "sparkles",
-                        backgroundOverride: .rdOnyx,
-                        foregroundOverride: .white,
-                        shadowOverride: .clear
+                        backgroundOverride: scanButtonBackground,
+                        shadowOverride: scanButtonShadow
                     ) {
                         startAnalysisFlow()
                     }
+                    .accessibilityIdentifier("home.start_scan")
                     .frame(height: 56)
                     .rdCardShadow(colorScheme: colorScheme, radius: 3, x: 8, y: 10)
                     .padding(.top, 14)
@@ -134,7 +136,6 @@ struct HomeView: View {
             await loadProfessionalProgress()
         }
         .onAppear {
-            applyCachedQuotaUsageIfAvailable()
             closeFreeQuotaEntryPointsIfNeeded()
             handlePendingQuickScanOnAppear()
             Task {
@@ -153,7 +154,6 @@ struct HomeView: View {
         }
         .onChange(of: app.currentTier) { _ in
             normalizeSelectedCanvasesForTier()
-            applyCachedQuotaUsageIfAvailable()
             closeFreeQuotaEntryPointsIfNeeded()
             Task { await loadQuotaUsage() }
         }
@@ -208,25 +208,18 @@ struct HomeView: View {
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .sheet(isPresented: $showCompanyPicker) {
-            CompanyPickerSheet(
-                title: "Analiz firması",
-                accessTier: app.currentTier,
-                selectedCompanyID: selectedCompany?.id,
-                allowNoCompany: true,
-                onSelect: { company in
-                    selectedCompany = company
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        runAnalysis()
-                    }
-                },
-                onPaywall: {
+        .sheet(isPresented: $showSectorSheet) {
+            AnalysisSectorPickerView(
+                items: sectorPickerItems,
+                selected: $selectedAnalysisSector,
+                onContinue: {
+                    showSectorSheet = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        showPlainPaywall()
+                        continueAfterSectorSelection()
                     }
                 }
             )
-            .presentationDetents(CompanyPickerSheet.presentationDetents(for: app.currentTier))
+            .presentationDetents([.height(analysisSectorSheetHeight)])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -278,6 +271,7 @@ struct HomeView: View {
                 ),
                 asyncWork: job.work,
                 previewImage: job.previewImage,
+                presentationMode: job.presentationMode,
                 onComplete: { result in
                     analysisResult = result
                     if !app.currentTier.isPaid {
@@ -315,8 +309,7 @@ struct HomeView: View {
                 localPreviewImage: selectedImage,
                 onClose: {
                     showResult = false
-                    selectedImage = nil
-                    selectedCompany = nil
+                    resetAnalysisDraft()
                     analysisResult = nil
                     Task {
                         await loadRecentItems()
@@ -358,6 +351,17 @@ struct HomeView: View {
         app.themePreference.colorScheme ?? colorScheme
     }
 
+    private var scanButtonBackground: Color {
+        preferredModalColorScheme == .dark ? .rdGreen : .rdOnyx
+    }
+
+    private var scanButtonShadow: Color {
+        if preferredModalColorScheme == .dark {
+            return Color.rdGreen.opacity(0.28)
+        }
+        return Color.rdOnyx.opacity(0.18)
+    }
+
     private var annotatePresentationBinding: Binding<Bool> {
         Binding(
             get: {
@@ -386,9 +390,9 @@ struct HomeView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: m.icon)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         Text(m.label)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 36)
@@ -401,6 +405,7 @@ struct HomeView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier(m == .photo ? "home.mode.photo" : "home.mode.text")
             }
         }
         .padding(4)
@@ -448,7 +453,7 @@ struct HomeView: View {
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             } label: {
                                 Image(systemName: "xmark")
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                                     .foregroundStyle(.white)
                                     .frame(width: 28, height: 28)
                                     .background(Color.black.opacity(0.55))
@@ -459,9 +464,9 @@ struct HomeView: View {
                         .overlay(alignment: .bottomLeading) {
                             HStack(spacing: 6) {
                                 Image(systemName: "pencil.tip.crop.circle")
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                                 Text("İşaretlemeyi düzenle")
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                             }
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
@@ -485,16 +490,16 @@ struct HomeView: View {
                                     )
 
                                 Image(systemName: "camera.fill")
-                                    .font(.system(size: 26, weight: .semibold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(26), weight: .semibold, design: .rounded))
                                     .foregroundStyle(Color.rdGreenDark)
                             }
                             .frame(width: 68, height: 68)
 
                             Text("Saha fotoğrafı yükle")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             Text("Kamerayla çek veya galeriden seç")
-                                .font(.system(size: 13, design: .rounded))
+                                .font(.system(size: RDFontScale.size(13), design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -543,25 +548,25 @@ struct HomeView: View {
                         .frame(width: 56, height: 56)
 
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(lockedPhotoCriticalColor)
                 }
                 .frame(width: 82, height: 82)
 
                 Text("Ücretsiz hak doldu")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                     .foregroundStyle(lockedPhotoTitleColor)
                 Text("Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et.")
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(lockedPhotoSubtitleColor)
                     .frame(maxWidth: 280)
 
                 HStack(spacing: 5) {
                     Text("Yükselt")
-                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .heavy, design: .rounded))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                 }
                 .foregroundStyle(lockedPhotoActionColor)
                 .padding(.top, 4)
@@ -660,19 +665,20 @@ struct HomeView: View {
                                 Text("Örn: \"Korkuluk eksik, işçi emniyet kemeri kullanmıyor.\"")
                                     .padding(.top, 4)
                             }
-                            .font(.system(size: 15, design: .rounded))
+                            .font(.system(size: RDFontScale.size(15), design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .padding(.horizontal, 14)
                             .padding(.top, 14)
                             .allowsHitTesting(false)
                         }
                         TextEditor(text: $text)
-                            .font(.system(size: 15, design: .rounded))
+                            .font(.system(size: RDFontScale.size(15), design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .scrollContentBackground(.hidden)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 8)
                             .frame(minHeight: 160)
+                            .accessibilityIdentifier("home.text_input")
                             .onChange(of: text) { new in
                                 if new.count > maxTextInputCharacters {
                                     text = String(new.prefix(maxTextInputCharacters))
@@ -691,7 +697,7 @@ struct HomeView: View {
 
                     HStack {
                         Text("Maks. \(maxTextInputCharacters) karakter")
-                            .font(.system(size: 12, design: .rounded))
+                            .font(.system(size: RDFontScale.size(12), design: .rounded))
                         Spacer()
                         Text("\(text.count)/\(maxTextInputCharacters)")
                             .rdMono(size: 12, weight: .medium)
@@ -722,10 +728,10 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Ücretsiz Analiz Hakkı")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(freeQuotaHintSubtitle)
-                        .font(.system(size: 11, design: .rounded))
+                        .font(.system(size: RDFontScale.size(11), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
                 }
@@ -733,7 +739,7 @@ struct HomeView: View {
                 Spacer(minLength: 4)
 
                 Image(systemName: "gift.fill")
-                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .heavy, design: .rounded))
                     .foregroundStyle(SubscriptionTier.plus.accentTextColor)
                     .frame(width: 28, height: 28)
                     .background(SubscriptionTier.plus.accentSoftColor)
@@ -769,36 +775,36 @@ struct HomeView: View {
         VStack(spacing: 10) {
             ZStack {
                 Circle()
-                    .fill(Color.rdCritical.opacity(0.10))
+                    .fill(lockedPhotoIconBackground)
                     .frame(width: 68, height: 68)
-                    .shadow(color: Color.rdCritical.opacity(0.18), radius: 16, x: 0, y: 8)
+                    .shadow(color: lockedPhotoIconShadow, radius: 16, x: 0, y: 8)
 
                 Circle()
-                    .stroke(Color.rdCritical, lineWidth: 5)
+                    .stroke(lockedPhotoCriticalColor, lineWidth: 5)
                     .frame(width: 52, height: 52)
 
                 Image(systemName: icon)
-                    .font(.system(size: 19, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdCritical)
+                    .font(.system(size: RDFontScale.size(19), weight: .bold, design: .rounded))
+                    .foregroundStyle(lockedPhotoCriticalColor)
             }
 
             Text(title)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdBlack)
+                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                .foregroundStyle(lockedPhotoTitleColor)
 
             Text(subtitle)
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), design: .rounded))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(Color.rdSlate)
+                .foregroundStyle(lockedPhotoSubtitleColor)
                 .frame(maxWidth: 290)
 
             HStack(spacing: 5) {
                 Text("PRO'ya geç")
-                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .heavy, design: .rounded))
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
             }
-            .foregroundStyle(Color.rdCritical)
+            .foregroundStyle(lockedPhotoActionColor)
             .padding(.top, 4)
         }
         .frame(maxWidth: .infinity)
@@ -807,7 +813,7 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: 14)
                 .fill(
                     LinearGradient(
-                        colors: [Color.rdWhite, Color.rdCriticalBg.opacity(0.68)],
+                        colors: lockedPhotoBackgroundColors,
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -817,10 +823,10 @@ struct HomeView: View {
                         .strokeBorder(
                             style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
                         )
-                        .foregroundStyle(Color.rdCritical.opacity(0.38))
+                        .foregroundStyle(lockedPhotoBorderColor)
                 )
         )
-        .shadow(color: Color.rdCritical.opacity(0.08), radius: 14, x: 0, y: 6)
+        .shadow(color: lockedPhotoCardShadow, radius: 14, x: 0, y: 6)
     }
 
     private var recentSection: some View {
@@ -906,7 +912,7 @@ struct HomeView: View {
     ) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(width: 28, height: 28)
                 .background(tint.opacity(0.10))
@@ -914,12 +920,12 @@ struct HomeView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
 
                 Text(countLabel)
-                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.5), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate.opacity(0.82))
                     .lineLimit(1)
             }
@@ -930,9 +936,9 @@ struct HomeView: View {
                 HStack(spacing: 4) {
                     Text("Tümü")
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 8.5, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                 }
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
                 .padding(.horizontal, 10)
                 .frame(height: 28)
@@ -947,7 +953,7 @@ struct HomeView: View {
         RDCard {
             HStack(spacing: 12) {
                 Image(systemName: "doc.text")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 42, height: 42)
                     .background(Color.rdFog)
@@ -955,10 +961,10 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Henüz rapor oluşturulmadı")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("PDF veya Excel çıktıları burada görünecek.")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 Spacer(minLength: 0)
@@ -970,7 +976,7 @@ struct HomeView: View {
         RDCard {
             HStack(spacing: 12) {
                 Image(systemName: "clock.badge.checkmark")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 42, height: 42)
                     .background(Color.rdGreenSoft)
@@ -978,10 +984,10 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Henüz tamamlanmış analiz yok")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("İlk tarama tamamlandığında burada listelenecek.")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 Spacer(minLength: 0)
@@ -995,7 +1001,7 @@ struct HomeView: View {
         !app.currentTier.isPaid && quotaUsage?.isExhausted == true
     }
 
-    /// "Taramayı Başlat" → foto yoksa picker; varsa canvas sheet.
+    /// "Taramayı Başlat" → foto yoksa picker; varsa sektör veya canvas seçimine geçer.
     private func startAnalysisFlow() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
@@ -1014,7 +1020,12 @@ struct HomeView: View {
             ).fullText
             return
         }
-        showCanvasSheet = true
+        beginPreAnalysisSelection()
+    }
+
+    private func resetAnalysisDraft() {
+        text = ""
+        selectedImage = nil
     }
 
     private func handleQuickScanRequest() {
@@ -1043,7 +1054,7 @@ struct HomeView: View {
         if selectedImage == nil {
             showSourceDialog = true
         } else {
-            showCanvasSheet = true
+            beginPreAnalysisSelection()
         }
     }
 
@@ -1055,24 +1066,45 @@ struct HomeView: View {
     }
 
     /// AnnotateView'daki "İşaretli alanları analiz et" sonrası ana sayfada
-    /// bekletmeden doğrudan analiz odağı seçimine geçer.
+    /// bekletmeden doğrudan sektör veya canvas seçimine geçer.
     private func continueFromAnnotatedPhoto() {
         guard mode == .photo, selectedImage != nil else { return }
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             return
         }
+        beginPreAnalysisSelection()
+    }
+
+    /// Foto/metin hazır olduktan sonra ilk seçim adımı.
+    private func beginPreAnalysisSelection() {
+        if RDConfig.Features.activeAnalysisSectorEnabled {
+            selectedAnalysisSector = nil
+            showSectorSheet = true
+        } else {
+            showCanvasSheet = true
+        }
+    }
+
+    /// Aktif sektör seçildikten sonra canvas seçimine geçer.
+    private func continueAfterSectorSelection() {
+        guard selectedAnalysisSector != nil else { return }
         showCanvasSheet = true
     }
 
-    /// Canvas seçimi onaylandıktan sonra çağrılır.
+    /// Canvas seçimi onaylandıktan sonra analizi başlatır.
     private func continueAfterCanvasSelection() {
-        if app.currentTier.isPaid {
-            showCompanyPicker = true
-        } else {
-            selectedCompany = nil
-            runAnalysis()
-        }
+        runAnalysis()
+    }
+
+    private var sectorPickerItems: [AnalysisSectorPickerItem] {
+        let onboarding = AnalysisSectorPreferences.onboardingSectors(
+            from: OnboardingAnswersService.shared.pendingDraft()
+        )
+        return AnalysisSectorPreferences.pickerItems(
+            onboardingSectors: onboarding,
+            lastUsed: AnalysisSectorPreferences.lastUsedSector()
+        )
     }
 
     /// Canvas + opsiyonel firma seçimi tamamlandıktan sonra çağrılır.
@@ -1088,14 +1120,21 @@ struct HomeView: View {
         let canvases = selectedCanvasesForCurrentTier()
         let capturedImage = selectedImage
         let capturedText = text
-        let capturedCompanyID = selectedCompany?.id
+        let analysisSector: AnalysisSectorID?
+        if RDConfig.Features.activeAnalysisSectorEnabled {
+            guard let selected = selectedAnalysisSector else { return }
+            analysisSector = selected
+            AnalysisSectorPreferences.recordLastUsed(selected)
+        } else {
+            analysisSector = nil
+        }
 
         switch mode {
         case .photo:
             guard let img = capturedImage else {
                 return
             }
-            pendingJob = AnalysisJob(previewImage: img) {
+            pendingJob = AnalysisJob(previewImage: img, presentationMode: .photo) {
                 progress in
                 if app.currentTier.isPaid {
                     await app.refreshPlanState()
@@ -1104,7 +1143,8 @@ struct HomeView: View {
                     userID: userID,
                     images: [img],
                     canvases: canvases,
-                    companyID: capturedCompanyID,
+                    analysisSector: analysisSector,
+                    companyID: nil,
                     onProgress: progress
                 )
             }
@@ -1113,7 +1153,7 @@ struct HomeView: View {
             guard !trimmed.isEmpty else {
                 return
             }
-            pendingJob = AnalysisJob(previewImage: nil) {
+            pendingJob = AnalysisJob(previewImage: nil, presentationMode: .text) {
                 progress in
                 if app.currentTier.isPaid {
                     await app.refreshPlanState()
@@ -1122,7 +1162,8 @@ struct HomeView: View {
                     userID: userID,
                     text: trimmed,
                     canvases: canvases,
-                    companyID: capturedCompanyID,
+                    analysisSector: analysisSector,
+                    companyID: nil,
                     onProgress: progress
                 )
             }
@@ -1260,13 +1301,14 @@ struct HomeView: View {
             quotaUsage = nil
             return
         }
-        applyCachedQuotaUsageIfAvailable()
         do {
             let usage = try await AnalysisService.shared.dailyQuotaUsage()
             quotaUsage = usage
             cacheQuotaUsage(usage)
         } catch {
-            if cachedQuotaUsageForCurrentUser() == nil {
+            if let cached = cachedQuotaUsageForCurrentUser() {
+                quotaUsage = cached
+            } else {
                 quotaUsage = nil
             }
         }
@@ -1397,7 +1439,7 @@ struct HomeView: View {
 
     private static var uiTestWeekStart: String {
         var calendar = Calendar(identifier: .iso8601)
-        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        calendar.timeZone = RDConfig.Quota.businessTimeZone
         let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
         let formatter = DateFormatter()
         formatter.calendar = calendar
@@ -1420,13 +1462,6 @@ struct HomeView: View {
         quotaUsage = usage
         cacheQuotaUsage(usage)
         closeFreeQuotaEntryPointsIfNeeded()
-    }
-
-    private func applyCachedQuotaUsageIfAvailable() {
-        guard !app.currentTier.isPaid,
-              let cached = cachedQuotaUsageForCurrentUser()
-        else { return }
-        quotaUsage = cached
     }
 
     private func closeFreeQuotaEntryPointsIfNeeded() {
@@ -1463,7 +1498,7 @@ struct HomeView: View {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        formatter.timeZone = RDConfig.Quota.businessTimeZone
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: Date())
     }
@@ -1610,7 +1645,7 @@ struct RecentAnalysisCard: View {
                 } else {
                     HStack(spacing: 3) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 8.5, weight: .black, design: .rounded))
+                            .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                         Text("\(item.count)")
                             .rdMono(size: 10, weight: .black)
                     }
@@ -1642,7 +1677,7 @@ private struct HomeReportRow: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: iconName)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(kindStyle.text)
                     .frame(width: 38, height: 38)
                     .background(kindStyle.background)
@@ -1650,20 +1685,20 @@ private struct HomeReportRow: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(reportTitle)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .lineLimit(1)
 
                     HStack(spacing: 6) {
                         Text(kindLabel)
-                            .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(10.5), weight: .bold, design: .rounded))
                             .foregroundStyle(kindStyle.text)
                             .padding(.horizontal, 8)
                             .frame(height: 23)
                             .background(kindStyle.background)
                             .clipShape(RoundedRectangle(cornerRadius: 7))
                         Text(dateText)
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                     }
                 }
@@ -1674,7 +1709,7 @@ private struct HomeReportRow: View {
                         .controlSize(.small)
                 } else {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
             }
@@ -1750,7 +1785,7 @@ struct PhotoSourceSheet: View {
         VStack(spacing: 16) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "camera.viewfinder")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 48, height: 48)
                     .background(Color.rdGreenSoft)
@@ -1758,10 +1793,10 @@ struct PhotoSourceSheet: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Fotoğraf Yükle")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("Fotoğrafı nereden almak istiyorsun?")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
 
@@ -1769,7 +1804,7 @@ struct PhotoSourceSheet: View {
 
                 Button(action: onClose) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .frame(width: 38, height: 38)
                         .background(Color.rdCloud)
@@ -1806,7 +1841,7 @@ struct PhotoSourceSheet: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(width: 44, height: 44)
                     .background(Color.rdWhite)
@@ -1818,17 +1853,17 @@ struct PhotoSourceSheet: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(subtitle)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
             .padding(12)

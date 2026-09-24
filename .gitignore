@@ -27,9 +27,11 @@ Packages/
 
 # Sensitive
 *.env
+*.p8
+AuthKey_*.p8
 App/GoogleService-Info.plist
 App/GoogleService-Info.plist.local
-QA/tmp/
+backups/
 
 # Supabase local/link cache
 supabase/.temp/
@@ -43,3 +45,12 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+# Generated review artifacts
+output/
+output/paywall-device-matrix/
+output/paywall-screenshots/
+output/app-review-preflight/
+output/app-review-physical-smoke/
+output/imagegen/
+output/snapshot-previews/

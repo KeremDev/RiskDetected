@@ -10,9 +10,14 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import JSZip from "npm:jszip@3.10.1";
 import XLSX from "npm:xlsx-js-style@1.2.0";
+import {
+  analysisSectorLabel,
+  normalizeAnalysisSector,
+} from "../analyze/sector-context.ts";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const BUSINESS_TIME_ZONE = "Europe/Istanbul";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,6 +51,7 @@ type AnalysisRow = Record<string, unknown> & {
   finding_count?: number | null;
   created_at?: string | null;
   completed_at?: string | null;
+  analysis_sector?: string | null;
 };
 
 type FindingRow = Record<string, unknown> & {
@@ -54,6 +60,7 @@ type FindingRow = Record<string, unknown> & {
   category?: string | null;
   description?: string | null;
   recommended_action?: string | null;
+  recommended_measures?: unknown;
   references_text?: string | null;
   root_cause_text?: string | null;
   confidence?: number | null;
@@ -181,7 +188,7 @@ function monthlyReportLimit(tier: PlanTier): number | null {
 
 function istanbulMonthStartISO(): string {
   const day = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Istanbul",
+    timeZone: BUSINESS_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
   }).format(new Date());
@@ -295,6 +302,24 @@ async function sendReportReadyPush(params: {
     );
     return;
   }
+  let pushResult: { status?: string } = {};
+  try {
+    pushResult = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    pushResult = {};
+  }
+  if (pushResult.status !== "sent") {
+    console.warn(
+      "Report ready push not sent",
+      JSON.stringify({
+        request_id: params.requestID,
+        support_id: params.supportID,
+        report_id: params.reportID,
+        body: safeLogText(responseText),
+      }),
+    );
+    return;
+  }
 
   await params.supabase
     .from("reports")
@@ -309,10 +334,67 @@ function safeText(value: unknown, fallback = ""): string {
   return String(value);
 }
 
+function displayFindingTitle(title: unknown): string {
+  const original = safeText(title);
+  const qualifiers = [
+    /\(sahada doğrulanmalı\)/giu,
+    /\(sahada dogrulanmali\)/giu,
+    /\(sahada doğrulanmalıdır\)/giu,
+    /\(sahada dogrulanmalidir\)/giu,
+    /sahada doğrulanmalı/giu,
+    /sahada dogrulanmali/giu,
+    /sahada doğrulanmalıdır/giu,
+    /sahada dogrulanmalidir/giu,
+  ];
+
+  let cleaned = original;
+  for (const qualifier of qualifiers) {
+    cleaned = cleaned.replace(qualifier, "");
+  }
+  cleaned = cleaned
+    .replace(/\s{2,}/gu, " ")
+    .replace(/ \(\)/gu, "")
+    .trim()
+    .replace(/[-–—·,;:\s]+$/u, "");
+
+  return cleaned || original;
+}
+
 function actionWithRootCause(finding: FindingRow): string {
   const rootCause = safeText(finding.root_cause_text).trim();
-  const action = safeText(finding.recommended_action);
-  return rootCause ? `${action}\n\nKök neden: ${rootCause}` : action;
+  const measures = controlMeasuresText(finding);
+  return rootCause ? `${measures}\n\nKök neden: ${rootCause}` : measures;
+}
+
+function controlMeasuresText(finding: FindingRow): string {
+  const rawMeasures = Array.isArray(finding.recommended_measures)
+    ? finding.recommended_measures
+    : [];
+  const measures = rawMeasures
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const kind = safeText(record.kind);
+      const title = controlMeasureTitle(kind, record.title);
+      const text = safeText(record.text).trim();
+      return text ? { title, text } : null;
+    })
+    .filter((item): item is { title: string; text: string } => item !== null);
+
+  if (measures.length === 0) {
+    const fallback = safeText(finding.recommended_action).trim();
+    return fallback ? `Düzeltici Önlem: ${fallback}` : "";
+  }
+
+  return measures
+    .map((measure) => `${measure.title}: ${measure.text}`)
+    .join("\n");
+}
+
+function controlMeasureTitle(kind: string, title: unknown): string {
+  if (kind === "preventive") return "Önleyici Kontrol";
+  if (kind === "corrective") return "Düzeltici Önlem";
+  return safeText(title, "Kontrol Tedbiri");
 }
 
 function safeNumber(value: unknown, fallback = 0): number {
@@ -327,7 +409,7 @@ function formatDate(raw: unknown): string {
   return new Intl.DateTimeFormat("tr-TR", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "Europe/Istanbul",
+    timeZone: BUSINESS_TIME_ZONE,
   }).format(date);
 }
 
@@ -391,7 +473,7 @@ function profileWithCompany(
   return {
     ...(profile ?? {}),
     company_name: company.name,
-    company_logo_url: company.logo_path ?? null,
+    company_logo_url: company.logo_path ?? profile?.company_logo_url ?? null,
     phone: hazardClassLabel(company.hazard_class),
   };
 }
@@ -421,6 +503,11 @@ function bandStyle(value: unknown) {
     default:
       return { fg: palette.unknown, bg: palette.unknownSoft };
   }
+}
+
+function analysisSectorLabelFromRow(analysis: AnalysisRow): string {
+  const sector = normalizeAnalysisSector(analysis.analysis_sector);
+  return sector ? analysisSectorLabel(sector, "tr") : "Belirtilmedi";
 }
 
 function canvasLabel(value: unknown): string {
@@ -526,12 +613,29 @@ function logoPathFromProfile(value: unknown): string {
   }
 }
 
+function isOwnedLogoPath(path: string, userID: string): boolean {
+  const normalizedPath = path.replace(/^\/+/, "").toLowerCase();
+  const ownerPrefix = `${userID.toLowerCase()}/`;
+  if (!normalizedPath.startsWith(ownerPrefix)) return false;
+  return normalizedPath === `${ownerPrefix}profile-logo.jpg` ||
+    /^([0-9a-f-]+)\/companies\/([0-9a-f-]+)\/logo\.jpg$/i.test(
+      normalizedPath,
+    );
+}
+
 async function loadCompanyLogo(
   supabase: any,
   profile: ProfileRow | null,
+  userID: string,
 ): Promise<{ bytes: Uint8Array; extension: "jpg" | "png" } | null> {
   const path = logoPathFromProfile(profile?.company_logo_url);
   if (!path) return null;
+  if (!isOwnedLogoPath(path, userID)) {
+    console.warn(
+      "Company logo skipped because path is outside current user prefix",
+    );
+    return null;
+  }
 
   const { data, error } = await supabase.storage.from("logos").download(path);
   if (error || !data) {
@@ -1289,6 +1393,22 @@ function appendFineKinneyReferenceSheet(
       "",
       "",
     ],
+    [
+      `Analiz kapsamı: ${analysisSectorLabelFromRow(analysis)}`,
+      "",
+      "",
+      "",
+      "",
+      `Analiz odağı: ${canvasLabel(analysis.canvas)}`,
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
   ]);
   setCols(sheet, [12, 18, 18, 18, 4, 12, 18, 18, 18, 4, 12, 18, 18, 18]);
   setRows(sheet, [
@@ -1858,6 +1978,16 @@ function makeWorkbook(
       methodLabel(method),
     ],
     [
+      "Analiz kapsamı",
+      analysisSectorLabelFromRow(analysis),
+      "",
+      "Analiz odağı",
+      canvasLabel(analysis.canvas),
+      "",
+      "",
+      "",
+    ],
+    [
       "Başlangıç",
       createdDate,
       "",
@@ -1993,7 +2123,7 @@ function makeWorkbook(
     "Kategori",
     "Açıklama",
     ...metricHeaders,
-    "Önerilen Önlem",
+    "Önlem / Kontrol Tedbirleri",
     "Kök Neden",
     "Referans / İzleme",
     "Termin",
@@ -2004,11 +2134,11 @@ function makeWorkbook(
     riskHeaders,
     ...findings.map((finding, index) => [
       finding.ordinal ?? index + 1,
-      safeText(finding.title),
+      displayFindingTitle(finding.title),
       safeText(finding.category),
       safeText(finding.description),
       ...metricValues(finding),
-      safeText(finding.recommended_action),
+      controlMeasuresText(finding),
       safeText(finding.root_cause_text),
       safeText(finding.references_text),
       suggestedTerm(methodBand(finding, method)),
@@ -2018,15 +2148,15 @@ function makeWorkbook(
   ];
   const riskSheet = appendSheet(workbook, "Risk Analiz Tablosu", riskRows);
   const riskColumnWidths = method === "matrix_5x5"
-    ? [6, 26, 18, 56, 11, 11, 12, 16, 56, 34, 36, 16, 14, 32]
-    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 56, 34, 36, 16, 14, 32];
+    ? [6, 26, 18, 56, 11, 11, 12, 16, 64, 34, 36, 16, 14, 32]
+    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 64, 34, 36, 16, 14, 32];
   const riskLastCol = XLSX.utils.encode_col(riskHeaders.length - 1);
   const riskLevelCol = XLSX.utils.encode_col(4 + metricHeaders.length - 1);
   const metricFirstCol = "E";
   const metricLastCol = XLSX.utils.encode_col(4 + metricHeaders.length - 2);
   const statusCol = XLSX.utils.encode_col(riskHeaders.length - 2);
   setCols(riskSheet, riskColumnWidths);
-  setRows(riskSheet, [34, ...findings.map(() => 92)]);
+  setRows(riskSheet, [38, ...findings.map(() => 118)]);
   riskSheet["!autofilter"] = {
     ref: `A1:${riskLastCol}${Math.max(1, riskRows.length)}`,
   };
@@ -2082,7 +2212,7 @@ function makeWorkbook(
       )
       .map((finding) => [
         finding.ordinal ?? "",
-        safeText(finding.title),
+        displayFindingTitle(finding.title),
         bandLabel(methodBand(finding, method)),
         methodScore(finding, method),
         actionWithRootCause(finding),
@@ -2100,7 +2230,7 @@ function makeWorkbook(
     24,
     8,
     28,
-    ...findings.map(() => 48),
+    ...findings.map(() => 68),
   ]);
   addMerges(distribution, ["A1:F1", "A8:F8"]);
   setStyle(distribution, "A1:F1", styles.title);
@@ -2309,10 +2439,11 @@ serve(async (req: Request) => {
   let freeRiskAnalysisTrialAvailable = false;
   if (planTier === "free") {
     const { count: trialCount, error: trialCountError } = await supabase
-      .from("reports")
+      .from("usage_events")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
-      .or("kind.in.(riskAnalysis,risk_analysis),format.eq.xlsx");
+      .eq("feature", "report_risk_analysis_trial")
+      .eq("event_type", "completed");
 
     if (trialCountError) {
       return json(500, {
@@ -2326,8 +2457,7 @@ serve(async (req: Request) => {
     if ((trialCount ?? 0) >= 1) {
       return json(429, {
         error: "free_risk_analysis_trial_exhausted",
-        message:
-          "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
+        message: "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
         request_id: requestID,
         support_id: supportID,
       });
@@ -2339,9 +2469,11 @@ serve(async (req: Request) => {
   const reportLimit = monthlyReportLimit(planTier);
   if (reportLimit !== null && !freeRiskAnalysisTrialAvailable) {
     const { count: reportCount, error: reportCountError } = await supabase
-      .from("reports")
+      .from("usage_events")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
+      .eq("feature", "report_standard")
+      .eq("event_type", "completed")
       .gte("created_at", istanbulMonthStartISO());
 
     if (reportCountError) {
@@ -2377,7 +2509,7 @@ serve(async (req: Request) => {
     supportID,
     documentNo,
   );
-  const logo = await loadCompanyLogo(supabase, effectiveProfile);
+  const logo = await loadCompanyLogo(supabase, effectiveProfile, user.id);
   const rawBytes = workbookBuffer(workbook);
   const bytes = logo ? await embedCompanyLogo(rawBytes, logo) : rawBytes;
   const fileName = `${
@@ -2450,8 +2582,7 @@ serve(async (req: Request) => {
     if (message.includes("free_risk_analysis_trial_exhausted")) {
       return json(429, {
         error: "free_risk_analysis_trial_exhausted",
-        message:
-          "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
+        message: "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
         request_id: requestID,
         support_id: supportID,
       });

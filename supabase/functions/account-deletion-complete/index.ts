@@ -80,48 +80,6 @@ async function sha256Hex(value: string): Promise<string> {
     .join("");
 }
 
-async function sendAccountDeletionPush(params: {
-  supabaseURL: string;
-  serviceRoleKey: string;
-  userID: string;
-  requestID: string;
-  supportID: string;
-}) {
-  const response = await fetch(
-    `${params.supabaseURL}/functions/v1/send-push-notification`,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${params.serviceRoleKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        user_id: params.userID,
-        kind: "account_updates",
-        title: "Hesap silme işlemi tamamlanıyor",
-        body: "RiskDetected hesabın ve verilerin silme sürecine alındı.",
-        data: {
-          destination: "profile",
-          event: "account_deletion_complete",
-          request_id: params.requestID,
-          support_id: params.supportID,
-        },
-      }),
-    },
-  );
-  if (!response.ok) {
-    console.warn(
-      "Account deletion push failed",
-      JSON.stringify({
-        request_id: params.requestID,
-        support_id: params.supportID,
-        status: response.status,
-        body: safeErrorMessage(await response.text()),
-      }),
-    );
-  }
-}
-
 async function listBucketPaths(
   supabase: SupabaseAdmin,
   bucket: string,
@@ -284,6 +242,18 @@ serve(async (req) => {
     });
   }
 
+  if (
+    !request.user_id ||
+    (request.target_user_id && request.target_user_id !== request.user_id)
+  ) {
+    return json(409, {
+      error: "target_user_mismatch",
+      message: "Deletion request target does not match the requesting user.",
+      request_id: request.id,
+      support_id: supportID,
+    });
+  }
+
   const targetUserID = request.target_user_id ?? request.user_id;
   if (!isUUID(targetUserID)) {
     return json(409, {
@@ -352,14 +322,6 @@ serve(async (req) => {
         targetUserID,
       );
     }
-
-    await sendAccountDeletionPush({
-      supabaseURL,
-      serviceRoleKey,
-      userID: targetUserID,
-      requestID: request.id,
-      supportID,
-    });
 
     const { error: authDeleteError } = await supabase.auth.admin.deleteUser(
       targetUserID,

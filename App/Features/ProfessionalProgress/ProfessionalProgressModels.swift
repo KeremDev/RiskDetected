@@ -388,7 +388,7 @@ struct ProfessionalProgressSummary: Equatable {
 
     private static var currentWeekStartString: String {
         var calendar = Calendar(identifier: .iso8601)
-        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        calendar.timeZone = RDConfig.Quota.businessTimeZone
         let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
 
         let formatter = DateFormatter()

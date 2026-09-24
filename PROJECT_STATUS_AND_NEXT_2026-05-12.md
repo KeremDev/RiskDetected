@@ -435,7 +435,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Done: Prompt/personalization/context/cache/thinking/token telemetry kolonları production DB'de canlı.
    - Done: Onboarding `Atla` linki onay ekranına bağlandı; "Sana özel sonuçlar veremeyeceğiz" mesajı ve üzgün yüz ikonu gösteriliyor.
    - Done: Onboarding V2 her zaman beyaz/light temaya kilitlendi; cihaz dark mode ayarı onboarding ekranlarını değiştirmiyor.
-   - Onboarding ve uygulama içi bazı metin/sloganlarda revizyon yapılacak.
+   - Done: Onboarding ve uygulama içi bazı metin/sloganlarda revizyon yapıldı. [TAMAMLANDI - 2026-06-02]
 
 8. Sabit analiz prompt revizyonu
    - Done: Backend sabit prompt `CORE_ANALYSIS_PROMPT` olarak korundu; dynamic onboarding/company/tier context ayrı bloklara ayrıldı.

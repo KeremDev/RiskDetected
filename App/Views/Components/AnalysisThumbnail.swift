@@ -78,7 +78,7 @@ struct RDTextAnalysisArtwork: View {
 
             VStack(spacing: 7) {
                 Image(systemName: "text.alignleft")
-                    .font(.system(size: 19, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(19), weight: .heavy, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 36, height: 36)
                     .background(Color.rdWhite.opacity(0.86))

@@ -4,8 +4,12 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>tr</string>
+	</array>
 	<key>CFBundleDisplayName</key>
-	<string>RiskDetected</string>
+	<string>$(INFOPLIST_KEY_CFBundleDisplayName)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -41,24 +45,38 @@
 			</array>
 		</dict>
 	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>GIDClientID</key>
 	<string>200539603330-p0o5ddmuqf1m7fobof5omtca28k0mk7b.apps.googleusercontent.com</string>
 	<key>GIDServerClientID</key>
 	<string>200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com</string>
-	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>RiskDetected, saha fotoğrafları çekerek iş güvenliği analizi yapabilmek için kamerana ihtiyaç duyar.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Saha fotoğraflarını analiz edebilmek için galerine erişim izni gerekiyor.</string>
+	<key>RDRevenueCatAPIKey</key>
+	<string>$(RISKDETECTED_REVENUECAT_API_KEY)</string>
+	<key>RDRevenueCatOfferingIdentifier</key>
+	<string>$(RISKDETECTED_REVENUECAT_OFFERING_IDENTIFIER)</string>
+	<key>RDSupabasePublishableKey</key>
+	<string>$(RISKDETECTED_SUPABASE_PUBLISHABLE_KEY)</string>
+	<key>RDSupabaseURL</key>
+	<string>$(RISKDETECTED_SUPABASE_URL)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>UILaunchScreen</key>
 	<dict/>

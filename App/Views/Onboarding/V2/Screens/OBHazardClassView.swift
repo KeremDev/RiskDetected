@@ -6,9 +6,9 @@ struct OBHazardClassView: View {
     let onNext: () -> Void
 
     private let items: [(cls: OBHazardClass, icon: String, sub: String)] = [
-        (.critical, "exclamationmark.triangle.fill", "Petrokimya, maden, inşaat"),
-        (.high, "exclamationmark.circle.fill", "İmalat, gıda, sağlık"),
-        (.low, "info.circle.fill", "Ofis, perakende, hizmet"),
+        (.critical, "exclamationmark.triangle.fill", "Petrokimya, maden, inşaat, fabrika vb."),
+        (.high, "exclamationmark.circle.fill", "İmalat, gıda, sağlık vb."),
+        (.low, "info.circle.fill", "Ofis, perakende, hizmet vb."),
     ]
 
     var body: some View {
@@ -21,13 +21,13 @@ struct OBHazardClassView: View {
                         OBHeroTile { OBHeroHazard() }
                             .obStage(delay: 0.08)
                         Text("Hangi tehlike sınıfında çalışıyorsun?")
-                            .font(.system(size: 28, weight: .semibold))
+                            .font(.system(size: RDFontScale.size(28), weight: .semibold))
                             .tracking(-0.8)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
                         Text("Birden fazla seçebilirsin.")
-                            .font(.system(size: 15))
+                            .font(.system(size: RDFontScale.size(15)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.22)
@@ -78,9 +78,17 @@ struct OBHazardClassView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 12).fill(cls.bgColor)
             Image(systemName: icon)
-                .font(.system(size: 20))
+                .font(.system(size: RDFontScale.size(20)))
                 .foregroundStyle(cls.color)
         }
         .frame(width: 44, height: 44)
     }
+}
+
+#Preview {
+    OBHazardClassView(
+        state: OnboardingV2State.previewSample(step: 3),
+        onBack: {},
+        onNext: {}
+    )
 }

@@ -2,9 +2,7 @@ import SwiftUI
 
 extension View {
     func rdCardShadow() -> some View {
-        self
-            .shadow(color: Color.rdBlack.opacity(0.105), radius: 4, x: 5, y: 6)
-            .shadow(color: Color.rdSlate.opacity(0.045), radius: 7, x: 7, y: 8)
+        modifier(RDDepthShadowModifier())
     }
 
     func rdCardShadow(
@@ -14,31 +12,19 @@ extension View {
         x: CGFloat = 5,
         y: CGFloat = 6
     ) -> some View {
-        self
-            .shadow(
-                color: Color.rdBlack.opacity(colorScheme == .dark ? 0.30 : 0.105),
+        modifier(
+            RDDepthShadowModifier(
+                explicitColorScheme: colorScheme,
+                accent: accent,
                 radius: radius,
                 x: x,
                 y: y
             )
-            .shadow(
-                color: Color.rdSlate.opacity(colorScheme == .dark ? 0.12 : 0.045),
-                radius: radius + 3,
-                x: x + 2,
-                y: y + 2
-            )
-            .shadow(
-                color: accent.opacity(colorScheme == .dark ? 0.07 : 0.025),
-                radius: 6,
-                x: 6,
-                y: 7
-            )
+        )
     }
 
     func rdRowShadow() -> some View {
-        self
-            .shadow(color: Color.rdBlack.opacity(0.10), radius: 4, x: 5, y: 6)
-            .shadow(color: Color.rdSlate.opacity(0.045), radius: 7, x: 7, y: 8)
+        modifier(RDDepthShadowModifier(radius: 4, x: 5, y: 6))
     }
 
     func rdModalShadow() -> some View {
@@ -47,5 +33,28 @@ extension View {
 
     func rdSheetShadow() -> some View {
         self.shadow(color: Color(hex: "#0B0D0E").opacity(0.18), radius: 40, x: 0, y: -10)
+    }
+}
+
+private struct RDDepthShadowModifier: ViewModifier {
+    @Environment(\.colorScheme) private var environmentColorScheme
+
+    var explicitColorScheme: ColorScheme?
+    var accent: Color = Color.rdBlack
+    var radius: CGFloat = 4
+    var x: CGFloat = 5
+    var y: CGFloat = 6
+
+    func body(content: Content) -> some View {
+        let resolvedScheme = explicitColorScheme ?? environmentColorScheme
+
+        if resolvedScheme == .dark {
+            content
+        } else {
+            content
+                .shadow(color: Color.rdBlack.opacity(0.105), radius: radius, x: x, y: y)
+                .shadow(color: Color.rdSlate.opacity(0.045), radius: radius + 3, x: x + 2, y: y + 2)
+                .shadow(color: accent.opacity(0.025), radius: 6, x: 6, y: 7)
+        }
     }
 }

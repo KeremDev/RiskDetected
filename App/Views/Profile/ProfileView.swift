@@ -7,6 +7,7 @@ import UserNotifications
 struct ProfileView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.openURL) private var openURL
     @StateObject private var notifications = NotificationService.shared
     @State private var showPaywall = false
     @State private var showProfileEditor = false
@@ -18,6 +19,8 @@ struct ProfileView: View {
     @State private var showSupport = false
     @State private var showProfessionalTitlesFromHeader = false
     @State private var profileBadgesSheet: ProfileBadgesSheetItem?
+    @State private var isRestoringPurchases = false
+    @State private var restoreMessage: String?
     @State private var stats: ProfileStats? = nil
     @State private var professionalProgressSummary: ProfessionalProgressSummary? = nil
     @State private var onboardingSummary: ProfileOnboardingSummary? = nil
@@ -28,7 +31,9 @@ struct ProfileView: View {
     @State private var dataActionInProgress: ProfileDataAction?
     @State private var pendingDataAction: ProfileDataAction?
     @State private var dataMessage: String?
-    @State private var shareItem: ShareItem?
+    @State private var shouldSignOutAfterDataMessageDismiss = false
+    @State private var exportedDataFile: ShareItem?
+    @State private var deviceIntegrity = DeviceIntegrityService.assess()
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
     }
@@ -57,8 +62,11 @@ struct ProfileView: View {
                     if app.currentTier.isPaid { proCard } else { upsellCard }
                     accountList
                     settingsList
+                    if deviceIntegrity.isWarning {
+                        deviceIntegrityWarningCard
+                    }
+                    deleteAccountCard
                     signOutCard
-                    versionFootnote
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 0)
@@ -75,6 +83,9 @@ struct ProfileView: View {
         .task(id: app.profile?.avatarURL) {
             await loadProfileAvatarImage()
         }
+        .onAppear {
+            consumePendingProfileDestinationIfNeeded()
+        }
         .onChange(of: app.auth.session?.user.id) { _ in
             Task {
                 await loadStats()
@@ -82,6 +93,9 @@ struct ProfileView: View {
                 await loadOnboardingSummary()
                 await loadProfileAvatarImage()
             }
+        }
+        .onChange(of: app.pendingProfileDestination) { _ in
+            consumePendingProfileDestinationIfNeeded()
         }
         .onChange(of: selectedProfileAvatarItem) { newItem in
             guard let newItem else { return }
@@ -102,6 +116,7 @@ struct ProfileView: View {
             ProfileDataControlsSheet(
                 stats: stats,
                 actionInProgress: dataActionInProgress,
+                exportedFile: $exportedDataFile,
                 onExport: { runDataAction(.exportData) },
                 onDeleteReports: { pendingDataAction = .deleteReports },
                 onDeleteAnalyses: { pendingDataAction = .deleteAnalyses },
@@ -139,7 +154,7 @@ struct ProfileView: View {
                     }
                 }
             )
-            .presentationDetents(CompanyPickerSheet.presentationDetents(for: app.currentTier))
+            .presentationDetents(CompanyPickerSheet.presentationDetents(for: app.currentTier, allowNoCompany: false))
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -193,10 +208,6 @@ struct ProfileView: View {
                 .presentationDragIndicator(.visible)
                 .preferredColorScheme(preferredModalColorScheme)
         }
-        .sheet(item: $shareItem) { item in
-            ShareSheet(items: [item.url])
-                .preferredColorScheme(preferredModalColorScheme)
-        }
         .alert("Profil fotoğrafı güncellenemedi", isPresented: Binding(
             get: { profileAvatarError != nil },
             set: { if !$0 { profileAvatarError = nil } }
@@ -224,13 +235,21 @@ struct ProfileView: View {
         } message: {
             Text(pendingDataAction?.confirmationMessage ?? "")
         }
-        .alert("Verilerim", isPresented: Binding(
+        .alert(dataAlertTitle, isPresented: Binding(
             get: { dataMessage != nil },
-            set: { if !$0 { dataMessage = nil } }
+            set: { if !$0 { dismissDataMessage() } }
         )) {
-            Button("Tamam") { dataMessage = nil }
+            Button("Tamam") { dismissDataMessage() }
         } message: {
             Text(dataMessage ?? "")
+        }
+        .alert("Satın alımları geri yükle", isPresented: Binding(
+            get: { restoreMessage != nil },
+            set: { if !$0 { restoreMessage = nil } }
+        )) {
+            Button("Tamam") { restoreMessage = nil }
+        } message: {
+            Text(restoreMessage ?? "")
         }
     }
 
@@ -245,14 +264,14 @@ struct ProfileView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(profileDisplayName)
-                            .font(.system(size: 23, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(23), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .lineLimit(1)
                             .minimumScaleFactor(0.72)
                             .padding(.top, 50)
 
                         Text(profileExpertiseLabel)
-                            .font(.system(size: 13.5, weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(13.5), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .lineSpacing(2)
                             .lineLimit(2)
@@ -264,7 +283,7 @@ struct ProfileView: View {
                                 showProfileBadges(professionalProgressSummary)
                             } label: {
                                 Label("Başarılarım", systemImage: "rosette")
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                                     .foregroundStyle(Color.rdGreenDark)
                             }
                             .buttonStyle(.plain)
@@ -417,7 +436,7 @@ struct ProfileView: View {
         }
         .overlay(alignment: .bottomTrailing) {
             Image(systemName: "camera.fill")
-                .font(.system(size: 11, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .black, design: .rounded))
                 .foregroundStyle(Color.rdWhite)
                 .frame(width: 26, height: 26)
                 .background(Color.rdBlack.opacity(0.88))
@@ -433,7 +452,7 @@ struct ProfileView: View {
         switch app.currentTier {
         case .plus:
             Image(systemName: "crown.fill")
-                .font(.system(size: 12, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                 .foregroundStyle(Color.rdWhite)
                 .frame(width: 28, height: 28)
                 .background(Color.rdPlanPlus)
@@ -442,7 +461,7 @@ struct ProfileView: View {
                 .shadow(color: Color.rdPlanPlus.opacity(0.30), radius: 8, x: 0, y: 4)
         case .pro:
             Image(systemName: "star.fill")
-                .font(.system(size: 12, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                 .foregroundStyle(Color.rdWhite)
                 .frame(width: 28, height: 28)
                 .background(Color.rdGreen)
@@ -462,14 +481,14 @@ struct ProfileView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: professionalTitleIcon)
-                    .font(.system(size: 10.5, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10.5), weight: .black, design: .rounded))
                     .foregroundStyle(Color.rdWhite)
                     .frame(width: 21, height: 21)
                     .background(professionalTitleAccent)
                     .clipShape(Circle())
 
                 Text(professionalTitleLabel)
-                    .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.5), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -533,7 +552,7 @@ struct ProfileView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: item.icon)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(item.color)
                     .frame(width: 22, height: 22)
                     .background(item.color.opacity(colorScheme == .dark ? 0.16 : 0.10))
@@ -547,7 +566,7 @@ struct ProfileView: View {
                         .minimumScaleFactor(0.64)
 
                     Text(item.label)
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
                         .minimumScaleFactor(0.68)
@@ -678,12 +697,12 @@ struct ProfileView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(subscriptionPaymentTitle) aktif")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
 
                 Text("\(subscriptionPeriodLabel) · \(subscriptionRenewalLabel)")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
@@ -692,7 +711,7 @@ struct ProfileView: View {
             Spacer(minLength: 8)
 
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(18), weight: .semibold, design: .rounded))
                 .foregroundStyle(app.currentTier.accentColor)
         }
         .padding(.horizontal, 14)
@@ -717,82 +736,8 @@ struct ProfileView: View {
     }
 
     private var upsellCard: some View {
-        Button {
+        RDPlanUpsellCard {
             showPaywall = true
-        } label: {
-            ZStack(alignment: .topTrailing) {
-                Circle()
-                    .fill(Color.rdPlanPlus.opacity(0.16))
-                    .frame(width: 96, height: 96)
-                    .blur(radius: 16)
-                    .offset(x: 42, y: -58)
-
-                Circle()
-                    .fill(Color.rdGreen.opacity(0.10))
-                    .frame(width: 86, height: 86)
-                    .blur(radius: 18)
-                    .offset(x: -214, y: 78)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 7) {
-                        RDTierBadge(tier: .plus)
-                        RDTierBadge(tier: .pro)
-                        Spacer()
-                        Image(systemName: "arrow.up.right.circle.fill")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.rdPlanPlusDark)
-                    }
-
-                    Text("Plus veya Pro'ya yükselt")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-
-                    VStack(alignment: .leading, spacing: 7) {
-                        upsellBenefit("Daha fazla günlük analiz")
-                        upsellBenefit("Detaylı risk raporları")
-                        upsellBenefit("Fine-Kinney + 5x5 matris")
-                        upsellBenefit("PDF ve Excel dışa aktarım")
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                LinearGradient(
-                    colors: [
-                        Color(hex: "#F8FAF9"),
-                        Color(hex: "#EEF2F1"),
-                        Color(hex: "#F6F0DF")
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .stroke(Color.rdLine.opacity(0.95), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-            .profileCardDepth(colorScheme: colorScheme, accent: Color.rdPlanPlus)
-        }
-        .buttonStyle(RDPressableButtonStyle())
-    }
-
-    private func upsellBenefit(_ text: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "checkmark")
-                .font(.system(size: 9, weight: .black, design: .rounded))
-                .foregroundStyle(Color.rdOnyx)
-                .frame(width: 18, height: 18)
-                .background(Color.rdPlanPlus)
-                .clipShape(Circle())
-
-            Text(text)
-                .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
         }
     }
 
@@ -876,6 +821,16 @@ struct ProfileView: View {
         }
     }
 
+    private func consumePendingProfileDestinationIfNeeded() {
+        guard app.activeTab == .profile,
+              let destination = app.pendingProfileDestination else { return }
+        app.pendingProfileDestination = nil
+        switch destination {
+        case .preferences:
+            showPreferences = true
+        }
+    }
+
     private var settingsList: some View {
         VStack(alignment: .leading, spacing: 6) {
             sectionHeader("Ayarlar")
@@ -887,6 +842,35 @@ struct ProfileView: View {
                     ProfileRow(icon: "gearshape", title: "Tercihler")
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile.row.preferences")
+                Divider().background(Color.rdLine).padding(.leading, 60)
+                Button {
+                    restorePurchasesFromProfile()
+                } label: {
+                    ProfileRow(
+                        icon: "arrow.clockwise.circle",
+                        title: "Satın alımları geri yükle",
+                        detail: isRestoringPurchases ? "Bekle" : app.currentTier.title
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isRestoringPurchases)
+                .accessibilityIdentifier("profile.row.restore_purchases")
+                if app.currentTier.isPaid {
+                    Divider().background(Color.rdLine).padding(.leading, 60)
+                    Button {
+                        openURL(subscriptionManagementURL)
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    } label: {
+                        ProfileRow(
+                            icon: "creditcard",
+                            title: "App Store aboneliğini yönet",
+                            detail: "Apple"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("profile.row.manage_app_store_subscription")
+                }
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     showDataControls = true
@@ -900,7 +884,12 @@ struct ProfileView: View {
                     showLegalInfo = true
                     UISelectionFeedbackGenerator().selectionChanged()
                 } label: {
-                    ProfileRow(icon: "lock", title: "Güvenlik ve gizlilik")
+                    ProfileRow(
+                        icon: deviceIntegrity.isWarning ? "exclamationmark.shield.fill" : "lock",
+                        title: "Güvenlik ve gizlilik",
+                        detail: deviceIntegrity.profileDetail,
+                        danger: deviceIntegrity.isWarning
+                    )
                 }
                 .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
@@ -922,6 +911,78 @@ struct ProfileView: View {
         }
     }
 
+    private var subscriptionManagementURL: URL {
+        app.subscriptionState.managementURL
+            ?? URL(string: "https://apps.apple.com/account/subscriptions")!
+    }
+
+    private func restorePurchasesFromProfile() {
+        guard !isRestoringPurchases else { return }
+        UISelectionFeedbackGenerator().selectionChanged()
+        isRestoringPurchases = true
+        logProfileRestoreTap()
+
+        Task {
+            do {
+                let restoredState = try await app.restoreSubscriptions()
+                await loadStats()
+                restoreMessage = restoredState.tier.isPaid
+                    ? "\(restoredState.tier.title) aboneliğin doğrulandı."
+                    : "Geri yüklenecek aktif abonelik bulunamadı."
+            } catch {
+                restoreMessage = error.localizedDescription
+            }
+            isRestoringPurchases = false
+        }
+    }
+
+    private func logProfileRestoreTap() {
+        PaywallEventService.shared.record(
+            .restoreTap,
+            funnelSessionID: UUID(),
+            source: .inApp,
+            variantID: "profile_subscription_restore_v1",
+            segmentKey: nil,
+            selectedTier: app.currentTier,
+            billing: nil,
+            productIdentifier: nil,
+            metadata: PaywallEventMetadata(
+                layout: "profile_restore",
+                currentTier: app.currentTier.rawValue,
+                selectedPackageID: nil,
+                noticePresent: false,
+                errorMessage: nil,
+                contextHeadline: "profile",
+                purchaseError: nil
+            )
+        )
+    }
+
+    private var deviceIntegrityWarningCard: some View {
+        RDCard {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.shield.fill")
+                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdCriticalText)
+                    .frame(width: 40, height: 40)
+                    .background(Color.rdCriticalBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Cihaz güvenliği uyarısı")
+                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(deviceIntegrity.userMessage)
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .accessibilityIdentifier("profile.device_integrity.warning")
+    }
+
     private var signOutCard: some View {
         Button {
             app.signOut()
@@ -939,20 +1000,48 @@ struct ProfileView: View {
         .buttonStyle(.plain)
     }
 
+    private var deleteAccountCard: some View {
+        Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            pendingDataAction = .requestAccountDeletion
+        } label: {
+            ProfileRow(
+                icon: "person.crop.circle.badge.xmark",
+                title: "Hesabımı sil / Delete Account",
+                subtitle: "Hesap ve uygulama verilerini kalıcı olarak siler.",
+                danger: true
+            )
+            .background(profileCardFill)
+            .overlay(
+                RoundedRectangle(cornerRadius: RDRadius.lg)
+                    .stroke(profileLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+            .profileCardDepth(colorScheme: colorScheme)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("profile.row.delete_account")
+    }
+
+    private var dataAlertTitle: String {
+        shouldSignOutAfterDataMessageDismiss
+            ? "Hesap silindi / Account Deleted"
+            : "Verilerim"
+    }
+
+    private func dismissDataMessage() {
+        dataMessage = nil
+        guard shouldSignOutAfterDataMessageDismiss else { return }
+        shouldSignOutAfterDataMessageDismiss = false
+        app.signOut()
+    }
+
     private func sectionHeader(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.system(size: 11, weight: .bold, design: .rounded))
+            .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
             .tracking(0.6)
             .foregroundStyle(Color.rdSlate)
             .padding(.leading, 4)
-    }
-
-    private var versionFootnote: some View {
-        Text("v1.4.0 · build 2841")
-            .rdMono(size: 11)
-            .foregroundStyle(Color.rdSlate)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 6)
     }
 
     private var subscriptionPeriodLabel: String {
@@ -1077,6 +1166,10 @@ struct ProfileView: View {
     private func runDataAction(_ action: ProfileDataAction) {
         guard dataActionInProgress == nil else { return }
         pendingDataAction = nil
+        shouldSignOutAfterDataMessageDismiss = false
+        if action == .exportData {
+            exportedDataFile = nil
+        }
 
         guard let userID = app.auth.session?.user.id else {
             dataMessage = AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated, context: "Veri işlemi yapılamadı").fullText
@@ -1097,7 +1190,7 @@ struct ProfileView: View {
                         requestID: requestID,
                         supportID: supportID
                     )
-                    shareItem = ShareItem(url: url)
+                    exportedDataFile = ShareItem(url: url)
                 case .deleteReports:
                     try await AnalysisService.shared.deleteAllReports(
                         requestID: requestID,
@@ -1113,15 +1206,21 @@ struct ProfileView: View {
                     dataMessage = "Tüm analizlerin ve ilişkili bulgular/fotoğraflar silindi."
                     await loadStats()
                 case .requestAccountDeletion:
-                    try await AnalysisService.shared.requestAccountDeletion(
+                    let result = try await AnalysisService.shared.requestAccountDeletion(
                         userID: userID,
                         email: app.profile?.email,
                         requestID: requestID,
                         supportID: supportID
                     )
-                    dataMessage = "Hesap silme talebin kaydedildi. İşlem güvenli silme kuyruğunda tamamlanacak."
+                    if result.shouldClearLocalSession {
+                        shouldSignOutAfterDataMessageDismiss = true
+                        dataMessage = result.message ?? "Hesabın ve uygulama verilerin silindi."
+                    } else {
+                        dataMessage = result.message ?? "Hesap silme isteğin alındı. Güvenli silme işlemi devam ediyor."
+                    }
                 }
             } catch {
+                shouldSignOutAfterDataMessageDismiss = false
                 dataMessage = AppErrorMessage.make(
                     rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
                     context: action.errorContext,
@@ -1159,7 +1258,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .deleteAnalyses:
             return "Tüm analizler silinsin mi?"
         case .requestAccountDeletion:
-            return "Hesap silme talebi oluşturulsun mu?"
+            return "Hesabın ve verilerin silinsin mi?"
         }
     }
 
@@ -1172,7 +1271,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .deleteAnalyses:
             return "Tüm analizler, bulgular, fotoğraf kayıtları ve bu analizlere bağlı raporlar silinir. Bu işlem geri alınamaz."
         case .requestAccountDeletion:
-            return "Talep kaydedilir. Hesap silme işlemi yetkili sunucu akışıyla tamamlanır."
+            return "Hesabın, profilin, analizlerin, raporların ve saklanan dosyaların kalıcı olarak silinir. Silme işlemi uygulama içinde tamamlanır; e-posta, destek veya web sitesi gerekmez. Aktif App Store aboneliğin varsa iptal ve yönetim işlemleri Apple abonelik ayarlarından yapılır. Bu işlem geri alınamaz."
         }
     }
 
@@ -1181,7 +1280,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .exportData: return "Dışa aktar"
         case .deleteReports: return "Tüm raporları sil"
         case .deleteAnalyses: return "Tüm analizleri sil"
-        case .requestAccountDeletion: return "Talep oluştur"
+        case .requestAccountDeletion: return "Hesabımı sil / Delete Account"
         }
     }
 
@@ -1190,7 +1289,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .exportData: return "Veri dışa aktarımı oluşturulamadı"
         case .deleteReports: return "Raporlar silinemedi"
         case .deleteAnalyses: return "Analizler silinemedi"
-        case .requestAccountDeletion: return "Hesap silme talebi kaydedilemedi"
+        case .requestAccountDeletion: return "Hesap silme işlemi başlatılamadı"
         }
     }
 
@@ -1293,7 +1392,7 @@ private struct ProfileEditSheet: View {
                             .padding(10)
                     } else {
                         Image(systemName: "building.2.crop.circle")
-                            .font(.system(size: 28, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(28), weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                     }
                 }
@@ -1301,10 +1400,10 @@ private struct ProfileEditSheet: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(companyLogo == nil ? "Logo ekle" : "Varsayılan rapor logosu")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("Firma veya kişisel logon raporlarda varsayılan olarak kullanılır.")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1313,7 +1412,7 @@ private struct ProfileEditSheet: View {
 
                 PhotosPicker(selection: $selectedLogoItem, matching: .images) {
                     Image(systemName: companyLogo == nil ? "plus" : "arrow.triangle.2.circlepath")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                         .frame(width: 36, height: 36)
                         .foregroundStyle(Color.rdGreenDark)
                         .background(Color.rdGreenSoft)
@@ -1377,7 +1476,7 @@ private struct ProfileEditSheet: View {
         } label: {
             VStack(spacing: 4) {
                 Text(method.domain.label)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 Text("R = \(method.domain.formula)")
                     .rdMono(size: 10)
             }
@@ -1397,13 +1496,13 @@ private struct ProfileEditSheet: View {
     private func sectionTitle(_ title: String, icon: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .frame(width: 24, height: 24)
                 .background(Color.rdGreenSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 7))
             Text(title)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
         }
         .padding(.leading, 2)
@@ -1418,7 +1517,7 @@ private struct ProfileEditSheet: View {
     ) -> some View {
         HStack(spacing: 11) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack.opacity(0.72))
                 .frame(width: 36, height: 36)
                 .background(Color.rdCloud)
@@ -1426,10 +1525,10 @@ private struct ProfileEditSheet: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                 TextField(placeholder, text: text)
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .keyboardType(keyboard)
                     .textInputAutocapitalization(keyboard == .default ? .words : .never)
@@ -1504,11 +1603,11 @@ private struct NotificationSettingsSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 16) {
                 RDCard {
                     HStack(alignment: .top, spacing: 10) {
                         Image(systemName: iconName)
-                            .font(.system(size: 19, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(19), weight: .semibold, design: .rounded))
                             .foregroundStyle(iconColor)
                             .frame(width: 42, height: 42)
                             .background(iconColor.opacity(0.12))
@@ -1516,48 +1615,27 @@ private struct NotificationSettingsSheet: View {
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text(statusTitle)
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             Text(statusMessage)
-                                .font(.system(size: 12, design: .rounded))
+                                .font(.system(size: RDFontScale.size(12), design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
 
-                VStack(spacing: 8) {
-                    notificationRow(icon: "checkmark.seal", title: "Analiz tamamlandı", subtitle: "Uzun süren analizlerde sonucu kaçırma.")
-                    notificationRow(icon: "doc.richtext", title: "Rapor hazır", subtitle: "PDF arşivleme ve paylaşım akışlarında haber ver.")
-                    notificationRow(icon: "person.crop.circle.badge.checkmark", title: "Hesap ve güvenlik", subtitle: "Oturum, profil ve önemli hesap durumları.")
-                    progressPreferenceRow(
-                        icon: "chart.line.uptrend.xyaxis",
-                        title: "Haftalık mesleki özet",
-                        subtitle: "Rapor, analiz ve yetkinlik özetini haftalık al.",
-                        preference: .weeklySummary
-                    )
-                    progressPreferenceRow(
-                        icon: "calendar",
-                        title: "Aylık mesleki özet",
-                        subtitle: "Ay sonu MDP, ünvan ve kategori birikimini gör.",
-                        preference: .monthlySummary
-                    )
-                    progressPreferenceRow(
-                        icon: "rosette",
-                        title: "Rozet ve ünvan",
-                        subtitle: "Yeni başarı ve ünvan değişimlerini sakin bildirimlerle gör.",
-                        preference: .milestones
-                    )
-                }
-
                 if let lastError = notificationService.lastError {
                     Text(lastError)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdCriticalText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Spacer(minLength: 0)
+                if isEnabled {
+                    notificationTypesCard
+                    progressPreferencesCard
+                }
 
                 if notificationService.authorizationStatus == .denied {
                     RDButton(
@@ -1581,10 +1659,10 @@ private struct NotificationSettingsSheet: View {
                     RDButton(
                         title: notificationService.isRegistering ? "Bildirimler kuruluyor..." : "Bildirimleri aç",
                         style: .detect,
-                        icon: notificationService.isRegistering ? "hourglass" : "bell.badge.fill",
+                        icon: notificationService.isRegistering ? "hourglass" : "bell.badge",
                         height: 48
                     ) {
-                        notificationService.requestPermissionAndRegister()
+                        notificationService.enableNotifications()
                     }
                     .disabled(notificationService.isRegistering)
                     .opacity(notificationService.isRegistering ? 0.72 : 1)
@@ -1605,38 +1683,99 @@ private struct NotificationSettingsSheet: View {
                 await notificationService.refreshSettings()
             }
         }
+        .presentationDetents([.height(sheetHeight), .medium, .large])
+        .presentationDragIndicator(.visible)
     }
 
-    private var isEnabled: Bool {
-        switch notificationService.authorizationStatus {
-        case .authorized, .provisional, .ephemeral:
-            return true
-        default:
-            return false
+    private var sheetHeight: CGFloat {
+        if isEnabled {
+            return notificationService.lastError == nil ? 540 : 580
+        }
+        if notificationService.lastError != nil {
+            return 330
+        }
+        return notificationService.authorizationStatus == .denied ? 300 : 285
+    }
+
+    private var notificationTypesCard: some View {
+        RDCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Aktif bildirimler")
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+
+                NotificationInfoRow(icon: "sparkles", title: "Analiz tamamlandı")
+                NotificationInfoRow(icon: "doc.text.fill", title: "Rapor hazır")
+                NotificationInfoRow(icon: "shield.checkered", title: "Hesap güvenliği")
+            }
         }
     }
 
+    private var progressPreferencesCard: some View {
+        RDCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Mesleki ilerleme")
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+
+                NotificationPreferenceToggle(
+                    title: "Haftalık özet",
+                    icon: "calendar",
+                    isOn: notificationService.progressPreferenceEnabled(.weeklySummary)
+                ) { isOn in
+                    notificationService.setProgressPreference(.weeklySummary, enabled: isOn)
+                }
+
+                NotificationPreferenceToggle(
+                    title: "Aylık özet",
+                    icon: "calendar.badge.clock",
+                    isOn: notificationService.progressPreferenceEnabled(.monthlySummary)
+                ) { isOn in
+                    notificationService.setProgressPreference(.monthlySummary, enabled: isOn)
+                }
+
+                NotificationPreferenceToggle(
+                    title: "Rozet ve unvan",
+                    icon: "medal.fill",
+                    isOn: notificationService.progressPreferenceEnabled(.milestones)
+                ) { isOn in
+                    notificationService.setProgressPreference(.milestones, enabled: isOn)
+                }
+            }
+        }
+    }
+
+    private var isEnabled: Bool {
+        notificationService.notificationsEnabled
+    }
+
     private var statusTitle: String {
-        switch notificationService.authorizationStatus {
-        case .authorized, .provisional, .ephemeral:
+        if notificationService.notificationsEnabled {
             return "Bildirimler açık"
+        }
+        switch notificationService.authorizationStatus {
         case .denied:
-            return "Bildirim izni kapalı"
+            return "Bildirimler kapalı"
+        case .authorized, .provisional, .ephemeral:
+            return "Bildirimler kapalı"
         case .notDetermined:
-            return "Bildirimleri kur"
+            return "Bildirimler kapalı"
         @unknown default:
             return "Bildirim durumu kontrol edilemedi"
         }
     }
 
     private var statusMessage: String {
+        if notificationService.notificationsEnabled {
+            return "Analiz tamamlandığında, rapor hazır olduğunda ve önemli hesap güvenliği durumlarında bildirim alırsın."
+        }
         switch notificationService.authorizationStatus {
         case .authorized, .provisional, .ephemeral:
-            return "Cihaz kaydı Supabase ile eşleştiğinde analiz ve rapor durumları için bildirim alabileceksin."
+            return "Bildirimler uygulama içinde kapalı. Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini tekrar alırsın."
         case .denied:
-            return "iOS bildirim izni kapalı. RiskDetected bildirimlerini cihaz ayarlarından tekrar açabilirsin."
+            return "Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini alabilirsin."
         case .notDetermined:
-            return "Önemli analiz, rapor ve hesap durumlarını kaçırmamak için cihaz bildirim iznini aç."
+            return "Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini alabilirsin."
         @unknown default:
             return "Bildirim ayarlarını yenileyip tekrar dene."
         }
@@ -1650,85 +1789,71 @@ private struct NotificationSettingsSheet: View {
         isEnabled ? Color.rdGreen : Color.rdSlate
     }
 
-    private func notificationRow(icon: String, title: String, subtitle: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.rdGreenDark)
-                .frame(width: 38, height: 38)
-                .background(Color.rdGreenSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 11))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
-                Text(subtitle)
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer()
-        }
-        .padding(12)
-        .background(Color.rdWhite)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.rdLine, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func progressPreferenceRow(
-        icon: String,
-        title: String,
-        subtitle: String,
-        preference: NotificationService.ProgressPreference
-    ) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.rdGreenDark)
-                .frame(width: 38, height: 38)
-                .background(Color.rdGreenSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 11))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
-                Text(subtitle)
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer()
-            Toggle(
-                "",
-                isOn: Binding(
-                    get: { notificationService.progressPreferenceEnabled(preference) },
-                    set: { notificationService.setProgressPreference(preference, enabled: $0) }
-                )
-            )
-            .labelsHidden()
-            .tint(Color.rdGreen)
-        }
-        .padding(12)
-        .background(Color.rdWhite)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.rdLine, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
     private func openSystemSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
     }
 }
 
+private struct NotificationInfoRow: View {
+    let icon: String
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdGreen)
+                .frame(width: 24, height: 24)
+                .background(Color.rdGreen.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            Text(title)
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+
+            Spacer(minLength: 0)
+
+            Text("Açık")
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreen)
+        }
+    }
+}
+
+private struct NotificationPreferenceToggle: View {
+    let title: String
+    let icon: String
+    let isOn: Bool
+    let onChange: (Bool) -> Void
+
+    var body: some View {
+        Toggle(isOn: Binding(
+            get: { isOn },
+            set: onChange
+        )) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .frame(width: 24, height: 24)
+                    .background(Color.rdSlate.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Text(title)
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+            }
+        }
+        .toggleStyle(.switch)
+        .tint(Color.rdGreen)
+    }
+}
+
 private struct ProfileDataControlsSheet: View {
     let stats: ProfileStats?
     let actionInProgress: ProfileDataAction?
+    @Binding var exportedFile: ShareItem?
     let onExport: () -> Void
     let onDeleteReports: () -> Void
     let onDeleteAnalyses: () -> Void
@@ -1742,11 +1867,16 @@ private struct ProfileDataControlsSheet: View {
                     summaryCard
                     dataActionButton(
                         icon: "square.and.arrow.up",
-                        title: "Verilerimi dışa aktar",
-                        subtitle: "Analiz, bulgu, rapor ve profil özetini JSON dosyası olarak al.",
+                        title: actionInProgress == .exportData ? "Verilerin hazırlanıyor..." : "Verilerimi dışa aktar",
+                        subtitle: actionInProgress == .exportData
+                            ? "JSON dosyası oluşturuluyor ve telefona kaydediliyor."
+                            : "Analiz, bulgu, rapor ve profil özetini JSON dosyası olarak al.",
                         action: .exportData,
                         onTap: onExport
                     )
+                    if let exportedFile {
+                        exportedFileCard(exportedFile)
+                    }
                     dataActionButton(
                         icon: "doc.badge.minus",
                         title: "Tüm raporlarımı sil",
@@ -1765,15 +1895,15 @@ private struct ProfileDataControlsSheet: View {
                     )
                     dataActionButton(
                         icon: "person.crop.circle.badge.xmark",
-                        title: "Hesabımı silme talebi",
-                        subtitle: "Talep kaydı oluşturulur; hesap silme güvenli sunucu sürecinde tamamlanır.",
+                        title: "Hesabımı sil / Delete Account",
+                        subtitle: "Profil, analizler, raporlar ve dosyalar kalıcı silinir. E-posta, destek veya web sitesi gerekmez.",
                         action: .requestAccountDeletion,
                         danger: true,
                         onTap: onRequestAccountDeletion
                     )
 
                     Text("Not: Otomatik saklama politikası ayrıca çalışır. Free fotoğraflar 7 gün, Plus fotoğraflar 30 gün, Pro fotoğraflar sınırsız saklanır; raporlar kullanıcı silene kadar kalır.")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(12)
@@ -1791,6 +1921,9 @@ private struct ProfileDataControlsSheet: View {
                 }
             }
         }
+        .sheet(item: $exportedFile) { item in
+            DocumentPreview(url: item.url)
+        }
     }
 
     private var summaryCard: some View {
@@ -1807,7 +1940,7 @@ private struct ProfileDataControlsSheet: View {
                 .rdMono(size: 18, weight: .bold)
                 .foregroundStyle(Color.rdBlack)
             Text(label)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity)
@@ -1831,7 +1964,7 @@ private struct ProfileDataControlsSheet: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                     .foregroundStyle(danger ? Color.rdCriticalText : Color.rdGreen)
                     .frame(width: 42, height: 42)
                     .background(danger ? Color.rdCriticalBg : Color.rdGreenSoft)
@@ -1839,10 +1972,10 @@ private struct ProfileDataControlsSheet: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                         .foregroundStyle(danger ? Color.rdCriticalText : Color.rdBlack)
                     Text(subtitle)
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1853,7 +1986,7 @@ private struct ProfileDataControlsSheet: View {
                         .controlSize(.small)
                 } else {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
             }
@@ -1868,6 +2001,46 @@ private struct ProfileDataControlsSheet: View {
         .buttonStyle(RDPressableButtonStyle())
         .disabled(actionInProgress != nil)
     }
+
+    private func exportedFileCard(_ item: ShareItem) -> some View {
+        Button {
+            exportedFile = item
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreen)
+                    .frame(width: 42, height: 42)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Telefona kaydedildi")
+                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(item.url.lastPathComponent)
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+            }
+            .padding(14)
+            .background(Color.rdGreenSoft.opacity(0.45))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.rdGreen.opacity(0.28), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel("Dışa aktarılan dosyayı aç")
+    }
 }
 
 struct ProfileRow: View {
@@ -1875,6 +2048,7 @@ struct ProfileRow: View {
 
     let icon: String
     let title: String
+    var subtitle: String? = nil
     var detail: String? = nil
     var danger: Bool = false
     var showsChevron: Bool = true
@@ -1894,15 +2068,28 @@ struct ProfileRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                 .frame(width: 32, height: 32)
                 .foregroundStyle(iconColor)
                 .background(iconFill)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            Text(title)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundStyle(danger ? Color.rdCriticalText : Color.rdBlack)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
+                    .foregroundStyle(danger ? Color.rdCriticalText : Color.rdBlack)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                        .foregroundStyle(danger ? Color.rdCriticalText.opacity(0.82) : Color.rdSlate)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if let detail {
@@ -1912,7 +2099,7 @@ struct ProfileRow: View {
             }
             if showsChevron {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
         }
@@ -2002,11 +2189,11 @@ private struct ProfilePreferencesSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title.uppercased())
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .tracking(0.6)
                     .foregroundStyle(Color.rdSlate)
                 Text(subtitle)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -2028,7 +2215,7 @@ private struct PreferenceOptionRow: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .frame(width: 36, height: 36)
                     .foregroundStyle(isSelected ? Color.white : Color.rdCharcoal)
                     .background(isSelected ? Color.rdSelected : Color.rdFog)
@@ -2036,17 +2223,17 @@ private struct PreferenceOptionRow: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(subtitle)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(20), weight: .semibold, design: .rounded))
                     .foregroundStyle(isSelected ? Color.rdGreen : Color.rdSlate.opacity(0.55))
             }
             .padding(14)
@@ -2060,6 +2247,7 @@ private struct PreferenceOptionRow: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .accessibilityLabel(title)
+        .accessibilityIdentifier("profile.preference.\(title)")
         .accessibilityValue(isSelected ? "Seçili" : "Seçili değil")
     }
 }
@@ -2077,7 +2265,7 @@ private struct ProfileBadgesSheetItem: Identifiable {
     let summary: ProfessionalProgressSummary
 }
 
-private extension View {
+extension View {
     func profileCardDepth(colorScheme: ColorScheme, accent: Color = Color.rdBlack) -> some View {
         rdCardShadow(colorScheme: colorScheme, accent: accent)
     }

@@ -163,9 +163,10 @@ final class PDFReportService: @unchecked Sendable {
             color: .rdPDFBlack
         )
 
+        let sectorPart = analysis.analysisSectorLabel.map { "Analiz kapsamı: \($0) · " } ?? ""
         drawText(
-            "\(formattedDate(analysis.createdAt, language: input.options.language)) · \(canvasLabel(analysis.canvas)) · \(input.findings.count) bulgu",
-            in: CGRect(x: margin, y: contentTop + 38, width: 480, height: 22),
+            "\(formattedDate(analysis.createdAt, language: input.options.language)) · \(sectorPart)Analiz odağı: \(canvasLabel(analysis.canvas)) · \(input.findings.count) bulgu",
+            in: CGRect(x: margin, y: contentTop + 38, width: 520, height: 22),
             font: .systemFont(ofSize: 12, weight: .medium),
             color: .rdPDFSlate
         )
@@ -211,10 +212,11 @@ final class PDFReportService: @unchecked Sendable {
             "Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())"
         ].compactMap { $0 }
         let footer = footerParts.joined(separator: " · ")
-        drawText(
+        drawFittingText(
             footer,
             in: CGRect(x: margin, y: 448, width: 758, height: 22),
-            font: .monospacedSystemFont(ofSize: 10, weight: .medium),
+            baseFont: .monospacedSystemFont(ofSize: 9.5, weight: .medium),
+            minimumFontSize: 7,
             color: .rdPDFSlate
         )
 
@@ -538,14 +540,29 @@ final class PDFReportService: @unchecked Sendable {
         let title = input.options.preparedTitle.nonEmpty ?? input.profile?.title ?? "Belirtilmedi"
         let certificate = input.options.certificateNumber.nonEmpty ?? input.profile?.certificateNumber ?? "Belirtilmedi"
         let companyInfo = input.options.companyInfo.nonEmpty ?? input.profile?.phone
-        drawText("Analiz: \(analysis.title)", in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 260, height: 10), font: .systemFont(ofSize: 7.5, weight: .bold), color: .rdPDFBlack)
-        drawText("Firma: \(company)", in: CGRect(x: rect.minX + 10, y: rect.minY + 18, width: 260, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Firma bilgisi: \(companyInfo ?? "Belirtilmedi")", in: CGRect(x: rect.minX + 10, y: rect.minY + 31, width: 260, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Hazırlayan: \(prepared)", in: CGRect(x: rect.minX + 294, y: rect.minY + 5, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Ünvan: \(title)", in: CGRect(x: rect.minX + 294, y: rect.minY + 18, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Belge No: \(certificate)", in: CGRect(x: rect.minX + 294, y: rect.minY + 31, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Tarih: \(formattedDate(analysis.createdAt, language: input.options.language))", in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate, alignment: .right)
-        drawText("Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())", in: CGRect(x: rect.minX + 548, y: rect.minY + 23, width: 200, height: 10), font: .monospacedSystemFont(ofSize: 7.5, weight: .semibold), color: .rdPDFBlack, alignment: .right)
+        let sectorLine = analysis.analysisSectorLabel.map { "Analiz kapsamı: \($0)\n" } ?? ""
+        drawFittingText(
+            "\(sectorLine)Analiz: \(analysis.title)\nFirma: \(company)\nFirma bilgisi: \(companyInfo ?? "Belirtilmedi")",
+            in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 260, height: 37),
+            baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
+            minimumFontSize: 5.8,
+            color: .rdPDFSlate
+        )
+        drawFittingText(
+            "Hazırlayan: \(prepared)\nÜnvan: \(title)\nBelge No: \(certificate)",
+            in: CGRect(x: rect.minX + 294, y: rect.minY + 5, width: 220, height: 37),
+            baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
+            minimumFontSize: 5.8,
+            color: .rdPDFSlate
+        )
+        drawFittingText(
+            "Tarih: \(formattedDate(analysis.createdAt, language: input.options.language))\nDoküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())",
+            in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: 24),
+            baseFont: .monospacedSystemFont(ofSize: 7.4, weight: .semibold),
+            minimumFontSize: 5.8,
+            color: .rdPDFBlack,
+            alignment: .right
+        )
     }
 
     private func drawFineKinneyAssessmentTable(input: ReportInput, rows: [AssessmentTableRow]) {
@@ -590,7 +607,7 @@ final class PDFReportService: @unchecked Sendable {
         [
             "\(ordinal)",
             canvasLabel(input.bundle.analysis.canvas),
-            finding.title + "\n" + finding.description,
+            finding.displayTitle + "\n" + finding.description,
             finding.category,
             scoreText(finding.fk.probability),
             scoreText(finding.fk.frequency),
@@ -607,7 +624,7 @@ final class PDFReportService: @unchecked Sendable {
         [
             "\(ordinal)",
             canvasLabel(input.bundle.analysis.canvas),
-            finding.title + "\n" + finding.description,
+            finding.displayTitle + "\n" + finding.description,
             finding.category,
             "\(finding.m5.probability)",
             "\(finding.m5.severity)",
@@ -742,15 +759,16 @@ final class PDFReportService: @unchecked Sendable {
         drawText("#", in: CGRect(x: x, y: y, width: 28, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
         drawText("RİSK / KANIT", in: CGRect(x: x + 36, y: y, width: 300, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
         drawText("SKOR", in: CGRect(x: x + 372, y: y, width: 70, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
-        drawText("ÖNERİLEN ÖNLEM", in: CGRect(x: x + 462, y: y, width: 290, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
+        drawText("ÖNLEM / KONTROL TEDBİRLERİ", in: CGRect(x: x + 462, y: y, width: 290, height: 18), font: .systemFont(ofSize: 8.2, weight: .bold), color: .rdPDFSlate)
         UIColor.rdPDFLine.setFill()
         UIBezierPath(rect: CGRect(x: 42, y: y + 22, width: 758, height: 1)).fill()
     }
 
     private func actionTextWithRootCause(for finding: Finding) -> String {
         let rootCause = finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !rootCause.isEmpty else { return finding.action }
-        return "\(finding.action)\n\nKök neden: \(rootCause)"
+        let measuresText = finding.controlMeasuresText
+        guard !rootCause.isEmpty else { return measuresText }
+        return "\(measuresText)\n\nKök neden: \(rootCause)"
     }
 
     private func standardFindingRowHeight(for finding: Finding) -> CGFloat {
@@ -758,7 +776,7 @@ final class PDFReportService: @unchecked Sendable {
         let titleHeight = max(
             18,
             measuredTextHeight(
-                finding.title,
+                finding.displayTitle,
                 width: 302,
                 font: .systemFont(ofSize: 12, weight: .bold),
                 alignment: .left
@@ -792,7 +810,7 @@ final class PDFReportService: @unchecked Sendable {
         let titleHeight = max(
             18,
             measuredTextHeight(
-                finding.title,
+                finding.displayTitle,
                 width: 302,
                 font: .systemFont(ofSize: 12, weight: .bold),
                 alignment: .left
@@ -800,7 +818,7 @@ final class PDFReportService: @unchecked Sendable {
         )
         let descriptionY = y + 10 + titleHeight + 7
         drawFittingText(
-            finding.title,
+            finding.displayTitle,
             in: CGRect(x: x + 48, y: y + 9, width: 302, height: titleHeight),
             baseFont: .systemFont(ofSize: 12, weight: .bold),
             minimumFontSize: 9.2,

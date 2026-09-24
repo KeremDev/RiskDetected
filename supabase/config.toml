@@ -1,0 +1,79 @@
+project_id = "ppcrzemgiztzcgddbins"
+
+[auth]
+enabled = true
+site_url = "https://riskdetected.com"
+additional_redirect_urls = [
+  "io.supabase.riskdetected://login-callback",
+  "https://riskdetected.com/admin/auth/callback",
+  "https://riskdetected.com/admin/login",
+  "https://riskdetected.com/admin/mfa",
+  "http://localhost:5173/admin/auth/callback",
+  "http://localhost:5173/admin/login",
+  "http://localhost:5173/admin/mfa"
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = false
+max_frequency = "1m0s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.external.apple]
+enabled = true
+client_id = "com.riskdetected.app.service,com.riskdetected.app"
+
+[auth.external.google]
+enabled = true
+client_id = "200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com"
+
+[functions.analyze]
+verify_jwt = false
+
+[functions.support-contact]
+verify_jwt = true
+
+[functions.send-welcome-email]
+verify_jwt = true
+
+[functions.generate-excel-report]
+verify_jwt = true
+
+[functions.register-report]
+verify_jwt = true
+
+[functions.sync-revenuecat-subscription]
+verify_jwt = true
+
+[functions.send-report-ready-notification]
+verify_jwt = true
+
+[functions.request-account-deletion]
+verify_jwt = true
+
+[functions.process-analysis-jobs]
+verify_jwt = false
+
+[functions.account-deletion-complete]
+verify_jwt = false
+
+[functions.retention-cleanup]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.revenuecat-webhook]
+verify_jwt = false
+
+[functions.send-trial-reminder-notifications]
+verify_jwt = false

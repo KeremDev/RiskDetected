@@ -105,12 +105,12 @@ struct PDFGenerationOverlay: View {
 
                 VStack(spacing: 8) {
                     Text("PDF hazırlanıyor")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(28), weight: .bold, design: .rounded))
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
 
                     Text(statusText)
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                 }
@@ -118,7 +118,7 @@ struct PDFGenerationOverlay: View {
                 VStack(spacing: 12) {
                     HStack {
                         Text("İlerleme")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .textCase(.uppercase)
                             .tracking(1.2)
@@ -126,7 +126,7 @@ struct PDFGenerationOverlay: View {
                         Spacer()
 
                         Text(percentText)
-                            .font(.system(size: 20, weight: .heavy, design: .rounded))
+                            .font(.system(size: RDFontScale.size(20), weight: .heavy, design: .rounded))
                             .foregroundStyle(Color.rdGreen)
                             .monospacedDigit()
                     }
@@ -155,7 +155,7 @@ struct PDFGenerationOverlay: View {
                     Image(systemName: "sparkles")
                     Text("RiskDetected raporu oluşturulurken uygulamayı açık tut.")
                 }
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
             }
             .padding(.horizontal, 24)
@@ -210,11 +210,11 @@ struct PDFGenerationOverlay: View {
                 .rotationEffect(.degrees(orbit ? 360 : 0))
 
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 38, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(38), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
 
             Image(systemName: "sparkle")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .offset(x: 44, y: -42)
                 .opacity(pulse ? 1 : 0.45)

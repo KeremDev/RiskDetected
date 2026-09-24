@@ -50,10 +50,55 @@ enum AppFlow: Equatable {
     case main
 }
 
+enum SubscriptionOfferingsLoadState: Equatable {
+    case loading
+    case retryingOnce
+    case loaded
+    case failed(String)
+
+    var isLoading: Bool {
+        switch self {
+        case .loading, .retryingOnce:
+            return true
+        case .loaded, .failed:
+            return false
+        }
+    }
+
+    var errorMessage: String? {
+        switch self {
+        case let .failed(message):
+            return message
+        case .loading, .retryingOnce, .loaded:
+            return nil
+        }
+    }
+}
+
 enum QuickScanSource {
     case chooser
     case camera
     case gallery
+}
+
+enum ProfileDestination {
+    case preferences
+}
+
+private struct BackendSubscriptionRow: Decodable {
+    let tier: String
+    let status: String?
+    let entitlementID: String?
+    let currentPeriodEndsAt: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case tier
+        case status
+        case entitlementID = "entitlement_id"
+        case currentPeriodEndsAt = "current_period_ends_at"
+        case updatedAt = "updated_at"
+    }
 }
 
 @MainActor
@@ -69,12 +114,16 @@ final class AppState: ObservableObject {
     @Published var planCapabilities: PlanCapabilities = .forTier(.free)
     @Published var profile: UserProfile?
     @Published var activeTab: RDTab = .home
+    @Published var pendingProfileDestination: ProfileDestination?
     @Published var quickScanRequestID = UUID()
     var quickScanSource: QuickScanSource = .chooser
     @Published var hasSeenOnboarding: Bool
     @Published var authError: String?
+    @Published private(set) var isAuthenticated: Bool
     @Published private(set) var subscriptionState: SubscriptionState = .free
+    @Published private(set) var backendSubscriptionState: SubscriptionState = .free
     @Published private(set) var subscriptionPackages: [SubscriptionPlanPackage] = []
+    @Published private(set) var subscriptionOfferingsLoadState: SubscriptionOfferingsLoadState = .loading
     @Published var isDarkModeEnabled: Bool {
         didSet {
             UserDefaults.standard.set(isDarkModeEnabled, forKey: Self.darkModeKey)
@@ -95,6 +144,13 @@ final class AppState: ObservableObject {
     let auth: AuthService
     let subscriptions: any SubscriptionManaging
 
+    private let backendSubscriptionVerificationDelaysNanoseconds: [UInt64] = [
+        1_000_000_000,
+        2_000_000_000,
+        3_000_000_000,
+        5_000_000_000
+    ]
+    private let subscriptionOfferingsRetryDelayNanoseconds: UInt64 = 1_200_000_000
     private var pendingNotificationAnalysisID: UUID?
     private var cancellables = Set<AnyCancellable>()
 
@@ -120,9 +176,9 @@ final class AppState: ObservableObject {
             .flatMap(RDLanguagePreference.init(rawValue:))
         self.languagePreference = Self.normalizedLanguagePreference(storedLanguage)
         self.profile = resolved.profile
-        applyTier(displayTier(profileTier: resolved.profile?.tier ?? .free, subscriptionTier: resolvedSubscriptions.state.tier))
+        self.isAuthenticated = resolved.isAuthenticated
+        applyTier(.free)
         self.authError = resolved.lastError
-        resolvedSubscriptions.configure()
         observeAuth()
         observeSubscriptions()
         observeNotificationRouting()
@@ -136,7 +192,14 @@ final class AppState: ObservableObject {
         if Self.isUITestMainLaunch {
             let testTier: SubscriptionTier = Self.isUITestFreeTierLaunch ? .free : .plus
             profile = Self.uiTestProfile(tier: testTier)
-            applyTier(displayTier(profileTier: testTier, subscriptionTier: testTier))
+            backendSubscriptionState = SubscriptionState(
+                tier: testTier,
+                entitlementID: testTier.isPaid ? testTier.rawValue : nil,
+                source: "ui_test",
+                updatedAt: Date(),
+                errorMessage: nil
+            )
+            applyTier(testTier)
             flow = .main
             return
         }
@@ -146,28 +209,31 @@ final class AppState: ObservableObject {
     }
 
     func bootstrap() async {
-        try? await Task.sleep(nanoseconds: 800_000_000)
-
         #if DEBUG
         if Self.isUITestResetLaunch {
             await auth.resetLocalSessionForUITests()
             profile = nil
-            applyTier(displayTier(profileTier: .free, subscriptionTier: .free))
+            backendSubscriptionState = .free
+            applyTier(.free)
             flow = .onboarding
             return
         }
         #endif
 
         if auth.isAuthenticated {
-            // Profile observer'ı zaten bağladığımız için fetch otomatik tetiklenir,
-            // yine de kesinlik için bir kez daha refresh edelim.
-            await auth.refreshProfile()
-            await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
-            await sendWelcomeEmailIfPossible()
+            async let initialProfileRefresh: Void = auth.refreshProfile()
+            async let pendingDraftSync = OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+            async let welcomeEmail: Void = sendWelcomeEmailIfPossible()
+
             await subscriptions.identify(userID: auth.session?.user.id)
-            await syncBackendSubscription()
+            _ = await (initialProfileRefresh, pendingDraftSync, welcomeEmail)
+
+            await loadSubscriptionOfferings(retryOnce: true, identifyUserID: nil)
+
+            await reconcileBackendSubscriptionSnapshot()
             await auth.refreshProfile()
-            await subscriptions.loadOfferings()
+            let backendState = await refreshBackendSubscriptionState()
+            applyTier(backendState.tier)
             flow = .main
             routePendingNotificationIfReady(defaultTab: .home)
             return
@@ -191,11 +257,16 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Auth tarafı zaten signedIn yayınladığında otomatik geçilecek; manuel çağrıyı
-    /// AuthView'in geçici "demo giriş" senaryosu için saklıyoruz.
+    /// Auth tarafı zaten signedIn yayınladığında otomatik geçilecek; manuel çağrı
+    /// sadece auth tamamlanması sonrası explicit route geçişleri için saklıdır.
     func signIn() {
         flow = .main
         routePendingNotificationIfReady(defaultTab: .home)
+    }
+
+    func requestProfileDestination(_ destination: ProfileDestination) {
+        activeTab = .profile
+        pendingProfileDestination = destination
     }
 
     func signOut() {
@@ -205,28 +276,117 @@ final class AppState: ObservableObject {
     }
 
     func refreshSubscriptionOfferings() async {
+        guard let userID = auth.session?.user.id else {
+            subscriptionPackages = []
+            subscriptionOfferingsLoadState = .failed("App Store fiyatları için tekrar giriş yapman gerekiyor.")
+            return
+        }
+        await loadSubscriptionOfferings(retryOnce: true, identifyUserID: userID)
+    }
+
+    private func loadSubscriptionOfferings(retryOnce: Bool, identifyUserID: UUID?) async {
+        if let identifyUserID {
+            await subscriptions.identify(userID: identifyUserID)
+        }
+
+        subscriptionOfferingsLoadState = .loading
         await subscriptions.loadOfferings()
+        subscriptionPackages = subscriptions.packages
+        guard subscriptionPackages.isEmpty else {
+            subscriptionOfferingsLoadState = .loaded
+            return
+        }
+
+        guard retryOnce else {
+            subscriptionOfferingsLoadState = .failed(subscriptionOfferingsFailureMessage())
+            return
+        }
+
+        subscriptionOfferingsLoadState = .retryingOnce
+        try? await Task.sleep(nanoseconds: subscriptionOfferingsRetryDelayNanoseconds)
+        guard !Task.isCancelled else { return }
+
+        await subscriptions.loadOfferings()
+        subscriptionPackages = subscriptions.packages
+        subscriptionOfferingsLoadState = subscriptionPackages.isEmpty
+            ? .failed(subscriptionOfferingsFailureMessage())
+            : .loaded
+    }
+
+    private func subscriptionOfferingsFailureMessage() -> String {
+        return "App Store abonelik fiyatları şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
     }
 
     func refreshPlanState() async {
+        guard let userID = auth.session?.user.id else {
+            await auth.refreshProfile()
+            backendSubscriptionState = .free
+            applyTier(.free)
+            return
+        }
+        await subscriptions.identify(userID: userID)
         await subscriptions.refreshCustomerInfo()
-        await syncBackendSubscription()
+        await reconcileBackendSubscriptionSnapshot()
         await auth.refreshProfile()
-        applyTier(displayTier(profileTier: auth.profile?.tier ?? .free, subscriptionTier: subscriptions.state.tier))
+        let backendState = await refreshBackendSubscriptionState()
+        applyTier(backendState.tier)
     }
 
-    func purchaseSubscription(packageID: String) async throws {
-        try await subscriptions.purchase(packageID: packageID)
-        await syncBackendSubscription()
+    @discardableResult
+    func purchaseSubscription(packageID: String, expectedTier: SubscriptionTier? = nil) async throws -> SubscriptionState {
+        guard let userID = auth.session?.user.id else {
+            throw NSError(
+                domain: "RiskDetected.Subscription",
+                code: 401,
+                userInfo: [NSLocalizedDescriptionKey: "Abonelik başlatmadan önce tekrar giriş yapman gerekiyor."]
+            )
+        }
+        await subscriptions.identify(userID: userID)
+        let purchasedState = try await subscriptions.purchase(packageID: packageID)
+        let assertedTier = expectedTier ?? purchasedState.tier
+        guard purchasedState.tier == assertedTier else {
+            throw NSError(
+                domain: "RiskDetected.Subscription",
+                code: 409,
+                userInfo: [NSLocalizedDescriptionKey: "Abonelik doğrulanamadı. Seçilen plan \(assertedTier.title), doğrulanan plan \(purchasedState.tier.title)."]
+            )
+        }
+        let backendState = try await syncBackendSubscriptionWithRetry(expectedTier: assertedTier)
         await auth.refreshProfile()
+        backendSubscriptionState = backendState
+        guard backendState.tier == assertedTier else {
+            throw NSError(
+                domain: "RiskDetected.Subscription",
+                code: 409,
+                userInfo: [NSLocalizedDescriptionKey: "Abonelik backend tarafında doğrulanamadı. Lütfen birkaç saniye sonra tekrar dene veya satın alımları geri yükle."]
+            )
+        }
+        applyTier(backendState.tier)
+        return backendState
     }
 
     @discardableResult
     func restoreSubscriptions() async throws -> SubscriptionState {
+        guard let userID = auth.session?.user.id else {
+            throw NSError(
+                domain: "RiskDetected.Subscription",
+                code: 401,
+                userInfo: [NSLocalizedDescriptionKey: "Satın alımları geri yüklemek için tekrar giriş yapman gerekiyor."]
+            )
+        }
+        await subscriptions.identify(userID: userID)
         let restoredState = try await subscriptions.restorePurchases()
-        await syncBackendSubscription()
+        guard restoredState.tier.isPaid else {
+            await auth.refreshProfile()
+            let backendState = await refreshBackendSubscriptionState()
+            applyTier(backendState.tier)
+            return backendState
+        }
+        let backendState = try await syncBackendSubscriptionWithRetry(expectedTier: restoredState.tier)
         await auth.refreshProfile()
-        return restoredState
+        backendSubscriptionState = backendState
+        applyTier(backendState.tier)
+        return backendState
     }
 
     func setDarkMode(_ enabled: Bool) {
@@ -322,7 +482,6 @@ final class AppState: ObservableObject {
                 guard !Self.isUITestMainLaunch else { return }
                 #endif
                 self.profile = newProfile
-                self.applyTier(self.displayTier(profileTier: newProfile?.tier ?? .free, subscriptionTier: self.subscriptionState.tier))
             }
             .store(in: &cancellables)
 
@@ -334,6 +493,7 @@ final class AppState: ObservableObject {
                 #if DEBUG
                 guard !Self.isUITestMainLaunch else { return }
                 #endif
+                self.isAuthenticated = session != nil
                 if let session {
                     Task {
                         await LegalAcceptanceService.shared
@@ -342,6 +502,7 @@ final class AppState: ObservableObject {
                         NotificationService.shared.syncCurrentTokenIfPossible()
                         await self.subscriptions.identify(userID: session.user.id)
                         await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+                        await self.refreshPlanState()
                         await self.sendWelcomeEmailIfPossible()
                     }
                     if self.flow == .onboarding && !self.hasSeenOnboarding {
@@ -353,6 +514,8 @@ final class AppState: ObservableObject {
                     self.routePendingNotificationIfReady(defaultTab: .home)
                 } else if self.flow == .main {
                     Task { await self.subscriptions.identify(userID: nil) }
+                    self.backendSubscriptionState = .free
+                    self.applyTier(.free)
                     self.flow = .auth
                 }
             }
@@ -406,6 +569,9 @@ final class AppState: ObservableObject {
     }
 
     private func observeSubscriptions() {
+        #if DEBUG
+        if Self.isUITestMainLaunch { return }
+        #endif
         subscriptions.statePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
@@ -414,26 +580,19 @@ final class AppState: ObservableObject {
                 guard !Self.isUITestMainLaunch else { return }
                 #endif
                 self.subscriptionState = state
-                self.applyTier(self.displayTier(profileTier: self.profile?.tier ?? .free, subscriptionTier: state.tier))
             }
             .store(in: &cancellables)
 
         subscriptions.packagesPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] packages in
-                self?.subscriptionPackages = packages
+                guard let self else { return }
+                self.subscriptionPackages = packages
+                if !packages.isEmpty {
+                    self.subscriptionOfferingsLoadState = .loaded
+                }
             }
             .store(in: &cancellables)
-    }
-
-    private func displayTier(profileTier: SubscriptionTier, subscriptionTier: SubscriptionTier) -> SubscriptionTier {
-        if profileTier.isPaid {
-            return profileTier
-        }
-        if subscriptionTier.isPaid {
-            return subscriptionTier
-        }
-        return .free
     }
 
     private func applyTier(_ tier: SubscriptionTier) {
@@ -442,33 +601,201 @@ final class AppState: ObservableObject {
         isPro = tier == .pro
     }
 
-    private func syncBackendSubscription() async {
+    @discardableResult
+    private func refreshBackendSubscriptionState() async -> SubscriptionState {
+        guard let userID = auth.session?.user.id else {
+            backendSubscriptionState = .free
+            return .free
+        }
+
+        do {
+            let row: BackendSubscriptionRow = try await SupabaseService.shared.client
+                .from("user_subscriptions")
+                .select("tier,status,entitlement_id,current_period_ends_at,updated_at")
+                .eq("user_id", value: userID.uuidString)
+                .single()
+                .execute()
+                .value
+            let state = Self.subscriptionState(from: row)
+            backendSubscriptionState = state
+            return state
+        } catch let error as PostgrestError where Self.isMissingBackendSubscriptionError(error) {
+            backendSubscriptionState = .free
+            return .free
+        } catch {
+            let failedClosedState = SubscriptionState(
+                tier: .free,
+                entitlementID: nil,
+                source: "supabase",
+                updatedAt: Date(),
+                errorMessage: error.localizedDescription
+            )
+            backendSubscriptionState = failedClosedState
+            return failedClosedState
+        }
+    }
+
+    private static func subscriptionState(from row: BackendSubscriptionRow) -> SubscriptionState {
+        guard let tier = SubscriptionTier(rawValue: row.tier),
+              tier.isPaid,
+              Self.isActiveBackendStatus(row.status),
+              Self.isFutureExpiration(row.currentPeriodEndsAt)
+        else {
+            return SubscriptionState(
+                tier: .free,
+                entitlementID: nil,
+                source: row.status ?? "supabase",
+                updatedAt: Date(),
+                errorMessage: nil
+            )
+        }
+
+        return SubscriptionState(
+            tier: tier,
+            entitlementID: row.entitlementID,
+            source: row.status ?? "supabase",
+            updatedAt: Date(),
+            errorMessage: nil
+        )
+    }
+
+    private static func isActiveBackendStatus(_ status: String?) -> Bool {
+        guard let status else { return false }
+        return ["active", "trialing", "grace_period"].contains(status)
+    }
+
+    private static func isFutureExpiration(_ value: String?) -> Bool {
+        guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: value) {
+            return date > Date()
+        }
+        let fallback = ISO8601DateFormatter()
+        fallback.formatOptions = [.withInternetDateTime]
+        return fallback.date(from: value).map { $0 > Date() } ?? false
+    }
+
+    private static func isMissingBackendSubscriptionError(_ error: PostgrestError) -> Bool {
+        if error.code == "PGRST116" { return true }
+        let lower = error.message.lowercased(with: Locale(identifier: "en_US_POSIX"))
+        return lower.contains("0 rows") || lower.contains("no rows")
+    }
+
+    private func reconcileBackendSubscriptionSnapshot() async {
         guard auth.session != nil else { return }
+
+        struct EmptySyncBody: Encodable {}
+        struct SyncResponse: Decodable {
+            let tier: String?
+        }
+
+        do {
+            let _: SyncResponse = try await SupabaseService.shared.functions.invoke(
+                RDConfig.syncRevenueCatSubscriptionFunctionName,
+                options: FunctionInvokeOptions(body: EmptySyncBody())
+            )
+        } catch {
+            // Paid access is intentionally not unlocked from this passive sync.
+            // Purchase/restore paths call syncBackendSubscription(expectedTier:).
+        }
+    }
+
+    private func syncBackendSubscription(expectedTier: SubscriptionTier) async throws -> SubscriptionState {
+        guard auth.session != nil else {
+            throw NSError(
+                domain: "RiskDetected.Subscription",
+                code: 401,
+                userInfo: [NSLocalizedDescriptionKey: "Abonelik doğrulaması için tekrar giriş yapman gerekiyor."]
+            )
+        }
         struct SyncBody: Encodable {
             let expected_tier: String
             let expected_entitlement_id: String?
         }
         struct SyncResponse: Decodable {
             let tier: String?
+            let entitlement_id: String?
+            let status: String?
         }
 
-        do {
-            let response: SyncResponse = try await SupabaseService.shared.functions.invoke(
-                RDConfig.syncRevenueCatSubscriptionFunctionName,
-                options: FunctionInvokeOptions(
-                    body: SyncBody(
-                        expected_tier: subscriptions.state.tier.rawValue,
-                        expected_entitlement_id: subscriptions.state.entitlementID
-                    )
+        let response: SyncResponse = try await SupabaseService.shared.functions.invoke(
+            RDConfig.syncRevenueCatSubscriptionFunctionName,
+            options: FunctionInvokeOptions(
+                body: SyncBody(
+                    expected_tier: expectedTier.rawValue,
+                    expected_entitlement_id: subscriptions.state.entitlementID
                 )
             )
-            if let tier = response.tier.flatMap(SubscriptionTier.init(rawValue:)) {
-                applyTier(displayTier(profileTier: tier, subscriptionTier: subscriptions.state.tier))
-            }
-        } catch {
-            // RevenueCat SDK state remains the user-facing source; backend sync retry
-            // happens on the next refresh/purchase/restore/bootstrap.
+        )
+        guard let tier = response.tier.flatMap(SubscriptionTier.init(rawValue:)) else {
+            throw NSError(
+                domain: "RiskDetected.Subscription",
+                code: 502,
+                userInfo: [NSLocalizedDescriptionKey: "Abonelik doğrulama yanıtı okunamadı."]
+            )
         }
+        guard tier == expectedTier || (!expectedTier.isPaid && !tier.isPaid) else {
+            let message: String
+            if expectedTier.isPaid && !tier.isPaid {
+                message = "App Store hesabında \(expectedTier.title) aboneliği görünüyor, ancak RevenueCat backend doğrulaması henüz ücretli plan döndürmüyor. Güvenlik için plan açılmadı; abonelik RevenueCat/Supabase tarafında eşleşince otomatik açılır."
+            } else {
+                message = "Abonelik doğrulanamadı. Seçilen plan \(expectedTier.title), backend planı \(tier.title)."
+            }
+            throw NSError(
+                domain: "RiskDetected.Subscription",
+                code: 409,
+                userInfo: [NSLocalizedDescriptionKey: message]
+            )
+        }
+        return SubscriptionState(
+            tier: tier,
+            entitlementID: response.entitlement_id,
+            source: response.status ?? "supabase",
+            updatedAt: Date(),
+            errorMessage: nil
+        )
+    }
+
+    private func syncBackendSubscriptionWithRetry(expectedTier: SubscriptionTier) async throws -> SubscriptionState {
+        do {
+            return try await syncBackendSubscription(expectedTier: expectedTier)
+        } catch {
+            guard expectedTier.isPaid,
+                  Self.isBackendTierMismatch(error),
+                  !backendSubscriptionVerificationDelaysNanoseconds.isEmpty
+            else {
+                throw error
+            }
+
+            var lastError = error
+            for delay in backendSubscriptionVerificationDelaysNanoseconds {
+                try Task.checkCancellation()
+                try await Task.sleep(nanoseconds: delay)
+                do {
+                    return try await syncBackendSubscription(expectedTier: expectedTier)
+                } catch {
+                    lastError = error
+                    guard Self.isBackendTierMismatch(error) else {
+                        throw error
+                    }
+                }
+            }
+            throw lastError
+        }
+    }
+
+    private static func isBackendTierMismatch(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        guard nsError.domain == "RiskDetected.Subscription", nsError.code == 409 else {
+            return false
+        }
+        let message = nsError.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        return message.contains("backend planı")
+            || message.contains("backend doğrulaması henüz")
+            || message.contains("revenuecat backend doğrulaması")
     }
 
     private func sendWelcomeEmailIfPossible() async {
