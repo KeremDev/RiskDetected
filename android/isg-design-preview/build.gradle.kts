@@ -13,6 +13,8 @@ android {
         versionName = "qa-only"
     }
     buildFeatures { compose = true }
+    // Bundled wizard engines (same assets as the app) so the risk wizard runs offline here too.
+    sourceSets.getByName("main").assets.srcDir(rootProject.file("../App/WizardAssets"))
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
