@@ -1220,7 +1220,7 @@ struct NovaDashboardScreen: View {
                     }
                 }
                 if let trackingIdentity {
-                    NovaModuleTrackingCard(identity: trackingIdentity, canWrite: trackingCanWrite)
+                    NovaHomeDeadlineBoard(identity: trackingIdentity, canWrite: trackingCanWrite)
                         .padding(.horizontal, 20).padding(.top, 22)
                 }
                 if let footer {

@@ -539,6 +539,8 @@ private struct IsgOSGBWorkspaceRoot: View {
                 onNavigate: navigate,
                 onPhoto: { navigate(.newAnalysis) },
                 onAssistant: { },
+                trackingIdentity: identity,
+                trackingCanWrite: context?.canOperate == true,
                 footer: isExpert ? nil : AnyView(osgbHomeFooter),
                 showsPhotoCapture: true,
                 showsAssistant: !isExpert)
