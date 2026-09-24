@@ -1,0 +1,170 @@
+{
+  "fk": {
+    "bands": [
+      {
+        "action_tr": "İzleme yeterli",
+        "code": "fk_b1",
+        "color_token": "rdLow",
+        "deadline_is_legal_period": false,
+        "deadline_policy_code": "monitor",
+        "display_level": "low",
+        "label_tr": "Önemsiz",
+        "lower_exclusive": 0,
+        "upper_inclusive": 20
+      },
+      {
+        "action_tr": "Gözetim altında izle",
+        "code": "fk_b2",
+        "color_token": "rdLow",
+        "deadline_is_legal_period": false,
+        "deadline_policy_code": "monitor",
+        "display_level": "low",
+        "label_tr": "Olası risk",
+        "lower_exclusive": 20,
+        "upper_inclusive": 70
+      },
+      {
+        "action_tr": "Düzeltici plan gerekli",
+        "code": "fk_b3",
+        "color_token": "rdMedium",
+        "deadline_is_legal_period": false,
+        "deadline_policy_code": "planned",
+        "display_level": "medium",
+        "label_tr": "Önemli risk",
+        "lower_exclusive": 70,
+        "upper_inclusive": 200
+      },
+      {
+        "action_tr": "Kısa vadede önlem",
+        "code": "fk_b4",
+        "color_token": "rdHigh",
+        "deadline_is_legal_period": false,
+        "deadline_policy_code": "urgent",
+        "display_level": "high",
+        "label_tr": "Yüksek risk",
+        "lower_exclusive": 200,
+        "upper_inclusive": 400
+      },
+      {
+        "action_tr": "Çalışma derhal durdurulmalı",
+        "code": "fk_b5",
+        "color_token": "rdCritical",
+        "deadline_is_legal_period": false,
+        "deadline_policy_code": "stop_exposure",
+        "display_level": "critical",
+        "label_tr": "Tolerans dışı",
+        "lower_exclusive": 400,
+        "upper_inclusive": null
+      }
+    ],
+    "factors": {
+      "f": [
+        0.5,
+        1,
+        2,
+        3,
+        6,
+        10
+      ],
+      "p": [
+        0.2,
+        0.5,
+        1,
+        3,
+        6,
+        10
+      ],
+      "s": [
+        1,
+        3,
+        7,
+        15,
+        40,
+        100
+      ]
+    },
+    "id": "isgada.fk.2026.2",
+    "normative_status": "product_profile_not_statutory_scale",
+    "score_origin_default": "unscored",
+    "version": 2
+  },
+  "m5": {
+    "bands": [
+      {
+        "action_tr": "İzleme yeterli",
+        "code": "m5_b1",
+        "color_token": "rdLow",
+        "deadline_is_legal_period": false,
+        "deadline_policy_code": "monitor",
+        "display_level": "low",
+        "label_tr": "Önemsiz",
+        "lower_exclusive": 0,
+        "upper_inclusive": 2
+      },
+      {
+        "action_tr": "Gözetim altında izle",
+        "code": "m5_b2",
+        "color_token": "rdLow",
+        "deadline_is_legal_period": false,
+        "deadline_policy_code": "monitor",
+        "display_level": "low",
+        "label_tr": "Düşük risk",
+        "lower_exclusive": 2,
+        "upper_inclusive": 4
+      },
+      {
+        "action_tr": "Plan dahilinde önlem",
+        "code": "m5_b3",
+        "color_token": "rdMedium",
+        "deadline_is_legal_period": false,
+        "deadline_policy_code": "planned",
+        "display_level": "medium",
+        "label_tr": "Orta risk",
+        "lower_exclusive": 4,
+        "upper_inclusive": 9
+      },
+      {
+        "action_tr": "En kısa sürede önlem",
+        "code": "m5_b4",
+        "color_token": "rdHigh",
+        "deadline_is_legal_period": false,
+        "deadline_policy_code": "urgent",
+        "display_level": "high",
+        "label_tr": "Yüksek risk",
+        "lower_exclusive": 9,
+        "upper_inclusive": 19
+      },
+      {
+        "action_tr": "Çalışma derhal durdurulmalı",
+        "code": "m5_b5",
+        "color_token": "rdCritical",
+        "deadline_is_legal_period": false,
+        "deadline_policy_code": "stop_exposure",
+        "display_level": "critical",
+        "label_tr": "Tolerans dışı",
+        "lower_exclusive": 19,
+        "upper_inclusive": 25
+      }
+    ],
+    "factors": {
+      "p": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "s": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "id": "isgada.m5.2026.2",
+    "normative_status": "product_profile_not_statutory_scale",
+    "score_origin_default": "unscored",
+    "version": 2
+  }
+}

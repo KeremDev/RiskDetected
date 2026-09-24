@@ -1,0 +1,25 @@
+{
+  "combined_support_below": 10,
+  "distinct_person_minimum": null,
+  "firstaid_amendment_date": "2025-12-27",
+  "firstaid_divisors": {
+    "high": 10,
+    "low": 20,
+    "medium": 15
+  },
+  "id": "tr-numeric-reference-2026-09-24",
+  "normative_release_enabled": false,
+  "primary_text_chain_confirmed": false,
+  "renewal_years": {
+    "high": 2,
+    "low": 6,
+    "medium": 4
+  },
+  "status": "reference_arithmetic_not_compliance_verdict",
+  "support_divisors": {
+    "high": 30,
+    "low": 50,
+    "medium": 40
+  },
+  "training_regulation_date": "2026-04-02"
+}

@@ -1,0 +1,47 @@
+{
+  "authorship": "V4 için elle yazılmış editoryal kabul vakaları; bağımsız İSG uzmanı onayı değildir.",
+  "profiles": [
+    {
+      "id": "ofis",
+      "answers": {"workplace_id":"W-OFFICE","sectors":["S172"],"areas":["office"],"equipment":{"state":"none"},"tasks":{"state":"none"},"hazards":{"state":"none"},"conditions":{"state":"none"},"reuse":"no","method":"fk","preset":"standard"},
+      "context": {"workplace_id":"W-OFFICE","employer_name":"Örnek Yazılım İşyeri (sentetik)","workplace_address":"Örnek adres — gerçek saha bilgisi değildir","hazard_class":"low","employee_count":12},
+      "must_include": ["R-24-06","R-51-01","R-51-02","R-51-03","R-51-04","R-51-05","R-51-06","R-49-01"],
+      "must_exclude": ["R-24-10","R-23-08","R-42-06","R-28-04"],
+      "exclude_families": ["G47","G48","G12","G29"],
+      "must_cards": ["AD-001","AD-039","AD-052","AD-069"],
+      "must_not_cards": ["AD-014","AD-017","AD-021"],
+      "max_rows": 50,"max_summary":10
+    },
+    {
+      "id":"cam",
+      "answers":{"workplace_id":"W-GLASS","sectors":["S037"],"areas":["production"],"equipment":["E161","E021"],"tasks":null,"hazards":["molten_glass"],"conditions":{"state":"none"},"reuse":"no","method":"fk","preset":"brief"},
+      "context":{"workplace_id":"W-GLASS","employer_name":"Örnek Cam Tesisi (sentetik)","hazard_class":"very_hazardous","employee_count":65},
+      "must_include":["R-29-03","R-07-01","R-51-10"],
+      "must_exclude":["R-28-04","R-23-08"],
+      "exclude_families":["G47","G52"],
+      "must_cards":["AD-001","AD-026","AD-033","AD-039","AD-052","AD-069"],
+      "must_not_cards":["AD-014","AD-015"],
+      "summary_must_families":["G07","G29"],"max_rows":25,"max_summary":5
+    },
+    {
+      "id":"kimya_deposu",
+      "answers":{"workplace_id":"W-CHEM","sectors":["S129"],"areas":["warehouse"],"equipment":["E143"],"tasks":{"state":"unknown"},"hazards":["flammable_liquids","corrosives"],"conditions":{"state":"none"},"reuse":"no","method":"m5","preset":"comprehensive"},
+      "context":{"workplace_id":"W-CHEM","employer_name":"Örnek Kimyasal Deposu (sentetik)","hazard_class":"hazardous","employee_count":41},
+      "must_include":["R-18-01","R-18-02","R-19-05","R-20-08","R-21-03"],
+      "must_exclude":["R-19-06","R-19-07","R-19-08","R-12-01","R-17-06"],
+      "exclude_families":["G47","G29","G52"],
+      "must_cards":["AD-001","AD-004","AD-021","AD-023","AD-039","AD-052","AD-069"],
+      "must_not_cards":["AD-014","AD-015","AD-016"],"max_rows":150,"max_summary":15
+    },
+    {
+      "id":"moto_kurye",
+      "answers":{"workplace_id":"W-COURIER","sectors":["S181"],"areas":["road"],"equipment":["E065"],"tasks":["T067"],"hazards":{"state":"unknown"},"conditions":["night","mobile_work"],"reuse":"no","method":"m5","preset":"standard"},
+      "context":{"workplace_id":"W-COURIER","employer_name":"Örnek Kurye İşyeri (sentetik)","hazard_class":null,"employee_count":18},
+      "must_include":["R-52-01","R-52-02","R-52-03","R-52-04","R-52-05","R-52-06","R-52-07","R-52-08"],
+      "must_exclude":["R-23-08","R-28-04","R-27-01"],
+      "exclude_families":["G47","G29","G12"],
+      "must_cards":["AD-001","AD-007","AD-039","AD-052","AD-069"],
+      "must_not_cards":["AD-014","AD-015","AD-026"],"max_rows":50,"max_summary":10
+    }
+  ]
+}

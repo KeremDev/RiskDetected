@@ -1,0 +1,3804 @@
+[
+  {
+    "after": [
+      "Yangın bölgesini erişime kapalı tutun; müdahale ve hasar kaydını oluşturun.",
+      "Kullanılmış söndürücü ve devre dışı korumaları yeniden kullanılabilir hale getirin."
+    ],
+    "before": [
+      "Çıkışları, alarmı ve toplanma yerini vardiya başında tanıyın.",
+      "Söndürücü erişimi ve yangın kapılarının çalışmasını görevli kişi kontrol etsin."
+    ],
+    "content_version": 5,
+    "core": true,
+    "during_team": [
+      "Söndürme ekibi yalnız başlangıç aşamasındaki yangına, eğitimine uygun söndürücü ve açık geri kaçış yolu varsa müdahale etsin; duman artarsa çekilsin.",
+      "Yetkili teknik görevli gaz ve elektriği ancak güvenli kesme noktasından, yangın pompası/alarm/yaşam desteğini tehlikeye atmayan tesis planına göre ayırsın.",
+      "Koruma ekibi sayımı toplasın; eksik kişinin son bilinen yerini itfaiyeye bildirsin, çalışanları arama için geri göndermesin."
+    ],
+    "during_worker": [
+      "Yangını en yakın güvenli noktadan alarm vererek bildirin; eşya toplamak için beklemeyin.",
+      "Dumansız güvenli çıkışa yönelin; normal asansörü kullanmayın, güvenliyse çıkarken kapıyı kapatın.",
+      "Toplanma yerine gidip sayım sorumlusuna bildirin; bir kişi güvenli yerden 112'ye adres ve olay bilgisini versin."
+    ],
+    "id": "AD-001",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Dumana girerek veya kaçış arkada kapalıyken yangınla mücadele etmeyin.",
+      "Elektrik, yağ veya bilinmeyen madde yangınına rastgele su kullanmayın."
+    ],
+    "reentry_tr": "İtfaiye/olay yöneticisi kararı ve etkilenen elektrik, yapı ve koruma sistemlerinin teknik kontrolünden sonra.",
+    "requires_any_features": [],
+    "site_field_keys": [
+      "alarm_noktasi",
+      "guvenli_cikis",
+      "toplanma_yeri",
+      "sondurucu_turu_yeri",
+      "guvenli_enerji_kesme_noktasi"
+    ],
+    "site_field_labels_tr": {
+      "alarm_noktasi": "Alarm noktası",
+      "guvenli_cikis": "Güvenli çıkış",
+      "guvenli_enerji_kesme_noktasi": "Güvenli enerji kesme noktası",
+      "sondurucu_turu_yeri": "Söndürücü türü ve konumu",
+      "toplanma_yeri": "Toplanma yeri"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Genel bina yangını",
+    "trigger_tr": "Duman, alev veya doğrulanmış yangın alarmı"
+  },
+  {
+    "after": [
+      "Enerji kesilmesinin etkilediği güvenlik sistemlerini kontrol edin.",
+      "Arızayı teknik inceleme olmadan yeniden beslemeyin."
+    ],
+    "before": [
+      "Pano önü erişimini açık ve yanıcı malzemeden uzak tutun.",
+      "Pano ve besleme ayırıcılarını teknik plana işleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Elektrik yetkilisi upstream güvenli noktadan izolasyonu tesis planına göre değerlendirsin.",
+      "Eğitimli söndürme ekibi yalnız elektrik tehlikesi ve yangın sınırı uygunsa uygun ekipmanla müdahale etsin.",
+      "Koruma ekibi panel çevresini ve etkilenebilecek kaçış yolunu kapatsın."
+    ],
+    "during_worker": [
+      "Ark veya duman görülen panodan uzaklaşın; kapağı açmayın.",
+      "Çevredekileri uyarıp bölgenin güvenli çıkışını kullanın.",
+      "Olayı pano konumuyla bildirin; güvenli yerden 112 çağrısını görevlendirin."
+    ],
+    "id": "AD-002",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Panoya su tutmayın.",
+      "Ark bölgesine kesiciyi elle kapatmak için yaklaşmayın."
+    ],
+    "reentry_tr": "Yetkili elektrik incelemesi ve yangın/izolasyon sonrası güvenlik kontrolleri tamamlanınca.",
+    "requires_any_features": [
+      "electrical"
+    ],
+    "site_field_keys": [
+      "pano_kodu",
+      "uzak_ayirma_noktasi",
+      "elektrik_yetkilisi",
+      "alternatif_cikis"
+    ],
+    "site_field_labels_tr": {
+      "alternatif_cikis": "Alternatif çıkış",
+      "elektrik_yetkilisi": "Elektrik yetkilisi",
+      "pano_kodu": "Pano kodu",
+      "uzak_ayirma_noktasi": "Uzak ayırma noktası"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Elektrik panosu yangını",
+    "trigger_tr": "Panoda alev, yoğun duman veya ark"
+  },
+  {
+    "after": [
+      "Yağın yeniden tutuşma tehlikesi için alanı kapalı tutun.",
+      "Davlumbaz, gaz ve elektrik sistemi kontrol edilmeden mutfağı açmayın."
+    ],
+    "before": [
+      "Yağlı davlumbaz ve kanal temizliğini takip edin.",
+      "Mutfak yangınına uygun söndürme donanımı ve enerji kesme noktalarını tanıyın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Eğitimli görevli yalnız güvenliyse ısı kaynağını dış noktadan kapatsın.",
+      "Söndürme ekibi uygun yağ yangını ekipmanını eğitimine göre kullansın; büyüyen yangında çekilsin.",
+      "Teknik görevli mutfak gazını güvenli planda ayırsın; davlumbaz kanalına yayılan yangını itfaiyeye bildirsin."
+    ],
+    "during_worker": [
+      "Yağ yangınını yüksek sesle bildirip çevredekileri uzaklaştırın.",
+      "Yanan kabı taşımayın; güvenli çıkışı ve mutfak kapısını kullanın.",
+      "Güvenli yerden alarm ve 112 çağrısını sağlayın; mutfağa geri dönmeyin."
+    ],
+    "id": "AD-003",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Yağ yangınına su dökmeyin.",
+      "Yanan kabı lavaboya taşımayın."
+    ],
+    "reentry_tr": "Yangın tamamen kontrol altında ve pişirme/kanal/gaz tesisatı yetkili incelemeden geçmişse.",
+    "requires_any_features": [
+      "kitchen"
+    ],
+    "site_field_keys": [
+      "yag_yangini_ekipmani",
+      "gaz_vanasi",
+      "mutfak_cikisi",
+      "davlumbaz_sistemi"
+    ],
+    "site_field_labels_tr": {
+      "davlumbaz_sistemi": "Davlumbaz sistemi",
+      "gaz_vanasi": "Gaz vanası",
+      "mutfak_cikisi": "Mutfak çıkışı",
+      "yag_yangini_ekipmani": "Yağ yangını ekipmani"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Mutfak yağ yangını",
+    "trigger_tr": "Kızgın yağ veya davlumbazda yangın"
+  },
+  {
+    "after": [
+      "Kirli yangın suyunun drenaj etkisini çevre ekibiyle değerlendirin.",
+      "Hasarlı kapları uzman planı olmadan taşımayın."
+    ],
+    "before": [
+      "Solvent envanteri ve GBF'yi erişilebilir tutun.",
+      "Yangına dayanımlı depolama, sızıntı tutma ve güvenli uzaklaşma yolunu tanıyın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi etki alanını ve komşu depoları ayırsın.",
+      "Teknik ekip beslemeyi yalnız uzaktan güvenli olanakla durdursun.",
+      "Söndürme ekibi GBF ve tesis planına uygun sınırda hareket etsin; yoğun buhar veya büyüyen yangında uzman müdahalesine çekilsin."
+    ],
+    "during_worker": [
+      "Depodaki alev veya dumanı bildirip yangın bölgesinden uzaklaşın.",
+      "Kapları kurtarmak için içeri girmeyin; döküntü ve buhar yolundan uzak güvenli çıkışı izleyin.",
+      "112'ye solvent türü ve yaklaşık miktarın kayıtlı bilgisini güvenli noktadan iletin."
+    ],
+    "id": "AD-004",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Buharlı alanda elektrik anahtarı işletmeyin.",
+      "Kimyasal türü bilinmeden söndürücü veya emici seçmeyin."
+    ],
+    "reentry_tr": "İtfaiye kararı, ortam ve depolama bütünlüğü değerlendirmesinden sonra.",
+    "requires_any_features": [
+      "flammable_liquids"
+    ],
+    "site_field_keys": [
+      "solvent_envanteri",
+      "GBF_erisim",
+      "depo_cikisi",
+      "uzak_transfer_durdurma",
+      "drenaj_plani"
+    ],
+    "site_field_labels_tr": {
+      "GBF_erisim": "Güvenlik bilgi formuna erişim",
+      "depo_cikisi": "Depo çıkışı",
+      "drenaj_plani": "Drenaj planı",
+      "solvent_envanteri": "Solvent envanteri",
+      "uzak_transfer_durdurma": "Uzak transfer durdurma"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Solvent deposu yangını",
+    "trigger_tr": "Yanıcı sıvı deposunda duman veya alev"
+  },
+  {
+    "after": [
+      "Filtreyi açmadan sıcak nokta ve yeniden tutuşmayı uzman değerlendirsin.",
+      "Patlama izolasyon/tahliye elemanları kontrol edilmeden üretimi başlatmayın."
+    ],
+    "before": [
+      "Filtre malzemesi ve tozun yangın/patlama özelliklerini kaydedin.",
+      "Patlama tahliye etki alanını ve acil duruş yöntemini belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik görevli besleme ve emişi yalnız tesise özgü güvenli duruş sırasıyla yönetsin.",
+      "Olay yöneticisi kanalla bağlı diğer üniteleri risk kapsamına alsın.",
+      "Uzman müdahale ekibine toz türü, izolasyon ve koruma düzenini teslim edin."
+    ],
+    "during_worker": [
+      "Filtre dumanı veya sıcaklık alarmını bildirin.",
+      "Filtre kapağını açmadan tahliye etki alanından uzaklaşın.",
+      "Bağlı makine alanındaki kişileri uyarıp güvenli toplanmaya geçin."
+    ],
+    "id": "AD-005",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Tozu basınçlı havayla havalandırmayın.",
+      "Filtreyi kapağını açarak veya rastgele su vererek söndürmeye çalışmayın."
+    ],
+    "reentry_tr": "Proses ve yangın uzmanının birikim, sıcaklık ve koruma sistemlerini uygun bulmasıyla.",
+    "requires_any_features": [
+      "combustible_dust",
+      "woodworking"
+    ],
+    "site_field_keys": [
+      "toz_turu",
+      "filtre_kodu",
+      "patlama_tahliye_alani",
+      "guvenli_durus_sirasi"
+    ],
+    "site_field_labels_tr": {
+      "filtre_kodu": "Filtre kodu",
+      "guvenli_durus_sirasi": "Güvenli duruş sırası",
+      "patlama_tahliye_alani": "Patlama tahliye alanı",
+      "toz_turu": "Toz türü"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Talaş veya toz filtresi yangını",
+    "trigger_tr": "Filtrede sıcaklık artışı, kıvılcım veya duman"
+  },
+  {
+    "after": [
+      "Yeniden tutuşma için uzman gözetimli izleme düzeni kurun.",
+      "Hasarlı kalıntıları yetkin bertaraf planına göre yönetin."
+    ],
+    "before": [
+      "Batarya kimyası ve üretici acil bilgilerini kayıtlı tutun.",
+      "Hasarlı ürün için ayrılmış alan ve kaçış yönünü belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik görevli şarjı yalnız güvenli uzaktan kesme imkânı varsa durdursun.",
+      "Olay yöneticisi komşu hücrelere ısı yayılımı ve patlama etkisine göre sınırı genişletsin.",
+      "Profesyonel ekibe batarya kimyası, kapasite ve sistem izolasyon bilgisini iletin."
+    ],
+    "during_worker": [
+      "Tıslama, şişme veya dumanı bildirip bataryadan uzaklaşın.",
+      "Bataryayı elinize almayın; dumanı solumadan alanı boşaltın.",
+      "112'ye batarya ve konum bilgisini verin; etrafı erişime kapalı tutun."
+    ],
+    "id": "AD-006",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Duman yok oldu diye bataryaya yaklaşmayın.",
+      "Hasarlı bataryayı taşımayın veya üretici ve uzman müdahale planı dışında suya batırmayın."
+    ],
+    "reentry_tr": "Profesyonel ekip termal yayılım, gaz ve yeniden tutuşmayı değerlendirdikten sonra.",
+    "requires_any_features": [
+      "lithium_battery"
+    ],
+    "site_field_keys": [
+      "batarya_kimyasi",
+      "sarj_kesme_noktasi",
+      "karantina_yeri",
+      "komsu_yangin_yuku"
+    ],
+    "site_field_labels_tr": {
+      "batarya_kimyasi": "Batarya kimyasi",
+      "karantina_yeri": "Karantina yeri",
+      "komsu_yangin_yuku": "Komşu yangın yükü",
+      "sarj_kesme_noktasi": "Şarj kesme noktası"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Batarya termal olayı",
+    "trigger_tr": "Bataryada şişme, tıslama, yoğun ısı veya duman"
+  },
+  {
+    "after": [
+      "Araç çekme işlemini yangın ekibinin güvenli bulmasına bağlayın.",
+      "Hasarlı enerji sistemini teknik uzman incelemeden açmayın."
+    ],
+    "before": [
+      "Araç tipini ve yakıt/batarya bilgisini acil kayda ekleyin.",
+      "Yol üzerinde güvenli duruş ve yolcu uzaklaştırma yöntemini belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Görevli trafik etkisini ve çevre erişimini güvenli mesafeden yönetsin.",
+      "Eğitimli kişi yalnız küçük başlangıç yangını ve güvenli kaçış varsa uygun söndürücü kullansın.",
+      "Elektrikli/alternatif yakıtlı araç bilgisini müdahale ekibine iletin."
+    ],
+    "during_worker": [
+      "Aracı yalnız mümkün ve güvenliyse durdurup motoru kapatın.",
+      "Yolcuları trafik ve dumandan uzağa çıkarın; eşyalar için geri dönmeyin.",
+      "112'ye konum, araç türü ve içeride kalan kişi bilgisini verin."
+    ],
+    "id": "AD-007",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Yanan kaputu aniden açmayın.",
+      "Trafikte korunmasız beklemeyin veya yakıt sızıntısına yaklaşmayın."
+    ],
+    "reentry_tr": "İtfaiye ve araç teknik yetkilisinin izin verdiği sınırda.",
+    "requires_any_features": [
+      "motorcycle",
+      "vehicle"
+    ],
+    "site_field_keys": [
+      "arac_turu",
+      "yakit_batarya",
+      "konum_bildirimi",
+      "yolcu_sayimi"
+    ],
+    "site_field_labels_tr": {
+      "arac_turu": "Araç türü",
+      "konum_bildirimi": "Konum bildirimi",
+      "yakit_batarya": "Yakıt batarya",
+      "yolcu_sayimi": "Yolcu sayımı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Araç yangını",
+    "trigger_tr": "Araçta alev veya duman"
+  },
+  {
+    "after": [
+      "Gizli katman yangını ve yeniden tutuşmayı teknik ekibe kontrol ettirin.",
+      "Isı etkilenmiş taşıyıcı ve kaplamayı inceletin."
+    ],
+    "before": [
+      "Çatı katmanlarını ve sıcak iş alanlarını kaydedin.",
+      "Çatı altındaki kullanım ve alternatif çıkışları belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi düşebilecek kaplama ve eriyen malzeme alanını kapatsın.",
+      "Teknik ekip yangının geçtiği tesisatları güvenli uzak noktadan değerlendirsin.",
+      "İtfaiyeye çatı yapısı, izolasyon ve olası PV sistemi bilgisini verin."
+    ],
+    "during_worker": [
+      "Çatı dumanını bildirip alt bölgedeki kişileri uyarın.",
+      "Çatıya yangını görmek veya söndürmek için çıkmayın.",
+      "Güvenli çıkıştan ayrılarak çatı düşme hattının dışında toplanın."
+    ],
+    "id": "AD-008",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Alev görünmüyor diye çatıya çıkmayın.",
+      "PV veya elektrik sistemini enerjisiz varsaymayın."
+    ],
+    "reentry_tr": "Yangın ve yapı uzmanının katman, taşıyıcı ve elektrik incelemesi sonrası.",
+    "requires_any_features": [
+      "roof_work",
+      "hot_work"
+    ],
+    "site_field_keys": [
+      "cati_yapisi",
+      "PV_varligi",
+      "dusme_etki_alani",
+      "alternatif_cikis"
+    ],
+    "site_field_labels_tr": {
+      "PV_varligi": "Fotovoltaik (PV) sistem bilgisi",
+      "alternatif_cikis": "Alternatif çıkış",
+      "cati_yapisi": "Çatı yapısı",
+      "dusme_etki_alani": "Düşme etki alanı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Çatı veya izolasyon yangını",
+    "trigger_tr": "Çatı katmanında alev veya gizli duman"
+  },
+  {
+    "after": [
+      "Topraklama ve adım/temas gerilimi tehlikesini teknik ekip değerlendirsin.",
+      "Yağ ve yangın suyu temizliğini uygun uzman planına bağlayın."
+    ],
+    "before": [
+      "Trafo kodu, yağ türü ve uzaktan ayırma yöntemini kaydedin.",
+      "Trafo çevresi erişim ve yağ tutma alanını belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Elektrik yetkilisi beslemeyi işletme prosedürüne göre ayırsın.",
+      "Koruma ekibi komşu alan ve yaya geçişini kapatsın.",
+      "İtfaiyeye enerji izolasyon durumu ve yağ tutma/drenaj bilgisini teslim edin."
+    ],
+    "during_worker": [
+      "Patlama veya dumanı bildirip trafo çevresinden uzaklaşın.",
+      "Yaklaşma sınırını geçmeyin; zemindeki iletken/sıvı alana basmayın.",
+      "112'ye elektrik tesisi olduğunu ve konumunu güvenli yerden bildirin."
+    ],
+    "id": "AD-009",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Trafoya yaklaşarak anahtarlama yapmayın.",
+      "Gerilim kesilmeden su veya iletken ekipmanla müdahale etmeyin."
+    ],
+    "reentry_tr": "Elektrik işletme yetkilisi ve itfaiye izin verdikten sonra.",
+    "requires_any_features": [
+      "transformer"
+    ],
+    "site_field_keys": [
+      "trafo_kodu",
+      "isletme_yetkilisi",
+      "uzak_ayirici",
+      "yag_tutma_alani"
+    ],
+    "site_field_labels_tr": {
+      "isletme_yetkilisi": "İşletme yetkilisi",
+      "trafo_kodu": "Trafo kodu",
+      "uzak_ayirici": "Uzak ayırıcı",
+      "yag_tutma_alani": "Yağ tutma alanı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Trafo yangını",
+    "trigger_tr": "Trafoda patlama sesi, duman veya yağ yangını"
+  },
+  {
+    "after": [
+      "Tesis çevresindeki sıcak noktaları profesyonel ekibe kontrol ettirin.",
+      "Hava kalitesi ve enerji/yapı etkilerini değerlendirmeden işe dönmeyin."
+    ],
+    "before": [
+      "Resmî uyarı kanalı ve alternatif yol güzergâhlarını belirleyin.",
+      "Toplanma alanını orman yangını etkisinden ayrı değerlendirin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi yetkili kurumla tahliye veya korunma kararını koordine etsin.",
+      "Görevliler ziyaretçi ve desteğe ihtiyacı olan kişilerin ulaşımını düzenlesin.",
+      "Teknik ekip yalnız güvenli zaman ve yoldan kritik yakıt/prosesleri tesis planına göre bıraksın."
+    ],
+    "during_worker": [
+      "Resmî uyarı veya saha alarmını izleyin; erken güvenli tahliyeye hazırlanın.",
+      "Duman/alev yönündeki yola çıkmayın; olay yöneticisinin açık güvenli güzergâhını kullanın.",
+      "Sayım noktasına varışınızı bildirin; mahsur kalma halinde konumunuzu 112'ye iletin."
+    ],
+    "id": "AD-010",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Yangına karşı kendi başınıza araçla karşı yönde ilerlemeyin.",
+      "Eşyaları kurtarmak için tahliyeyi geciktirmeyin."
+    ],
+    "reentry_tr": "Yetkili kurumun bölge erişim izni ve işyeri teknik incelemesi sonrası.",
+    "requires_any_features": [
+      "forest_interface"
+    ],
+    "site_field_keys": [
+      "resmi_uyari_kanali",
+      "alternatif_yol",
+      "tahliye_araci",
+      "dis_toplanma"
+    ],
+    "site_field_labels_tr": {
+      "alternatif_yol": "Alternatif yol",
+      "dis_toplanma": "Dış toplanma",
+      "resmi_uyari_kanali": "Resmî uyarı kanalı",
+      "tahliye_araci": "Tahliye aracı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Orman yangınının tesise yaklaşması",
+    "trigger_tr": "Resmî uyarı, yaklaşan duman veya alev"
+  },
+  {
+    "after": [
+      "Enkaz ve delillere kontrollü erişim sağlayın.",
+      "Yapı, atmosfer ve enerji güvenliğini uzman incelemesine bağlayın."
+    ],
+    "before": [
+      "Patlama senaryosu etki alanını ve tesis enerji kaynaklarını planlayın.",
+      "İtfaiyeye verilecek proses ve kimyasal bilgi setini hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi yeniden patlama ve çökme etkisine göre alanı genişçe ayırsın.",
+      "Teknik ekip uzaktan güvenli izolasyonu tesis planına göre yapsın.",
+      "Profesyonel kurtarma ekibine tehlikeli madde ve son bilinen kişi konumunu iletin."
+    ],
+    "during_worker": [
+      "İlk patlamadan sonra cam, parça ve hasarlı yapıdan uzaklaşın.",
+      "İkinci olay ihtimaline karşı bölgeyi terk edip güvenli noktadan alarm verin.",
+      "Yaralı/eksik kişi ve olay konumunu 112'ye bildirin."
+    ],
+    "id": "AD-011",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Enkaza eğitimsiz arama için girmeyin.",
+      "Patlamanın bittiğini sessizliğe bakarak varsaymayın."
+    ],
+    "reentry_tr": "Kurtarma, yapı ve proses yetkililerinin ortak güvenli dönüş kararıyla.",
+    "requires_any_features": [
+      "explosive_atmosphere",
+      "reactive_chemicals",
+      "combustible_dust"
+    ],
+    "site_field_keys": [
+      "patlama_etki_alani",
+      "kimyasal_envanter",
+      "uzak_izolasyon",
+      "eksik_kisi_kaydi"
+    ],
+    "site_field_labels_tr": {
+      "eksik_kisi_kaydi": "Eksik kişi kaydı",
+      "kimyasal_envanter": "Kimyasal envanter",
+      "patlama_etki_alani": "Patlama etki alanı",
+      "uzak_izolasyon": "Uzak izolasyon"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Patlama sonrası durum",
+    "trigger_tr": "Patlama, yapısal hasar veya ani basınç dalgası"
+  },
+  {
+    "after": [
+      "Kaçağın nedeni ve bağlantı bütünlüğünü teknik kayda alın.",
+      "Algılama ve gaz beslemesi yeniden devreye alma testini yaptırın."
+    ],
+    "before": [
+      "Gaz vana ve algılama noktalarını işaretleyin.",
+      "Kaçak halinde güvenli dış iletişim yerini belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili görevli yalnız tehlikeli alana girmeden erişilebilen vanayı tesis planına göre kapatsın.",
+      "Koruma ekibi olası gaz yayılım alanını boşaltsın.",
+      "Yetkili gaz ekibi ölçüm, kaçak giderme ve güvenli havalandırmayı yönetsin."
+    ],
+    "during_worker": [
+      "Gaz kokusu/alarmında alev ve elektrikli cihaz kullanmadan uzaklaşın.",
+      "Kaçak bölgesindeki anahtar ve fişlere dokunmayın; çevredekileri sözlü uyarın.",
+      "Güvenli dış noktadan 112 ve tesisin gaz acil irtibatını arayın."
+    ],
+    "id": "AD-012",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Gazı alevle aramayın.",
+      "Telefonu veya elektrik anahtarını kaçak bölgesinde işletmeyin."
+    ],
+    "reentry_tr": "Gaz işletmesi/teknik yetkili ölçüm ve onarım sonrası izin verdiğinde.",
+    "requires_any_features": [
+      "natural_gas"
+    ],
+    "site_field_keys": [
+      "gaz_vanasi",
+      "guvenli_arama_yeri",
+      "gaz_acil_irtibat",
+      "gaz_algilama"
+    ],
+    "site_field_labels_tr": {
+      "gaz_acil_irtibat": "Gaz acil irtibat",
+      "gaz_algilama": "Gaz algılama",
+      "gaz_vanasi": "Gaz vanası",
+      "guvenli_arama_yeri": "Güvenli arama yeri"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Doğalgaz kaçağı",
+    "trigger_tr": "Gaz alarmı, belirgin gaz kokusu veya doğrulanmış sızıntı"
+  },
+  {
+    "after": [
+      "Gazın birikebildiği bağlantılı hacimleri kontrol ettirin.",
+      "Tank/tüp ve tesisat onarımını yetkin servise yaptırın."
+    ],
+    "before": [
+      "LPG depolama ve alçak hacim bağlantılarını kaydedin.",
+      "Tüp/tank izolasyonunu yetkili ekiple planlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili görevli sızıntıyı yalnız güvenli dış noktadan izole etsin.",
+      "Olay yöneticisi alçak hacimleri ve drenaj geçişlerini erişime kapatsın.",
+      "Uzman ekip gaz ölçümü ve kaynak kontrolünü yapsın."
+    ],
+    "during_worker": [
+      "LPG alarmında çukur ve bodrumlardan uzaklaşın.",
+      "Kıvılcım yaratabilecek cihazları işletmeden bölgeyi boşaltın.",
+      "Güvenli yerden LPG kaynağı ve çevredeki kişi bilgisini bildirin."
+    ],
+    "id": "AD-013",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Sızan tüpü taşımayın.",
+      "Gaz birikebilecek çukura kontrolsüz girmeyin."
+    ],
+    "reentry_tr": "Kaynak giderilmiş ve bağlantılı alçak alanlar uzman ölçümüyle güvenli bulunmuşsa.",
+    "requires_any_features": [
+      "lpg"
+    ],
+    "site_field_keys": [
+      "LPG_kaynagi",
+      "alcak_hacimler",
+      "uzak_vana",
+      "tahliye_yonu"
+    ],
+    "site_field_labels_tr": {
+      "LPG_kaynagi": "LPG kaynağı",
+      "alcak_hacimler": "Alçak hacimler",
+      "tahliye_yonu": "Tahliye yönü",
+      "uzak_vana": "Uzak vana"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "LPG kaçağı",
+    "trigger_tr": "LPG alarmı veya bağlantıda kaçak bulgusu"
+  },
+  {
+    "after": [
+      "Etkilenenleri tıbbi değerlendirmeye yönlendirin.",
+      "Sızıntı kaynağı ve havalandırma sistemini teknik inceleyin."
+    ],
+    "before": [
+      "Amonyak envanteri ve sistem acil talimatını hazırlayın.",
+      "Rüzgâr bilgisi ve güvenli uzaktan kesme olanaklarını belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik görevli yalnız tesis planındaki güvenli uzaktan izolasyonu uygulasın.",
+      "Olay yöneticisi rüzgâr ve hava emişlerini değerlendirerek güvenli bölgeyi belirlesin.",
+      "Uygun solunum korumalı uzman ekip ölçüm ve müdahaleyi yürütürken ilkyardım ekibi temiz alanda desteklesin."
+    ],
+    "during_worker": [
+      "Alarm veya keskin tahriş halinde gaz bölgesinden uzaklaşın.",
+      "Sızıntıyı aramaya veya vanaya yaklaşmaya çalışmayın.",
+      "Güvenli yerden 112'ye amonyak ve etkilenen kişi bilgisini verin."
+    ],
+    "id": "AD-014",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Koku azaldı diye geri girmeyin.",
+      "Filtreli maskenin her konsantrasyonda yeterli olduğunu varsaymayın."
+    ],
+    "reentry_tr": "Uzman atmosfer ölçümü, onarım ve olay yöneticisi kararıyla.",
+    "requires_any_features": [
+      "ammonia"
+    ],
+    "site_field_keys": [
+      "amonyak_sistemi",
+      "GBF",
+      "ruzgar_bilgisi",
+      "uzak_izolasyon",
+      "temiz_mudahale_yeri"
+    ],
+    "site_field_labels_tr": {
+      "GBF": "Güvenlik bilgi formu (GBF)",
+      "amonyak_sistemi": "Amonyak sistemi",
+      "ruzgar_bilgisi": "Rüzgâr bilgisi",
+      "temiz_mudahale_yeri": "Temiz müdahale yeri",
+      "uzak_izolasyon": "Uzak izolasyon"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Amonyak salımı",
+    "trigger_tr": "Amonyak alarmı veya doğrulanmış proses sızıntısı"
+  },
+  {
+    "after": [
+      "Maruz kalanların tıbbi değerlendirmesini sağlayın.",
+      "Uyumsuz kimyasal birleşmesi olup olmadığını uzman inceletin."
+    ],
+    "before": [
+      "Klor ve asit bağlantılarını ayrı tanımlayın.",
+      "Dış yardım için kimyasal ve havalandırma şemasını hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik ekip uzaktan güvenli izolasyon imkânını tesis talimatıyla kullansın.",
+      "Koruma ekibi komşu hacimleri ve emiş noktalarını güvenli plana göre ayırsın.",
+      "Kimyasal müdahale ekibine tüp/hat ve GBF bilgisini verin."
+    ],
+    "during_worker": [
+      "Klor alarmında veya tahrişte güvenli alana çekilin.",
+      "Alt hacimlere inmeyin ve kaçağı kapatmak için geri dönmeyin.",
+      "112'ye klor kaynağı, konum ve olası etkilenenleri bildirin."
+    ],
+    "id": "AD-015",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Klor bölgesinde korunmasız kurtarma yapmayın.",
+      "Asit veya rastgele kimyasalla nötralizasyon denemeyin."
+    ],
+    "reentry_tr": "Uzman ölçümü, kaynak kontrolü ve güvenli havalandırma sonrasında.",
+    "requires_any_features": [
+      "chlorine"
+    ],
+    "site_field_keys": [
+      "klor_kaynagi",
+      "asit_deposu",
+      "hava_emisleri",
+      "GBF",
+      "tahliye_yolu"
+    ],
+    "site_field_labels_tr": {
+      "GBF": "Güvenlik bilgi formu (GBF)",
+      "asit_deposu": "Asit deposu",
+      "hava_emisleri": "Hava emişleri",
+      "klor_kaynagi": "Klor kaynağı",
+      "tahliye_yolu": "Tahliye yolu"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Klor salımı",
+    "trigger_tr": "Klor algılaması veya bağlantı kaçağı"
+  },
+  {
+    "after": [
+      "Etkilenenleri sağlık ekibine teslim edin.",
+      "Kaçak, sensör ve havalandırma nedenlerini inceleyin."
+    ],
+    "before": [
+      "İnert gaz kullanılan kapalı hacimleri belirleyin.",
+      "Oksijen algılama ve girişsiz kurtarma olanaklarını planlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili görevli beslemeyi güvenli uzaktan noktadan kessin.",
+      "Koruma ekibi odayı ve bağlantılı hacimleri erişime kapatsın.",
+      "Uygun solunum donanımlı uzman kurtarma ekibi atmosferi ölçerek müdahale etsin."
+    ],
+    "during_worker": [
+      "Oksijen alarmında hemen güvenli alana çıkın.",
+      "Bayılmış kişiye ulaşmak için gaz bölgesine girmeyin.",
+      "Dışarıdan alarm verip konumu ve azot/inert gaz bilgisini iletin."
+    ],
+    "id": "AD-016",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Filtreli maskeyle oksijensiz ortama girmeyin.",
+      "Kapının açılmasını tek başına güvenli atmosfer kanıtı saymayın."
+    ],
+    "reentry_tr": "Uygun atmosfer ölçümü ve kaynak izolasyonu teyit edilince.",
+    "requires_any_features": [
+      "nitrogen"
+    ],
+    "site_field_keys": [
+      "azot_kaynagi",
+      "oksijen_sensoru",
+      "uzak_vana",
+      "giris_siniri"
+    ],
+    "site_field_labels_tr": {
+      "azot_kaynagi": "Azot kaynağı",
+      "giris_siniri": "Giriş sınırı",
+      "oksijen_sensoru": "Oksijen sensörü",
+      "uzak_vana": "Uzak vana"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Azotla oksijen azalması",
+    "trigger_tr": "Oksijen alarmı veya inert gaz kaçağı"
+  },
+  {
+    "after": [
+      "Boşalma nedeni ve sistem arızasını teknik olarak inceleyin.",
+      "Gazlı söndürme korumasını ve alarmı kontrollü biçimde geri alın."
+    ],
+    "before": [
+      "CO₂ boşalma alanı ve ön alarmı çalışanlara tanıtın.",
+      "Kapı erişimi ve yeniden giriş ölçüm planını hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili görevli sistemi yalnız üretici acil prosedürüne göre yönetsin.",
+      "Koruma ekibi gazın geçebileceği komşu/alçak hacimleri kapatsın.",
+      "Uzman ekip gaz ve oksijen koşullarını değerlendirerek kurtarmayı yürütürken ilkyardım ekibi dışarıda hazır bulunsun."
+    ],
+    "during_worker": [
+      "Ön alarm veya gaz boşalmasında hacmi gecikmeden terk edin.",
+      "Başkalarını uyarmak için gaz bölgesine geri girmeyin.",
+      "Güvenli noktada sayım ve olay bildirimine katılın."
+    ],
+    "id": "AD-017",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Hacme nefes tutarak girmeyin.",
+      "Alarm susunca doğrudan geri dönmeyin."
+    ],
+    "reentry_tr": "Gaz türüne uygun ölçüm ve yetkili güvenli dönüş kararıyla.",
+    "requires_any_features": [
+      "co2",
+      "server_gas_system"
+    ],
+    "site_field_keys": [
+      "CO2_sistem_turu",
+      "bosalma_alani",
+      "on_alarm",
+      "komsu_hacimler"
+    ],
+    "site_field_labels_tr": {
+      "CO2_sistem_turu": "CO₂ sistemi türü",
+      "bosalma_alani": "Boşalma alanı",
+      "komsu_hacimler": "Komşu hacimler",
+      "on_alarm": "Ön alarm"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "CO2 boşalması",
+    "trigger_tr": "CO2 sistem alarmı veya gaz boşalması"
+  },
+  {
+    "after": [
+      "Etkilenmiş kişileri tıbbi değerlendirmeye alın.",
+      "Proses ve havalandırma arızasını giderip algılayıcıları sınayın."
+    ],
+    "before": [
+      "H₂S oluşabilecek proses ve çukurları belirleyin.",
+      "Gaz algılama ve özel kurtarma planını hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik ekip güvenli uzaktan kaynak kontrolünü uygulasın.",
+      "Koruma ekibi çukur ve bağlı hacimleri kapatsın.",
+      "Yalnız uygun solunum donanımlı uzman ekip kurtarma ve ölçümü yürütsün."
+    ],
+    "during_worker": [
+      "Gaz alarmında veya ani rahatsızlanmada bölgeyi terk edin.",
+      "Koku duyusuna güvenmeyin; yerde yatan kişiye kontrolsüz yaklaşmayın.",
+      "Güvenli yerden 112'ye H₂S şüphesi ve kişi konumunu bildirin."
+    ],
+    "id": "AD-018",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Korunmasız kurtarma girişi yapmayın.",
+      "Kokunun kaybolmasını tehlikenin bittiği şeklinde yorumlamayın."
+    ],
+    "reentry_tr": "Gaz kaynağı kontrolü ve uygun atmosfer ölçümü tamamlandığında.",
+    "requires_any_features": [
+      "h2s"
+    ],
+    "site_field_keys": [
+      "H2S_kaynagi",
+      "algilayici",
+      "uzak_izolasyon",
+      "kurtarma_plani"
+    ],
+    "site_field_labels_tr": {
+      "H2S_kaynagi": "H₂S kaynağı",
+      "algilayici": "Algılayıcı",
+      "kurtarma_plani": "Kurtarma planı",
+      "uzak_izolasyon": "Uzak izolasyon"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Hidrojen sülfür olayı",
+    "trigger_tr": "H2S alarmı veya şüpheli ani rahatsızlanma"
+  },
+  {
+    "after": [
+      "Etkilenenleri belirtiler azalsa da sağlık değerlendirmesine yönlendirin.",
+      "Yanma, baca ve havalandırma kusurlarını teknik ekibe giderin."
+    ],
+    "before": [
+      "Yanmalı cihaz, jeneratör ve kapalı araç kullanımını envantere alın.",
+      "CO algılama ve güvenli temiz hava alanını belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik görevli yanma kaynağını yalnız güvenli dış noktadan durdursun.",
+      "İlkyardım ekibi temiz alanda eğitimine ve 112 yönlendirmesine göre desteklesin.",
+      "Uzman ekip gaz ölçümü ve havalandırmayı değerlendirip diğer hacimlere erişimi kontrol etsin."
+    ],
+    "during_worker": [
+      "CO alarmında veya aynı alanda birden fazla rahatsızlanmada dışarı çıkın.",
+      "Kapalı alana kişiyi kurtarmak için geri girmeyin.",
+      "112'ye CO şüphesi, kaynak ve etkilenen sayısını bildirin."
+    ],
+    "id": "AD-019",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Kokusuz olduğu için güvenli saymayın.",
+      "Pencere açıldı diye cihazı yeniden çalıştırmayın."
+    ],
+    "reentry_tr": "Kaynak onarımı ve uzman CO ölçümü sonrası.",
+    "requires_any_features": [
+      "combustion"
+    ],
+    "site_field_keys": [
+      "yanmali_kaynak",
+      "CO_sensoru",
+      "temiz_hava_alani",
+      "guvenli_durdurma"
+    ],
+    "site_field_labels_tr": {
+      "CO_sensoru": "CO sensörü",
+      "guvenli_durdurma": "Güvenli durdurma",
+      "temiz_hava_alani": "Temiz hava alanı",
+      "yanmali_kaynak": "Yanmalı kaynak"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Karbonmonoksit maruziyeti",
+    "trigger_tr": "CO alarmı veya aynı alanda çoklu rahatsızlanma"
+  },
+  {
+    "after": [
+      "Soğuk temas yaralanmasını tıbbi değerlendirmeye yönlendirin.",
+      "Tahliye ve transfer ekipmanını hasar açısından inceleyin."
+    ],
+    "before": [
+      "Kriyojen türünü, tahliye ve oksijen alarmını kaydedin.",
+      "Döküntü alanı ve havalandırma sınırını belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Eğitimli teknik görevli güvenli uzaktan beslemeyi durdursun.",
+      "Olay yöneticisi oksijen azalması ve malzeme kırılganlığına göre erişimi kapatsın.",
+      "Uzman ekip uygun koruma ve atmosfer ölçümüyle durumu kontrol etsin."
+    ],
+    "during_worker": [
+      "Döküntüden ve buhar bulutundan uzaklaşın.",
+      "Sıvıya veya aşırı soğuk yüzeye dokunmayın.",
+      "Oksijen alarmı varsa bağlantılı hacmi de terk ederek durumu bildirin."
+    ],
+    "id": "AD-020",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Sıvıyı kapalı kaba hapsetmeyin.",
+      "Bulutu sıradan su buharı kabul etmeyin."
+    ],
+    "reentry_tr": "Atmosfer ve transfer sistemi uzman kontrolünde güvenli bulunduğunda.",
+    "requires_any_features": [
+      "cryogenic"
+    ],
+    "site_field_keys": [
+      "kriyojen_turu",
+      "transfer_vanasi",
+      "oksijen_sensoru",
+      "havalandirma"
+    ],
+    "site_field_labels_tr": {
+      "havalandirma": "Havalandirma",
+      "kriyojen_turu": "Kriyojen türü",
+      "oksijen_sensoru": "Oksijen sensörü",
+      "transfer_vanasi": "Transfer vanası"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Kriyojenik döküntü",
+    "trigger_tr": "Kriyojenik sıvı yayılması veya oksijen alarmı"
+  },
+  {
+    "after": [
+      "Alanı kalıntı ve kayma açısından kontrol edin.",
+      "Kit stokunu tamamlayıp olay nedenini kaydedin."
+    ],
+    "before": [
+      "GBF ve maddeye uygun döküntü kitini belirleyin.",
+      "Küçük salım için miktar, alan ve eğitim sınırını tanımlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Eğitimli ekip yalnız tanımlı sınırda, GBF'ye uygun koruyucuyla müdahale etsin.",
+      "Güvenliyse kaynağı durdurup uyumlu emiciyle yayılımı sınırlasın.",
+      "Toplanan atığı uyumlu etiketli kaba alsın; drenaja ulaşma riskini çevre sorumlusuna bildirsin."
+    ],
+    "during_worker": [
+      "Döküntüye dokunmadan çevredekileri uyarın.",
+      "Kaygan ve buharlı alanı güvenli mesafeden ayırın.",
+      "Madde veya miktar belirsizse küçük döküntü işlemini bırakıp uzman salım kartına geçin."
+    ],
+    "id": "AD-021",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Bilinmeyen maddeye nötralizasyon uygulamayın.",
+      "Döküntüyü suyla kanalizasyona yıkamayın."
+    ],
+    "reentry_tr": "Maddeye özgü temizlik kontrolü tamamlanıp maruziyet riski kalmadığı değerlendirildiğinde.",
+    "requires_any_features": [
+      "hazardous_chemicals",
+      "corrosives"
+    ],
+    "site_field_keys": [
+      "GBF",
+      "kucuk_salim_siniri",
+      "uyumlu_kit",
+      "atik_kabi",
+      "drenaj"
+    ],
+    "site_field_labels_tr": {
+      "GBF": "Güvenlik bilgi formu (GBF)",
+      "atik_kabi": "Atık kabı",
+      "drenaj": "Drenaj",
+      "kucuk_salim_siniri": "Küçük salım sınırı",
+      "uyumlu_kit": "Uyumlu kit"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Küçük tanımlı kimyasal döküntü",
+    "trigger_tr": "Kimliği bilinen ve eğitimli ekibin yetkinlik sınırındaki küçük salım"
+  },
+  {
+    "after": [
+      "Maruziyet şüphesi olanları sağlık değerlendirmesine yönlendirin.",
+      "Temizlik ve atığı uzman planıyla yönetin."
+    ],
+    "before": [
+      "Kimyasal envanter ve dış uzman irtibatını hazırlayın.",
+      "Büyük salımda güvenli toplanma alternatiflerini belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi yayılım ve rüzgâra göre çevreyi kapatsın.",
+      "Teknik ekip yalnız güvenli uzaktan izolasyonu uygulasın.",
+      "Kimyasal müdahale ekibine envanter, GBF, drenaj ve etkilenen kişi bilgisini teslim edin."
+    ],
+    "during_worker": [
+      "Maddeyi tanımak için yaklaşmayın veya koklamayın.",
+      "Buhar ve yayılım yönünden uzak güvenli alana çıkın.",
+      "112'ye bilinmeyen/büyük kimyasal salım olduğunu ve konumu bildirin."
+    ],
+    "id": "AD-022",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Sıradan maske ve temizlik beziyle müdahale etmeyin.",
+      "Tehlikeli bölgeye vana kapatmak için personel göndermeyin."
+    ],
+    "reentry_tr": "Uzman salım kontrolü, ölçüm ve temizleme kararı sonrası.",
+    "requires_any_features": [
+      "bulk_chemicals",
+      "reactive_chemicals"
+    ],
+    "site_field_keys": [
+      "kimyasal_envanter",
+      "GBF",
+      "ruzgar",
+      "drenaj",
+      "dis_uzman_irtibat"
+    ],
+    "site_field_labels_tr": {
+      "GBF": "Güvenlik bilgi formu (GBF)",
+      "dis_uzman_irtibat": "Dış uzman irtibat",
+      "drenaj": "Drenaj",
+      "kimyasal_envanter": "Kimyasal envanter",
+      "ruzgar": "Rüzgâr"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Büyük veya bilinmeyen kimyasal döküntü",
+    "trigger_tr": "Kontrol dışı, kimliği belirsiz veya yoğun buharlı salım"
+  },
+  {
+    "after": [
+      "Tıbbi yönlendirme ve maruziyet kaydını oluşturun.",
+      "Sıçramanın nedeni ve duş/göz yıkama erişimini düzeltin."
+    ],
+    "before": [
+      "Kimyasala uygun göz yıkama/duş yerlerini tanıyın.",
+      "GBF ilk yardım bölümünü erişilebilir tutun."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "İlkyardım ekibi ikincil bulaşmayı önleyerek eğitim ve GBF sınırında destek versin.",
+      "Görevli kirlenen alanı ve giysiyi güvenli biçimde ayırsın.",
+      "Kimyasal etiketi/GBF bilgisini sağlık ekibine taşıyın; yaralıyı tek başına göndermeyin."
+    ],
+    "during_worker": [
+      "Teması durdurup kendinizi yeniden maruz bırakmadan yardım çağırın.",
+      "Maddeye özgü GBF ve acil sağlık yönlendirmesine göre uygun göz yıkama/duşu kullanın.",
+      "İlkyardımcıyı çağırın; ciddi temas veya göz etkilenmesinde 112'ye kimyasal adını iletin."
+    ],
+    "id": "AD-023",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY",
+      "TR-FIRSTAID"
+    ],
+    "mode": "MEDICAL_RESPONSE",
+    "mode_label_tr": "İlkyardımcı ve acil sağlık desteği",
+    "prohibited": [
+      "Göze veya cilde gelişigüzel nötralizan sürmeyin.",
+      "Bilinmeyen kimyasal için tek tip müdahale reçetesi uygulamayın."
+    ],
+    "reentry_tr": "Salım temizlenip alan uygun bulunduğunda; kişinin işe dönüşünü sağlık değerlendirmesi belirler.",
+    "requires_any_features": [
+      "corrosives"
+    ],
+    "site_field_keys": [
+      "kimyasal_adi",
+      "GBF_ilkyardim",
+      "goz_yikama",
+      "acil_dus",
+      "ilkyardimci"
+    ],
+    "site_field_labels_tr": {
+      "GBF_ilkyardim": "GBF ilkyardım bilgisi",
+      "acil_dus": "Acil duş",
+      "goz_yikama": "Göz yıkama",
+      "ilkyardimci": "İlkyardımcı",
+      "kimyasal_adi": "Kimyasal adı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Kimyasalın göze veya cilde teması",
+    "trigger_tr": "Sıçrama veya kimyasal bulaş bildirimi"
+  },
+  {
+    "after": [
+      "Tepkime kararlılığı ve artık enerji uzman incelemesine alınsın.",
+      "Yeniden başlatma öncesi kök neden ve güvenlik işlevlerini kontrol edin."
+    ],
+    "before": [
+      "Prosesin onaylı sapma ve acil duruş talimatını hazırlayın.",
+      "Bağımsız koruma ve uzaktan duruş noktalarını tanımlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili operatör yalnız prosese özgü onaylı acil duruş sırasını uygulasın.",
+      "Olay yöneticisi salım ve patlama etkisine göre tahliyeyi başlatsın.",
+      "Proses uzmanı ve dış yardım ekibine madde, miktar ve son ölçümleri iletin."
+    ],
+    "during_worker": [
+      "Anormal sıcaklık/basınç alarmını kontrol odasına bildirin.",
+      "Reaktör çevresinden güvenli alana çekilin.",
+      "Kapak açma, madde ekleme veya doğaçlama soğutma yapmayın."
+    ],
+    "id": "AD-024",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "CONTROLLED_SHUTDOWN",
+    "mode_label_tr": "Yetkili kontrollü durdurma",
+    "prohibited": [
+      "Bilinmeyen reaksiyona su veya başka kimyasal eklemeyin.",
+      "Tüm enerjiyi plansız keserek soğutma ve korumayı devre dışı bırakmayın."
+    ],
+    "reentry_tr": "Proses uzmanının kararlılık, basınç ve koruma sistemi değerlendirmesiyle.",
+    "requires_any_features": [
+      "reactive_chemicals"
+    ],
+    "site_field_keys": [
+      "reaktor_kodu",
+      "acil_durus_talimati",
+      "proses_uzmani",
+      "son_olcumler"
+    ],
+    "site_field_labels_tr": {
+      "acil_durus_talimati": "Acil duruş talimatı",
+      "proses_uzmani": "Proses uzmanı",
+      "reaktor_kodu": "Reaktör kodu",
+      "son_olcumler": "Son ölçümler"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Kontrolsüz kimyasal reaksiyon",
+    "trigger_tr": "Sıcaklık/basınç artışı veya reaksiyon koruma alarmı"
+  },
+  {
+    "after": [
+      "Katılaşmış görünümlü metalin sıcaklığını uzman değerlendirsin.",
+      "Fırın, pota, zemin ve su kaynaklarını inceleyin."
+    ],
+    "before": [
+      "Dökülme etki alanını ve kuru güvenli kaçış yolunu belirleyin.",
+      "Pota/fırın acil duruş ve dış yardım bilgisini hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik görevli yalnız güvenli uzaktan besleme ve hareketi durdursun.",
+      "Koruma ekibi dökülme ve ikincil sıçrama alanını kapatsın.",
+      "İlkyardım ekibi güvenli alanda yaralıya eğitim sınırında destek versin ve 112'yi yönlendirsin."
+    ],
+    "during_worker": [
+      "Sıcak metalden ve sıçrama alanından uzaklaşın.",
+      "Su birikimi bulunan yola veya döküntü üzerine girmeyin.",
+      "Çevredekileri uyarıp yanık/eksik kişi bilgisini bildirin."
+    ],
+    "id": "AD-025",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Sıcak metale su dökmeyin.",
+      "Döküntüyü elle veya uygunluğu belirsiz araçla toplamaya çalışmayın."
+    ],
+    "reentry_tr": "Sıcaklık ve ekipman/yapı durumu teknik yetkili tarafından güvenli bulunduğunda.",
+    "requires_any_features": [
+      "molten_metal"
+    ],
+    "site_field_keys": [
+      "dokulme_alani",
+      "kuru_kacis",
+      "uzak_durdurma",
+      "pota_firin_bilgisi"
+    ],
+    "site_field_labels_tr": {
+      "dokulme_alani": "Dökülme alanı",
+      "kuru_kacis": "Kuru kaçış",
+      "pota_firin_bilgisi": "Pota fırın bilgisi",
+      "uzak_durdurma": "Uzak durdurma"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Sıcak metal dökülmesi",
+    "trigger_tr": "Pota/fırından metalin kontrol dışı çıkışı"
+  },
+  {
+    "after": [
+      "Fırın ve taşıyıcı yapı hasarını teknik uzman değerlendirsin.",
+      "Kaçak nedeni çözülmeden ve güvenli yeniden başlatma planı olmadan üretime dönmeyin."
+    ],
+    "before": [
+      "Cam fırınına özgü kaçak talimatını hazırlayın.",
+      "Sıcak camın akabileceği tutma alanını açık tutun."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Fırın yetkilisi yalnız onaylı proses duruş/izolasyon sırasını uygulasın.",
+      "Koruma ekibi akış ve yapı etkisine göre alanı kapatsın.",
+      "Dış yardım ekibine refrakter, sıcaklık ve proses bilgisi verin."
+    ],
+    "during_worker": [
+      "Kaçağı yerini belirterek kontrol odasına bildirin.",
+      "Sıcak camın akış hattından ve fırın yanından uzaklaşın.",
+      "Alt ve komşu alanlardaki kişileri uyarın."
+    ],
+    "id": "AD-026",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "CONTROLLED_SHUTDOWN",
+    "mode_label_tr": "Yetkili kontrollü durdurma",
+    "prohibited": [
+      "Kaçağa yaklaşarak doğaçlama tıkama yapmayın.",
+      "Üretici/proses planı dışında su verme veya ani soğutma uygulamayın."
+    ],
+    "reentry_tr": "Fırın/proses ve yapı uzmanlarının ortak kararıyla.",
+    "requires_any_features": [
+      "molten_glass"
+    ],
+    "site_field_keys": [
+      "firin_kodu",
+      "kacak_talimati",
+      "sicak_cam_tutma_alani",
+      "kontrol_odasi"
+    ],
+    "site_field_labels_tr": {
+      "firin_kodu": "Fırın kodu",
+      "kacak_talimati": "Kaçak talimatı",
+      "kontrol_odasi": "Kontrol odası",
+      "sicak_cam_tutma_alani": "Sıcak cam tutma alanı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Cam fırını kaçağı",
+    "trigger_tr": "Refrakter hasarı veya sıcak cam sızıntısı"
+  },
+  {
+    "after": [
+      "Hattı basınçsız ve soğuk koşulda yetkin kişiye inceletin.",
+      "Onarım sonrası basınçlandırmayı kontrollü teknik plana göre yapın."
+    ],
+    "before": [
+      "Buhar hatlarını ve güvenli vana noktalarını belirleyin.",
+      "Hat kırılmasında alternatif çıkışı hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili teknik görevli hattı uzak güvenli noktadan izole etsin.",
+      "Koruma ekibi sıcak ve görüşsüz alanı ayırsın.",
+      "İlkyardım ekibi temiz alanda yanık desteği ve sağlık yönlendirmesi sağlasın."
+    ],
+    "during_worker": [
+      "Yoğun buhar ve yüksek ses kaynağından uzaklaşın.",
+      "Kaçağa elinizle veya bir nesneyle temas etmeyin.",
+      "Görüş kayboluyorsa alternatif güvenli çıkışı kullanıp yaralı bilgisini bildirin."
+    ],
+    "id": "AD-027",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Görünür bulutun dışında kalan sıcak jeti güvenli saymayın.",
+      "Basınç varken bağlantı sıkma veya sökme yapmayın."
+    ],
+    "reentry_tr": "Basınç/sıcaklık ve hat bütünlüğü teknik olarak güvenli bulununca.",
+    "requires_any_features": [
+      "steam"
+    ],
+    "site_field_keys": [
+      "hat_kodu",
+      "uzak_vana",
+      "alternatif_cikis",
+      "yanik_ilkyardimci"
+    ],
+    "site_field_labels_tr": {
+      "alternatif_cikis": "Alternatif çıkış",
+      "hat_kodu": "Hat kodu",
+      "uzak_vana": "Uzak vana",
+      "yanik_ilkyardimci": "Yanık ilkyardımcı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Buhar hattı kopması",
+    "trigger_tr": "Yoğun buhar, yüksek ses veya basınç kaybı"
+  },
+  {
+    "after": [
+      "Kap ve emniyet donanımını hizmet dışı tutun.",
+      "Yetkin muayene ve gerekli onarım olmadan tekrar basınçlandırmayın."
+    ],
+    "before": [
+      "Kabın çalışma sınırlarını ve emniyet tahliyesini kaydedin.",
+      "Anormal basınçta uzaktan güvenli duruşu planlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili operatör onaylı acil duruşu güvenli noktadan uygulasın.",
+      "Koruma ekibi kap ve bağlı hatların etki alanını kapatsın.",
+      "Basınçlı ekipman uzmanı ve acil ekip durumu değerlendirsin."
+    ],
+    "during_worker": [
+      "Şişme, çatlak veya alarmı bildirip kaptan uzaklaşın.",
+      "Kapak, vana veya bağlantıya yaklaşmayın.",
+      "Parça fırlama hattının dışında toplanın ve kişi bilgisini iletin."
+    ],
+    "id": "AD-028",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Basıncı gelişigüzel bağlantı gevşeterek boşaltmayın.",
+      "Tahliye ağzının önüne geçmeyin."
+    ],
+    "reentry_tr": "Yetkin basınçlı ekipman incelemesi ve kontrollü yeniden devreye alma kararıyla.",
+    "requires_any_features": [
+      "pressure"
+    ],
+    "site_field_keys": [
+      "kap_kodu",
+      "akiskan",
+      "tasarim_siniri",
+      "uzak_durus",
+      "tahliye_yonu"
+    ],
+    "site_field_labels_tr": {
+      "akiskan": "Akışkan",
+      "kap_kodu": "Kap kodu",
+      "tahliye_yonu": "Tahliye yönü",
+      "tasarim_siniri": "Tasarım sınırı",
+      "uzak_durus": "Uzak duruş"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Basınçlı kabın hasarı",
+    "trigger_tr": "Şişme, çatlak, anormal basınç veya koruma alarmı"
+  },
+  {
+    "after": [
+      "Tüpün sonradan tehlike oluşturabileceğini dikkate alın.",
+      "Tüpün taşınma/bertarafını uzman talimatına bırakın."
+    ],
+    "before": [
+      "Tüp gazını ve depolama konumunu envantere alın.",
+      "Yangına maruz tüp için profesyonel müdahale planı hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi patlama/parça etkisine göre alanı kapatsın.",
+      "Teknik ekip yakındaki beslemeyi yalnız güvenli uzaktan ayırsın.",
+      "Tüp tedarikçisi ve itfaiyeye maruziyet süresi ve gaz bilgisini aktarın."
+    ],
+    "during_worker": [
+      "Isınan veya yangındaki tüpten uzaklaşın.",
+      "Tüpü taşımayın, vanasına yaklaşmayın.",
+      "Güvenli yerden 112'ye gaz türü ve tüp konumunu bildirin."
+    ],
+    "id": "AD-029",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Özellikle ısınmış asetilen tüpünü hareket ettirmeyin.",
+      "Tüpü çalışanların doğaçlama soğutma denemesine bırakmayın."
+    ],
+    "reentry_tr": "İtfaiye ve tüp uzmanı güvenli taşıma/erişim izni verdiğinde.",
+    "requires_any_features": [
+      "compressed_gas"
+    ],
+    "site_field_keys": [
+      "gaz_turu",
+      "tup_konumu",
+      "tedarikci_irtibat",
+      "dislama_alani"
+    ],
+    "site_field_labels_tr": {
+      "dislama_alani": "Dışlama alanı",
+      "gaz_turu": "Gaz türü",
+      "tedarikci_irtibat": "Tedarikçi irtibat",
+      "tup_konumu": "Tüp konumu"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Gaz tüpünün ısınması",
+    "trigger_tr": "Yangına maruz kalmış veya anormal ısınan tüp"
+  },
+  {
+    "after": [
+      "Etkilenen kişi tıbbi değerlendirmeye yönlendirilsin.",
+      "Arızalı tesisat/ekipmanı hizmet dışı tutun."
+    ],
+    "before": [
+      "Elektrik ayırma ve yetkili kişi bilgisini hazırlayın.",
+      "İlkyardımcı ve varsa OED/AED konumunu kaydedin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Elektrik yetkilisi tehlikeli alana girmeden uygun beslemeyi ayırsın.",
+      "İlkyardımcı elektrik güvenliği sağlandıktan sonra eğitimine ve 112 yönlendirmesine göre müdahale etsin.",
+      "Varsa OED/AED güvenli ortama getirilsin; cihaz yönlendirmesi ve eğitim sınırı izlenerek sağlık ekibi karşılansın."
+    ],
+    "during_worker": [
+      "Enerji kesilmeden yaralıya dokunmayın.",
+      "Güvenli alandan yardım ve 112 çağrısı yapın.",
+      "Çevredeki kişileri iletken, su ve temas alanından uzak tutun."
+    ],
+    "id": "AD-030",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Yaralıyı çıplak elle çekmeyin.",
+      "Yüksek gerilim bölgesine güvenli sınır teyit edilmeden yaklaşmayın."
+    ],
+    "reentry_tr": "Yetkili elektrik incelemesi sonrası; yaralının işe dönüşü sağlık kararıdır.",
+    "requires_any_features": [
+      "electrical_work"
+    ],
+    "site_field_keys": [
+      "guvenli_ayirici",
+      "elektrik_yetkilisi",
+      "ilkyardimci",
+      "OED_yeri"
+    ],
+    "site_field_labels_tr": {
+      "OED_yeri": "OED/AED konumu (varsa)",
+      "elektrik_yetkilisi": "Elektrik yetkilisi",
+      "guvenli_ayirici": "Güvenli ayırıcı",
+      "ilkyardimci": "İlkyardımcı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Elektrik çarpması",
+    "trigger_tr": "Enerjili sisteme temas şüphesi veya yaralı"
+  },
+  {
+    "after": [
+      "Ekipmanı tekrar enerjilendirmeden arıza ve koruma incelemesi yapın.",
+      "Müdahale ve kullanılan kişisel korumayı teknik olay kaydına alın."
+    ],
+    "before": [
+      "Anahtarlama alanı ve ark riskine özgü iş planını hazırlayın.",
+      "Güvenli dış enerji kesme ve yanık acil yanıtını belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili elektrik ekibi güvenli izolasyonu teyit etsin.",
+      "İlkyardımcı güvenli alanda yanık/yaralanma desteğini eğitim sınırında versin.",
+      "Koruma ekibi duman, parça ve elektrik etki alanına erişimi kapatsın."
+    ],
+    "during_worker": [
+      "Ark sonrasında panodan ve kopan parçalardan uzaklaşın.",
+      "Enerjili olabilecek ekipman veya yaralıya dokunmayın.",
+      "112'ye ark olayı, yanık ve kişi konumunu bildirin."
+    ],
+    "id": "AD-031",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Kapağı açarak arıza kaynağını aramayın.",
+      "Koruma attı diye tüm enerjinin kesildiğini varsaymayın."
+    ],
+    "reentry_tr": "Yetkili elektrik incelemesi ve güvenli yeniden besleme kararıyla.",
+    "requires_any_features": [
+      "switching_hv"
+    ],
+    "site_field_keys": [
+      "pano_kodu",
+      "uzak_izolasyon",
+      "elektrik_yetkilisi",
+      "ilkyardimci"
+    ],
+    "site_field_labels_tr": {
+      "elektrik_yetkilisi": "Elektrik yetkilisi",
+      "ilkyardimci": "İlkyardımcı",
+      "pano_kodu": "Pano kodu",
+      "uzak_izolasyon": "Uzak izolasyon"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Ark flaşı olayı",
+    "trigger_tr": "Anahtarlama veya arıza sırasında ark/yanık"
+  },
+  {
+    "after": [
+      "Makineyi mühendislik incelemesine kadar hizmet dışı tutun.",
+      "Koruyucu ve güvenli çalışma yöntemini yeniden değerlendirin."
+    ],
+    "before": [
+      "Makine acil duruş ve tüm enerji ayırma noktalarını tanıyın.",
+      "Sıkışmada yetkili kurtarma/servis irtibatını hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili teknik görevli elektrik, basınç ve yerçekimi enerjisini izole etsin.",
+      "Kurtarma ekibi parçaların stabilitesini güvenceye almadan söküm yapmasın.",
+      "İlkyardımcı güvenli erişim sağlandığında eğitimine göre desteklesin ve sağlık ekibini yönlendirsin."
+    ],
+    "during_worker": [
+      "Güvenliyse acil duruşu kullanıp alarm verin.",
+      "Makineyi ters yönde çalıştırarak kişiyi çıkarmaya uğraşmayın.",
+      "112'ye makine, sıkışan kişi ve konum bilgisini verin."
+    ],
+    "id": "AD-032",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Yaralıyı kuvvetle çekmeyin.",
+      "Yalnız acil duruşu tam enerji izolasyonu saymayın."
+    ],
+    "reentry_tr": "Teknik arıza/koruma incelemesi tamamlandıktan sonra.",
+    "requires_any_features": [
+      "machinery"
+    ],
+    "site_field_keys": [
+      "makine_kodu",
+      "acil_durus",
+      "enerji_noktalari",
+      "servis_irtibat",
+      "kurtarma_erisim"
+    ],
+    "site_field_labels_tr": {
+      "acil_durus": "Acil duruş",
+      "enerji_noktalari": "Enerji noktaları",
+      "kurtarma_erisim": "Kurtarma erişim",
+      "makine_kodu": "Makine kodu",
+      "servis_irtibat": "Servis irtibat"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Makineye sıkışma",
+    "trigger_tr": "Uzvun veya kişinin hareketli bölgede sıkışması"
+  },
+  {
+    "after": [
+      "Yük ve kaldırma ekipmanını inceleme için ayırın.",
+      "Bağlama, kapasite ve çalışma alanı planını düzeltin."
+    ],
+    "before": [
+      "Yük, kaldırma ve geçici destek bilgisini hazırlayın.",
+      "Yük düşmesinde alan kapatma ve uzman kurtarma planı yapın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Kaldırma yetkilisi ekipmanı güvenli duruma alıp yükün ilave hareketini önlesin.",
+      "Uzman kurtarma ekibi yükü tasarlanmış destek ve kaldırmayla emniyete alsın.",
+      "İlkyardım ekibi güvenli erişim sağlanana kadar dışarıda sağlık ekibiyle koordine olsun."
+    ],
+    "during_worker": [
+      "Yükün yeni hareket hattından uzaklaşın.",
+      "Yaralıyı çıkarmak için yükü elle veya gelişigüzel araçla kaldırmayın.",
+      "112'ye yük türü, kişi konumu ve hareket tehlikesini bildirin."
+    ],
+    "id": "AD-033",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Askıda veya kararsız yük altına girmeyin.",
+      "Yaralıya erişmek için desteği plansız sökmeyin."
+    ],
+    "reentry_tr": "Yük stabilitesi ve kaldırma sistemi yetkin incelemeden geçince.",
+    "requires_any_features": [
+      "lifting"
+    ],
+    "site_field_keys": [
+      "yuk_turu_agirligi",
+      "kaldirma_yetkilisi",
+      "guvenli_destek",
+      "yarali_konumu"
+    ],
+    "site_field_labels_tr": {
+      "guvenli_destek": "Güvenli destek",
+      "kaldirma_yetkilisi": "Kaldırma yetkilisi",
+      "yarali_konumu": "Yaralı konumu",
+      "yuk_turu_agirligi": "Yük türü ve ağırlığı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Yük altında kalma",
+    "trigger_tr": "Düşen veya kayan yükün kişiyi sıkıştırması"
+  },
+  {
+    "after": [
+      "Düşüşte kullanılan koruyucu ve ankrajı hizmet dışı incelemeye alın.",
+      "Yüksekte çalışma yöntemini gözden geçirin."
+    ],
+    "before": [
+      "Yüksekte işin düşme ve kurtarma planını hazırlayın.",
+      "112 erişim güzergâhını ve ilkyardımcıyı belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Görevli üst seviyedeki işi durdursun ve ikinci düşmeyi önlesin.",
+      "İlkyardımcı eğitimine ve 112 yönlendirmesine göre güvenli müdahale etsin.",
+      "Kurtarma ekibi yaralıya erişimi ve sağlık ekibinin gelişini koordine etsin."
+    ],
+    "during_worker": [
+      "Düşme alanını ve üstten gelebilecek cisimleri gözleyerek güvenli kalın.",
+      "Yaralıyı ani tehlike yoksa gereksiz hareket ettirmeyin.",
+      "İlkyardımcı ve 112'yi çağırıp düşme yüksekliği/konumun bilinen bilgisini aktarın."
+    ],
+    "id": "AD-034",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Yaralıyı yürütmeye veya zorla kaldırmaya çalışmayın.",
+      "İkinci kişiyi korunmasız kenara göndermeyin."
+    ],
+    "reentry_tr": "Üst çalışma alanı ve düşme koruması teknik olarak güvenli bulununca.",
+    "requires_any_features": [
+      "height"
+    ],
+    "site_field_keys": [
+      "dusme_alani",
+      "ilkyardimci",
+      "ambulans_erisim",
+      "ust_seviye_sorumlusu"
+    ],
+    "site_field_labels_tr": {
+      "ambulans_erisim": "Ambulans erişim",
+      "dusme_alani": "Düşme alanı",
+      "ilkyardimci": "İlkyardımcı",
+      "ust_seviye_sorumlusu": "Üst seviye sorumlusu"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Yüksekten düşme",
+    "trigger_tr": "Düşme ve yaralanma bildirimi"
+  },
+  {
+    "after": [
+      "Kişiyi sağlık değerlendirmesine yönlendirin.",
+      "Düşüş ve kurtarmada kullanılan ekipmanı inceleme için ayırın."
+    ],
+    "before": [
+      "İşe özgü hızlı askıdan kurtarma düzenini önceden hazırlayın.",
+      "Kurtarma donanımını ve eğitimli asıl/yedek kişileri belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Eğitimli kurtarma ekibi önceden planlanmış uygun sistemle gecikmeden kurtarma başlatsın.",
+      "Görevli ankraj ve çevre stabilitesini koruyup yetkisiz yaklaşmayı engellesin.",
+      "İlkyardımcı kurtarılan kişiyi eğitim ve sağlık yönlendirmesine göre değerlendirsin."
+    ],
+    "during_worker": [
+      "Askıda kalan kişi bilinci açıksa yardım çağırıp eğitiminde öğrendiği güvenli hareketleri uygulasın.",
+      "Çevredekiler ikinci düşme riski almadan alarm versin.",
+      "112'ye kişinin askıda olduğu ve erişim yerini bildirin."
+    ],
+    "id": "AD-035",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Askıdaki kişinin kemerini veya bağlantısını plansız kesmeyin.",
+      "Genel itfaiye çağrısını önceden hazırlanmış kurtarma düzeninin yerine koymayın."
+    ],
+    "reentry_tr": "Ankraj/koruma sistemi ve çalışma yönteminin yetkin kontrolü sonrası.",
+    "requires_any_features": [
+      "fall_arrest"
+    ],
+    "site_field_keys": [
+      "kurtarma_plani",
+      "kurtarma_ekibi",
+      "ankraj",
+      "kurtarma_donanimi",
+      "erisim_yolu"
+    ],
+    "site_field_labels_tr": {
+      "ankraj": "Ankraj",
+      "erisim_yolu": "Erişim yolu",
+      "kurtarma_donanimi": "Kurtarma donanımı",
+      "kurtarma_ekibi": "Kurtarma ekibi",
+      "kurtarma_plani": "Kurtarma planı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Askıda kalma",
+    "trigger_tr": "Düşüş durdurma sisteminde kişinin asılı kalması"
+  },
+  {
+    "after": [
+      "Etkilenenleri tıbbi değerlendirmeye alın.",
+      "Giriş izni, ölçüm ve izolasyon koşullarını olay sonrası yeniden kurun."
+    ],
+    "before": [
+      "Kapalı alan giriş izni, gözcü ve girişsiz kurtarma düzenini hazırlayın.",
+      "Uzman ekibe verilecek atmosfer/izolasyon bilgilerini belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Gözcü kişi sayısı ve son iletişimi kaydedip erişimi kapatsın.",
+      "Eğitimli ekip yalnız planlanmış güvenli girişsiz kurtarmayı uygulasın.",
+      "Giriş gerektiren kurtarmayı uygun solunum ve kurtarma donanımlı uzman ekip yürütürken teknik ekip beslemeleri izole etsin."
+    ],
+    "during_worker": [
+      "Yanıt alınamıyorsa dışarıdan alarm verin.",
+      "İçerideki kişiyi kurtarmak için kontrolsüz giriş yapmayın.",
+      "112'ye kapalı alan ve atmosfer tehlikesi olduğunu açıkça bildirin."
+    ],
+    "id": "AD-036",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Nefes tutarak veya filtreli maskeye güvenerek girmeyin.",
+      "Gözcüyü içeride arama için alan başından ayırmayın."
+    ],
+    "reentry_tr": "Atmosfer, izolasyon ve yeni giriş izni koşulları uzman tarafından sağlanınca.",
+    "requires_any_features": [
+      "confined_space"
+    ],
+    "site_field_keys": [
+      "alan_kodu",
+      "giris_izni",
+      "gozcu",
+      "atmosfer_bilgisi",
+      "giris_siz_kurtarma"
+    ],
+    "site_field_labels_tr": {
+      "alan_kodu": "Alan kodu",
+      "atmosfer_bilgisi": "Ortam atmosferi ve ölçüm bilgisi",
+      "giris_izni": "Giriş izni",
+      "giris_siz_kurtarma": "İçeri girmeden kurtarma düzeni",
+      "gozcu": "Gözcü"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Kapalı alanda bilinç kaybı",
+    "trigger_tr": "İçeride yanıt alınamaması veya atmosfer alarmı"
+  },
+  {
+    "after": [
+      "Zemin ve iksayı yetkin teknik kişiye yeniden değerlendirin.",
+      "Yağış, hat ve yük değişikliklerini olay kaydına alın."
+    ],
+    "before": [
+      "Kazı destek ve çevre yük planını sahada bulundurun.",
+      "Göçükte profesyonel kurtarma erişimini belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Saha sorumlusu araç, titreşim ve ilave yükleri güvenli biçimde durdursun.",
+      "Koruma ekibi kazı kenarını ve komşu yük alanını kapatsın.",
+      "Uzman kurtarma ekibi destek ve zemin güvenliğiyle müdahale etsin; ilkyardımcı güvenli bölgede hazır olsun."
+    ],
+    "during_worker": [
+      "Yeni göçme tehlikesinden uzaklaşıp kazı çevresini uyarın.",
+      "Kurtarma için desteksiz kazıya inmeyin.",
+      "112'ye kazı konumu, derinlik ve son bilinen kişi yerini bildirin."
+    ],
+    "id": "AD-037",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Eksik kişiyi bulmak için iş makinesiyle plansız kazmayın.",
+      "Kazı kenarında kalabalık ve ağır yük oluşturmayın."
+    ],
+    "reentry_tr": "Jeoteknik/destek incelemesi ve güvenli çalışma izni sonrası.",
+    "requires_any_features": [
+      "excavation"
+    ],
+    "site_field_keys": [
+      "kazi_plani",
+      "kisi_sayisi",
+      "hat_bilgisi",
+      "uzman_erisim",
+      "kenar_siniri"
+    ],
+    "site_field_labels_tr": {
+      "hat_bilgisi": "Hat bilgisi",
+      "kazi_plani": "Kazı planı",
+      "kenar_siniri": "Kenar sınırı",
+      "kisi_sayisi": "Kişi sayısı",
+      "uzman_erisim": "Uzman erişim"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Kazı göçüğü",
+    "trigger_tr": "Zemin hareketi veya kişinin göçük altında kalması"
+  },
+  {
+    "after": [
+      "Hasar incelemesini yetkin yapı uzmanına yaptırın.",
+      "Onarım ve destek planı olmadan bölgeyi kullanıma açmayın."
+    ],
+    "before": [
+      "Taşıyıcı değişiklik ve geçici destek bilgilerini kayıtlı tutun.",
+      "Şüpheli hasarda alternatif çıkışı belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi yapı etki alanını ve komşu kullanım bölgelerini boşaltsın.",
+      "Teknik görevli enerji ve hatları yalnız güvenli dış noktadan değerlendirsin.",
+      "Yapı uzmanı ve kurtarma ekibine plan, yük ve hasar bilgisini verin."
+    ],
+    "during_worker": [
+      "Ani çatlama, eğilme veya parça düşmesinde alanı terk edin.",
+      "Hasarlı bölümden geçmeyin; çevredekileri güvenli yoldan uyarın.",
+      "Güvenli noktadan olay ve içeride kalan kişi bilgisini 112'ye bildirin."
+    ],
+    "id": "AD-038",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Hasarı görmek için yapıya geri girmeyin.",
+      "Taşıyıcı veya geçici desteği doğaçlama değiştirmeyin."
+    ],
+    "reentry_tr": "Yetkin yapı güvenliği kararı ve ilgili tesisat kontrolleri sonrası.",
+    "requires_any_features": [
+      "demolition",
+      "construction"
+    ],
+    "site_field_keys": [
+      "yapi_plani",
+      "gecici_destek",
+      "alternatif_cikis",
+      "etki_alani"
+    ],
+    "site_field_labels_tr": {
+      "alternatif_cikis": "Alternatif çıkış",
+      "etki_alani": "Etki alanı",
+      "gecici_destek": "Geçici destek",
+      "yapi_plani": "Yapı planı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Yapısal çökme tehlikesi",
+    "trigger_tr": "Ani çatlama, eğilme veya taşıyıcı hasar"
+  },
+  {
+    "after": [
+      "Artçı ve hasar ihtimaline karşı binalardan uzak bekleyin.",
+      "Geri giriş için yapı ve tesisatın yetkili değerlendirmesini bekleyin."
+    ],
+    "before": [
+      "Devrilebilecek eşyaları güvenli sabitleyin.",
+      "Sarsıntıda korunma noktalarını ve sonrasında güvenli çıkışı tanıyın."
+    ],
+    "content_version": 5,
+    "core": true,
+    "during_team": [
+      "Görevliler sarsıntı sırasında kendi güvenliğini korusun; hareket sona erince tahliyeyi ve yardım ihtiyacını koordine etsin.",
+      "Teknik görevli gaz/elektrik hasarını güvenli planda değerlendirsin; arızalı alana girmesin.",
+      "Sayım sorumlusu eksik ve yaralı bilgisini toplasın; gerekli acil yardımı 112 üzerinden yönlendirsin."
+    ],
+    "during_worker": [
+      "Bina içindeyseniz uygun güvenli noktada Çök–Kapan–Tutun uygulayın; baş-boynu koruyun.",
+      "Sarsıntı sırasında merdivene koşmayın ve asansör kullanmayın; pencere ve devrilebilir eşyalardan uzak durun.",
+      "Sarsıntı bitince güvenliyse belirlenmiş çıkıştan ayrılıp yapı/parça düşme alanı dışındaki toplanma yerine gidin."
+    ],
+    "id": "AD-039",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "PROTECT_THEN_EVACUATE",
+    "mode_label_tr": "Önce korunma, sarsıntı bitince güvenli tahliye",
+    "prohibited": [
+      "Sarsıntı sırasında pencereden atlamayın veya merdivene koşmayın.",
+      "Dışarıdaysanız bina, direk ve hat altında beklemeyin."
+    ],
+    "reentry_tr": "Sarsıntının bitmesi tek başına izin değildir; olay yöneticisi ve gerekli teknik kontroller sonrası.",
+    "requires_any_features": [],
+    "site_field_keys": [
+      "korunma_noktalari",
+      "guvenli_cikis",
+      "toplanma",
+      "yardim_duzeni",
+      "tesisat_kesme"
+    ],
+    "site_field_labels_tr": {
+      "guvenli_cikis": "Güvenli çıkış",
+      "korunma_noktalari": "Korunma noktaları",
+      "tesisat_kesme": "Tesisat kesme",
+      "toplanma": "Toplanma",
+      "yardim_duzeni": "Yardım düzeni"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Deprem — sarsıntı anı",
+    "trigger_tr": "Hissedilen sarsıntı"
+  },
+  {
+    "after": [
+      "Teknik kararları ve açılan/kapanan alanları kayıt altına alın.",
+      "Yeniden kullanıma başlamadan kaçış, alarm ve enerji sistemlerini kontrol edin."
+    ],
+    "before": [
+      "Deprem sonrası inceleme ve alan kapatma yetkilisini belirleyin.",
+      "Plan ve kritik tesisat bilgilerini bina dışında erişilebilir tutun."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi geri girişleri kontrollü olarak kapatsın.",
+      "Yetkin yapı ve tesisat uzmanları erişim sınırları içinde değerlendirme yapsın.",
+      "Kurtarma ekiplerine eksik kişi ve son konum bilgisini teslim edin."
+    ],
+    "during_worker": [
+      "Hasarlı tesise eşyalar için dönmeyin.",
+      "Artçılarda yapıdan ve düşebilecek parçadan uzaklaşın.",
+      "Gaz kokusu, kopuk hat ve görünür hasarı güvenli noktadan bildirin."
+    ],
+    "id": "AD-040",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Yetkili izin olmadan binaya girmeyin.",
+      "Sadece dış görünüşe bakarak güvenli kararı vermeyin."
+    ],
+    "reentry_tr": "Yapı güvenliği, gaz/elektrik ve yangın koruması kontrolleriyle alan bazlı izin verildiğinde.",
+    "requires_any_features": [
+      "earthquake_damage"
+    ],
+    "site_field_keys": [
+      "yapi_inceleme_yetkilisi",
+      "hasar_kaydi",
+      "izinli_alanlar",
+      "tesisat_durumu"
+    ],
+    "site_field_labels_tr": {
+      "hasar_kaydi": "Hasar kaydı",
+      "izinli_alanlar": "İzinli alanlar",
+      "tesisat_durumu": "Tesisat durumu",
+      "yapi_inceleme_yetkilisi": "Yapı inceleme yetkilisi"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Deprem — hasarlı tesise dönüş",
+    "trigger_tr": "Sarsıntı sonrası hasar veya artçı tehlikesi"
+  },
+  {
+    "after": [
+      "Su çekilince elektrik, yapı ve kirlenme incelemesini yaptırın.",
+      "Kimyasal veya atıksu karışmış alanı uygun temizleme planına alın."
+    ],
+    "before": [
+      "Taşkın uyarısı, yüksek güvenli bölge ve alternatif yolları belirleyin.",
+      "Bodrumdaki elektrik ve kimyasal risklerini önceden değerlendirin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi bodrum ve alçak hacimleri kapatsın.",
+      "Elektrik yetkilisi sadece kuru ve güvenli uzaktan ayırma noktasını kullansın.",
+      "Görevliler sayım ve dış kurtarma erişimini koordine etsin."
+    ],
+    "during_worker": [
+      "Su yükselmesi veya tahliye uyarısında erken güvenli yüksek alana geçin.",
+      "Suya girmeyin ve akıntılı yolu yürüyerek/araçla geçmeye çalışmayın.",
+      "Mahsur kişi ve konumu güvenli noktadan 112'ye bildirin."
+    ],
+    "id": "AD-041",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Elektrikli ekipmana ıslak halde dokunmayın.",
+      "Su çekilmesini güvenli geri giriş kanıtı saymayın."
+    ],
+    "reentry_tr": "Yapı, elektrik ve kirlenme yönünden teknik/sağlık kontrolü sonrası.",
+    "requires_any_features": [
+      "flood"
+    ],
+    "site_field_keys": [
+      "resmi_taskin_uyarisi",
+      "yuksek_guvenli_alan",
+      "uzak_ayirici",
+      "bodrumlar"
+    ],
+    "site_field_labels_tr": {
+      "bodrumlar": "Bodrumlar",
+      "resmi_taskin_uyarisi": "Resmî taşkın uyarısı",
+      "uzak_ayirici": "Uzak ayırıcı",
+      "yuksek_guvenli_alan": "Yüksek güvenli alan"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Sel ve ani su baskını",
+    "trigger_tr": "Yükselen su veya resmî taşkın uyarısı"
+  },
+  {
+    "after": [
+      "Dış saha ekipmanını, çatıyı ve yolları yetkin kişiye kontrol ettirin.",
+      "Rüzgâr sonrası gevşek yükleri güvenli yöntemle düzeltin."
+    ],
+    "before": [
+      "Rüzgârda durdurulacak kaldırma/yüksekte işleri belirleyin.",
+      "Sağlam kapalı korunma ve düşebilecek eşya alanlarını tanıyın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Görevli kaldırma ve dış saha ekipmanını üretici hava sınırında güvenli duruşa alsın.",
+      "Koruma ekibi kırılabilecek cam/kaplama çevresini kapatsın.",
+      "Olay yöneticisi resmî hava uyarısı ve tesise özgü koşullara göre bekleme/tahliyeyi yönetsin."
+    ],
+    "during_worker": [
+      "Rüzgâr şiddetlenince açık saha ve yüksekte işi bırakın.",
+      "Gevşek çatı, ağaç ve askılı yüklerden uzak sağlam alana geçin.",
+      "Eksik kişi veya düşen parçayı güvenli noktadan bildirin."
+    ],
+    "id": "AD-042",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SHELTER_IN_PLACE",
+    "mode_label_tr": "Güvenli yerde korunma",
+    "prohibited": [
+      "Açık alanda malzeme tutmak için riske girmeyin.",
+      "Hava sınırlarını üretim hedefi için aşmayın."
+    ],
+    "reentry_tr": "Hava koşulu ve yapı/ekipman kontrolü birlikte uygun bulunduğunda.",
+    "requires_any_features": [
+      "outdoors",
+      "severe_weather"
+    ],
+    "site_field_keys": [
+      "ruzgar_sinirlari",
+      "saglam_korunma",
+      "askili_ekipman",
+      "kontrol_sorumlusu"
+    ],
+    "site_field_labels_tr": {
+      "askili_ekipman": "Askılı ekipman",
+      "kontrol_sorumlusu": "Kontrol sorumlusu",
+      "ruzgar_sinirlari": "Rüzgâr sınırları",
+      "saglam_korunma": "Sağlam korunma"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Fırtına ve şiddetli rüzgâr",
+    "trigger_tr": "Uyarı veya kontrol kaybı yaratacak rüzgâr"
+  },
+  {
+    "after": [
+      "Yıldırım etkilenmiş tesisat ve ekipmanı teknik incelemeye alın.",
+      "İşin yeniden başlamasını hava uyarı planına göre yönetin."
+    ],
+    "before": [
+      "Açık saha için yıldırım uyarısı ve güvenli kapalı alanı belirleyin.",
+      "İşi durdurma/yeniden başlatma kararını görevliye bağlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Saha sorumlusu ekiplerin korunma noktasına ulaştığını kontrol etsin.",
+      "Elektrik/proses görevli ekipmanı yalnız güvenli zaman ve yöntemle bıraksın.",
+      "Yaralı varsa 112 ve ilkyardım desteği güvenli ortamda sağlansın."
+    ],
+    "during_worker": [
+      "Yıldırım uyarısında açık saha ve yüksekte işi durdurun.",
+      "Sağlam kapalı yapı veya uygun kapalı araç gibi belirlenmiş güvenli yere gidin.",
+      "Tek ağaç, metal direk, su ve açık alanlardan uzak durun."
+    ],
+    "id": "AD-043",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SHELTER_IN_PLACE",
+    "mode_label_tr": "Güvenli yerde korunma",
+    "prohibited": [
+      "Açık alanda yalnız ağacın altına sığınmayın.",
+      "Yıldırım tehlikesi sürerken ekipman toplamak için dışarı çıkmayın."
+    ],
+    "reentry_tr": "Tesise özgü hava güvenliği kararı ve gerekli elektrik kontrolleri sonrası.",
+    "requires_any_features": [
+      "outdoors",
+      "roof_work"
+    ],
+    "site_field_keys": [
+      "yildirim_uyarisi",
+      "korunma_yeri",
+      "saha_sayimi",
+      "yeniden_baslama_yetkilisi"
+    ],
+    "site_field_labels_tr": {
+      "korunma_yeri": "Korunma yeri",
+      "saha_sayimi": "Saha sayımı",
+      "yeniden_baslama_yetkilisi": "Yeniden başlama yetkilisi",
+      "yildirim_uyarisi": "Yıldırım uyarısı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Yıldırım",
+    "trigger_tr": "Yaklaşan fırtına veya yıldırım uyarısı"
+  },
+  {
+    "after": [
+      "Kişinin işe dönüşünü sağlık değerlendirmesine bağlayın.",
+      "Isıl yük, mola ve su düzenini olaydan sonra düzeltin."
+    ],
+    "before": [
+      "Su, serinleme ve yeni çalışana uyum düzeni sağlayın.",
+      "Isı hastalığı belirtileri ve ilkyardımcıya ulaşımı öğretin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "İlkyardımcı eğitimine ve 112 yönlendirmesine göre serinletme ve destek uygulasın.",
+      "Görevli aynı sıcaklığa maruz diğer çalışanları serin güvenli alana yönlendirsin.",
+      "Olay yöneticisi ısı kaynağı ve çalışma düzenini duruş/azaltma yönünden değerlendirsin."
+    ],
+    "during_worker": [
+      "Ağır halsizlik, bilinç değişikliği veya bayılmayı gecikmeden bildirin.",
+      "Güvenliyse kişiyi serin alana alın ve ilkyardımcı/112 çağırın.",
+      "Kişiyi yalnız bırakmayın; bilinci bozuk kişiye ağızdan sıvı vermeyin."
+    ],
+    "id": "AD-044",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY",
+      "TR-FIRSTAID"
+    ],
+    "mode": "MEDICAL_RESPONSE",
+    "mode_label_tr": "İlkyardımcı ve acil sağlık desteği",
+    "prohibited": [
+      "Belirtileri yalnız yorgunluk diye geçiştirmeyin.",
+      "Bilinç değişikliğinde kendi başına araç kullanmasına izin vermeyin."
+    ],
+    "reentry_tr": "Çalışma koşulları yeniden değerlendirilince; kişi için sağlık yönlendirmesi esastır.",
+    "requires_any_features": [
+      "hot_climate",
+      "molten_metal",
+      "molten_glass"
+    ],
+    "site_field_keys": [
+      "serin_alan",
+      "su_noktasi",
+      "ilkyardimci",
+      "112_erisim",
+      "isi_kaynagi"
+    ],
+    "site_field_labels_tr": {
+      "112_erisim": "112 çağrısı için erişim yöntemi",
+      "ilkyardimci": "İlkyardımcı",
+      "isi_kaynagi": "Isı kaynağı",
+      "serin_alan": "Serin alan",
+      "su_noktasi": "Su noktası"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Aşırı sıcak ve ısı hastalığı",
+    "trigger_tr": "Sıcak ortamda ağır rahatsızlık veya bilinç değişikliği"
+  },
+  {
+    "after": [
+      "Islak giysi ve ekipman sorununun nedenini giderin.",
+      "İşe dönüşü sağlık değerlendirmesine göre planlayın."
+    ],
+    "before": [
+      "Soğuk ortam çalışma ve kontrol aralıklarını belirleyin.",
+      "Isınma yeri ve haberleşme kaybı yanıtını hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "İlkyardımcı eğitimine göre koruma ve ısıtma desteği sağlasın.",
+      "Görevli diğer kişilerin yerini kontrol edip soğuk maruziyetini durdursun.",
+      "Kurtarma gerektiren noktada uzman ekiple güvenli erişim kurulsun."
+    ],
+    "during_worker": [
+      "Titreme, uyuşma veya bilinç değişikliğini bildirin.",
+      "Güvenliyse kişiyi soğuktan korunan alana alın.",
+      "İlkyardımcıyı çağırın; ağır etkilenme veya mahsur kalmada 112'ye konumu verin."
+    ],
+    "id": "AD-045",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Donmuş bölgeyi sertçe ovuşturmayın.",
+      "Bilinci bozuk kişiye yiyecek/içecek vermeyin."
+    ],
+    "reentry_tr": "Ortam ve erişim koşulları güvenli; kişi sağlık yönlendirmesine uygun olduğunda.",
+    "requires_any_features": [
+      "cold_climate"
+    ],
+    "site_field_keys": [
+      "isinma_yeri",
+      "haberlesme",
+      "ilkyardimci",
+      "mahsur_erisim"
+    ],
+    "site_field_labels_tr": {
+      "haberlesme": "Haberleşme",
+      "ilkyardimci": "İlkyardımcı",
+      "isinma_yeri": "Isınma yeri",
+      "mahsur_erisim": "Mahsur erişim"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Aşırı soğuk ve mahsur kalma",
+    "trigger_tr": "Soğukta bilinç, hareket veya iletişim kaybı"
+  },
+  {
+    "after": [
+      "Şevi yetkin uzman yeniden değerlendirsin.",
+      "Yeni destek ve yaklaşma sınırı olmadan işi başlatmayın."
+    ],
+    "before": [
+      "Şev hareket işaretleri ve tahliye yönünü belirleyin.",
+      "Jeoteknik uyarı ve güvenli sınırı sahada gösterin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik sorumlu titreşim, yükleme ve yaklaşan araçları durdursun.",
+      "Koruma ekibi etki alanını ve komşu yolları kapatsın.",
+      "Eksik kişi varsa profesyonel kurtarma ve jeoteknik ekibi birlikte yönlendirin."
+    ],
+    "during_worker": [
+      "Çatlak veya hareket alarmında etki alanından uzaklaşın.",
+      "Düşen bloğu görmek için şev altına yaklaşmayın.",
+      "Kişi ve konum bilgisini saha sorumlusuna güvenli yerden bildirin."
+    ],
+    "id": "AD-046",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Göçük bölgesine plansız kurtarma için girmeyin.",
+      "Şev kenarına kalabalık veya araç yığmayın."
+    ],
+    "reentry_tr": "Jeoteknik değerlendirme ve güncellenmiş güvenli çalışma planıyla.",
+    "requires_any_features": [
+      "landslide"
+    ],
+    "site_field_keys": [
+      "sev_siniri",
+      "uyari_isaretleri",
+      "tahliye_yonu",
+      "jeoteknik_yetkili"
+    ],
+    "site_field_labels_tr": {
+      "jeoteknik_yetkili": "Jeoteknik yetkili",
+      "sev_siniri": "Şev sınırı",
+      "tahliye_yonu": "Tahliye yönü",
+      "uyari_isaretleri": "Uyarı işaretleri"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Heyelan veya şev hareketi",
+    "trigger_tr": "Çatlak, blok düşmesi veya hareket alarmı"
+  },
+  {
+    "after": [
+      "Asansörü arıza giderilip kontrol edilene kadar hizmet dışı tutun.",
+      "Kabin alarmı ve iletişim işlevini test ettirin."
+    ],
+    "before": [
+      "Asansör acil haberleşme ve servis irtibatını görünür tutun.",
+      "Yetkili kurtarma prosedürünü bina sorumlusuyla belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Görevli kabinle iletişimi sürdürüp yetkili asansör servisini çağırsın.",
+      "Koruma ekibi kat kapısı ve kuyu erişimini kapatsın.",
+      "Kurtarmayı yalnız yetkili prosedürle eğitimli teknik ekip yapsın."
+    ],
+    "during_worker": [
+      "Kabin içindeyseniz alarm/haberleşme düğmesini kullanıp konumunuzu bildirin.",
+      "Kapıyı zorlamayın ve kabin açıklığından çıkmaya çalışmayın.",
+      "Sağlık sorunu veya yangın/duman varsa bunu haberleşme görevlisine ve 112'ye iletin."
+    ],
+    "id": "AD-047",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Kat seviyesinde değilken dışarı atlamayın.",
+      "Eğitimsiz kişi fren/kapı mekanizmasına müdahale etmesin."
+    ],
+    "reentry_tr": "Yetkili asansör servisinin güvenli kullanım kararı sonrası.",
+    "requires_any_features": [
+      "elevator"
+    ],
+    "site_field_keys": [
+      "asansor_kodu",
+      "kabin_alarm",
+      "servis_telefonu",
+      "bina_sorumlusu"
+    ],
+    "site_field_labels_tr": {
+      "asansor_kodu": "Asansör kodu",
+      "bina_sorumlusu": "Bina sorumlusu",
+      "kabin_alarm": "Kabin alarm",
+      "servis_telefonu": "Servis telefonu"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Asansörde mahsur kalma",
+    "trigger_tr": "Kabin durması veya yardım alarmı"
+  },
+  {
+    "after": [
+      "Kapı ve alarm arızasını giderin.",
+      "İçeride kalma nedenini giriş/çıkış düzeniyle birlikte inceleyin."
+    ],
+    "before": [
+      "İç açma ve yardım alarmını gerçek çalışma koşulunda sınayın.",
+      "Soğuk depo giriş/çıkış haberleşmesini belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Görevli güvenli dış açma yöntemini uygulayıp içerideki kişiyi çıkarsın.",
+      "Teknik ekip otomatik kapanma ve soğutma tehlikesini güvenli şekilde yönetsin.",
+      "İlkyardımcı soğuk etkilenmesini eğitimine ve sağlık yönlendirmesine göre değerlendirsin."
+    ],
+    "during_worker": [
+      "İçerideyseniz iç açma ve alarmı kullanın; yerinizi bildirin.",
+      "Kapıya zarar vererek yeni sıkışma riski oluşturmayın.",
+      "Dışarıdaki kişi içeride kişi kaldığını bildirip ilkyardımcı/112 gereksinimini değerlendirsin."
+    ],
+    "id": "AD-048",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "İçeride kalan kişiyi yalnız ve iletişimsiz bırakmayın.",
+      "Kilit arızası giderilmeden depoyu olağan kullanıma açmayın."
+    ],
+    "reentry_tr": "Kapı/iç açma/alarm işlevi teknik olarak test edilince.",
+    "requires_any_features": [
+      "cold_room"
+    ],
+    "site_field_keys": [
+      "ic_acma",
+      "alarm",
+      "dis_acma",
+      "depo_sorumlusu",
+      "isinma_yeri"
+    ],
+    "site_field_labels_tr": {
+      "alarm": "Alarm",
+      "depo_sorumlusu": "Depo sorumlusu",
+      "dis_acma": "Dış açma",
+      "ic_acma": "İç açma",
+      "isinma_yeri": "Isınma yeri"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Soğuk depoda mahsur kalma",
+    "trigger_tr": "İç alarm veya içeride kişi kalması bildirimi"
+  },
+  {
+    "after": [
+      "Enerji gelince otomatik hareket riskini kontrol edin.",
+      "Yeniden başlatmayı alan sorumlularının kontrolüyle kademeli yapın."
+    ],
+    "before": [
+      "Kritik yük, UPS ve jeneratör önceliklerini belirleyin.",
+      "Kararma durumunda güvenli duruş ve kaçış planını hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik ekip güvenli duruş ve yedek beslemeyi yük önceliğine göre yönetsin.",
+      "Görevliler asansör, kapalı alan ve yaşam destekli hizmetleri kontrol etsin.",
+      "Olay yöneticisi yangın/alarm/iletişim kaybına göre işi kısıtlayıp tahliyeyi değerlendirsin."
+    ],
+    "during_worker": [
+      "Makine veya karanlık alanda güvenli duruma geçip çevrenizi kontrol edin.",
+      "Acil aydınlatma yetersizse belirlenmiş güvenli çıkışı kullanın.",
+      "Mahsur kişi ve kesintiden etkilenen kritik işi bildirin."
+    ],
+    "id": "AD-049",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "CONTROLLED_SHUTDOWN",
+    "mode_label_tr": "Yetkili kontrollü durdurma",
+    "prohibited": [
+      "Jeneratörü kapalı hacimde çalıştırmayın.",
+      "Enerji döndüğünde tüm makineleri kontrolsüz başlatmayın."
+    ],
+    "reentry_tr": "Enerji, güvenlik sistemleri ve kontrollü başlatma koşulları sağlandığında.",
+    "requires_any_features": [
+      "critical_power"
+    ],
+    "site_field_keys": [
+      "kritik_yukler",
+      "UPS_jenerator",
+      "acil_aydinlatma",
+      "mahsur_kisi_kontrolu"
+    ],
+    "site_field_labels_tr": {
+      "UPS_jenerator": "UPS ve jeneratör bilgisi",
+      "acil_aydinlatma": "Acil aydınlatma",
+      "kritik_yukler": "Kritik yükler",
+      "mahsur_kisi_kontrolu": "Mahsur kişi kontrolü"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Büyük enerji kesintisi",
+    "trigger_tr": "Kritik besleme kaybı"
+  },
+  {
+    "after": [
+      "Soğutma nedeni ve koruma işlevini teknik inceleyin.",
+      "Yeniden başlatmayı sıcaklık/basınç kararlılığı ve onaylı plana bağlayın."
+    ],
+    "before": [
+      "Kritik soğutma akışı ve yedek sistemleri tanımlayın.",
+      "Prosese özgü güvenli duruş sırasını onaylı talimatta tutun."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili operatör besleme ve ısıtmayı onaylı güvenli sırayla yönetsin.",
+      "Proses uzmanı biriken ısı ve basınca göre tahliye sınırını belirlesin.",
+      "Olay yöneticisi dış yardım ve komşu alan bilgilendirmesini başlatsın."
+    ],
+    "during_worker": [
+      "Soğutma alarmını kontrol odasına gecikmeden bildirin.",
+      "Isınan ekipman veya reaksiyon bölgesinden uzaklaşın.",
+      "Üreticinin/prosesin talimatı dışında vana, su veya enerjiyle müdahale etmeyin."
+    ],
+    "id": "AD-050",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "CONTROLLED_SHUTDOWN",
+    "mode_label_tr": "Yetkili kontrollü durdurma",
+    "prohibited": [
+      "Sıcak sisteme doğaçlama ani su vermeyin.",
+      "Koruma sistemini atlayarak üretime devam etmeyin."
+    ],
+    "reentry_tr": "Proses uzmanının kararlılık ve yedek koruma değerlendirmesiyle.",
+    "requires_any_features": [
+      "critical_cooling"
+    ],
+    "site_field_keys": [
+      "sogutma_sistemi",
+      "proses_durus_talimati",
+      "sicaklik_basinc",
+      "proses_yetkilisi"
+    ],
+    "site_field_labels_tr": {
+      "proses_durus_talimati": "Proses duruş talimatı",
+      "proses_yetkilisi": "Proses yetkilisi",
+      "sicaklik_basinc": "Sıcaklık basınç",
+      "sogutma_sistemi": "Soğutma sistemi"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Proses soğutma kaybı",
+    "trigger_tr": "Kritik soğutma debisi veya sıcaklık alarmı"
+  },
+  {
+    "after": [
+      "Filtre, fan, kanal ve kontrol arızasını giderin.",
+      "Emiş etkinliğini gerçek çalışma koşulunda yeniden kontrol edin."
+    ],
+    "before": [
+      "Havalandırmaya bağlı tehlikeli işleri ve alarmı belirleyin.",
+      "Hava kaybında duruş/tahliye sınırını hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik görevli tehlikeli üretimi güvenli prosedürle durdursun.",
+      "Koruma ekibi etkilenmiş hacimlere erişimi kapatsın.",
+      "Yetkin ekip hava performansı ve gerekiyorsa atmosfer ölçümünü yapsın."
+    ],
+    "during_worker": [
+      "Havalandırma alarmında zararlı madde oluşturan işi bırakın.",
+      "Güvenli temiz alana çıkın; koku veya görünür toza göre beklemeyin.",
+      "Alan sorumlusuna kesinti ve içerideki kişi bilgisini bildirin."
+    ],
+    "id": "AD-051",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Fan sesi gelmesini yeterli hava performansı saymayın.",
+      "Ölçüm gerektiren hacme kontrolsüz girmeyin."
+    ],
+    "reentry_tr": "Hava performansı ve gerekli atmosfer koşulları doğrulanınca.",
+    "requires_any_features": [
+      "critical_ventilation",
+      "confined_space"
+    ],
+    "site_field_keys": [
+      "havalandirma_alarmi",
+      "tehlikeli_proses",
+      "temiz_alan",
+      "olcum_ihtiyaci"
+    ],
+    "site_field_labels_tr": {
+      "havalandirma_alarmi": "Havalandirma alarmı",
+      "olcum_ihtiyaci": "Ölçüm ihtiyacı",
+      "tehlikeli_proses": "Tehlikeli proses",
+      "temiz_alan": "Temiz alan"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Kritik havalandırma kaybı",
+    "trigger_tr": "Zararlı ortamda fan veya hava performansı alarmı"
+  },
+  {
+    "after": [
+      "Sağlık ekibine güvenli devir ve olay kaydı yapın.",
+      "Kullanılan malzemeyi tamamlayıp yardım erişimindeki gecikmeleri düzeltin."
+    ],
+    "before": [
+      "İlkyardımcı, ilk yardım malzemesi ve varsa OED/AED yerini görünür tutun.",
+      "112 için açık adres, giriş ve karşılama noktasını hazırlayın."
+    ],
+    "content_version": 5,
+    "core": true,
+    "during_team": [
+      "İlkyardımcı eğitimine uygun bilinç/solunum değerlendirmesi ve gerekli desteği sağlasın.",
+      "OED/AED varsa cihazın yönlendirmesi ve eğitim sınırında kullanılsın; cihaz yoksa getirme çabası yardımı geciktirmesin.",
+      "Görevli ambulansı girişte karşılayıp sağlık ekibine olay ve yapılan işlemleri aktarsın."
+    ],
+    "during_worker": [
+      "Olay yerinin güvenliğini sağlayıp ilkyardımcıyı çağırın.",
+      "Bir kişiyi 112'yi aramak, diğerini varsa OED/AED ve malzemeyi getirmek için görevlendirin.",
+      "Kişiyi yalnız bırakmayın; 112'nin talimatlarını izleyin ve gereksiz hareket ettirmeyin."
+    ],
+    "id": "AD-052",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY",
+      "TR-FIRSTAID"
+    ],
+    "mode": "MEDICAL_RESPONSE",
+    "mode_label_tr": "İlkyardımcı ve acil sağlık desteği",
+    "prohibited": [
+      "Bilinçsiz kişiye ağızdan yiyecek, içecek veya ilaç vermeyin.",
+      "Eğitiminiz dışında tıbbi işlem veya teşhis yapmayın."
+    ],
+    "reentry_tr": "Ortam tehlikesi yoksa genel bina tahliyesi gerekmez; kişinin işe dönüşünü sağlık yetkilisi belirler.",
+    "requires_any_features": [],
+    "site_field_keys": [
+      "ilkyardimci",
+      "ilkyardim_kiti",
+      "OED_varsa_yeri",
+      "acik_adres",
+      "ambulans_karsilama"
+    ],
+    "site_field_labels_tr": {
+      "OED_varsa_yeri": "OED/AED varsa bulunduğu yer",
+      "acik_adres": "Açık adres",
+      "ambulans_karsilama": "Ambulans karşılama",
+      "ilkyardim_kiti": "İlkyardım kiti",
+      "ilkyardimci": "İlkyardımcı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Ciddi tıbbi acil durum",
+    "trigger_tr": "Ani bilinç kaybı, ciddi yaralanma veya yaşam tehdidi"
+  },
+  {
+    "after": [
+      "Sağlık kurumuna sevk bilgilerini yetkili ve gizli kayıtta tutun.",
+      "Ekipman ve alanı inceleme tamamlanmadan yeniden açmayın."
+    ],
+    "before": [
+      "Çoklu yaralı için sağlık ekibi erişim ve toplanma alanını belirleyin.",
+      "Yaralı sayımı ve bilgi iletimi görevlerini planlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi tehlikeli alanı ayırıp sağlık ekiplerine erişim açsın.",
+      "İlkyardımcılar eğitim ve 112 yönlendirmesiyle destek versin; tıbbi triyajı uzman sağlık ekibi yönetsin.",
+      "Koruma ekibi yaralı/eksik kişi bilgisini tek noktada toplasın."
+    ],
+    "during_worker": [
+      "İkinci kazaya maruz kalmadan kendinizi güvenli alana alın.",
+      "112'ye birden fazla yaralı olduğunu, yaklaşık sayıyı ve devam eden tehlikeyi bildirin.",
+      "Yaralıları gereksiz yere taşımayın; profesyonel yönlendirmeyi bekleyin."
+    ],
+    "id": "AD-053",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Eğitimsiz kişilere tıbbi triyaj görevi vermeyin.",
+      "Ambulans girişini meraklı kalabalıkla kapatmayın."
+    ],
+    "reentry_tr": "Olayın asıl kaynağı teknik olarak güvenli bulununca.",
+    "requires_any_features": [
+      "high_occupancy",
+      "bulk_chemicals",
+      "mining"
+    ],
+    "site_field_keys": [
+      "112_adres",
+      "yarali_toplanma",
+      "ambulans_erisim",
+      "sayim_sorumlusu"
+    ],
+    "site_field_labels_tr": {
+      "112_adres": "112 çağrısında verilecek açık adres",
+      "ambulans_erisim": "Ambulans erişim",
+      "sayim_sorumlusu": "Sayım sorumlusu",
+      "yarali_toplanma": "Yaralı toplanma"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Çoklu yaralanma",
+    "trigger_tr": "Birden fazla ağır yaralı"
+  },
+  {
+    "after": [
+      "Takibi sağlık biriminin planına göre sürdürün.",
+      "Kesici ve işlem tekniği nedenini inceleyin."
+    ],
+    "before": [
+      "Kesici atık ve maruziyet sonrası sağlık başvuru yolunu belirleyin.",
+      "Uygun el yıkama, göz yıkama ve koruyucuyu erişilebilir tutun."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Görevli kontamine kesici veya materyali güvenli atık düzenine alsın.",
+      "Sağlık birimi maruziyet sonrası değerlendirme ve takip gereksinimini belirlesin.",
+      "Sorumlu alanda ikinci maruziyeti önleyip uygun temizliği yönetsin."
+    ],
+    "during_worker": [
+      "İşlemi bırakıp maruziyeti gecikmeden bildirin.",
+      "Eğitimdeki uygun ilk temizleme yöntemini uygulayın; göz teması varsa ilgili yıkama düzenini kullanın.",
+      "Sağlık değerlendirmesine hızla başvurun; kaynak bilgisini gizlilikle yetkili birime iletin."
+    ],
+    "id": "AD-054",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY",
+      "TR-FIRSTAID"
+    ],
+    "mode": "MEDICAL_RESPONSE",
+    "mode_label_tr": "İlkyardımcı ve acil sağlık desteği",
+    "prohibited": [
+      "Yarayı sıkmayın veya aşındırıcı kimyasal sürmeyin.",
+      "Kişisel sağlık bilgilerini genel risk raporuna yazmayın."
+    ],
+    "reentry_tr": "Kontaminasyon temizlenip alan güvenli bulunduğunda; kişi için sağlık yönlendirmesi esastır.",
+    "requires_any_features": [
+      "biological",
+      "healthcare"
+    ],
+    "site_field_keys": [
+      "maruziyet_basvuru_yolu",
+      "yikama",
+      "kesici_atik",
+      "saglik_irtibat"
+    ],
+    "site_field_labels_tr": {
+      "kesici_atik": "Kesici atık",
+      "maruziyet_basvuru_yolu": "Maruziyet başvuru yolu",
+      "saglik_irtibat": "Sağlık irtibat",
+      "yikama": "Yıkama"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Biyolojik sıçrama veya kesici maruziyeti",
+    "trigger_tr": "Kan/vücut sıvısı temas bildirimi"
+  },
+  {
+    "after": [
+      "Yetkili numune/inceleme sürecine destek olun.",
+      "Kaynak giderilmeden ilgili gıdayı veya mutfak sürecini yeniden açmayın."
+    ],
+    "before": [
+      "Gıda tedarik, menü ve tüketim kayıtlarını erişilebilir tutun.",
+      "Toplu rahatsızlanma bildirim ve sağlık yönlendirmesini belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Sorumlu şüpheli gıdayı imha etmeden güvenli ayırsın ve kayıtları korusun.",
+      "Sağlık ekibi etkilenenleri değerlendirip yetkili sağlık otoritesiyle koordine olsun.",
+      "Gıda sorumlusu hazırlama, saklama ve servis noktalarını kontaminasyon yönünden inceletsin."
+    ],
+    "during_worker": [
+      "Benzer belirtileri ve ortak tüketimi sorumluya bildirin.",
+      "Şüpheli yiyecek/içecek tüketimini durdurun.",
+      "Ağır belirtilerde 112'ye etkilenen sayıyı ve durumu iletin."
+    ],
+    "id": "AD-055",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY",
+      "TR-FIRSTAID"
+    ],
+    "mode": "MEDICAL_RESPONSE",
+    "mode_label_tr": "İlkyardımcı ve acil sağlık desteği",
+    "prohibited": [
+      "Belirtileri bastırmak için gelişigüzel ilaç vermeyin.",
+      "Şüpheli ürünü kayıt tutulmadan atmayın."
+    ],
+    "reentry_tr": "Sağlık/gıda yetkilisinin kaynak ve hijyen değerlendirmesi sonrası.",
+    "requires_any_features": [
+      "kitchen",
+      "food_production"
+    ],
+    "site_field_keys": [
+      "menu_tuketim_kaydi",
+      "tedarikci",
+      "saglik_irtibat",
+      "supheli_urun_yeri"
+    ],
+    "site_field_labels_tr": {
+      "menu_tuketim_kaydi": "Menü tüketim kaydı",
+      "saglik_irtibat": "Sağlık irtibat",
+      "supheli_urun_yeri": "Şüpheli ürün yeri",
+      "tedarikci": "Tedarikçi"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Şüpheli toplu gıda zehirlenmesi",
+    "trigger_tr": "Aynı tüketim sonrası çoklu rahatsızlanma"
+  },
+  {
+    "after": [
+      "Tedbirleri sağlık otoritesi yönlendirmesiyle güncelleyin.",
+      "Kişisel sağlık kayıtlarını genel rapordan ayrı ve yetkili erişimde tutun."
+    ],
+    "before": [
+      "Sağlık otoritesi iletişimi ve işyeri bilgilendirme düzenini kurun.",
+      "Havalandırma, hijyen ve hastalık bildirimini planlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "İşyeri hekimi/yetkili sağlık birimi risk ve takip gereksinimini değerlendirsin.",
+      "İşveren havalandırma, temizlik ve çalışma düzenini sağlık önerisine göre uyarlasın.",
+      "Olay koordinatörü doğrulanmış bilgiyi çalışanlara anlaşılır biçimde iletsin."
+    ],
+    "during_worker": [
+      "İlişkili hastalık veya resmî uyarıyı yetkili sorumluya bildirin.",
+      "Belirti gösteren kişi için mahremiyeti koruyan sağlık yönlendirmesini izleyin.",
+      "İşyerinin bulaş azaltma tedbirlerine uyun; doğrulanmamış kişisel bilgileri paylaşmayın."
+    ],
+    "id": "AD-056",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Her hastalık bildirimi için otomatik bina tahliyesi başlatmayın.",
+      "Kişileri tanı veya söylentiye göre damgalamayın."
+    ],
+    "reentry_tr": "Hastalık türüne özgü sağlık otoritesi ve işyeri hekimi yönlendirmesine göre.",
+    "requires_any_features": [
+      "biological",
+      "healthcare"
+    ],
+    "site_field_keys": [
+      "saglik_irtibat",
+      "bilgilendirme_kanali",
+      "havalandirma",
+      "mahrem_basvuru"
+    ],
+    "site_field_labels_tr": {
+      "bilgilendirme_kanali": "Bilgilendirme kanalı",
+      "havalandirma": "Havalandirma",
+      "mahrem_basvuru": "Mahrem başvuru",
+      "saglik_irtibat": "Sağlık irtibat"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Salgın şüphesi",
+    "trigger_tr": "Yetkili sağlık uyarısı veya ilişkili çoklu hastalık"
+  },
+  {
+    "after": [
+      "Maruziyet ihtimalini yetkili sağlık/radyasyon ekibi değerlendirsin.",
+      "Kaynak kontrolü ve olay kaydını ilgili düzenlemeye göre tamamlayın."
+    ],
+    "before": [
+      "Kaynak envanteri ve radyasyon güvenliği sorumlusunu belirleyin.",
+      "Olayda yetkili bildirim zincirini hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Radyasyon güvenliği sorumlusu alanı ve erişim sınırını belirlesin.",
+      "Yetkili teknik/kurumsal bildirimler ve gerektiğinde 112 koordinasyonu sağlansın.",
+      "Yalnız yetkilendirilmiş uzman ekip ölçüm ve kaynak kontrolünü yürütsün."
+    ],
+    "during_worker": [
+      "Kaynak kaybı/hasarı veya alarmı bildirip uzaklaşın.",
+      "Kaynağı aramak, taşımak veya koruyucuyu açmak için yaklaşmayın.",
+      "Yaklaşan kişileri güvenli mesafeden uyarın."
+    ],
+    "id": "AD-057",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Kaynağı sıradan atık veya metal parça sanıp almayın.",
+      "Genel işyeri maskesini radyasyon kalkanı saymayın."
+    ],
+    "reentry_tr": "Yetkili radyasyon güvenliği değerlendirmesi ve kurum talimatıyla.",
+    "requires_any_features": [
+      "ionizing"
+    ],
+    "site_field_keys": [
+      "kaynak_kodu",
+      "radyasyon_sorumlusu",
+      "bildirim_zinciri",
+      "erisim_siniri"
+    ],
+    "site_field_labels_tr": {
+      "bildirim_zinciri": "Bildirim zinciri",
+      "erisim_siniri": "Erişim sınırı",
+      "kaynak_kodu": "Kaynak kodu",
+      "radyasyon_sorumlusu": "Radyasyon sorumlusu"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Radyasyon kaynağı olayı",
+    "trigger_tr": "Kaynak kaybı, hasar veya radyasyon alarmı"
+  },
+  {
+    "after": [
+      "Quench hattı, oda basıncı ve oksijen koşullarını teknik inceleyin.",
+      "MR tekrar kullanımını yetkili servis ve klinik karara bağlayın."
+    ],
+    "before": [
+      "MR kontrollü erişim, quench hattı ve oksijen alarmını belirleyin.",
+      "MR uyumlu kurtarma/taşıma donanımını planlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "MR yetkilisi üretici acil prosedürünü uygulasın.",
+      "Görevliler MR uygunluğu olmayan tüp, sedye ve aleti kontrollü alana sokmasın.",
+      "Uzman ekip atmosfer ve magnet durumunu değerlendirirken sağlık ekibi güvenli bölgede hazır olsun."
+    ],
+    "during_worker": [
+      "Gaz boşalması veya alarmda MR odasından güvenli çıkışı kullanın.",
+      "Buhar bulutuna veya mıknatıs odasına geri girmeyin.",
+      "İçeride kalan kişi ve sistem durumunu MR görevlisine bildirin."
+    ],
+    "id": "AD-058",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Magnetin artık güvenli olduğunu gaz boşalmasına bakarak varsaymayın.",
+      "Eğitimsiz kişi acil magnet düğmesine müdahale etmesin."
+    ],
+    "reentry_tr": "MR yetkilisi/servis ve atmosfer güvenliği değerlendirmesi sonrası.",
+    "requires_any_features": [
+      "magnetic_field"
+    ],
+    "site_field_keys": [
+      "MR_yetkilisi",
+      "quench_hatti",
+      "oksijen_alarmi",
+      "MR_uyumlu_kurtarma"
+    ],
+    "site_field_labels_tr": {
+      "MR_uyumlu_kurtarma": "MR ortamına uygun kurtarma düzeni",
+      "MR_yetkilisi": "MR yetkilisi",
+      "oksijen_alarmi": "Oksijen alarmı",
+      "quench_hatti": "MR quench tahliye hattı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "MR quench veya gaz olayı",
+    "trigger_tr": "MR gaz boşalması veya oksijen alarmı"
+  },
+  {
+    "after": [
+      "Kişiyi sağlık değerlendirmesine yönlendirin.",
+      "Kıyı koruması ve kurtarma ekipmanını yeniden kontrol edin."
+    ],
+    "before": [
+      "Kıyıdan erişilebilen can kurtarma ekipmanını belirleyin.",
+      "Su üstü kurtarma ve dış yardım konum bilgisini hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Görevli kıyı erişimini ve ikinci düşme riskini yönetsin.",
+      "Eğitimli kurtarma ekibi su koşullarına uygun yöntemle müdahale etsin.",
+      "İlkyardımcı çıkarılan kişiye eğitimine ve 112 yönlendirmesine göre desteklesin."
+    ],
+    "during_worker": [
+      "Kişinin düştüğü yeri gözden kaybetmeden alarm verin.",
+      "Güvenli kıyıdan uygun uzatma veya atma ekipmanını eğitim sınırında kullanın.",
+      "112'ye suya düşme, yer ve akıntı bilgisini verin."
+    ],
+    "id": "AD-059",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Eğitimsiz ve donanımsız şekilde suya atlamayın.",
+      "Akıntı veya emiş alanına plansız yaklaşmayın."
+    ],
+    "reentry_tr": "Kıyı/erişim koşulu ve kurtarma donanımı güvenli hale geldiğinde.",
+    "requires_any_features": [
+      "waterfront"
+    ],
+    "site_field_keys": [
+      "kiyi_konumu",
+      "atma_uzatma_ekipmani",
+      "akinti",
+      "kurtarma_ekibi"
+    ],
+    "site_field_labels_tr": {
+      "akinti": "Akıntı",
+      "atma_uzatma_ekipmani": "Atma uzatma ekipmani",
+      "kiyi_konumu": "Kıyı konumu",
+      "kurtarma_ekibi": "Kurtarma ekibi"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Suya düşme",
+    "trigger_tr": "Kişinin rıhtım veya tekneden suya düşmesi"
+  },
+  {
+    "after": [
+      "Araç ve yol düzenini olay incelemesine alın.",
+      "Yük ve sızıntılar güvenli hale gelmeden yolu açmayın."
+    ],
+    "before": [
+      "Trafik durdurma ve güvenli sağlık erişim noktalarını belirleyin.",
+      "Araç yakıt/batarya ve yük bilgisini erişilebilir tutun."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Görevli araç akışını güvenli planla durdursun.",
+      "Teknik/kurtarma ekibi aracın hareket, yük ve enerji tehlikesini kontrol etsin.",
+      "İlkyardımcı güvenli erişimden sonra eğitim ve sağlık yönlendirmesiyle desteklesin."
+    ],
+    "during_worker": [
+      "İkinci çarpışmaya karşı güvenli yerde durup alarm verin.",
+      "Trafik güvenliği sağlanmadan yaralıya yaklaşmayın.",
+      "112'ye konum, araç türü, sıkışma ve yaralı sayısını bildirin."
+    ],
+    "id": "AD-060",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Yaralıyı araçtan zorla çekmeyin.",
+      "Trafikte görünmez ve korunmasız şekilde durmayın."
+    ],
+    "reentry_tr": "Araç/yük/enerji güvenliği ve saha trafik sorumlusunun kararıyla.",
+    "requires_any_features": [
+      "motorcycle",
+      "vehicle",
+      "forklift"
+    ],
+    "site_field_keys": [
+      "kaza_konumu",
+      "trafik_durdurma",
+      "arac_enerjisi",
+      "ambulans_erisim"
+    ],
+    "site_field_labels_tr": {
+      "ambulans_erisim": "Ambulans erişim",
+      "arac_enerjisi": "Araç enerjisi",
+      "kaza_konumu": "Kaza konumu",
+      "trafik_durdurma": "Trafik durdurma"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Araç-yaya ağır kazası",
+    "trigger_tr": "Çarpma, devrilme veya sıkışma"
+  },
+  {
+    "after": [
+      "Kaldırma ve istif düzenini teknik incelemeye alın.",
+      "Konteyner içeriği tehlikeliyse kimyasal senaryo ve yetkili bildirimi ekleyin."
+    ],
+    "before": [
+      "Liman operasyonu yük ve hareket sınırını belirleyin.",
+      "Kurtarma ekibine verilecek konteyner/yük bilgisini hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Vinç ve araç operasyonunu yetkili tek komuta ile durdurun.",
+      "Uzman ekip yükü ve komşu istifi güvenli destekle stabilize etsin.",
+      "Koruma ekibi liman yollarını ve sağlık erişimini ayrı yönetsin."
+    ],
+    "during_worker": [
+      "Düşen veya salınan yükün etki alanından uzaklaşın.",
+      "Konteyner/askı altına kişi aramak için girmeyin.",
+      "Operasyon sorumlusuna ve 112'ye eksik kişi ve yük konumunu bildirin."
+    ],
+    "id": "AD-061",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Kararsız konteyneri doğaçlama araçla itmeyin.",
+      "Diğer vinçlerle plansız kaldırma yapmayın."
+    ],
+    "reentry_tr": "Liman operasyonu, kaldırma ve yük güvenliği yetkililerinin kararıyla.",
+    "requires_any_features": [
+      "port"
+    ],
+    "site_field_keys": [
+      "konteyner_yuk_bilgisi",
+      "vinc_kodu",
+      "operasyon_sorumlusu",
+      "saglik_yolu"
+    ],
+    "site_field_labels_tr": {
+      "konteyner_yuk_bilgisi": "Konteyner yük bilgisi",
+      "operasyon_sorumlusu": "Operasyon sorumlusu",
+      "saglik_yolu": "Sağlık yolu",
+      "vinc_kodu": "Vinç kodu"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Liman yük olayı",
+    "trigger_tr": "Konteyner veya askı yükü düşmesi"
+  },
+  {
+    "after": [
+      "Etkilenenlere gizli profesyonel destek erişimi sağlayın.",
+      "Olay ve erişim düzenini inceleyip tekrarını önleyin."
+    ],
+    "before": [
+      "Yardım alarmı ve güvenli uzaklaşma/korunma yerini belirleyin.",
+      "Şiddet riski yüksek görevlerde yalnız çalışmayı değerlendirin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Görevli güvenlik ekibi yalnız yetki ve eğitim sınırında alanı yönetsin.",
+      "Olay yöneticisi diğer çalışanları tehlikeli güzergâhtan uzak tutsun.",
+      "Sağlık ve kolluk ekiplerine güvenli erişim sağlansın."
+    ],
+    "during_worker": [
+      "Tehditle tartışmayı büyütmeden güvenli mesafeye geçin.",
+      "Güvenli kaçış varsa uzaklaşın; yoksa güvenli yerde korunup erişimi sınırlandırın.",
+      "Güvenli yerden 112'ye konum ve tehdidi bildirin."
+    ],
+    "id": "AD-062",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SECURITY_PROTECTION",
+    "mode_label_tr": "Güvenlik olayında korunma",
+    "prohibited": [
+      "Çalışanları saldırganı yakalamaya göndermeyin.",
+      "Güvenli değilse olayı görüntülemek için yaklaşmayın."
+    ],
+    "reentry_tr": "Kolluk/olay yöneticisinin tehdidin sona erdiğini bildirmesiyle.",
+    "requires_any_features": [
+      "security_exposure",
+      "public_area"
+    ],
+    "site_field_keys": [
+      "yardim_alarmi",
+      "guvenli_korunma",
+      "112_konum",
+      "guvenlik_irtibat"
+    ],
+    "site_field_labels_tr": {
+      "112_konum": "112 çağrısında bildirilecek konum",
+      "guvenli_korunma": "Güvenli korunma",
+      "guvenlik_irtibat": "Güvenlik irtibat",
+      "yardim_alarmi": "Yardım alarmı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Şiddet veya saldırı",
+    "trigger_tr": "Fiilî saldırı ya da yakın ciddi tehdit"
+  },
+  {
+    "after": [
+      "Kolluk talimatına göre erişim sınırını koruyun.",
+      "Olay kaydı ve bildirim sürecini değerlendirin."
+    ],
+    "before": [
+      "Şüpheli nesne bildirim zincirini belirleyin.",
+      "Kollukla koordine alan ayırma ve alternatif yol planını hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Koruma ekibi erişimi kapatıp yetkili kolluğu beklesin.",
+      "Olay yöneticisi tahliye/korunma kararını kolluk yönlendirmesiyle uygulasın.",
+      "Görevli paketin görüldüğü yer ve zamanı kayda alsın."
+    ],
+    "during_worker": [
+      "Pakete dokunmayın, açmayın veya yerini değiştirmeyin.",
+      "Yakın çevreyi sakin biçimde uzaklaştırın.",
+      "Güvenli noktadan sorumluya ve 112'ye konum bilgisini verin."
+    ],
+    "id": "AD-063",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SECURITY_PROTECTION",
+    "mode_label_tr": "Güvenlik olayında korunma",
+    "prohibited": [
+      "Paketi taşımayın veya test etmeyin.",
+      "Çalışanlara cihaz araştırma ya da etkisizleştirme görevi vermeyin."
+    ],
+    "reentry_tr": "Yetkili kolluğun alanı güvenli ilan etmesiyle.",
+    "requires_any_features": [
+      "security_exposure"
+    ],
+    "site_field_keys": [
+      "paket_konumu",
+      "bildirim_sorumlusu",
+      "alternatif_yol",
+      "kolluk_irtibat"
+    ],
+    "site_field_labels_tr": {
+      "alternatif_yol": "Alternatif yol",
+      "bildirim_sorumlusu": "Bildirim sorumlusu",
+      "kolluk_irtibat": "Kolluk irtibat",
+      "paket_konumu": "Paket konumu"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Şüpheli paket",
+    "trigger_tr": "Kaynağı belirsiz ve şüpheli paket bildirimi"
+  },
+  {
+    "after": [
+      "Yetkili inceleme tamamlanana kadar erişimi kapalı tutun.",
+      "Bildirim ve tahliye performansını değerlendirin."
+    ],
+    "before": [
+      "İhbar alan personel için bilgi kayıt ve bildirim düzenini hazırlayın.",
+      "Kollukla koordine tahliye alternatiflerini belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi kollukla kararı ve güvenli güzergâhı koordine etsin.",
+      "Koruma ekibi girişleri ve toplanmayı verilen talimata göre yönetsin.",
+      "İletişim görevlisi kaydı yetkililere teslim etsin; çalışanları şüpheli nesneye müdahaleye göndermesin."
+    ],
+    "during_worker": [
+      "İhbarı sakinlikle alın; bilinen söz, zaman ve iletişim bilgisini kaydedin.",
+      "Güvenli biçimde sorumluya ve 112'ye bildirin.",
+      "Yetkili tahliye/korunma talimatına uyun; söylenti yaymayın."
+    ],
+    "id": "AD-064",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SECURITY_PROTECTION",
+    "mode_label_tr": "Güvenlik olayında korunma",
+    "prohibited": [
+      "İhbarı şaka kabul ederek yok saymayın.",
+      "Şüpheli nesne bulmak için plansız arama ekibi kurmayın."
+    ],
+    "reentry_tr": "Kolluk ve olay yöneticisi güvenli dönüş bildirdiğinde.",
+    "requires_any_features": [
+      "security_exposure"
+    ],
+    "site_field_keys": [
+      "ihbar_kayit_formu",
+      "kolluk_irtibat",
+      "tahliye_alternatifleri",
+      "iletisim_sorumlusu"
+    ],
+    "site_field_labels_tr": {
+      "ihbar_kayit_formu": "İhbar kayıt formu",
+      "iletisim_sorumlusu": "İletişim sorumlusu",
+      "kolluk_irtibat": "Kolluk irtibat",
+      "tahliye_alternatifleri": "Tahliye alternatifleri"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Bomba ihbarı",
+    "trigger_tr": "Tehdit bildirimi"
+  },
+  {
+    "after": [
+      "Dış ortam güvenliği teyidinden sonra binanın havalandırılmasını teknik ekip yönetsin.",
+      "Etkilenme şüphesini sağlık birimine iletin."
+    ],
+    "before": [
+      "Dış toksik yayılımda korunma alanı ve havalandırma kontrolünü belirleyin.",
+      "Resmî uyarı kanalını ve bina sızdırmazlık sınırlamalarını tanıyın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik görevli dış hava alımını tesisin güvenli planına göre yönetsin.",
+      "Olay yöneticisi yetkili kurumdan bulut ve alternatif tahliye bilgisini alsın.",
+      "Görevliler korunma alanı kişi sayısı ve özel destek gereksinimini koordine etsin."
+    ],
+    "during_worker": [
+      "Yetkili sığınma uyarısında belirlenen kapalı korunma alanına geçin.",
+      "Dış kapı ve pencereleri güvenli biçimde kapatın; dışarıdaki buluta doğru tahliye olmayın.",
+      "Yer ve kişi durumunu görevliye bildirin; resmî talimatı izleyin."
+    ],
+    "id": "AD-065",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SHELTER_IN_PLACE",
+    "mode_label_tr": "Güvenli yerde korunma",
+    "prohibited": [
+      "Her dış kimyasal olayda otomatik açık alan toplanmasına çıkmayın.",
+      "HVAC'yi kapatırken yaşam desteği veya kritik proses etkisini göz ardı etmeyin."
+    ],
+    "reentry_tr": "Yetkili dış uyarının kalkması ve gerekli iç ortam değerlendirmesiyle.",
+    "requires_any_features": [
+      "adjacent_hazard"
+    ],
+    "site_field_keys": [
+      "korunma_alani",
+      "dis_hava_kontrolu",
+      "resmi_uyari",
+      "alternatif_tahliye"
+    ],
+    "site_field_labels_tr": {
+      "alternatif_tahliye": "Alternatif tahliye",
+      "dis_hava_kontrolu": "Dış hava kontrolü",
+      "korunma_alani": "Korunma alanı",
+      "resmi_uyari": "Resmî uyarı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Dış toksik bulut",
+    "trigger_tr": "Yetkili uyarı veya komşu tesisten toksik yayılım"
+  },
+  {
+    "after": [
+      "Komşu olay etkisini yapı, ortam ve tesisat bakımından inceleyin.",
+      "Ortak iletişim planını yaşanan gecikmelere göre güncelleyin."
+    ],
+    "before": [
+      "Komşu tesis irtibatı ve etki senaryolarını hazırlayın.",
+      "Sığınma ve tahliye alternatiflerini ayrı tanımlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Olay yöneticisi komşu tesis ve yetkili kurumdan doğrulanmış bilgi alsın.",
+      "Teknik ekip yangın, toksik bulut veya basınç etkisine göre güvenli işletme durumunu değerlendirsin.",
+      "Görevliler sayım ve yardıma ihtiyacı olan kişilerin durumunu takip etsin."
+    ],
+    "during_worker": [
+      "Komşu alarmını veya resmî uyarıyı sorumluya bildirin.",
+      "Görmek için tesis sınırına yaklaşmayın.",
+      "Olay türüne göre verilen korunma/tahliye kararını izleyin."
+    ],
+    "id": "AD-066",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Alarmın türünü tahmin ederek yanlış yönde tahliye etmeyin.",
+      "Komşu tesise yardım için eğitimsiz ekip göndermeyin."
+    ],
+    "reentry_tr": "Yetkili kurum ve işyeri teknik değerlendirmesinin ortak kararıyla.",
+    "requires_any_features": [
+      "adjacent_hazard"
+    ],
+    "site_field_keys": [
+      "komsu_irtibat",
+      "etki_senaryosu",
+      "siginma",
+      "alternatif_toplanma"
+    ],
+    "site_field_labels_tr": {
+      "alternatif_toplanma": "Alternatif toplanma",
+      "etki_senaryosu": "Etki senaryosu",
+      "komsu_irtibat": "Komşu irtibat",
+      "siginma": "Sığınma"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Komşu tesis büyük kazası",
+    "trigger_tr": "Komşu tesisin alarmı veya resmî uyarı"
+  },
+  {
+    "after": [
+      "Kirli malzeme ve suyu yetkin atık planıyla yönetin.",
+      "Salım nedeni ve tutma kapasitesini düzeltin."
+    ],
+    "before": [
+      "Drenaj ve yüzey suyu bağlantılarını plan üzerinde gösterin.",
+      "Kimyasala uygun çevresel salım müdahale sınırını belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Eğitimli ekip yalnız güvenliyse kaynağı durdurup uyumlu sistemle yayılımı sınırlasın.",
+      "Çevre sorumlusu drenaj/su etkisini ve gerekli yetkili bildirimleri yönetsin.",
+      "Kimlik veya miktar belirsizse uzman kimyasal müdahale ekibine geçin."
+    ],
+    "during_worker": [
+      "Salımı ve akış yönünü güvenli yerden bildirin.",
+      "Sıvıyla temas etmeyin ve yayılım alanına girmeyin.",
+      "Etkilenen kişi veya büyük tehlike varsa 112'yi bilgilendirin."
+    ],
+    "id": "AD-067",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "LOCAL_ISOLATION",
+    "mode_label_tr": "Yerel alanı ayırma",
+    "prohibited": [
+      "Salımı kanalizasyona yıkamayın.",
+      "Kimyasal uyumu bilinmeyen emici veya nötralizan kullanmayın."
+    ],
+    "reentry_tr": "Temizlik ve maruziyet/çevre kontrolleri uygun bulununca.",
+    "requires_any_features": [
+      "bulk_chemicals",
+      "hazardous_chemicals"
+    ],
+    "site_field_keys": [
+      "drenaj_plani",
+      "kimyasal",
+      "uyumlu_bariyer",
+      "cevre_sorumlusu"
+    ],
+    "site_field_labels_tr": {
+      "cevre_sorumlusu": "Çevre sorumlusu",
+      "drenaj_plani": "Drenaj planı",
+      "kimyasal": "Kimyasal",
+      "uyumlu_bariyer": "Uyumlu bariyer"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Çevreye tehlikeli sıvı yayılması",
+    "trigger_tr": "Drenaja veya çevreye kontrolsüz tehlikeli salım"
+  },
+  {
+    "after": [
+      "Sistem geri geldiğinde işlev testini kaydedin.",
+      "Kesinti kapatma ve normalleşmeyi tüm ilgili birimlere bildirin."
+    ],
+    "before": [
+      "Yangın sistem kesinti izin ve geçici koruma planını hazırlayın.",
+      "Koruma kaybında durdurulacak yüksek riskli işleri belirleyin."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Teknik görevli arızayı ve etkilenen bölgeyi sınırlandırsın.",
+      "Olay yöneticisi geçici tedbir yetersizse işi durdursun veya alanı boşaltsın.",
+      "Görevliler sıcak iş ve yanıcı yük artışını kısıtlayıp onarımı önceliklendirsin."
+    ],
+    "during_worker": [
+      "Algılama veya söndürme kaybını görevliye bildirin.",
+      "Geçici yangın gözetimi ve çalışma kısıtlarına uyun.",
+      "Yangın belirtisinde arızalı sistemi beklemeden güvenli alarm/112 yolunu kullanın."
+    ],
+    "id": "AD-068",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "CONTROLLED_SHUTDOWN",
+    "mode_label_tr": "Yetkili kontrollü durdurma",
+    "prohibited": [
+      "Geçici gözetimi süresiz kalıcı çözüm yapmayın.",
+      "Sistemin enerjisi geldi diye çalıştığını varsaymayın."
+    ],
+    "reentry_tr": "Koruma işlevi test edilmiş ve kesinti sorumlusu normalleşmeyi bildirmişse.",
+    "requires_any_features": [
+      "fire_system_outage"
+    ],
+    "site_field_keys": [
+      "etkilenen_sistem",
+      "kesinti_izni",
+      "gecici_koruma",
+      "onarim_sorumlusu"
+    ],
+    "site_field_labels_tr": {
+      "etkilenen_sistem": "Etkilenen sistem",
+      "gecici_koruma": "Geçici koruma",
+      "kesinti_izni": "Kesinti izni",
+      "onarim_sorumlusu": "Onarım sorumlusu"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Yangın sistemi hizmet dışı",
+    "trigger_tr": "Kritik algılama veya söndürme kaybı"
+  },
+  {
+    "after": [
+      "Sayım sonucunu tek kayıt noktasında tutun.",
+      "Çıkış ve haberleşme sorunlarını olay/tatbikat sonrası düzeltin."
+    ],
+    "before": [
+      "Güncel çıkış, toplanma ve sayım görevlerini belirleyin.",
+      "Personel, yüklenici ve ziyaretçileri kapsayan kayıt düzeni kurun."
+    ],
+    "content_version": 5,
+    "core": true,
+    "during_team": [
+      "Görevliler yalnız güvenli sınırda tahliye akışını ve özel desteği yönetsin.",
+      "Sayım sorumlusu bulunanları kayıtlarla eşleştirsin; eksik kişinin son bilinen yerini kaydetsin.",
+      "Olay yöneticisi eksik kişi bilgisini profesyonel kurtarma ekibine iletsin; çalışanları geri göndermesin."
+    ],
+    "during_worker": [
+      "Tahliye alarmı, yetkili talimat veya yakın ciddi tehlikede işi güvenli biçimde bırakın.",
+      "Güvenli çıkıştan ayrılın; normal asansörü kullanmayın ve eşya toplamak için dönmeyin.",
+      "Toplanma yerinde sayım sorumlusuna kendinizi bildirin; yerinizi habersiz değiştirmeyin."
+    ],
+    "id": "AD-069",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Eksik kişiyi aramak için binaya geri girmeyin.",
+      "Toplanma yerini olay etkisi altında olduğu halde kullanmayın."
+    ],
+    "reentry_tr": "Olay türüne özgü teknik/kurumsal güvenli dönüş izniyle.",
+    "requires_any_features": [],
+    "site_field_keys": [
+      "alarm_talimat",
+      "guvenli_cikis",
+      "toplanma",
+      "sayim_listesi",
+      "alternatif_alan"
+    ],
+    "site_field_labels_tr": {
+      "alarm_talimat": "Alarm talimat",
+      "alternatif_alan": "Alternatif alan",
+      "guvenli_cikis": "Güvenli çıkış",
+      "sayim_listesi": "Sayım listesi",
+      "toplanma": "Toplanma"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Tahliye, sayım ve eksik kişi bildirimi",
+    "trigger_tr": "Tahliye alarmı, yetkili tahliye talimatı veya bulunduğu yerde kalmayı tehlikeli kılan olay."
+  },
+  {
+    "after": [
+      "Kişiyle birlikte yöntemin işe yarayıp yaramadığını değerlendirin.",
+      "Yardımcı yokluğu veya ekipman sorununa göre planı güncelleyin."
+    ],
+    "before": [
+      "Yardım ihtiyacını kişiye danışarak ve mahremiyetle belirleyin.",
+      "Asıl/yedek yardımcı ve uygun tahliye aracını planlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Eğitimli yardımcılar kişiye uygun ve planlanmış yöntemi uygulasın.",
+      "Görevli kullanılan bekleme alanının güvenlik koşulunu olay türüne göre kontrol etsin.",
+      "Olay yöneticisi yardım tamamlanmasını sayım ve profesyonel kurtarmayla koordine etsin."
+    ],
+    "during_worker": [
+      "Tahliye alarmında önceden kararlaştırılan yardım yöntemini izleyin.",
+      "Yardımın nerede gerektiğini görevliye bildirin; güvenli olmayan yola tek başınıza ilerlemeyin.",
+      "Belirlenmiş güvenli bekleme kullanılıyorsa konumunuzu ve iletişimi koruyun."
+    ],
+    "id": "AD-070",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "EVACUATE",
+    "mode_label_tr": "Güvenli tahliye",
+    "prohibited": [
+      "Kişiyi eğitimsizce kucağa alıp merdivenden taşımayın.",
+      "Normal asansörü tahliye aracı kabul etmeyin; yalnız tasarlanmış ve yetkili plana bağlı sistem istisnadır."
+    ],
+    "reentry_tr": "Olay izinleri ve erişilebilir güzergâh güvenliği sağlandığında.",
+    "requires_any_features": [
+      "support_needs"
+    ],
+    "site_field_keys": [
+      "yardim_plani",
+      "asil_yedek",
+      "tahliye_araci",
+      "guvenli_bekleme",
+      "iletisim"
+    ],
+    "site_field_labels_tr": {
+      "asil_yedek": "Asıl / yedek görevli",
+      "guvenli_bekleme": "Güvenli bekleme",
+      "iletisim": "İletişim",
+      "tahliye_araci": "Tahliye aracı",
+      "yardim_plani": "Yardım planı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Erişilebilirlik desteği gereken tahliye",
+    "trigger_tr": "Tahliye gereği ve bireysel yardım ihtiyacı"
+  },
+  {
+    "after": [
+      "Atmosfer, su ve tahkimat durumunu yetkin ekip değerlendirsin.",
+      "Genel bina kartı yerine maden özel planını güncelleyin."
+    ],
+    "before": [
+      "Madenin özel güvenlik ve acil planını esas alın.",
+      "Alarm, kaçış ve profesyonel kurtarma irtibatını vardiyada tanıtın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Maden yetkilisi işletmeye özgü havalandırma, enerji ve tahliyeyi yönetsin.",
+      "Vardiya sorumlusu yeraltı kişi sayımını ve son konumları profesyonel ekibe aktarsın.",
+      "Yalnız yetkili maden kurtarma ekibi özel planla müdahale etsin."
+    ],
+    "during_worker": [
+      "Atmosfer veya su alarmında işletmenin belirlenmiş geri çekilme talimatını uygulayın.",
+      "Belirlenmiş kaçış yolunda ilerleyip gözetim noktasına durumunuzu bildirin.",
+      "Kapalı veya gazlı alana ekip arkadaşını aramak için geri dönmeyin."
+    ],
+    "id": "AD-071",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "SPECIALIST_RESPONSE",
+    "mode_label_tr": "Uzman müdahalesi/kurtarma",
+    "prohibited": [
+      "Genel sihirbaz kartını maden kurtarma prosedürü yerine kullanmayın.",
+      "Yetkisiz yeniden giriş yapmayın."
+    ],
+    "reentry_tr": "Maden yetkilisi ve özel mevzuat/prosedür kapsamındaki güvenli giriş kararıyla.",
+    "requires_any_features": [
+      "mining"
+    ],
+    "site_field_keys": [
+      "maden_ozel_plani",
+      "yer_alti_sayimi",
+      "kacis",
+      "kurtarma_irtibat"
+    ],
+    "site_field_labels_tr": {
+      "kacis": "Kaçış",
+      "kurtarma_irtibat": "Kurtarma irtibat",
+      "maden_ozel_plani": "Maden özel planı",
+      "yer_alti_sayimi": "Yer altı sayımı"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "Madende atmosfer veya su olayı",
+    "trigger_tr": "Maden özel alarmı veya ani giriş"
+  },
+  {
+    "after": [
+      "Sistem geri döndüğünde komut ve saha durumunu eşleştirin.",
+      "Bekleyen otomatik komutları kontrol etmeden yeniden başlatmayın."
+    ],
+    "before": [
+      "İletişim ve otomasyon kaybında kullanılacak yedek kanalı belirleyin.",
+      "Kritik prosesin yerel güvenli duruş talimatını hazırlayın."
+    ],
+    "content_version": 5,
+    "core": false,
+    "during_team": [
+      "Yetkili operatör güvenli yerel/bağımsız duruş yöntemini uygulasın.",
+      "Olay yöneticisi telsiz, basılı liste ve fiziksel sayım gibi yedek iletişimi başlatsın.",
+      "Teknik ekip otomasyon ve güvenlik sisteminin ayrı durumlarını değerlendirip kontrollü toparlamayı yönetsin."
+    ],
+    "during_worker": [
+      "Kontrol veya iletişim kaybını mümkün olan yedek kanaldan bildirin.",
+      "Durumu bilinmeyen makine/prosesten güvenli uzaklıkta kalın.",
+      "Talimat ve güvenlik işlevi olmadan üretime devam etmeyin."
+    ],
+    "id": "AD-072",
+    "legal_topic_ids": [
+      "TR6331",
+      "TR-EMERGENCY"
+    ],
+    "mode": "CONTROLLED_SHUTDOWN",
+    "mode_label_tr": "Yetkili kontrollü durdurma",
+    "prohibited": [
+      "Sadece ekran geldi diye prosesin güvenli olduğunu varsaymayın.",
+      "Güvenlik kilitlerini iletişim yok diye köprülemeyin."
+    ],
+    "reentry_tr": "Saha durumu, güvenlik işlevleri ve kontrollü yeniden başlatma teyit edilince.",
+    "requires_any_features": [
+      "critical_automation"
+    ],
+    "site_field_keys": [
+      "yedek_kanal",
+      "yerel_durus",
+      "kritik_proses",
+      "sayim",
+      "teknik_sorumlu"
+    ],
+    "site_field_labels_tr": {
+      "kritik_proses": "Kritik proses",
+      "sayim": "Sayım",
+      "teknik_sorumlu": "Teknik sorumlu",
+      "yedek_kanal": "Yedek kanal",
+      "yerel_durus": "Yerel duruş"
+    },
+    "source_scope": "original_editorial_synthesis_not_verbatim_standard",
+    "title_tr": "İletişim ve otomasyon kaybı",
+    "trigger_tr": "Kritik haberleşme veya kontrol altyapısının kesilmesi"
+  }
+]

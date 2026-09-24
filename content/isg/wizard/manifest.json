@@ -1,0 +1,33 @@
+{
+  "catalog_sha256": "deb614a951066b588ddc3ea1cbff2c34b585cb44bec64a9cc6520f726a8ef45e",
+  "catalog_version": "isgada-v5.0.0",
+  "files": {
+    "App/WizardAssets/isg_wizard/engine.js": "e1aeab18e2a5366f8f66536a0b01eac662924f9543ad2806c13aaf07040cca5b",
+    "App/WizardAssets/isg_wizard/export.js": "b989bc65bfa6db01e2db801e669d43e640ac6b1738c2a54af7bc462708b25605",
+    "App/WizardAssets/isg_wizard/isgada-catalog.json": "541f84e7263afcdd89ddcab2c0eb881c4486b953911867f7854cdefc322904d9",
+    "content/isg/wizard/06_RISK_KATALOGU.md": "1c1976a60ea5c3e811a4ef2ad877aee61d9adbf2c5c126d86e93ca91f49a4225",
+    "content/isg/wizard/07_ACIL_DURUM_KARTLARI.md": "599f7728c7cae870e64e50b355cfcc7ce91cec7d62526ad939e5294577c10165",
+    "content/isg/wizard/08_TAKSONOMI_VE_ESLEMELER.md": "51bcd6f59e257c7491fdd6c1052f94d464567713680bc6ac10a877821b28fff8",
+    "content/isg/wizard/README.md": "70bea1cd9e8e057f1e7069cc0a5ea5e66db9791d85d5dc86e655e79341afc13a",
+    "content/isg/wizard/build.py": "7ec95f7021785f9b422a7126379866ce1405255f3b3bc8d0302248faee468491",
+    "content/isg/wizard/data/bundle.json": "541f84e7263afcdd89ddcab2c0eb881c4486b953911867f7854cdefc322904d9",
+    "content/isg/wizard/data/emergency_cards.json": "b7e0dba88155d8e81fb2bb4a187b83090f1c841a6d7ae240fdfed0acc1ab12ec",
+    "content/isg/wizard/data/legal_topics.json": "f96a033d5a4d1db52b384e0591a7d08e222b56c6e6d7ee5fc289a17f072961b6",
+    "content/isg/wizard/data/method_profiles.json": "e4cb0033871bfaed20f2f8b06d48cd1660403c7afcf27b21bb2562f78c613fd2",
+    "content/isg/wizard/data/numeric_reference_rules.json": "d48e28e0c17cbfb1dd68f5dbe4e9a2ad46962ad11b448636fdbfad8b0de78747",
+    "content/isg/wizard/data/questions.json": "fc73709b7603d87035c7cda42b027582c1adbd1a151baeca811de9465be047fa",
+    "content/isg/wizard/data/risk_catalog.json": "e03539a6769e7526785c16986dd88efe4a100294e27765f2f1bf665a2b0e2e7c",
+    "content/isg/wizard/data/taxonomy.json": "4ab9ce2450f8edfc710f7b2441280d9418a2e01be0118c7ce464f949f951798e",
+    "content/isg/wizard/source/additions.tsv": "e3cecdf876e003676e8496a07c11fab14295aff3e90b1f3d3e314435002cc030",
+    "content/isg/wizard/source/card_enrichment.tsv": "f7943bc1540658c5d0aeb4f530917a84159b62dbdbe873ca2c0a890fafb7b226",
+    "content/isg/wizard/source/cards_v3_input.json": "04ba7e918b7e2ca0ba78359f19f9affb616ed34f93151957f8fea66c3e6f99ab",
+    "content/isg/wizard/source/config_authoring.py": "4ebf45e153a38b2efc0697205df46480f6580335e7f927b76768e9bce7b43f77",
+    "content/isg/wizard/source/enrichment.tsv": "0f02b658962fcbecd6fc72b09718e84edb436b130812b3eb6afc2f6a5641cf0b",
+    "content/isg/wizard/source/extensions.json": "2433fe036b7bd6a75ec8618514e022de61e884822d09e0be9a7338db4e964400",
+    "content/isg/wizard/source/risk_v3_input.json": "e30eeab5dad6719019204bfae714e823ad6ce797ba147270ab93cd3c21b46236",
+    "content/isg/wizard/source/severity.json": "b9d4d84ffdcc8db0c71ec4facde1098585c5b206a629fabc726bebd1bf9da355",
+    "content/isg/wizard/source/site_labels_authoring.py": "7aea7781a6997c2a178cf47a8e7f937a61a81612792d1b595eb38c4fdec3defc",
+    "content/isg/wizard/source/taxonomy_v3_input.json": "9f693dac0db72704fa63ed3f35887950af2db20422d7f39fb3164853dba342fb",
+    "content/isg/wizard/tests/v4_profiles.json": "8af419890a786d931a12fa55adb6430e3dd384116b7f7b4f1e8260342d649826"
+  }
+}

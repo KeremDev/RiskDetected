@@ -1,0 +1,601 @@
+# id|olasi_sonuc|ilk_onlem_seviyesi|ikinci_onlem_seviyesi|ikinci_onlem
+R-01-01|Burkulma, kırık ve baş yaralanması|engineering|administrative|Temizlik sırasında geçişi ayırın; yeniden açmadan zeminin kuru ve güvenli olduğunu kontrol edin.
+R-01-02|Ayak bileği yaralanması ve düşmeye bağlı kırık|engineering|administrative|Zemin bozukluklarını konumuyla bakım listesine alın; onarıma kadar güvenli alternatif yol belirleyin.
+R-01-03|Merdivenden düşme, kırık ve baş travması|engineering|administrative|Basamak, tutamak ve aydınlatmayı birlikte kontrol edin; malzeme taşırken görüşü kapatmayın.
+R-01-04|Baş yaralanması, ezilme ve ölüm|engineering|administrative|Fırtına sonrasında çatı bağlantılarını yetkin kişiye kontrol ettirin; güvenli bulunmadan alt alanı açmayın.
+R-01-05|Baş ve göz yaralanması|engineering|administrative|Tavana yeni yük asmadan taşıma uygunluğunu inceletin; su almış panelleri kullanım alanından ayırın.
+R-01-06|Çarpma, yüz yaralanması ve düşme|engineering|engineering|Kapı açılımını yoğun geçişten uzaklaştırın; uygun kontrollü kapatıcıyla ani kanat hareketini sınırlayın.
+R-01-07|Sıkışma, ezilme ve ölüm|engineering|administrative|Emniyet kenarı ve fotosel işlevlerini üretici yöntemine göre test edin; arıza kaydını bakım tamamlanana kadar açık tutun.
+R-01-08|Yüksekten düşme, çoklu kırık ve ölüm|engineering|administrative|Boşluk korumasının sökülmesini izinli işe bağlayın; söküm süresince alternatif korumayı yerinde tutun.
+R-01-09|Takılma, düşme ve taşınan yükle ezilme|elimination|engineering|Geçici hatları üstten veya yaya yolu dışında geçirin; zorunlu kesişimde sabit yük dayanımlı geçiş koruması kullanın.
+R-01-10|Baş kesisi ve boyun yaralanması|engineering|administrative|Baş mesafesi düşük güzergâhı ölçerek işaretleyin; malzemeyle geçiş için başka rota tanımlayın.
+R-01-11|Çarpışma, düşme ve sıkışma|engineering|administrative|Vardiya değişiminde karşılıklı yoğun akışı gözlemleyin; yük taşımayı yoğun yaya saatlerinden ayırın.
+R-01-12|Göçük altında kalma, ezilme ve ölüm|engineering|administrative|Çatlak ve hareket belirtilerinde yaklaşmayı durdurun; yapı uzmanının izin verdiği sınır dışında bekleyin.
+R-02-01|Elektrik yanığı, ritim bozukluğu ve ölüm|engineering|administrative|Kabloları kullanımdan önce gözle kontrol edin; bantla geçici onarım yerine yetkili bakım değişimi uygulayın.
+R-02-02|Elektrik çarpması ve ölüm|engineering|engineering|Kaçak akım koruması, topraklama ve besleme düzenini birlikte değerlendirin; yalnız koruma cihazına güvenmeyin.
+R-02-03|Elektrik çarpması ve ark yanığı|engineering|administrative|Pano önü çalışma alanını boş tutun; erişimi yalnız yetkililere verin ve enerjisiz bakım prosedürü kullanın.
+R-02-04|Ağır yanık, işitme hasarı ve ölüm|engineering|ppe|Ark değerlendirmesiyle belirlenen yüz, göz ve vücut korumasını kullanın; KKD'yi enerjisiz çalışmanın yerine koymayın.
+R-02-05|Gövde temasıyla elektrik çarpması|engineering|administrative|Koruma iletkeni ölçüm sonuçlarını cihaz kimliğiyle kaydedin; onarım sonrası yeniden ölçmeden kullanıma vermeyin.
+R-02-06|Yangın, yanık ve dumandan etkilenme|engineering|administrative|Yüksek güçlü cihazları uygun devrelere dağıtın; ısınan priz ve uzatma kablosunu derhal kullanımdan ayırın.
+R-02-07|Elektrik çarpması, ark yanığı ve ölüm|administrative|engineering|Hat yerini sahada doğrulatın; işletmeciyle güvenli açığa çıkarma ve enerjisizleştirme düzenini kurun.
+R-02-08|Havai hat arkı, yanık ve ölüm|administrative|engineering|Ekipman hareket zarfını fiziksel sınırlayıcılarla yönetin; güvenli yaklaşım mesafesini gerilim ve işletmeci şartlarına göre belirleyin.
+R-02-09|Geri beslemeyle elektrik çarpması ve yangın|engineering|administrative|Şebeke, jeneratör, UPS ve PV ayırma noktalarını şemada gösterin; tek kesiciyi açmayı yeterli saymayın.
+R-02-10|Depolanmış enerjiyle elektrik çarpması ve yanık|administrative|engineering|Üreticinin deşarj süresini ve ölçüm noktalarını kullanın; tekrar yüklenmeyi önleyen izolasyonu koruyun.
+R-02-11|Aşırı akım kaynaklı yangın ve elektrik çarpması|engineering|administrative|Tesisat değişikliklerinde koruma koordinasyonunu yenileyin; daha büyük sigortayla arızayı maskelemeyin.
+R-02-12|Elektrik çarpması ve koruma işlevi kaybı|engineering|administrative|Geçici dağıtımın test kaydını kurulumla eşleştirin; taşınma ve hasar sonrası yetkin kontrol yaptırın.
+R-03-01|Dolanma, uzuv kaybı ve ölüm|engineering|administrative|Dönen mile yaklaşmadan durdurma ve izolasyon uygulayın; bol giysi, takı ve açık saçı tehlike alanından uzak tutun.
+R-03-02|El ezilmesi ve parmak kaybı|engineering|engineering|Sıkışma giderme için elle erişim gerektirmeyen besleme ve temizleme araçları tasarlayın.
+R-03-03|Ezilme, amputasyon ve ölüm|engineering|administrative|Kalıp değişimi ve ayarı ayrı güvenli moda bağlayın; emniyet işlevlerini her değişim sonrasında doğrulayın.
+R-03-04|Robot çarpması, ezilme ve ölüm|engineering|administrative|Hücreye giren kişinin yeniden başlatmayı kontrol etmesini sağlayın; öğretme yetkisini eğitimli personele sınırlayın.
+R-03-05|Sıkışma, uzuv yaralanması ve amputasyon|engineering|administrative|Tıkanmayı bant hareketliyken gidermeyin; erişim öncesinde tüm bağlı hatları izole edin.
+R-03-06|Fırlayan parçayla baş ve gövde yaralanması|administrative|engineering|Parça fırlamasına dayanımlı muhafaza kullanın; anahtarı aynada bırakmayı önleyen düzen kurun.
+R-03-07|Derin kesik, tendon yaralanması ve amputasyon|engineering|administrative|Bıçak değişimi için güvenli tutucu ve izolasyon yöntemi belirleyin; kesim alanına elle uzanmayı engelleyin.
+R-03-08|Ters hareketle ezilme ve kırık|engineering|administrative|Arıza giderme talimatında otomatik geri dönüşü açıkça gösterin; yalnız dur düğmesine güvenmeyin.
+R-03-09|Tehlikeli hareketle temas ve uzuv kaybı|engineering|administrative|Köprülenmiş kilitte üretimi durdurun; tekrar devreye almadan emniyet devresinin işlevini yetkin kişiye doğrulatın.
+R-03-10|Beklenmedik çalışmayla ezilme ve ölüm|engineering|administrative|Uzaktan başlatma öncesi saha boşluğu kontrolünü tanımlayın; erişim noktasındaki kişisel kilidi kaldırmayın.
+R-03-11|Derin kesilme, uzuv dolanması ve amputasyon|engineering|administrative|Gerçek durma süresini bakımda ölçün; aşınma nedeniyle süre uzadığında erişim kilidini yeniden ayarlayın.
+R-03-12|Uç takımla delinme, kesilme ve sıkışma|administrative|engineering|Keskin uçları ve iş parçasını güvenli geometriyle tasarlayın; yalnız robotun kuvvet sınırlamasını yeterli saymayın.
+R-04-01|Disk parçalarıyla göz ve yüz yaralanması|engineering|ppe|Darbe dayanımlı göz koruması ve uygun yüz siperi kullanın; disk düzleminde başka kişileri bulundurmayın.
+R-04-02|El-bilek yaralanması ve parça çarpması|engineering|administrative|Sıkışan matkabı enerjisini keserek çıkarın; uca uygun devir ve baskı uygulayın.
+R-04-03|Delici yaralanma ve göz kaybı|engineering|administrative|Aleti kişiye doğrultmayın; sıkışma giderme ve taşımada enerji kaynağını ayırın.
+R-04-04|El kesisi ve tendon yaralanması|substitution|engineering|Kesme altlığı ve sabit parça desteği kullanın; boşta kalan eli kesim hattının dışında tutun.
+R-04-05|Fırlayan başla göz ve baş yaralanması|engineering|administrative|Sap bağlantısını iş başlangıcında kontrol edin; mantarlaşmış darbe yüzeyini yetkili bakımla giderin.
+R-04-06|El ezilmesi, sıyrık ve düşme|engineering|administrative|Anahtara boru ekleyerek moment artırmayın; sıkışmış bağlantı için işe uygun sökme yöntemi seçin.
+R-04-07|Göz hasarı ve basınçlı hava enjeksiyonu|elimination|engineering|Parçayı kapalı temizleme kabininde temizleyin; talaşın çevre çalışanlara ulaşmasını engelleyin.
+R-04-08|Yanık, yangın ve duman etkilenmesi|engineering|administrative|İş bitiminde sıcak uç soğuyana kadar kontrollü bekletin; kapalı boşluktaki yanıcı yüzeyleri değerlendirin.
+R-04-09|Geri tepme sonucu ağır kesik|engineering|administrative|Kesim hattını destek noktalarına göre belirleyin; dönen bıçak durmadan aleti zemine koymayın.
+R-04-10|Solunum yolu tahrişi ve mesleki astım|engineering|administrative|Emiş ağzını lehim noktasına yakın tutun; filtre ve hava akışı bakımını kayıtlı izleyin.
+R-04-11|Damar-sinir hasarı ve el-kol titreşim hastalığı|substitution|administrative|Gerçek tetik süresini görevler üzerinden hesaplayın; alet bakımını ve semptom bildirimini izleyin.
+R-04-12|Batarya yangını, yanık ve duman etkilenmesi|engineering|administrative|Şişmiş veya darbe almış bataryayı şarj etmeyin; üreticiye uygun karantina ve atık teslimi uygulayın.
+R-05-01|Yüksekten düşme, omurga hasarı ve ölüm|engineering|administrative|Kenar korumasını günlük çalışma değişikliklerinde gözden geçirin; söküm gerekiyorsa alternatif güvenli yöntem kurun.
+R-05-02|Çatıdan düşme, çoklu kırık ve ölüm|engineering|administrative|Kırılgan yüzeyleri işe başlamadan planda işaretleyin; çatı erişimini yetkisiz kullanıma kapatın.
+R-05-03|Işıklıktan düşme ve ölüm|engineering|administrative|Işıklığı sağlam döşeme gibi kullanmayın; üzerinin boyanması veya kirlenmesiyle görünmezleşmesini önleyin.
+R-05-04|Döşeme boşluğundan düşme ve ölüm|engineering|administrative|Kapak taşıma kapasitesini ve sabitlemesini belirleyin; açıklık oluşturan ekip ile kullanıcıları koordine edin.
+R-05-05|Alt seviyeye çarpma, ağır yaralanma ve ölüm|administrative|engineering|Enerji emici açılması, bağlantı boyu ve kullanıcı ölçüsünü açıklık hesabına katın; alt engelleri kaldırın.
+R-05-06|Ankraj kopmasıyla yüksekten düşme ve ölüm|engineering|administrative|Ankraj kimliği, kullanıcı sınırı ve kontrol kaydını eşleştirin; rastgele boru veya korkuluğa bağlanmayın.
+R-05-07|Salınımla yapıya çarpma ve baş travması|engineering|administrative|Çalışma mesafesini ankrajın altıyla sınırlayın; keskin kenar ve yan engelleri iş planında belirtin.
+R-05-08|Askıda kalmaya bağlı ciddi dolaşım sorunu ve ölüm|administrative|engineering|Kurtarma donanımını çalışma noktasından erişilebilir tutun; kurtarma yöntemini iş başlamadan uygulamalı deneyin.
+R-05-09|Düşen aletle baş yaralanması ve ölüm|engineering|administrative|Alet bağlarını alet ağırlığıyla eşleştirin; alt katta eşzamanlı çalışanları kaldırma ve yüksekte iş planına dahil edin.
+R-05-10|Düşme, düşen malzeme çarpması ve ölüm|administrative|administrative|Anlık hava koşullarını iş noktasında izleyin; durdurma kararını teslimat baskısından bağımsız yetkilendirin.
+R-05-11|Isı hastalığı, bayılma ve ikincil düşme|engineering|administrative|Çatı üzerindeki sıcaklık ve iş yüküne göre mola düzenleyin; yalnız çalışan için yardım iletişimi sağlayın.
+R-05-12|Halat sistemi arızasıyla düşme ve ölüm|engineering|administrative|Halat güzergâhını keskin kenardan koruyun; bağımsız sistemlerin aynı zayıf bağlantıya bağlanmasını önleyin.
+R-06-01|İskele devrilmesi, ezilme ve ölüm|engineering|administrative|Yağış veya zemin kazısı sonrasında ayak oturmalarını kontrol edin; uygunsuzluğu gidermeden iskeleyi kullanmayın.
+R-06-02|İskele göçmesi, yüksekten düşme ve ölüm|engineering|administrative|İskele bağlarını başka iş için sökmeyi izinli değişikliğe bağlayın; yetkin kişinin yeniden kabulünü kaydedin.
+R-06-03|Platformdan düşme, kırık ve ölüm|engineering|administrative|Platform aralıklarını ve yerinden kalkmayı kontrol edin; eksik elemanlı kata erişimi kapatın.
+R-06-04|Platform göçmesi ve altında ezilme|administrative|engineering|Yükleme noktalarını tasarımda belirleyin; ağır malzemeyi iskelenin rastgele bir bölmesine bırakmayın.
+R-06-05|Hareketli iskeleden düşme ve devrilme|administrative|engineering|Taşıma güzergâhındaki çukur ve engelleri giderin; yükseltilmiş durumdaki hareket için üretici koşullarına uyun.
+R-06-06|Merdivenden düşme ve kırık|substitution|administrative|Merdiven açısı, tabanı ve üst bağlantısını kontrol edin; kaygan zeminde doğaçlama takoz kullanmayın.
+R-06-07|Yana uzanma nedeniyle düşme|substitution|administrative|Erişilemeyen noktaya uzanmak yerine merdivenden inerek konumu değiştirin; uzun işler için platform kullanın.
+R-06-08|Seviye geçişinde düşme ve baş yaralanması|engineering|administrative|Geçişte iki elin kullanılmasını sağlayın; elde taşınan malzeme için ayrı aktarma yöntemi kurun.
+R-06-09|Sepet ile yapı arasında ezilme ve ölüm|engineering|administrative|Yerden acil indirmeyi bilen ikinci kişiyi görevlendirin; üst engelleri manevradan önce işaretleyin.
+R-06-10|Platform devrilmesi ve ölüm|administrative|engineering|Ayak ve teker yüküne göre zemin desteği sağlayın; dolgu ve yeraltı boşluğu üzerine kurulum yapmayın.
+R-06-11|Sepetten geçiş sırasında düşme ve ölüm|administrative|engineering|İş noktasına erişimi platform içinde kalacak şekilde tasarlayın; korkuluk üzerine çıkmayı önleyin.
+R-06-12|Asma platform düşmesi ve çoklu ölüm|engineering|administrative|Askı ankrajı ve güvenlik tertibatını kullanım öncesi denetleyin; arızayı cihaz üzerindeyken doğaçlama gidermeyin.
+R-07-01|Yük düşmesiyle ezilme ve ölüm|engineering|administrative|Sapanın kimliğini ve kontrol durumunu kaldırmadan önce okuyun; keskin kenarlar için uygun koruyucu kullanın.
+R-07-02|Sapan kopması, yük düşmesi ve ölüm|administrative|engineering|Düşük açı gerektiren bağlamada uygun travers kullanın; etiketteki kapasiteyi bütün açılar için geçerli saymayın.
+R-07-03|Dengesiz yükle ezilme ve ölüm|administrative|engineering|Bağlama noktalarını yük geometrisine uygun seçin; yük dönmesini güvenli mesafeden kontrol edin.
+R-07-04|Vinç devrilmesi ve çoklu ağır yaralanma|administrative|administrative|Kaldırma yarıçapı değiştiğinde planı yeniden değerlendirin; yük moment sınırlayıcısını devre dışı bırakmayın.
+R-07-05|Zemin oturmasıyla vinç devrilmesi ve ölüm|engineering|administrative|Yeraltı tesisatı ve dolgu bilgisini kurulum iznine ekleyin; operasyon sırasında ayak oturmasını izleyin.
+R-07-06|Salınan yük ile yapı arasında ezilme|engineering|administrative|Yükü elle tutarak bedenle durdurmayın; yönlendirme halatını dolanma yaratmayacak güvenli noktadan kullanın.
+R-07-07|Yük paylaşımı kaybıyla vinç çökmesi|administrative|administrative|Tandem kaldırmada tek komuta ve eşzamanlı durdurma düzeni kurun; operatörleri plan üzerinde birlikte bilgilendirin.
+R-07-08|Vakumlu levha düşmesiyle kesilme ve ezilme|engineering|administrative|Levha yüzeyi, sızdırmazlık ve vakum göstergesini her kaldırmada kontrol edin; alarmda yükü güvenli yere indirin.
+R-07-09|Manyetik yükün düşmesiyle ezilme ve ölüm|engineering|administrative|Malzeme türü, kalınlık, yüzey ve sıcaklığın tutma kapasitesine etkisini üretici verisiyle kontrol edin.
+R-07-10|Bağlantı kopmasıyla yük düşmesi|administrative|engineering|Kaldırma kulağına uygun bağlantı elemanı kullanın; yan yük ve uygunsuz kaynak tadilatından kaçının.
+R-07-11|Yük çarpmasıyla ezilme, kırık ve ölüm|administrative|administrative|Haberleşme kesildiğinde kaldırmayı durdurun; işaretçi değişimini operatöre açıkça bildirin.
+R-07-12|Yükün savrulması veya vincin devrilmesiyle ezilme ve ölüm|administrative|administrative|Geniş yüzeyli levhanın rüzgâr yükünü planlayın; genel vinç rüzgâr sınırını otomatik yeterli saymayın.
+R-08-01|Forklift çarpması, ezilme ve ölüm|engineering|administrative|Kavşak görüşünü yük ve istifle kapatmayın; yaya geçiş önceliğini saha talimatında netleştirin.
+R-08-02|Forklift devrilmesiyle ezilme ve ölüm|engineering|administrative|Operatörün üreticiye uygun tutucu sistemi kullanmasını sağlayın; eğimde dönüşü ve yüksek yükle seyri önleyin.
+R-08-03|Çatallardan düşen yükle ezilme|engineering|administrative|Hasarlı paleti ve uygunsuz ataşmanı ayırın; yükün görüşü kapattığı durumda güvenli alternatif taşıma planlayın.
+R-08-04|Çatallardan düşme ve ölüm|substitution|administrative|Çatal veya palet üzerinde insan taşımayı yasaklayın; yükseğe erişim işini uygun platformla planlayın.
+R-08-05|Geri manevrada yaya ezilmesi|engineering|administrative|Uyarı lambası veya kamera bulunduğu için fiziksel ayrımı kaldırmayın; görünmeyen alanı boşaltmadan hareket etmeyin.
+R-08-06|Rampa kenarından düşme ve ölüm|engineering|administrative|Rampa açıklığını araç yokken kapalı tutun; yanaşma tamamlanmadan yükleme başlatmayın.
+R-08-07|Dorse ayrılmasıyla forklift düşmesi|engineering|administrative|Yükleme bitti bilgisini sürücüye tek yetkili versin; araç sabitlemesi çözülmeden rampa bağlantısını kapatın.
+R-08-08|Hidrojen patlaması, yanık ve göz hasarı|engineering|administrative|Şarj tipini akü kimyasıyla eşleştirin; kıvılcım üreten bakım ve sigarayı şarj alanından uzak tutun.
+R-08-09|CO zehirlenmesi, bilinç kaybı ve ölüm|substitution|administrative|İçten yanmalı forkliftin kapalı alana uygunluğunu ölçümle değerlendirin; motor bakımı havalandırmanın yerine geçmez.
+R-08-10|Ayak ezilmesi ve ayak bileği yaralanması|engineering|administrative|Transpaleti dar dönüşte bedenden uzak yönlendirin; yüklü aracı eğimde kontrolsüz bırakmayın.
+R-08-11|Raf çökmesiyle yük altında kalma, ağır ezilme ve ölüm|engineering|administrative|Raf çarpmasını derhal bildirip etkilenen bölmeyi ayırın; gözle küçük görünen hasarı göz ardı etmeyin.
+R-08-12|Otonom araç çarpması ve sıkışma|engineering|administrative|Yerleşim değişikliğinde koruma alanı ve sensör algılamasını test edin; geçici engelleri rota yönetimine bildirin.
+R-09-01|Araç-yaya çarpışması ve ölüm|engineering|administrative|Manevra alanında görevli olmayan kişileri uzak tutun; işaretçiyi sürücünün sürekli görebileceği konumda görevlendirin.
+R-09-02|Trafik kazası, çoklu yaralanma ve ölüm|administrative|administrative|Teslim hedeflerini dinlenme ihtiyacına göre düzenleyin; uykululuk bildiren sürücüyü cezalandırmadan seferi durdurun.
+R-09-03|Trafik kazası sonucu kırık, kafa travması ve ölüm|administrative|engineering|Navigasyon ve telefon ayarlarını araç dururken yapın; hareket halinde uygulama etkileşimini sınırlandırın.
+R-09-04|Yük kayması, araç devrilmesi ve ezilme|administrative|administrative|Bağlama donanımının kapasitesini ve yük dağılımını hareketten önce kontrol edin; gerekli ara kontrolleri planlayın.
+R-09-05|Kontrolsüz araç hareketiyle ezilme|engineering|administrative|Sürücü araçtan ayrılmadan park frenini ve eğimi değerlendirsin; yükleme personeliyle park durumunu teyit etsin.
+R-09-06|Yol kenarında araç çarpması ve ölüm|engineering|administrative|İşe başlamadan trafik işaretleme planını kurun; çalışanlara güvenli kaçış alanı bırakın.
+R-09-07|Motosiklet düşmesi, baş travması ve ölüm|administrative|ppe|Uygun kask, görünürlük ve koruyucu sürüş donanımı sağlayın; yağışta süre baskısını kaldırın.
+R-09-08|Araçtan düşme, burkulma ve kırık|engineering|administrative|Kabin veya kasadan atlamayın; basamakları yağ ve çamurdan temizleyin, üç temas noktasını koruyun.
+R-09-09|Araç altında ezilme ve ölüm|engineering|administrative|Aracı üreticinin destek noktalarından taşıyın; hidrolik krikoyu tek başına kalıcı destek kabul etmeyin.
+R-09-10|Hortum kopması, kimyasal salım ve yaralanma|engineering|administrative|Transfer tamamlanması, hortum ayrılması ve körleme adımlarını sürüş izninden önce kontrol edin.
+R-09-11|Kayma kaynaklı çarpışma ve ölüm|administrative|administrative|Görüş, buzlanma ve yol kapanmasını sefer öncesi değerlendirin; güvenli duruş alanı ve erteleme yetkisi tanımlayın.
+R-09-12|Müşteriyle çarpışma ve düşme|engineering|administrative|Yükü taşıyıcının görüşünü kapatmayacak biçimde yerleştirin; yoğun müşteri akışında teslimatı durdurun.
+R-10-01|Raf çökmesiyle ezilme ve ölüm|engineering|administrative|Hasarı raf konumu ve fotoğrafıyla kaydedin; tamir kabulü olmadan bölmeyi yeniden yüklemeyin.
+R-10-02|Raf çökmesi ve ağır yaralanma|administrative|engineering|Raf kapasite levhasını mevcut konfigürasyonla eşleştirin; kiriş seviyesi değiştiğinde taşıma hesabını yenileyin.
+R-10-03|Ürün düşmesiyle ezilme ve kesilme|administrative|administrative|Palet tipini raf ve yükle uyumlu seçin; kırık paleti onaylı onarım veya atık alanına alın.
+R-10-04|İstif devrilmesi ve ezilme|engineering|administrative|İstif altından veya ortasından malzeme çekmeyin; ambalaj açılınca dengeyi yeniden değerlendirin.
+R-10-05|Yuvarlanan ruloyla ezilme|engineering|administrative|Rulo alma sırasını belirleyin; takozları yük güvenceye alınmadan sökmeyin ve eğimli zeminde depolamayın.
+R-10-06|Levha kapanmasıyla ezilme, kesilme ve ölüm|engineering|administrative|Levha paketine vücudu dayayarak denge sağlamayın; ayırma sırasında kalan levhaları bağımsız tutun.
+R-10-07|Çuval yığını altında kalmaya bağlı ezilme ve boğulma|administrative|engineering|Yığın düzenini ambalaj sürtünmesi ve zemine göre belirleyin; hasarlı çuvalları istifin taşıyıcı katında kullanmayın.
+R-10-08|Rampa dengeleyici altında ezilme|engineering|administrative|Bakım desteğini yerine oturtmadan platform altına girmeyin; hidrolik basıncı destek yerine kullanmayın.
+R-10-09|Düşen yükün çarpmasıyla ezilme ve kırık|engineering|administrative|Kapı açma alanını boşaltın; kapı arkasındaki yükün kararlılığını güvenli konumdan değerlendirin.
+R-10-10|Asma kattan malzeme düşmesi ve baş yaralanması|engineering|administrative|Palet kapısını açmadan karşı korumayı kapatın; kenarda geçici istife izin vermeyin.
+R-10-11|Gergin çember çarpması ve göz yaralanması|administrative|ppe|Gergin çemberi uygun kesiciyle yan konumdan kesin; göz koruması kullanın ve çevreyi boşaltın.
+R-10-12|Soğukta mahsur kalma, hipotermi ve ölüm|engineering|administrative|İç açma kolunu ve alarmı vardiya başında deneyin; yalnız girişler için süreli haberleşme düzeni kurun.
+R-11-01|Ezilme, uzuv kaybı ve ölüm|engineering|administrative|İzolasyon sonrasında güvenli deneme ve enerji yokluğu kontrolü yapın; kumanda düğmesini enerji ayırıcı yerine kullanmayın.
+R-11-02|Ezilme ve basınçlı sıvı yaralanması|engineering|administrative|Akümülatörleri enerji listesine ekleyin; basınç göstergesinin sıfır olmasıyla yetinmeden üretici boşaltma yöntemini uygulayın.
+R-11-03|Sıkışma ve uzuv yaralanması|engineering|engineering|Hapsedilmiş hava hacimlerini de tahliye edebilen kilitlenebilir ayırıcı kullanın; silindir yükünü ayrıca destekleyin.
+R-11-04|Ağır ezilme ve ölüm|engineering|administrative|Dayamanın yük kapasitesini doğrulayın; yalnız hidrolik kriko veya askı sistemine güvenerek altına girmeyin.
+R-11-05|Göz yaralanması, kırık ve delici travma|engineering|administrative|Söküm sırasını ve yay yönünü iş öncesi belirleyin; üreticinin sıkıştırma aparatını ve dışlama alanını kullanın.
+R-11-06|Elektrik çarpması, yanık ve ölüm|engineering|administrative|UPS, jeneratör, geri besleme ve kontrol beslemelerini izolasyon çiziminde gösterin; her kaynakta enerji yokluğunu kontrol edin.
+R-11-07|Beklenmedik hareket nedeniyle ezilme ve ölüm|engineering|administrative|Her çalışanın kendi kilidini takıp kaldırmasını sağlayın; istisnai kilit kaldırma işlemini yazılı ve kişiye erişim kontrollü yönetin.
+R-11-08|Yeniden enerjilendirmede ezilme ve ölüm|administrative|engineering|Vardiya tesliminde kilit koruması kesilmesin; grup kilit kutusunda eski ve yeni ekip bağlantısını eşzamanlı güvenceye alın.
+R-11-09|Çakışan çalışmalarda elektrik çarpması ve ezilme|administrative|administrative|İşletme ve yüklenici sorumluları izolasyon sınırını aynı şema üzerinde mutabık kılsın; iş izinlerini bu sınıra bağlayın.
+R-11-10|Test sırasında beklenmedik hareketle ağır yaralanma|administrative|engineering|Testte yalnız gerekli enerji devresini etkinleştirin; erişim bariyerlerini koruyun ve teste dönüşte kişisel kilitleri yeniden uygulayın.
+R-11-11|Elektrik çarpması, yanık ve ölüm|engineering|administrative|Ölçü aletini kullanım öncesi ve sonrası bilinen kaynakta sınayın; yanlış etiket ve kablo eşleşmesini teknik kayıtla düzeltin.
+R-11-12|Fırlayan parçaya bağlı baş, göz ve gövde yaralanması|administrative|engineering|Koruyucu ve bağlantıları yerine almadan deneme yapmayın; ilk çalıştırmada kişileri fırlama hattının dışına çıkarın.
+R-12-01|Oksijensiz kalma, beyin hasarı ve ölüm|elimination|administrative|Giriş izninde atmosfer, kesintisiz gözcü ve kurtarma düzenini birlikte değerlendirin; filtreli maskeyi oksijen desteği sanmayın.
+R-12-02|Boğulma ve ölüm|engineering|administrative|Azot ve diğer inert besleme yollarını fiziksel olarak ayırın; havalandırma kesilirse giriş koşullarını yeniden değerlendirin.
+R-12-03|Akut zehirlenme, bilinç kaybı ve ölüm|elimination|administrative|Koku duyusunu uyarı aracı kabul etmeyin; uygun kişisel algılayıcı alarmında alanı terk edecek iş kuralı oluşturun.
+R-12-04|Patlama, ağır yanık ve ölüm|engineering|administrative|Atmosfer ölçümünü iş boyunca değişebilecek katman ve noktalarda sürdürün; sıcak iş iznini kapalı alan izniyle ilişkilendirin.
+R-12-05|Dökme malzemede gömülme, ezilme ve ölüm|elimination|engineering|Boşaltma ve besleme donanımlarını kilitleyin; malzeme köprüsü üstünde yürümeyi fiziksel erişim engeliyle önleyin.
+R-12-06|Boğulma, kimyasal yanık ve ölüm|engineering|administrative|Bağlı hatları şemayla izleyin; tek vanaya güvenmek yerine akışkana uygun körleme veya fiziksel ayırma yöntemini seçin.
+R-12-07|Uzuv kaybı, ezilme ve ölüm|engineering|administrative|Karıştırıcı kanatlarının durduğunu ve depolanmış enerjinin giderildiğini giriş öncesi kontrol edin; dışarıdan kumanda verilmesini engelleyin.
+R-12-08|Isı hastalığı, bilinç kaybı ve ölüm|engineering|administrative|Tankın soğuma süresini sıcaklık ölçümüyle belirleyin; dinlenme ve dışarı çıkma koşullarını erişilebilir haberleşmeyle destekleyin.
+R-12-09|Yaralının çıkarılamamasına bağlı ağırlaşma ve ölüm|engineering|administrative|Kurtarma ekipmanının açıklıktan geçişini temsilî ağırlıkla değerlendirin; mevcut erişim uygun değilse işi dışarıdan yapacak yöntem seçin.
+R-12-10|Geciken müdahaleye bağlı kalıcı hasar ve ölüm|administrative|engineering|Haberleşme kesintisinde otomatik geri çekilme kuralı tanımlayın; gözcüyü başka görevle alan başından ayırmayın.
+R-12-11|İkincil kurtarıcı kaybı ve çoklu ölüm|administrative|engineering|Uygun koşullarda girişsiz kurtarma imkânı kurun; solunum korumasız girişe karşı alanı emniyete alın.
+R-12-12|Fark edilmeyen atmosfer tehlikesiyle zehirlenme ve ölüm|engineering|administrative|Cihazın hedef gazlara uygunluğunu ve kullanım öncesi işlev kontrolünü kaydedin; sensör çapraz duyarlılığını teknik dokümandan değerlendirin.
+R-13-01|Göçük altında kalma, boğulma ve ölüm|engineering|administrative|Yağış, titreşim veya zemin değişikliğinden sonra destek sistemini yetkin kişiye kontrol ettirin; uygun bulunmadan girişi açmayın.
+R-13-02|Malzeme altında kalma ve ağır ezilme|engineering|administrative|Hafriyat yığınlarını plan üzerinde gösterin; kenarda geçici malzeme ve araç birikimini vardiya kontrolüne dahil edin.
+R-13-03|Araçla birlikte göçüğe düşme ve ölüm|engineering|administrative|Manevra yönünü kazıdan uzaklaştırın; yaklaşma sınırını zemin taşıma koşullarına göre teknik sorumlu belirlesin.
+R-13-04|Boğulma, sürüklenme ve ölüm|engineering|administrative|Hava durumu ve upstream su faaliyetlerini izleyin; tahliye yolunun pompaya veya tek enerji kaynağına bağımlı olmamasını sağlayın.
+R-13-05|Zehirlenme, boğulma ve patlama|administrative|engineering|Gaz kaynağı olabilecek kanal ve hatları izole edin; ölçüm sonucuna uygun havalandırma ve erişim kontrolü kurun.
+R-13-06|Basınçlı akışkan yaralanması, yangın ve ölüm|engineering|administrative|Hat yakınında makineyle kazı sınırını işletmeciyle belirleyin; bilinmeyen hat görüldüğünde çalışmayı durdurma yetkisini ekibe bildirin.
+R-13-07|Düşme ve acil durumda içeride kalma|engineering|administrative|Kaçış merdivenlerini kazı ilerleyişi ve çalışma noktasına göre taşıyın; çıkışların malzemeyle kapanmasını önleyin.
+R-13-08|Komşu yapıda oturma, çökme ve çoklu yaralanma|engineering|administrative|Ölçülebilir hareket izleme ve işi durdurma eşikleri belirleyin; gözlenen çatlak veya deplasmanı tasarım sorumlusuna iletin.
+R-13-09|Toksik maruziyet, kimyasal yanık ve patlama|administrative|engineering|Bilinmeyen kabı açmayın veya taşımayın; alanı ayırıp çevre ve iş güvenliği sorumlularıyla numune ve bertaraf planlayın.
+R-13-10|Derin boşluğa düşme ve ölüm|engineering|administrative|Kapakların yerinden çıkmasını önleyin; sondaj çevresinde gece görüşünü ve çalışma dışı erişim kontrolünü sağlayın.
+R-13-11|Kaya düşmesiyle ezilme ve ölüm|engineering|administrative|Ayna incelemesini ilerleme döngüsüne bağlayın; tahkimat tamamlanmadan korunmasız bölgeye personel geçirmeyin.
+R-13-12|Enerjili veya basınçlı hatta temasla ölüm|administrative|engineering|Güzergâhı yerinde tespit ve doğrulama kazılarıyla destekleyin; delgi başı konum takibini iş planına dahil edin.
+R-14-01|Yapı altında kalma ve çoklu ölüm|engineering|administrative|Yıkım planından sapmayı yetkisiz saha kararına bırakmayın; yük yolları değiştiğinde teknik sorumlu yeniden değerlendirsin.
+R-14-02|Elektrik çarpması, gaz yangını ve su baskını|engineering|administrative|Ayırma teyitlerini tesisat türüne göre kayıt altına alın; söküm sırasında bulunan kayıt dışı hatlarda işi durdurun.
+R-14-03|Asbest lifine maruziyetle uzun dönem akciğer hastalığı ve kanser|administrative|engineering|Asbestli alanı diğer faaliyetlerden ayırın; lif yayılımını ve atık geçişini uzman söküm planına göre kontrol edin.
+R-14-04|Kurşun maruziyetine bağlı sistemik zehirlenme|substitution|administrative|Tozun yeme içme ve dinlenme alanına taşınmasını önleyin; kişisel hijyen ve maruziyet değerlendirmesini işyeri hekimiyle planlayın.
+R-14-05|Düşen molozla baş yaralanması ve ölüm|engineering|administrative|Düşürme alanını yalnız bantla değil uygun fiziksel sınırla ayırın; alt kattaki ve komşu faaliyetleri duruş planına bağlayın.
+R-14-06|Döşeme çökmesi ve çoklu ezilme|engineering|administrative|Atık yükleme noktalarını ve izin verilen yığılmayı iş planında belirtin; birikimi gözle tahmin yerine planlı sevkiyatla sınırlandırın.
+R-14-07|Boşluktan düşme ve ağır yaralanma|engineering|administrative|Döşeme ve duvar açıldıkça koruma kapsamını güncelleyin; sökülmüş bariyer yerine kalıcı güvenli erişim tamamlanmadan alanı açmayın.
+R-14-08|Fırlayan eleman ve ani çökme nedeniyle ölüm|engineering|administrative|Öngerme kablolarını sıradan donatı kabul etmeyin; kesim noktası ve serbestleşme yönünü yapı uzmanına belirletin.
+R-14-09|Solunabilir toza bağlı akciğer hastalığı|engineering|administrative|Islak yöntemin elektrik ve kayma etkilerini birlikte yönetin; temizlikte basınçlı hava ve kuru süpürme kullanmayın.
+R-14-10|Makine devrilmesi ve operatör ölümü|engineering|administrative|Zemin, bom erişimi ve çalışma sınırını üretici yük diyagramına göre doğrulayın; moloz üzerinde plansız manevrayı önleyin.
+R-14-11|Donatı saplanması, iç organ yaralanması ve ölüm|elimination|engineering|Koruyucunun yalnız uç örtüsü değil düşme etkisini karşılayan saplanma önleme sistemi olmasını sağlayın.
+R-14-12|Komşu alanda parça düşmesi ve yapı hasarıyla yaralanma|engineering|administrative|Kullanımdaki alanlarla yıkım bölgesini ayrı erişim ve çalışma zamanlarıyla yönetin; sınırdaki değişiklikleri günlük saha toplantısında ele alın.
+R-15-01|Yangın, yanık ve duman zehirlenmesi|elimination|administrative|Sıcak iş izninde kıvılcımın gidebileceği alt ve karşı alanları kontrol edin; gözcüyü uygun söndürücüyle görevlendirin.
+R-15-02|Gecikmeli yangın ve duman zehirlenmesi|administrative|engineering|Isı geçebilen boşlukları yanmaz korumayla ayırın; iş sonrası kontrol süresini malzeme ve gizli hacimlere göre belirleyin.
+R-15-03|Kap patlaması, ağır yanık ve ölüm|elimination|administrative|Boş kabı temiz ve gazsız kabul etmeyin; güvenli hazırlık belgelenemiyorsa soğuk kesim dahil yöntemi uzman değerlendirmesine yönlendirin.
+R-15-04|Ark gözü, göz hasarı ve cilt yanığı|engineering|ppe|Kaynak türüne uygun filtre derecesi ve yüz koruyucu seçin; çevredeki kişiler için de ışınım perdesinin sürekliliğini sağlayın.
+R-15-05|Solunum hastalığı ve metal dumanına bağlı toksik etkiler|engineering|administrative|Emiş ağzını dumanın solunum bölgesine ulaşmasını önleyecek konumda tutun; kaplama ve kaynak sarf malzemesine göre maruziyeti değerlendirin.
+R-15-06|Elektrik çarpması ve ölüm|engineering|administrative|Kaynak dönüş bağlantısını güvenli ve sağlam noktaya yapın; dar ve iletken hacimlerde ek elektriksel tedbirleri yetkin kişiye belirletin.
+R-15-07|Gaz alevinin geri ilerlemesi, yanık ve patlama|engineering|administrative|Hortum, regülatör ve geri tepme güvenlik donanımını sistem uyumuyla kontrol edin; uygunsuz bağlantı adaptörleri kullanmayın.
+R-15-08|Gaz yangını, patlama ve yanık|engineering|administrative|Kaçak aramasında alev kullanmayın; hasarlı hortumu bantlayarak sürdürmek yerine hizmet dışı bırakın.
+R-15-09|Toksik metal ve kaplama dumanına bağlı zehirlenme|substitution|engineering|Malzemeye uygun kaplama giderme ve emiş yöntemini seçin; bilinmeyen kaplamalı parçayı açık üretim alanında ısıtmayın.
+R-15-10|Kapalı hacimde zehirlenme, boğulma ve patlama|administrative|engineering|Gaz tüplerini kapalı hacim dışında konumlandırın; iş kesintisinde kaçak beslemesini önleyen izolasyon düzeni kurun.
+R-15-11|Sıcak parçaya bağlı göz ve cilt yanığı|engineering|administrative|Alt seviyeyi yalnızca uyarı levhasıyla açık bırakmayın; sıcak iş bitene ve parçalar soğuyana kadar erişimi kapatın.
+R-15-12|Kor atıktan başlayan yangın ve duman maruziyeti|administrative|engineering|Sıcak atığı uyumlu yanmaz kapta ayrı tutun; yangın yüküne karıştırmadan soğuduğunu kontrol edin.
+R-16-01|Kap yırtılmasıyla parça fırlaması ve ölüm|administrative|engineering|Tahliye ve kondens giderme düzenini çalışır tutun; izin verilen basıncı ekipman üzerine okunaklı biçimde işaretleyin.
+R-16-02|Basınçlı sistem patlaması ve çoklu yaralanma|engineering|administrative|Emniyet elemanının önüne kapalı vana bırakılmasını önleyen düzen kurun; test ve ayarları yetkin servise yaptırın.
+R-16-03|Buhar yanığı ve ölüm|engineering|administrative|Kaçak bölgesini görsel buhara yaklaşmadan ayırın; hattın soğuduğu ve basıncının düştüğü teyit edilmeden bağlantı sökmeyin.
+R-16-04|Savrulan hortum darbesi ve kırık|engineering|administrative|Bağlantıları hat basıncına göre eşleştirin; söküm öncesi hortumun iki tarafındaki hapsolmuş basıncı giderin.
+R-16-05|Fırlayan bağlantı ve kap yırtılmasıyla ölüm|administrative|engineering|Test ortamının enerji düzeyini teknik planla sınırlandırın; gözlemi korumalı veya uzaktan noktadan yapın.
+R-16-06|Ani buhar salımı, haşlanma ve ölüm|engineering|administrative|Kapak kilidini atlayarak çevrim kısaltmayı yasaklayın; güvenlik işlevlerini üretici bakım prosedüründe sınayın.
+R-16-07|İçe çöken kap parçalarıyla kesilme ve ezilme|engineering|administrative|Kabın vakum sınırını tasarım belgesinden doğrulayın; onaysız cam veya ince cidarlı kapları sisteme bağlamayın.
+R-16-08|Cilt altı enjeksiyon, doku kaybı ve uzuv kaybı|elimination|administrative|Enjeksiyon şüphesini küçük yara gibi değerlendirmeyin; basınçlı akışkan bilgisini sağlık ekibine ileterek acil tıbbi yardım çağırın.
+R-16-09|Hat kopması ve basınçlı akışkan yaralanması|engineering|administrative|Vana açma kapama hızını işletme talimatına bağlayın; vuruntu gözlendiğinde sistemi teknik incelemeye alın.
+R-16-10|Basınçlı hat yırtılmasında parça çarpması, yaralanma ve akışkan yanığı|engineering|administrative|Bakım sonrası termal tahliye hattının açık ve doğru yere bağlı olduğunu kontrol edin; izole sıvı hacmini kayıt altına alın.
+R-16-11|Kazan hasarı, patlama ve ağır yanık|engineering|administrative|Düşük su seviyesi korumasını devre dışı bırakmayın; yeniden çalıştırmayı yetkin kazancı ve teknik servis değerlendirmesine bağlayın.
+R-16-12|Bileşen kırılması ve basınçlı akışkanla yaralanma|engineering|administrative|Yedek parçada yalnız çapı değil basınç, sıcaklık ve kimyasal uyumluluk belgesini de kontrol edin.
+R-17-01|Vana kopması, tüp fırlaması ve ölüm|engineering|administrative|Tüpleri vanadan kaldırmayın; kullanılmadığında üreticinin öngördüğü vana korumasını takıp uygun arabayla taşıyın.
+R-17-02|Oksijen zengin ortamda şiddetli yanık|engineering|administrative|Oksijen ekipmanına sıradan yağlayıcı sürmeyin; bağlantı temizliğini ve uygun malzeme kullanımını teslim kontrolüne ekleyin.
+R-17-03|LPG yangını, patlama ve ölüm|engineering|administrative|Çukur ve bodrum bağlantılarını kaçak senaryosuna dahil edin; gaz kokusunda elektrik anahtarlarını işletmeden güvenli alana çıkın.
+R-17-04|Oksijen azalmasıyla bilinç kaybı ve ölüm|engineering|administrative|Alarm halinde içeri kurtarma amacıyla kontrolsüz giriş yapılmamasını öğretin; beslemeyi yalnız güvenli uzak noktadan yetkili kişi kessin.
+R-17-05|CO₂ maruziyeti, boğulma ve ölüm|engineering|administrative|Boşalma öncesi alarm ve gecikme düzenini sistem tasarımıyla doğrulayın; yeniden girişi atmosfer kontrolüne bağlayın.
+R-17-06|Amonyak inhalasyonu, kimyasal yanık ve ölüm|engineering|administrative|Kaçak sınırını ve dış yardım çağrı ölçütünü acil plana ekleyin; eğitimsiz çalışanı vanaya ulaşmak için gaz bölgesine göndermeyin.
+R-17-07|Klor inhalasyonu ve ağır solunum hasarı|engineering|administrative|Tüp değişiminde uygun bağlantı ve kaçak testini eğitimli ekip yapsın; rüzgâr ve bina emiş noktalarını senaryoda değerlendirin.
+R-17-08|Soğuk yanığı ve göz hasarı|engineering|ppe|Kriyojenik işlem için seçilmiş yüz siperi ve el korumasını kullanın; sıvının giysi ve ayakkabı içine dolmasını önleyen çalışma konumu kurun.
+R-17-09|Kriyojenik kap patlaması ve parça yaralanması|engineering|administrative|Tahliye ağzını buzlanma ve tıkanma yönünden izleyin; kriyojeni kapalı sıradan termosta veya tahliyesiz kapta tutmayın.
+R-17-10|Gaz salımı, basınç yaralanması ve yangın|engineering|administrative|Regülatör etiketini gaz ve çıkış basıncıyla eşleştirin; uyumsuz dişi zorlayarak veya adaptörle bağlamayın.
+R-17-11|Araç içinde boğulma, yangın ve çarpışma yaralanması|engineering|administrative|Yükleme sonrası vana kapanmasını kontrol edin; taşınan gaza göre araç ve taşıma mevzuatını ayrıca değerlendirin.
+R-17-12|Tüp ayrışmasıyla patlama, ağır yanık ve ölüm|administrative|administrative|Isınmış veya yangına maruz tüpü taşımayın; tüp türü ve konumunu güvenli mesafeden acil müdahale ekibine bildirin.
+R-18-01|Kimyasal göz yanığı ve görme kaybı|engineering|engineering|Maddeye uygun acil göz yıkama erişimini açık tutun; dolum ağzını yüz hizasından uzaklaştırın.
+R-18-02|Solvent inhalasyonuna bağlı akut ve kronik sağlık etkileri|engineering|substitution|Proses uygunluğunu değerlendirerek daha düşük uçuculuk veya toksisiteye sahip ürüne geçin; açık kap bekletme süresini azaltın.
+R-18-03|Alerjik dermatit ve kalıcı duyarlanma|engineering|ppe|Eldiveni kimyasal geçirgenlik verisine göre seçin; kirlenmiş eldivenin cildi ve ortak yüzeyleri kirletmesini önleyen değiştirme düzeni kurun.
+R-18-04|Yanlış ürün kullanımına bağlı yanık, zehirlenme ve reaksiyon|engineering|administrative|İkincil kapta ürün adı ve ilgili tehlike bilgisini koruyun; etiketi kayıp ürünü tahmin ederek kullanmayın.
+R-18-05|Kimyasal yutma ve ağır zehirlenme|elimination|administrative|Kimyasal depolamayla yeme içme alanını ayırın; uygunsuz kaba aktarımı tedarik ve dolum talimatında engelleyin.
+R-18-06|Hortum yırtılmasıyla sıçrama ve kimyasal yanık|engineering|administrative|Hortum değişim süresini kullanım koşullarına bağlayın; şişme, sertleşme veya çatlak görülen hortumu derhal ayırın.
+R-18-07|Kimyasal maruziyet, düşme ve çevreye yayılım|engineering|administrative|Dolum öncesi tank boş kapasitesini kontrol edin; gözetimsiz transferi önleyen durdurma ve taşma yanıtı tanımlayın.
+R-18-08|Ekzotermik sıçrama, göz ve cilt yanığı|engineering|administrative|Karışım sırasını GBF ve proses talimatından alın; genelleştirilmiş kimyasal karıştırma reçetesi kullanmayın.
+R-18-09|Toksik gaz solunması ve solunum hasarı|engineering|administrative|Asitli ve klorlu temizlik ürünlerini ayrı saklayın; aynı yüzeye ardışık uygulamada üreticinin durulama talimatını izleyin.
+R-18-10|Kimyasal aerosole bağlı solunum hastalığı ve göz irritasyonu|engineering|substitution|Uygun işlerde püskürtme yerine düşük yayılımlı uygulama seçin; emiş etkinliği ve filtre bakımını izleyin.
+R-18-11|Atık buharına bağlı zehirlenme ve yangın|engineering|administrative|Atıkları uyumluluk gruplarıyla etiketleyin; reaksiyon oluşturabilecek farklı atıkları aynı kaba biriktirmeyin.
+R-18-12|Uygunsuz müdahalede reaksiyon ve kimyasal yanık|administrative|engineering|Kiti kimyasalın GBF bilgisindeki uyumsuzluklara göre seçin; miktar veya madde bilinmiyorsa alanı ayırıp uzman yardım çağırın.
+R-19-01|Reaksiyon kaçışı, kap yırtılması ve çoklu ölüm|engineering|administrative|Proses tehlike çalışmasında sıcaklık, basınç ve besleme sapmalarını birlikte ele alın; koruma işlevlerini kontrollü test programına bağlayın.
+R-19-02|Uyumsuz reaksiyon, patlama ve zehirlenme|engineering|administrative|Hammadde kabul ve yükleme öncesi parti kimliğini kontrol edin; reçete değişikliğini değişiklik yönetimi sürecine alın.
+R-19-03|Reaksiyon kaçışı ve ağır yanık|engineering|administrative|Soğutma kaybındaki duruş sırasını proses tasarımcısına belirletin; genel amaçlı acil duruşun tek başına güvenli olduğunu varsaymayın.
+R-19-04|Reaksiyon kaçışında basınç etkisi, ağır yanık ve ölüm|engineering|administrative|Karıştırıcı arızasında besleme devamını proses güvenliği incelemesine göre kilitleyin; yeniden başlatmadan birikmiş malzemeyi değerlendirin.
+R-19-05|Toksik gazla zehirlenme, yangın yanığı ve ölüm|engineering|administrative|Uyumluluk tablosunu gerçek kimyasal envanterle güncelleyin; ortak drenajın ayrı havuzları yeniden birleştirmediğini kontrol edin.
+R-19-06|Kararsızlaşmış kimyasalda patlama ve ağır yaralanma|administrative|elimination|Süresi veya durumu belirsiz kabı açmayın ya da taşımayın; yetkin bertaraf hizmetiyle güvenli uzaklaştırma planlayın.
+R-19-07|Nem temasıyla ısı, yanıcı gaz ve kimyasal yanık|engineering|administrative|Su ile müdahaleyi otomatik tercih etmeyin; depolama ve yangın planını maddenin uyumsuzluk bilgisine göre hazırlayın.
+R-19-08|Şiddetlenen yangın ve patlamada ağır yanık, parça yaralanması ve ölüm|engineering|administrative|Oksitleyici döküntüsünü yanıcı emiciyle toplamayı önleyin; taşıma ekipmanı ve temizlik malzemesinin uyumluluğunu kontrol edin.
+R-19-09|Basınçlı sıcak madde salımında yanık ve parça çarpmasıyla yaralanma|engineering|administrative|Bekleme ve duruşlarda polimerleşme koşullarını proses verisiyle izleyin; tıkanmış hattı plansız ısıtma veya basınçla açmayın.
+R-19-10|Piroforik tutuşma, yangın ve yanık|engineering|administrative|Katalizörün hava ile temas sınırını üreticiden doğrulayın; boşaltma ve atık saklamayı aynı inertlik planına dahil edin.
+R-19-11|Tahliye akışkanına bağlı zehirlenme ve yanık|engineering|administrative|Çıkış yönünü yaya yolları, hava emişleri ve komşu alanlarla karşılaştırın; tahliye hattı değişikliğinde risk değerlendirmesini yenileyin.
+R-19-12|Proses sapmasının ağırlaşmasıyla yanık, zehirlenme ve çoklu yaralanma|engineering|administrative|Alarm seli sırasında operatörün ilk eylemlerini senaryo ile çalışın; alarm susturmayı koruma işlevini devre dışı bırakmaya dönüştürmeyin.
+R-20-01|Yangın, yanık ve duman zehirlenmesi|engineering|administrative|Yanıcı atık için boşaltma sıklığını üretim hızına göre belirleyin; çıkış ve elektrik panosu çevresini depolama yeri olarak kullanmayın.
+R-20-02|Dumanın kaçış yoluna yayılması ve ölüm|engineering|administrative|Yangın kapısını kama ile açık tutmayı önleyin; tutucu gerekiyorsa alarmda kapanan uygun sistem kullanın.
+R-20-03|Bölmeler arasında yangın ve duman yayılması|engineering|administrative|Yeni kablo ve boru geçişlerinden sonra yangın durdurucu bütünlüğünü kayıtlı kontrol edin; sıradan köpüğü uygun sistem yerine kullanmayın.
+R-20-04|Mutfak yangını, yanık ve duman maruziyeti|engineering|administrative|Davlumbaz ve kanalı yağ yüküne göre temizletin; yağ yangınında su kullanmama kuralını mutfak ekibine öğretin.
+R-20-05|Isıtıcı kaynaklı yangın ve yanık|engineering|administrative|Taşınabilir ısıtıcı kullanımını görevli iznine bağlayın; çevresinde yanıcı malzeme ve uzatma kablosu yığılmasını önleyin.
+R-20-06|Yangında duman zehirlenmesi ve yanık; patlamada ağır yaralanma|engineering|administrative|İzmaritleri uygun yanmaz kapta toplayın; sigara alanının gaz, yakıt ve yanıcı atık noktalarından güvenli ayrıldığını kontrol edin.
+R-20-07|Sürtünme kaynaklı yangın ve duman maruziyeti|engineering|administrative|Rulman sıcaklığı ve anormal ses değişimlerini duruş ölçütüne bağlayın; çevredeki toz ve yanıcı birikimini temizleyin.
+R-20-08|Solvent yangını, ağır yanık ve duman zehirlenmesi|engineering|administrative|Günlük kullanım miktarı ile yedek stoğu ayırın; depolamanın tutuşturucu kaynak ve kaçış yoluyla ilişkisini kontrol edin.
+R-20-09|Geciken algılama nedeniyle yangının büyümesi ve ölüm|administrative|engineering|Devre dışı kalan bölge için uygun geçici izleme sağlayın; arıza kapatılmadan koruma sisteminin çalıştığını varsaymayın.
+R-20-10|Büyüyen yangında yanık, duman zehirlenmesi ve ölüm|engineering|administrative|İstif yüksekliğini ve başlık çevresi boşluğunu depo planında işaretleyin; raf değişikliklerinde sistem tasarımına uygunluğu yeniden inceletin.
+R-20-11|Müdahale gecikmesi nedeniyle ağır yangın ve ölüm|administrative|administrative|Kesinti süresince sıcak iş ve yangın yükünü kısıtlayın; ilgili birimlere koruma kaybını ve yeniden devreye alınmayı bildirin.
+R-20-12|Komşu yangından duman, ısı ve yanık maruziyeti|engineering|administrative|Komşu işletmeyle haberleşme ve alternatif tahliye yönünü belirleyin; dış yangın sırasında hava emişlerinin yönetimini plana ekleyin.
+R-21-01|Toz patlaması, yanık ve çoklu ölüm|engineering|administrative|Tozun patlama özelliklerini temsilî malzeme verisiyle belirleyin; koruma donanımının bakımını ve tahliye yönünü PKD ile ilişkilendirin.
+R-21-02|Silo patlaması ve ağır yaralanma|engineering|administrative|Dolum sırasında toz yayılımını gözleyin; yanıcı toz bulunan hacimlerde uygunsuz elektrikli temizlik cihazı kullanmayın.
+R-21-03|Solvent yangını ve patlamasında ağır yanık ve ölüm|engineering|administrative|Eşpotansiyel bağlantıyı transfer başlamadan kurup sürekliliğini uygun yöntemle kontrol edin; malzeme ve akışa özgü transfer sınırlarını izleyin.
+R-21-04|Ateşleme kaynaklı patlama ve ölüm|engineering|administrative|Ekipman uygunluğunu yalnız Ex işaretiyle değil bölge, gaz/toz grubu ve sıcaklık gereklilikleriyle karşılaştırın.
+R-21-05|Patlama tahliyesi önündeki kişide ağır yanık ve ölüm|engineering|administrative|Tahliye etki alanını depolama veya yaya yolu yapmayın; sonradan yapılan bina ve kanalları koruma tasarımına göre inceletin.
+R-21-06|Zincirleme patlama ve çoklu ölüm|engineering|administrative|Bağlı kanalları ve prosesler arası geçişleri PKD kapsamına alın; izolasyon elemanlarını standart klape ile değiştirmeyin.
+R-21-07|İkincil toz patlaması ve yaygın yapı hasarı|engineering|administrative|Kiriş ve kablo tavası üstleri dahil birikim noktalarını temizlik planına ekleyin; tozu basınçlı havayla havalandırmayın.
+R-21-08|Fırın patlaması, yanık ve ölüm|engineering|administrative|Havalandırma kaybında besleme ve ısıtmayı güvenli duruma geçiren işlevi test edin; proses kapasitesini onaysız artırmayın.
+R-21-09|Hidrojen patlaması ve ağır yanık|engineering|administrative|Şarj alanında kıvılcım kaynaklarını kontrol edin; kapalı hacimlerde havalandırmanın yalnız kapı açıklığına bağlı kalmamasını sağlayın.
+R-21-10|Öğütücü veya filtre patlaması ve ölüm|engineering|administrative|Yabancı metal tespiti ve uzaklaştırmayı besleme öncesinde düzenleyin; sıcaklık veya kıvılcım alarmı sonrasında otomatik tekrar başlatmayın.
+R-21-11|Yağ sisi yangını ve ağır yanık|engineering|administrative|Basınçlı yağ kaçağını sis oluşumu yönünden değerlendirin; kaçağa müdahalede hattı basınçsız bırakın.
+R-21-12|Ex korumasının kaybıyla patlama ve ölüm|administrative|engineering|Conta, rakor, kapak ve bağlantı parçalarını koruma tipine uygun seçin; onarım sonrasında uygunluğu yetkin kişiye kontrol ettirin.
+R-22-01|Silika maruziyetine bağlı silikozis ve akciğer kanseri|engineering|administrative|Kesim noktasındaki emiş veya suyun çalışmasını iş öncesi sınayın; kişisel maruziyet ölçümüyle tedbirlerin yeterliliğini değerlendirin.
+R-22-02|Yoğun silika maruziyetiyle ağır akciğer hastalığı|substitution|engineering|Püskürtme kabinini diğer çalışanlardan ayırın; aşındırıcının daha az tehlikeli olması halinde bile oluşan iş parçası tozunu kontrol edin.
+R-22-03|Ahşap tozuyla solunum hastalığı, duyarlanma ve bazı kanserler|engineering|administrative|Emiş hortumunun tıkanma ve kaçaklarını kontrol edin; tozu kuru süpürme yerine uygun endüstriyel vakumla alın.
+R-22-04|Un tozuna bağlı mesleki astım ve irritasyon|engineering|administrative|Çuvalı yüksekten dökmeyin; düşük düşme mesafeli boşaltma ve un serpme yerine düşük tozlu yöntem kullanın.
+R-22-05|Metal dumanına bağlı solunum hasarı ve toksik etkiler|engineering|substitution|Proses ve sarf malzemesinin oluşturduğu dumanı tanımlayın; daha az duman oluşturan teknik seçenekleri kalite koşullarıyla birlikte değerlendirin.
+R-22-06|Dizel egzozuna bağlı solunum hastalığı ve kanser riski|substitution|administrative|Kapalı alanda rölantiyi sınırlandırın; motor bakımını ve emisyonun çalışan solunum bölgesine taşınmasını izleyin.
+R-22-07|Lif ve silika maruziyetine bağlı akciğer hastalığı|administrative|engineering|Sökülecek refrakterin bileşimini ve kullanımda değişimini araştırın; parçaları kırarak tozlaştırmadan kontrollü sökün ve paketleyin.
+R-22-08|Solunum irritasyonu, dermatit ve kimyasal cilt yanığı|engineering|ppe|Ciltle temas eden çimentoyu giysi içinde tutmayın; uygun el koruması, yıkama ve temiz kıyafet erişimi sağlayın.
+R-22-09|Lif ve toza bağlı göz, cilt ve solunum irritasyonu|engineering|administrative|Kesimi havalandırılan ayrılmış noktada yapın; kıyafete taşınan lifleri basınçlı hava ile temizlemeyin.
+R-22-10|Yoğun toz inhalasyonu ve toksik maruziyet|engineering|administrative|Filtreyi açmadan sistemi durdurup güvenli duruma getirin; toz niteliğine göre kapalı atık aktarımı ve uygun kişisel koruma belirleyin.
+R-22-11|Yeniden havalanan toza bağlı solunum maruziyeti|substitution|administrative|Giysi ve vücut temizliğinde de basınçlı havayı kullanmayın; vakum cihazını tozun yanıcılık ve filtreleme gereksinimine göre seçin.
+R-22-12|İnce toz inhalasyonuna bağlı maddeye özgü sağlık hasarı|engineering|administrative|Parçacık boyutu, toksisite ve miktarı ayrı değerlendirin; nano veya özel fonksiyonel malzemede genel toz sınırını yeterli kabul etmeyin.
+R-23-01|Kalıcı işitme kaybı ve çınlama|engineering|ppe|Kaynak azaltımı sonrasında kalan maruziyete göre kulak koruyucu seçin; çalışanların takma biçimini ve iletişim ihtiyacını değerlendirin.
+R-23-02|Akustik travma ve kalıcı işitme kaybı|engineering|administrative|Darbe olayının tepe etkisini uygun ölçümle değerlendirin; sadece vardiya ortalamasına göre güvenli sonuç vermeyin.
+R-23-03|Bel ve omurga rahatsızlıkları|engineering|administrative|Araç hızını zemin bozukluğu ve yükle uyumlu sınırlandırın; maruziyet süresini ve molaları gerçek sürüş görevine göre düzenleyin.
+R-23-04|Isı bitkinliği, sıcak çarpması ve ölüm|engineering|administrative|Isıl yükü görev ve giysiyle birlikte değerlendirin; su, serinleme ve yeni çalışana uyum sürecini planlayın.
+R-23-05|Soğuk stresi, donma ve beceri kaybına bağlı kaza|administrative|ppe|Giysiyi sıcaklık, nem ve hareket gereksinimine göre seçin; ıslanmış korumayı değiştirme ve ısınma olanağı sağlayın.
+R-23-06|Tehlikenin seçilememesine bağlı çarpma ve sıkışma|engineering|administrative|Ölçümü görevin yapıldığı yüzeyde ve gerçek çalışma koşulunda yapın; arızalı armatürleri görev önceliğine göre değiştirin.
+R-23-07|Görsel zorlanma ve tehlikeye geç tepki|engineering|administrative|Parlama kontrolünü farklı vardiya ve güneş koşullarında değerlendirin; operatörün görüş hattına parlak yansıtıcı yüzey yerleştirmeyin.
+R-23-08|Dönen parçaya temasla uzuv kaybı|engineering|administrative|Dönen parçanın hızını güvenli göstergeyle izleyin; aydınlatma değişikliğinden sonra yanılsama oluşmadığını işletme koşullarında kontrol edin.
+R-23-09|Kalıcı göz hasarı ve cilt yanığı|engineering|administrative|Lazer sınıfına uygun kontrollü alan ve bakım modu oluşturun; ışın yolundaki yansıtıcı malzemeleri ve yetkisiz erişimi kontrol edin.
+R-23-10|UV maruziyetine bağlı göz ve cilt hasarı|engineering|administrative|Kapak açılınca ışınımın kesildiği işlevi kontrol edin; bakımda kaynak kapanmadan erişim sağlamayın.
+R-23-11|Elektromanyetik alana bağlı maddeye ve kaynağa özgü sağlık etkileri|administrative|engineering|Erişim sınırını kaynak çalışırken yapılan değerlendirmeye göre belirleyin; implant konusunu sağlık verisini rapora taşımadan işyeri hekimine yönlendirin.
+R-23-12|İyonlaştırıcı radyasyona bağlı doku hasarı ve kanser riski|administrative|engineering|Kaynak muhafazası, kilitleme ve erişim işlevlerini yetkili radyasyon güvenliği düzeninde kontrol edin; izinsiz kaynak müdahalesi yaptırmayın.
+R-24-01|Bel incinmesi ve kas iskelet sistemi hasarı|engineering|administrative|Yükün ağırlığı kadar kavrama, taşıma mesafesi ve kaldırma yüksekliğini değerlendirin; ekip kaldırmasını mekanik yardımın yerine otomatik çözüm saymayın.
+R-24-02|Bel ve omurga zorlanması|engineering|administrative|Malzeme akışını ayakla dönmeye izin verecek biçimde kurun; gövde sabitken yük çevirmeyi gerektiren istasyonları değiştirin.
+R-24-03|Omuz ve boyun rahatsızlıkları|engineering|administrative|Alet ve parçayı omuz altında erişilebilir konuma alın; baş üstü işi kısa çevrimlerde farklı görevlerle dengeleyin.
+R-24-04|Tendinit ve el bileği rahatsızlıkları|engineering|administrative|Kavrama kuvvetini iş parçası tutucusu ve keskin/uygun aletle azaltın; sadece eldiven vermekle riski kontrol edilmiş saymayın.
+R-24-05|Bacak yorgunluğu, dolaşım ve bel rahatsızlıkları|engineering|administrative|Oturmaya izin veren iş organizasyonu kurun; uygun zemin desteğinin takılma veya kayma tehlikesi oluşturmamasını sağlayın.
+R-24-06|Boyun, sırt ve el bileği rahatsızlıkları|engineering|administrative|Ekran işini düzenli kısa ara veya farklı görevle bölün; dizüstü bilgisayarda uzun çalışmada ayrı ekran ve giriş aygıtını değerlendirin.
+R-24-07|Çalışanda bel yaralanması ve hastada düşme|engineering|administrative|Transfer yöntemini hastanın destek gereksinimi ve alan ölçülerine göre seçin; yardımcı cihazı kullanacak personelin uygulamalı eğitimini sağlayın.
+R-24-08|Bel, omuz ve el bileği zorlanması|engineering|administrative|Tekerlekleri ve güzergâh eğimini kontrol edin; aşırı dolu arabayı daha fazla çalışanla zorlamak yerine yükü veya sistemi değiştirin.
+R-24-09|Diz eklemi ve bel rahatsızlıkları|engineering|administrative|Diz üstü çalışma süresini azaltacak uzun saplı alet ve yükseltilmiş çalışma yüzeyi kullanın; görevi farklı duruşlarla bölün.
+R-24-10|El ve önkol zorlanması ile göz yorgunluğu|engineering|administrative|Küçük parça işinde uygun büyütme ve destek fikstürü sağlayın; hassas kavrama gerektiren görevleri dinlenme aralarıyla dönüşümlü planlayın.
+R-24-11|Kas iskelet sistemi zorlanması ve acil çıkışta gecikme|engineering|administrative|Bakım planında sökülebilir erişim panelleri ve çalışma boşluğu sağlayın; dar erişimi personelin bedensel zorlanmasıyla telafi etmeyin.
+R-24-12|Tekrarlı hareket rahatsızlıkları ve yorgunluk|administrative|engineering|Otomatik besleme ve ürün çıkış düzeniyle tekrarlı işi azaltın; mola süresini yalnız üretimin durduğu aralıklara bırakmayın.
+R-25-01|Kan yoluyla bulaşabilen enfeksiyonlar|engineering|administrative|İğneyi tekrar kapatmayı önleyin; kesici yaralanmasında gecikmeden bildirilecek sağlık değerlendirme yolunu tanımlayın.
+R-25-02|Mukozal maruziyet sonrası enfeksiyon|engineering|ppe|Sıçrama olasılığı olan işlemde yüz ve göz koruması kullanın; kirli koruyucuyu çıkarma ve el hijyeni sırasını öğretin.
+R-25-03|Solunum yolu enfeksiyonu ve ağır hastalık|engineering|administrative|Hastalık şüphesinde güvenli bildirim ve işe özgü yönlendirme düzeni kurun; gerçek temas biçimine göre koruma seçin.
+R-25-04|Kirli aerosol kaynaklı solunum enfeksiyonu|engineering|administrative|Durgun hat, duş ve soğutma kulesi gibi aerosol noktalarını envantere alın; su yönetimini yetkin kişiyle planlayın.
+R-25-05|Küf kaynaklı solunum ve alerjik yakınmalar|engineering|administrative|Yalnız yüzeyi boyamayın; sızıntı ve yoğuşma nedenini giderin, yaygın kirlenmede çalışanları temizleme alanından ayırın.
+R-25-06|Atıksu kaynaklı enfeksiyon ve cilt hastalığı|engineering|administrative|Kirli-temiz giysi ayrımı ve el yıkama olanağı sağlayın; atıksu alanında yeme içmeyi önleyin.
+R-25-07|Isırık, doku yaralanması ve zoonotik enfeksiyon|engineering|administrative|Hayvanın davranışını eğitimli kişi değerlendirsin; ısırık sonrası temizlik ve tıbbi değerlendirmeyi geciktirmeyen bildirim düzeni kurun.
+R-25-08|Zoonotik enfeksiyon ve biyolojik maruziyet|engineering|administrative|Hayvansal materyalin kabul, işleme ve atık akışını ayırın; cilt yarası bulunan çalışanın işe uygunluğunu sağlık birimiyle değerlendirin.
+R-25-09|Vektörle bulaşan hastalık ve alerjik reaksiyon|administrative|ppe|Saha ve mevsime uygun koruyucu giysi kullanın; kene veya böcek temasında güvenli kontrol ve tıbbi yönlendirme bilgisini verin.
+R-25-10|Biyoaerosole bağlı solunum rahatsızlığı|engineering|administrative|Kompost çevirme sırasında çevredeki personeli uzaklaştırın; kabin filtrelerinin bakım ve sızdırmazlığını kontrol edin.
+R-25-11|Kirli tekstille bulaşma ve kontamine kesici yaralanması|engineering|administrative|Kirli çamaşırı sallamadan taşıyın; ayrım sırasında görünmeyen kesiciyi elle aramak yerine güvenli ayırma yöntemi uygulayın.
+R-25-12|Laboratuvar kaynaklı enfeksiyon|engineering|administrative|Santrifüj, pipetleme ve kap açma adımlarını ajan riskine göre değerlendirin; kabin uygunluğunu ve operatör tekniğini birlikte kontrol edin.
+R-26-01|Tükenme, psikolojik zorlanma ve yorgunluk kaynaklı hata|administrative|administrative|İş yükünü gerçekleşen süreler ve personel kapasitesiyle izleyin; çalışanın erken bildirimini performans cezasına dönüştürmeyin.
+R-26-02|Dikkat azalmasına bağlı kaza ve uyku düzeni bozukluğu|administrative|administrative|Güvenlik kritik işleri uyanıklığın en düşük olduğu saatlerde ek destekle planlayın; vardiya geçişinde yeterli dinlenmeyi koruyun.
+R-26-03|Uzamış stresin sağlık etkileri ve yanlış işlem sonucu yaralanma|administrative|administrative|Birden fazla amirin çelişen talimatlarında başvurulacak tek karar merciini belirleyin; görev değişimini yazılı iletin.
+R-26-04|Psikolojik zarar ve işlev kaybı|administrative|administrative|Bildirimleri gizlilik ve misilleme yasağıyla ele alın; kişisel sağlık ayrıntılarını risk raporuna değil yetkili destek sürecine yönlendirin.
+R-26-05|Fiziksel yaralanma ve psikolojik travma|engineering|administrative|Yüksek gerilimli müşteri etkileşimlerinde yalnız çalışmayı azaltın; çatışmadan uzaklaşma ve yardım çağırma planını uygulayın.
+R-26-06|Yardımın gecikmesiyle yaralanmanın ağırlaşması|engineering|administrative|Planlı kontrol aralığını işin tehlikesine göre belirleyin; haber alınamadığında kimin ne yapacağını önceden tanımlayın.
+R-26-07|Travma sonrası ruhsal etkilenme ve tükenme|administrative|administrative|Travmatik olay sonrası gönüllü ve gizli profesyonel destek sağlayın; zorunlu toplu olay anlatımını destek yerine koymayın.
+R-26-08|Koruyucu atlama sonucu ağır yaralanma|administrative|engineering|Üretim hedefi için emniyet kilidini aşmayı teknik olarak güçleştirin; güvenli duruş bildirimlerini olumlu performans göstergesi olarak izleyin.
+R-26-09|İş stresi ve sorumluluk belirsizliği sonucu güvenlik hatasıyla yaralanma|administrative|administrative|Değişiklik sonrasında görev yükü ve kritik bilgi aktarımını kontrol edin; ayrılan personelin tek başına bildiği işleri devredin.
+R-26-10|Kritik uyarının kaçırılması sonucu prosese bağlı ağır yaralanma|engineering|administrative|Güvenlik alarmını sıradan mesajlardan ayırın; alarm susturma ve öncelik değişikliklerini yetkili kişi yönetsin.
+R-26-11|Yorgunluk, dikkat kaybı ve sağlık yakınmaları|administrative|administrative|Mola yerini ve görev devralacak kişiyi fiilen erişilebilir kılın; kullanılmayan molaları yalnız çizelgede var saymayın.
+R-26-12|İzolasyon, psikolojik zorlanma ve ergonomik sorunların sürmesi|administrative|engineering|Uzaktan destek ve ekipman talebi kanalı sağlayın; ulaşılabilirlik saatlerini belirleyerek sürekli çevrimiçi kalma baskısını azaltın.
+R-27-01|Yanlış makine ayarıyla sıkışma ve uzuv kaybı|engineering|administrative|Ayar yetkisini görev ve makine bazında tanımlayın; güvenli ayar modu ve yeniden başlatma kontrolü uygulanmadan üretime geçmeyin.
+R-27-02|Üst seviyeden cisim düşmesi ve çakışan enerjiyle yaralanma|elimination|administrative|İş alanı ve zaman çizelgesini tüm yüklenicilerle paylaşın; bir iş değiştiğinde ortak çalışma iznini yeniden değerlendirin.
+R-27-03|Bilinmeyen enerjinin salımıyla ağır yaralanma|administrative|engineering|Teslim edilen alandaki izolasyon noktalarını yerinde gösterin; yalnız sözlü “enerji kesildi” bilgisiyle çalışmaya başlatmayın.
+R-27-04|Yanlış güvenlik işlemiyle yaralanma|administrative|administrative|Talimatın anlaşılmasını kısa uygulama veya geri anlatımla kontrol edin; yalnız imzalı eğitim formunu anlama kanıtı saymayın.
+R-27-05|Beklenmedik enerji veya makine hareketiyle ezilme, elektrik çarpması ve ölüm|administrative|administrative|Devirde kilitler, devre dışı korumalar ve bekleyen izinleri tek listede ele alın; sorumluluğu isim ve saatle devredin.
+R-27-06|Yeni ekipman arayüzünde sıkışma, elektrik veya proses kazası|administrative|engineering|Yeni makinenin komşu hat, acil duruş ve koruyucu sistemle uyumunu devreye alma kontrolüne dahil edin.
+R-27-07|Çakışan izinlerden kaynaklı beklenmedik enerji ve yaralanma|administrative|engineering|Aynı enerji kaynağına bağlı işlerin kilit ve izin ilişkisini görünür kılın; bir iş bitince diğerinin koruması kalkmasın.
+R-27-08|Ziyaretçide çarpma, ezilme ve ağır yaralanma|engineering|administrative|Ziyaretçi güzergâhını değişen üretim ve sevkiyat alanlarından ayırın; refakatçiye durdurma ve alternatif yol yetkisi verin.
+R-27-09|Saha trafik çarpışması ve yaya yaralanması|administrative|engineering|Sürücüye dil bağımsız yönlendirme ve güvenli bekleme yeri sağlayın; araçtan inilen noktayı yaya geçişine bağlayın.
+R-27-10|Kritik ekipman kusuruyla ağır yaralanma ve ölüm|administrative|engineering|Kusurlu ekipmanın yeniden kullanımını fiziksel kilit veya hizmet dışı işaretiyle engelleyin; onarım kapatma yetkisini tanımlayın.
+R-27-11|Tehlikeli durumun sürmesi ve yaralanmanın büyümesi|administrative|administrative|Çalışanın ciddi tehlikede işi durdurup güvenli alana geçmesini destekleyin; üretim yeniden başlatma kararını yetkili kişiye bırakın.
+R-27-12|Tekrarlayan kazalar ve önlenebilir yaralanma|administrative|administrative|Ramak kala ve kaza için alınan önlemi iş yerinde kontrol edin; yalnız kayıt açılmasını düzeltici faaliyetin tamamlanması saymayın.
+R-28-01|Deneyimsiz işe atamada ağır yaralanma|administrative|elimination|Yaş grubuna yasak veya uygun olmayan işi alternatif görevle değiştirin; bu kararı yalnız sektör adına göre otomatik vermeyin.
+R-28-02|Gebelik ve çalışan sağlığı üzerinde maddeye özgü olumsuz etki|administrative|substitution|Madde ve maruziyet yolunu GBF ile tanımlayın; sağlık verisini gizli tutarak daha az tehlikeli proses veya alternatif işi değerlendirin.
+R-28-03|Kas iskelet sistemi zorlanması ve gebelikte sağlık etkilenmesi|engineering|administrative|Ayakta kalma, kaldırma ve vardiya koşullarını kişiye özgü değerlendirin; teşhis veya gebelik ayrıntısını genel rapora yazmayın.
+R-28-04|Tahliyede gecikme, düşme ve duman maruziyeti|engineering|administrative|Yardım ihtiyacını kişiye danışarak belirleyin; uygun tahliye ekipmanını, erişilebilir güzergâhı ve asıl/yedek refakat görevini birlikte planlayın.
+R-28-05|Tahliyede gecikmeye bağlı duman maruziyeti, düşme ve yaralanma|engineering|administrative|Alarmın farklı çalışma noktalarında algılanmasını kullanıcıyla test edin; tek refakatçinin yokluğuna karşı yedek iletişim düzeni kurun.
+R-28-06|Engellere çarpma ve düşme|engineering|administrative|Güzergâhtaki değişiklikleri önceden erişilebilir biçimde bildirin; geçici kablo ve malzemeyi alışılmış yolun üzerinde bırakmayın.
+R-28-07|Proses tehlikesine yaklaşmayla ağır yaralanma|administrative|engineering|Yeni çalışanın erişimini yetkinlik kazanılana kadar güvenli alanla sınırlandırın; uygulamalı tanıtımı gerçek makine ve kaçış yolunda yapın.
+R-28-08|Yanlış işleme bağlı yaralanma ve sağlık zararı|administrative|administrative|Geçici personelin göreve özgü bilgilendirmesini işe başlamadan tamamlayın; kritik işi gözlemli uygulamayla öğretip yetkisiz görevlendirmeyi önleyin.
+R-28-09|İmplant işlevinin etkilenmesine bağlı ciddi sağlık olayı|administrative|engineering|Alan kaynağına erişim sınırını uzman incelemesiyle belirleyin; kişinin implant bilgisini yalnız yetkili sağlık kanalıyla yönetin.
+R-28-10|Uyanıklık kaybıyla güvenlik kritik hata ve yaralanma|administrative|administrative|Gizli sağlık değerlendirmesi sonrası görev uyarlamasını tanımlayın; raporda tanı, ilaç veya kişisel sağlık ayrıntısı istemeyin.
+R-28-11|Uygunsuz fiziksel yük ve zorlanmaya bağlı yaralanma|administrative|engineering|Ayarlanabilir çalışma yüzeyi ve mekanik yardım sağlayın; kişiyi yaş etiketiyle değil gerçek iş talebiyle birlikte değerlendirin.
+R-28-12|Yanlış işlem sonucu yaralanma ve tehlikeye maruz kalma|administrative|administrative|Görsel, uygulamalı ve anlaşılır dilde anlatım sunun; okuryazarlık veya dil güçlüğünü çalışanın kusuru olarak kaydetmeyin.
+R-29-01|Cam kesisi, tendon ve damar yaralanması|engineering|ppe|Kesilme direnci işe uygun el-kol koruması seçin; kırık camı elle toplamak yerine uygun mekanik toplama aracı kullanın.
+R-29-02|Mineral toza bağlı solunum hastalığı|engineering|administrative|Hammadde bileşimine göre silika ve diğer tozları değerlendirin; tartım kabinindeki emişin çalışmasını operatör kontrolüne ekleyin.
+R-29-03|Sıcak camla ağır yanık ve ölüm|engineering|administrative|Kaçak işaretleri için fırına özgü izleme ve uzaklaşma ölçütü belirleyin; tehlikeli noktaya yaklaşarak sızıntı kapatma yaptırmayın.
+R-29-04|Erimiş cam temasıyla ağır yanık|engineering|administrative|Aktarım hattının altına personel geçişini kapatın; tıkanıklığa müdahaleyi duruş ve izolasyon yöntemine bağlayın.
+R-29-05|Yanık, sıkışma ve el yaralanması|engineering|administrative|Kalıp ağırlığı ve sıcaklığını değiştirme planında belirtin; taşıma aparatını sıcak parçaya ve kavrama noktasına uygun seçin.
+R-29-06|Sıcak ürüne veya hareketli hatta temasla yanık ve ezilme|engineering|administrative|Sıkışmış ürünü normal çalışma sırasında elle düzeltmeyin; enerji ve sıcaklık bakımından güvenli müdahale koşulunu tanımlayın.
+R-29-07|Cam parçasıyla göz, el ve yüz yaralanması|engineering|ppe|Kırma hattındaki parçacık yönüne uygun yüz ve göz koruması kullanın; desteklenmeyen levhayı bedenle tutarak kırmayın.
+R-29-08|Kesilme, sıkışma ve fırlayan cam yaralanması|engineering|administrative|Bağlama düzenini levha boyutu ve kalınlığına göre ayarlayın; takım değişiminde kilitleme ve sıfır enerji prosedürünü uygulayın.
+R-29-09|Temperli cam parçalarıyla göz ve cilt yaralanması|engineering|administrative|Parçalanmış camın temizliği için hattı güvenli duruma alın; koruma paneli sökülmüş halde üretime devam etmeyin.
+R-29-10|Kaplama kimyasalıyla yanık ve toksik maruziyet|engineering|administrative|Bakım öncesi kimyasal beslemeyi ve birikmiş sıvıyı tanımlayın; izolasyon ve atık toplama yöntemini ürün GBF bilgisine bağlayın.
+R-29-11|Ani basınç salımı ve sıcak buharla ağır yanık|engineering|administrative|Otoklav kapağı emniyetini çevrim testine dahil edin; basınç göstergesini tek başına açma izni kabul etmeyin.
+R-29-12|Cam paket devrilmesiyle ağır ezilme ve ölüm|engineering|administrative|Bağları çözmeden paketin sabitliğini kontrol edin; boşaltma sırasında devrilme düzleminin dışında durun.
+R-30-01|Sıvı metal sıçramasıyla ağır yanık ve ölüm|engineering|administrative|Kapalı, içi bilinmeyen ve ıslak hurdaları şarja kabul etmeyin; şarj kabul kontrolünü besleme noktasından önce yapın.
+R-30-02|Metal ve nem temasıyla patlayıcı sıçrama ve ölüm|engineering|administrative|Pota hazırlama durumunu kayıtla izleyin; yalnız dış yüzeyin sıcak görünmesini yeterli kuruluk kanıtı saymayın.
+R-30-03|Pota metal kaçağıyla ağır yanık|engineering|administrative|Pota kontrolünü her çevrimde görünür kusur ve tasarım ömrüyle birlikte yapın; kusurlu potayı belirgin biçimde hizmet dışı bırakın.
+R-30-04|Sıvı metal dökülmesiyle yanık ve ölüm|engineering|administrative|Yaya ve döküm güzergâhlarını çalışma sırasında fiziksel ayırın; metal dökülebilecek alanlarda su ve yanıcı birikimini önleyin.
+R-30-05|Fırın arızasında sıcak metal salımı ve patlamayla ağır yanık ve ölüm|engineering|administrative|Soğutma kaybındaki eylemleri fırın üreticisinin acil durum talimatına bağlayın; su verme gibi genel müdahaleleri otomatik önermeyin.
+R-30-06|Sıcak metal sıçramasıyla göz ve cilt yanığı|engineering|administrative|Kalıp hazırlama ve bekletme koşullarını izleyin; nemli veya hasarlı kalıbı döküm öncesinde ayırın.
+R-30-07|Mikserde ezilme ve uzuv kaybı|engineering|administrative|Temizlikte karıştırıcıya erişimi izolasyonla yönetin; kapak kilidini üretim veya temizlik kolaylığı için devre dışı bırakmayın.
+R-30-08|Sıcak parça yanığı ve solunabilir toz maruziyeti|engineering|administrative|Sarsak kabinindeki toz birikimini uygun yöntemle temizleyin; sıcak parçayı soğuk ürün kabul ederek elle ayırmayın.
+R-30-09|Bağlayıcı dumanına bağlı solunum ve toksik etkiler|substitution|administrative|Bağlayıcı ve sıcaklığa göre çıkan maddeleri değerlendirin; emişin kalıp açma ve boşaltma anındaki etkinliğini kontrol edin.
+R-30-10|Cüruf sıçramasıyla ağır yanık|engineering|administrative|Cüruf alanına yağış ve su girişini kontrol edin; sıcak atığı nemli zemin veya uygunluğu belirsiz kapla temas ettirmeyin.
+R-30-11|Numune sırasında sıcak metal yanığı|engineering|ppe|İşe uygun yüz, gövde ve ayak koruması seçin; numune aracını sıcak metale sokmadan hazırlama ve kuruluk koşulunu doğrulayın.
+R-30-12|Çapakla göz yaralanması, kesilme ve titreşim maruziyeti|engineering|administrative|Parçayı fikstürde tutun; taş veya takımın üretici hız sınırını aşmayın ve değişim sonrası koruyucuyu yerine alın.
+R-31-01|Kesik, tendon yaralanması ve enfeksiyon|engineering|ppe|Keskin talaşa uygun el korumasını yalnız makine durup izole edildikten sonra kullanın; dönen parçaya eldivenle yaklaşmayın.
+R-31-02|Dermatit, solunum duyarlanması ve mikrobiyal maruziyet|engineering|administrative|Sıvı konsantrasyonu, kirlenme ve bakımını üretici planına göre izleyin; sisin kabin dışına çıkmasını önleyin.
+R-31-03|El ve parmak kaybı|engineering|administrative|Arka taraftaki hurda alma işini de erişim korumasına dahil edin; kısa parçalar için eli kesim bölgesine sokmayan tutucu kullanın.
+R-31-04|El-parmak ezilmesi ve uzuv kaybı|engineering|administrative|Bükülen sacın yukarı hareket ederek kişiye sıkıştırma oluşturmasını parça geometrisine göre değerlendirin; kalıp değişiminde izolasyon uygulayın.
+R-31-05|Sac darbesi, kesilme ve ağır ezilme|engineering|administrative|Bağları çözmeden rulonun açıcıya güvenle bağlandığını kontrol edin; açılma düzlemi önünde personel bulundurmayın.
+R-31-06|Metal dumanıyla solunum hasarı|engineering|administrative|Kesilen metal ve kaplamaya göre filtre uygunluğunu kontrol edin; emiş arızasında üretimi güvenli duruşa alın.
+R-31-07|Göz ve cilt yanığı, sıcak parçacık yaralanması|engineering|ppe|Plazma işlemine uygun göz-yüz korumasını seçin; çevre çalışanlarını yalnız mesafeye güvenerek korunmasız bırakmayın.
+R-31-08|Korozif sisle solunum, göz ve cilt hasarı|engineering|administrative|Banyo sıcaklığını ve emiş performansını birlikte izleyin; parçayı çıkarırken çalışan yüzüne aerosol taşınmasını azaltın.
+R-31-09|Kimyasal yanık, toksik gaz maruziyeti ve hidrojen yangını|engineering|administrative|Asit ve işlenen metal etkileşimini GBF ve proses verisiyle değerlendirin; uyumsuz metal veya kimyasalı banyoya kabul etmeyin.
+R-31-10|Yağ yangını ve ağır yanık|engineering|administrative|Parça yükü ve yağ sıcaklığını proses sınırında tutun; yangına suyla müdahale edilmesini önleyen özel talimat hazırlayın.
+R-31-11|Aşındırıcı parçacıkla göz ve cilt yaralanması|engineering|administrative|Kabin açılmadan püskürtme ve basıncı güvenli duruma alın; aşınmış görüş camı ve eldiven bağlantılarını değiştirin.
+R-31-12|Metal tozuyla solunum hasarı; yangın/patlamada yanık ve ağır yaralanma|engineering|administrative|Tozun su ve oksijenle uyumunu malzemeye göre belirleyin; döküntü ve atık toplamada genel amaçlı süpürge veya söndürücü kullanmayın.
+R-32-01|Geri fırlayan ahşapla gövde ve baş yaralanması|engineering|administrative|İtme düzeniyle kesim hattının yanında çalışın; sıkışan parçaya makine dönüyorken müdahale etmeyin.
+R-32-02|Parmak ve el kaybı|engineering|administrative|Besleme yönünü takım dönüşüne ve üretici talimatına göre belirleyin; küçük parça için uygun fikstür olmadan iş başlatmayın.
+R-32-03|Kesici temasıyla parmak kaybı|engineering|administrative|Kısa parçaları üreticinin güvenli işleme boyutuna göre ayırın; parçayı avuçla bastırmak yerine uygun itici kullanın.
+R-32-04|Açık bıçak temasıyla ağır kesilme|engineering|administrative|Kılavuz ve koruyucu yüksekliğini her parça grubuna göre ayarlayın; bıçak değişimi sonrası gergi ve iz sürmeyi kontrol edin.
+R-32-05|Gantri çarpması ve ezilme|engineering|administrative|Hücreye malzeme yükleme ile otomatik hareketi ayırın; içeride kişi varken uzaktan yeniden başlatmayı engelleyin.
+R-32-06|Talaş yangını veya patlamasında yanık, duman zehirlenmesi ve ölüm|engineering|administrative|Emiş hattına kıvılcım üreten farklı işlemleri tasarım incelemesi olmadan bağlamayın; toz birikimini güvenli yöntemle giderin.
+R-32-07|Yapıştırıcı buharıyla solunum ve cilt etkilenmesi|substitution|administrative|Ürün değişiminde yeni GBF'yi değerlendirin; kapları uygulama aralarında kapalı tutun.
+R-32-08|Solvent/aerosol maruziyeti, yangın ve yanık|engineering|administrative|Kabin filtre bakımını ve uygun elektrik donanımını boya türüyle birlikte değerlendirin; karışım alanını tutuşturucu kaynaklardan ayırın.
+R-32-09|Zımba batması, göz ve el yaralanması|engineering|administrative|Sıkışan zımbayı çıkarmadan hava veya elektrik beslemesini ayırın; tabancayı kişiye yöneltmeyin.
+R-32-10|Panel düşmesi, kas zorlanması ve ezilme|engineering|administrative|Taşıma güzergâhını panel boyutuyla karşılaştırın; dar dönüşlerde yükü bedenle dengelemek yerine uygun taşıyıcı kullanın.
+R-32-11|Isı stresi ve sıcak yüzey yanığı|engineering|administrative|Fırına giriş öncesi sıcaklık ve hava koşullarını ölçün; içeride kişi varken kapı kapanması ve çevrim başlamasını önleyin.
+R-32-12|Talaş içinde gömülme ve boğulma|elimination|administrative|Köprüleşmiş malzemenin üstünde yürümeyin; giriş zorunluysa kapalı alan ve tüm besleme/boşaltma izolasyonunu birlikte planlayın.
+R-33-01|Dolanma, ağır ezilme ve uzuv kaybı|engineering|administrative|Silindir duruş süresini dikkate alan güvenli erişim sağlayın; lif temizliğini hareket sürerken el veya bezle yapmayın.
+R-33-02|Uzvun dolanmasıyla ezilme, kopma ve amputasyon|engineering|administrative|İplik geçirme ve kopuk giderme işlemini korumalı güvenli moda bağlayın; bol kıyafet ve sarkan aksesuarı hareket bölgesinden uzak tutun.
+R-33-03|Hareketli tezgâh parçasıyla çarpma ve sıkışma|engineering|administrative|Ayarlama ve bakımda komşu tezgâh hareketlerini de değerlendirin; üretim sırasında koruma aralığından el sokmayın.
+R-33-04|Basınçlı sıcak sıvı/buharla ağır yanık|engineering|administrative|Kapağı açmadan çevrim sonu güvenlik koşullarını üretici yöntemine göre kontrol edin; kapak emniyetini köprülemeyin.
+R-33-05|Boya tozuyla solunum duyarlanması ve irritasyon|engineering|administrative|Tartım sonrası yüzeyleri tozu havalandırmadan temizleyin; ürünlere göre eldiven ve solunum koruması gereksinimini değerlendirin.
+R-33-06|Ramöz yangını ve duman zehirlenmesi|administrative|engineering|Lif biriken sıcak kanal ve rulman noktalarına bakım erişimi sağlayın; sıcaklık sapmasını duruş ölçütüne bağlayın.
+R-33-07|İğne batması ve gözde kırık iğne yaralanması|engineering|administrative|İğne değişimini enerji kesildikten sonra yapın; kırılan parçaların bulunması ve güvenli toplanması için işlem belirleyin.
+R-33-08|Derin el kesisi ve uzuv kaybı|engineering|ppe|Bıçak tipine ve işe uygun kesilme korumasını seçin; kesim hattına eli sokmayı önleyen parça tutma düzenini koruyun.
+R-33-09|Buhar ve sıcak yüzeyle el-kol yanığı|engineering|administrative|Buhar kaçaklarını plansız sıkma ile gidermeyin; bakımda basınç, sıcaklık ve pres hareketini birlikte izole edin.
+R-33-10|Korozif yanık, dermatit ve duyarlanma|engineering|administrative|Deri işleme kimyasallarını uyumluluk gruplarına göre ayırın; kirli giysi ve eldiven değişimini işlem çıkışında düzenleyin.
+R-33-11|Dolap hareketiyle sıkışma ve ezilme|engineering|administrative|Kapak ve dönme kilidini düzenli işlev kontrolüne alın; tambur tamamen durmadan yükleme veya boşaltma yapmayın.
+R-33-12|Lifli tozla solunum hastalığı ve irritasyon|engineering|administrative|Makine altı ve yüksek yüzey tozlarını plana dahil edin; hava tabancasıyla lif uçurmak yerine uygun vakum kullanın.
+R-34-01|Mikserde ezilme ve uzuv kaybı|engineering|administrative|Temizlik yapan kişinin kendi izolasyonunu kontrol etmesini sağlayın; kapak açılmasını tek başına sıfır enerji kanıtı kabul etmeyin.
+R-34-02|Bıçak temasıyla kesilme ve parmak kaybı|engineering|administrative|Bıçak temizliğini üretici yöntemiyle ve izole durumda yapın; dilimleme için tutucu yerine el kullanımını önleyin.
+R-34-03|Helezona kapılmayla el ve kol kaybı|engineering|administrative|Uygun iticiyi besleme yanında bulundurun; tıkanıklığı giderirken motor ve artık hareketi izole edin.
+R-34-04|CIP kimyasalıyla yanık ve ürün hattına yanlış besleme|engineering|administrative|Hat değişimi sonrası bağlantıyı akış şemasına göre kontrol edin; temizlik kimyasalı hattını ürün transferinden açıkça ayırın.
+R-34-05|Kızgın yağ sıçramasıyla yüz ve vücut yanığı|engineering|administrative|Yağa girecek malzemenin yüzey suyunu kontrol edin; sıcak yağ kabını aşırı doldurmayın ve taşımayı mekanik olarak kolaylaştırın.
+R-34-06|Sıcak tepsi temasıyla el-kol yanığı|engineering|ppe|Sıcağa uygun el korumasını kuru ve sağlam tutun; sıcak tepsilerin soğuma alanını normal ürün alanından ayırın.
+R-34-07|Soğuk stresi ve içeride kalmaya bağlı ölüm|engineering|administrative|İç açma ve alarmı gerçek soğuk ortamda sınayın; bakım personelinin giriş çıkışını dışarıdaki görevliye bildirin.
+R-34-08|CO₂ birikimiyle bilinç kaybı ve boğulma|engineering|administrative|Fermantasyon tankı çevresindeki çukur ve bodrumları değerlendirin; içeriye kurtarma amacıyla eğitimsiz girişe izin vermeyin.
+R-34-09|Mesleki astım, dermatit ve duyarlanma|engineering|administrative|Alerjen ürünleri açık dökme yerine düşük yayılımlı yöntemle verin; temizlik ve ürün değişiminde çalışan maruziyetini ayrıca değerlendirin.
+R-34-10|Kesici yaralanması, hayvan çarpması ve ezilme|engineering|ppe|Göreve uygun bıçak ve kesilme koruması seçin; hayvan hareketini personelin bedeniyle bastırma yöntemiyle kontrol etmeyin.
+R-34-11|Kapama mekanizmasında el sıkışması ve kesilme|engineering|administrative|Sıkışmış ambalajı güvenli duruşta alın; koruyucu sökülmüş halde düşük hızın güvenli olduğunu varsaymayın.
+R-34-12|Temizlik sırasında beklenmedik hareketle ağır yaralanma|administrative|engineering|Temizlik erişimi için kilitlenebilir izolasyon noktası sağlayın; üretim ve temizlik ekibinin aynı makinedeki işlerini ayırın.
+R-35-01|İğne batması ve kan yoluyla enfeksiyon|engineering|administrative|Kutuyu doluluk çizgisine ulaşmadan değiştirin; dolu kutuya atığı sıkıştırmayın ve kapağını tekrar açmayın.
+R-35-02|Sitotoksik maruziyete bağlı ciddi sağlık etkileri|engineering|administrative|Hazırlama, uygulama, temizlik ve atığı tek kontrol planında ele alın; döküntü müdahalesini eğitimli personele ayırın.
+R-35-03|Anestezik gaz inhalasyonuna bağlı sağlık etkileri|engineering|administrative|Bağlantı ve gaz toplama performansını bakım programında kontrol edin; kaçak şüphesini koku algısına bırakmayın.
+R-35-04|Fırlayan metal cisimle ağır yaralanma ve ölüm|engineering|administrative|MR kontrollü alanına giren personel, ekipman ve acil yardım donanımını uygunluk sürecinden geçirin; sıradan sedye veya tüp sokmayın.
+R-35-05|Oksijen azalmasına bağlı boğulma ve kriyojen temasıyla soğuk yanığı|engineering|administrative|Quench tahliye hattının çıkışını güvenli ve engelsiz tutun; acil magnet müdahalesini yalnız yetkili MR prosedürüne bırakın.
+R-35-06|Oksijen zengin ortamda hızlı yangın ve ağır yanık|engineering|administrative|Oksijen bağlantısını yağ ve uygunsuz malzemeden uzak tutun; kesinti kararını hastanın yaşam desteğiyle birlikte klinik yetkiliye bağlayın.
+R-35-07|Saldırıya bağlı fiziksel yaralanma ve psikolojik travma|engineering|administrative|Çalışanın kapıya erişimini engellemeyen görüşme düzeni kurun; şiddet uyarısında destek çağırma ve güvenli uzaklaşma yöntemini öğretin.
+R-35-08|Havadan bulaş kontrolünün zayıflaması ve enfeksiyon|engineering|administrative|Basınç yönü veya havalandırma kaybında uygulanacak hasta/işlem yönlendirmesini enfeksiyon kontrol birimiyle belirleyin.
+R-35-09|Sterilizasyon ajanıyla solunum hasarı ve kimyasal yanık|engineering|administrative|Kimyasala özgü havalandırma ve çevrim sonu güvenli açma koşullarını izleyin; arıza halinde yetkisiz kapak açmayın.
+R-35-10|İyonlaştırıcı radyasyona bağlı sağlık zararı|administrative|engineering|Işınlama alanı erişimini ve bariyerleri görevle uyumlu düzenleyin; yetkili radyasyon güvenliği programındaki izlemeyi sürdürün.
+R-35-11|Hasta transferinde bel ve omuz yaralanması|engineering|administrative|Transfer cihazını hastanın ağırlığı, hareketi ve odanın erişimine göre seçin; tek kişinin güçle kaldırmasını rutin yöntem yapmayın.
+R-35-12|Yanlış tıbbi gaz beslemesiyle ağır sağlık olayı ve ölüm|engineering|administrative|Bakım sonrası hat kimliğini yetkin teknik testle doğrulayın; renk etiketini tek doğrulama olarak kullanmayın.
+R-36-01|Tehlikeli buharla toksik maruziyet|engineering|administrative|Çeker ocağa gereksiz malzeme yığmayın; çalışma açıklığını ve alarm koşulunu üreticiye uygun tutun.
+R-36-02|Rotor kırılmasıyla parça yaralanması ve aerosol salımı|engineering|administrative|Rotorun hız, kullanım ömrü ve kimyasal uyumluluğunu takip edin; titreşimde kapağı zorla açmadan cihazı güvenli durdurun.
+R-36-03|Cam kırılmasıyla kesilme ve kimyasal sıçrama|engineering|administrative|Camın basınç/vakum uygunluğunu belgesinden kontrol edin; çizik veya hasarlı parçayı basınçlı düzeneğe takmayın.
+R-36-04|Tüp patlamasıyla göz ve yüz yaralanması|engineering|ppe|Çözme sırasında yüz siperi ve uygun el koruması kullanın; tüpü yüz ve diğer kişilere yöneltmeyin.
+R-36-05|Ölçek büyütmede reaksiyon kaçışı ve yanık|administrative|engineering|Isı uzaklaştırma, besleme ve tahliye kapasitesini yeni hacme göre tasarlayın; laboratuvar reçetesini yalnız katsayıyla büyütmeyin.
+R-36-06|Kimyasal yutma ve biyolojik enfeksiyon|elimination|administrative|Uygun mekanik pipet yardımcısını istasyonda bulundurun; ağızla pipetlemeyi hiçbir numune için kabul etmeyin.
+R-36-07|Solvent tutuşması ve ağır yanık|substitution|administrative|Uçucu madde miktarını işlem gereğiyle sınırlandırın; ateşleme kaynaklarını ve buharın yakın yüzeye taşınmasını kontrol edin.
+R-36-08|Cam kesisi ve kontamine materyalle enfeksiyon|engineering|administrative|Kırık camı elle ayırmayın; kimyasal veya biyolojik kirlenmeyi atık kabında tanımlayın.
+R-36-09|Gaz kaçağıyla boğulma, yangın veya zehirlenme|engineering|administrative|Hat bağlantılarını kullanılan gazla eşleştirin; cihaz bakımından sonra uygun kaçak kontrolü yapın.
+R-36-10|UV kaynaklı göz ve cilt hasarı|engineering|administrative|Kapak ve ışınım kesme işlevini kontrol edin; görüntü alırken koruyucuyu açık bırakacak geçici düzenek kullanmayın.
+R-36-11|Bilinmeyen numuneyle toksik veya biyolojik maruziyet|administrative|engineering|Numuneyi tehlike bilgisi gelene kadar güvenli kontrollü koşulda tutun; açık hazırlama yöntemini varsayılan seçmeyin.
+R-36-12|Numuneleyici koluyla sıkışma ve kesilme|engineering|administrative|Tüp veya numune değiştirme işini güvenli erişim modunda yapın; otomatik yeniden başlatmayı müdahale boyunca engelleyin.
+R-37-01|Traktör devrilmesinde ezilme ve ölüm|engineering|administrative|Devrilme korumasıyla birlikte uygun emniyet kemeri kullanımını sağlayın; römork yükü ve eğime göre güzergâh seçin.
+R-37-02|Mil dolanmasıyla uzuv kaybı ve ölüm|engineering|administrative|Tahrik durmadan mil çevresine yaklaşmayın; muhafazayı yağlama veya bağlantı kolaylığı için çıkarmayın.
+R-37-03|Hasat makinesinde sıkışma ve uzuv kaybı|engineering|administrative|Bıçak ve volan gibi duruş sonrası hareketi dikkate alın; tıkanıklığı el yerine uygun araçla ve izolasyonla giderin.
+R-37-04|Pestisit zehirlenmesi, cilt ve göz hasarı|engineering|administrative|Ürün etiketindeki kullanım ve kişisel koruma koşullarını izleyin; karışımı gıda ve içme suyu alanından ayırın.
+R-37-05|Erken yeniden girişle pestisit maruziyeti|administrative|administrative|İlaçlama zamanı ve ürünün yeniden giriş koşulunu sahada görünür kılın; takvime göre genel tek süre uygulamayın.
+R-37-06|Hayvan çarpmasıyla kırık ve ezilme|engineering|administrative|Çalışan için kaçış açıklığı bırakın; hayvanı dar köşeye sıkıştıracak veya arkasında kalmayı gerektirecek çalışma düzeninden kaçının.
+R-37-07|Toksik gazla bilinç kaybı ve çoklu ölüm|elimination|administrative|Karıştırma sırasında çukur çevresini de gaz yayılımı bakımından ayırın; korunmasız kurtarma girişini önleyen acil plan oluşturun.
+R-37-08|Ağaç altında kalma ve ölüm|administrative|engineering|Devrilme yönünü rüzgâr, eğim ve sıkışmış dallarla birlikte değerlendirin; enerji hattı yakınında işletmeciyle güvenli çalışma planlayın.
+R-37-09|Testere geri tepmesiyle ağır kesilme|engineering|ppe|Kesim işine uygun baş, yüz, bacak ve ayak korumasını kullanın; zincir freni ve bakımını üretici yöntemine göre kontrol edin.
+R-37-10|Islak ortamda elektrik çarpması ve ölüm|engineering|administrative|Kablo, pano ve bağlantıları su birikiminden uzak tutun; arızaya müdahaleyi yetkili elektrik personeline bırakın.
+R-37-11|Isı hastalığı ve sıcak çarpması|engineering|administrative|Sıcak saatlerde ağır işi azaltın; serinleme, su ve belirtilerin erken bildirimini çalışma planına ekleyin.
+R-37-12|Sokmaya bağlı ağır alerjik reaksiyon ve ölüm|ppe|administrative|Yardım çağırma ve sağlık birimine ulaşım düzenini sahaya göre planlayın; kişisel tedavi bilgisini genel çalışan listesinde paylaşmayın.
+R-38-01|Kaya düşmesiyle ezilme ve ölüm|engineering|administrative|Tahkimat ve tavan gözlemini ilerleme döngüsüne bağlayın; destek değişikliği sonrası yetkin inceleme tamamlanmadan alana dönmeyin.
+R-38-02|Metan patlaması ve çoklu ölüm|engineering|administrative|Metan izleme ve havalandırma arızasını güvenli durdurma/geri çekilme düzenine bağlayın; yeniden çalışmayı yetkili atmosfer değerlendirmesine göre planlayın.
+R-38-03|Yayılan kömür tozu patlaması ve çoklu ölüm|engineering|administrative|Toz kontrol ve yayılım önleme sistemlerini işletmeye özgü uzman tasarımında izleyin; bakım değişikliklerini güvenlik dokümanına yansıtın.
+R-38-04|Zararlı atmosferle zehirlenme ve boğulma|engineering|administrative|Havalandırma kaybı senaryosunu vardiya tahliye tatbikatına dahil edin; yeniden girişi yetkili ölçüm ve izin sürecine bağlayın.
+R-38-05|Şev göçmesiyle ezilme ve ölüm|engineering|administrative|Yağış ve patlatma sonrası şev davranışını izleyin; tehlikeli alana yaklaşma sınırını jeoteknik değerlendirmeyle güncelleyin.
+R-38-06|Ağır araç çarpışması ve ölüm|engineering|administrative|Yükleme, boşaltma ve dönüş noktalarında görüş ve hız planını uygulayın; hafif araçları ağır nakliye akışından ayırın.
+R-38-07|Sıkışmış taşın fırlamasıyla ölüm|elimination|administrative|Taşta depolanmış kuvveti değerlendirin; kırıcıya girerek veya basınçla plansız çözme yapmayın.
+R-38-08|Ağır elek parçasıyla ezilme ve düşme|engineering|administrative|Elek paneli sökümünde kaldırma noktası ve parça ağırlığını doğrulayın; titreşim motorunu ve yerçekimi enerjisini birlikte kontrol edin.
+R-38-09|Patlatma etkisiyle ağır yaralanma ve ölüm|administrative|administrative|Yetkili uzmanın saha boşaltma ve geri giriş teyidini bekleyin; bu katalog maddesini teknik patlatma planı yerine kullanmayın.
+R-38-10|Patlamamış malzemeyle temasta ölüm|elimination|administrative|Şüpheli malzemeye dokunmadan çevreyi ayırın; yalnız yetkili patlatma uzmanının prosedürüyle ilerleyin.
+R-38-11|Ani su/çamur baskınında boğulma ve ölüm|engineering|administrative|Su birikimi ve komşu çalışma bilgilerini işletme planıyla eşleştirin; erken uyarı halinde kaçış için gecikmesiz duruş düzeni kurun.
+R-38-12|Dizel partikülüne bağlı solunum hastalığı ve kanser riski|engineering|administrative|Araç emisyon bakımını ve havalandırma debisini gerçek yükle izleyin; işgal edilen kapalı noktalarda gereksiz rölantiyi önleyin.
+R-39-01|DC arkıyla ağır yanık ve elektrik çarpması|engineering|administrative|Işık alan panelin gerilim üretebildiğini iş planına dahil edin; uygun DC ayırma olmadan bağlantıyı yük altında açmayın.
+R-39-02|Çatı çökmesi, düşme ve ölüm|engineering|administrative|Panel, personel ve taşınan malzeme yükünü birlikte değerlendirin; kırılgan yüzeye basmayı güvenli platformla önleyin.
+R-39-03|Türbin yangınında duman maruziyeti ve yüksekte mahsur kalma|engineering|administrative|Kurtarma ekipmanını türbin erişim ve yüksekliğine göre seçin; uzak saha haberleşme ve dış yardım ulaşımını önceden planlayın.
+R-39-04|Kanat hareketiyle çarpma ve yüksekte düşme|engineering|administrative|Rüzgâr sınırlarını üretici iş talimatından alın; mekanik sabitleme teyit edilmeden kanat bakımına başlamayın.
+R-39-05|Akıntıya kapılma ve boğulma|engineering|administrative|Su alma yapısında yaklaşma ve kurtarma sınırını belirleyin; akış izolasyonu olmadan kurtarma için suya personel göndermeyin.
+R-39-06|Su basması, ezilme ve ölüm|engineering|administrative|Kapak ve vana izolasyonunu yetkili teknik planla doğrulayın; mekanik sabitlemeyi yalnız kumanda sinyaliyle yeterli kabul etmeyin.
+R-39-07|Yakıt yangını ve ağır yanık|engineering|administrative|Geri yayılım ve besleme kesme işlevlerini proses tasarımına göre kontrol edin; güvenlik kilitlerini üretim için devre dışı bırakmayın.
+R-39-08|Trafo yangını ve duman/ısı maruziyeti|engineering|administrative|Yağ tutma alanını drenaj ve yanıcı yükten ayrı değerlendirin; elektriksel izolasyon olmadan yangın bölgesine yaklaşmayın.
+R-39-09|Adım/temas gerilimiyle ölüm|engineering|administrative|Arıza alanına yaklaşmayı sınırlandırın; topraklama kontrolünü yetkin elektrik kişisine ve uygun ölçüm yöntemine bağlayın.
+R-39-10|H₂S zehirlenmesi ve ölüm|engineering|administrative|Kokuya güvenmeyin; gaz alarmında güvenli kaçış yönünü ve dış yardım çağrısını jeotermal saha planına ekleyin.
+R-39-11|Biyogaz yangını, patlama ve boğulma|engineering|administrative|Gaz bileşimi ve kapalı hacim risklerini birlikte değerlendirin; bakımda gaz hatlarını ve patlama koruma sistemini izole edin.
+R-39-12|Batarya termal yayılımı, toksik duman ve yangın|engineering|administrative|Hasarlı modülü genel atık veya olağan depolama alanına almayın; yeniden tutuşma ve uzun süreli izlemeyi acil plana dahil edin.
+R-40-01|Kesici yaralanması ve kontamine atıkla enfeksiyon|engineering|ppe|Atık niteliğine uygun el ve vücut koruması seçin; sıkışmış veya görünmeyen cismi çıplak elle aramayın.
+R-40-02|Kompaktörde ezilme ve ölüm|engineering|administrative|Sıkışıklık giderme işini kişisel izolasyona bağlayın; besleme ağzına erişimi operatörün görüşüne güvenerek açık bırakmayın.
+R-40-03|Batarya yangını ve toksik duman maruziyeti|engineering|administrative|Hasarlı bataryayı işaretlenmiş uygun karantina düzenine alın; parçalama ve presleme öncesi kabul kontrolünü güçlendirin.
+R-40-04|Atık reaksiyonu, toksik gaz ve kimyasal yanık|administrative|engineering|İçeriği belirsiz atığı uyumsuz gruplara karıştırmayın; ayrı kabul ve güvenli bekletme alanı sağlayın.
+R-40-05|Savrulan tel nedeniyle göz ve yüz yaralanması|engineering|ppe|Bağ çözme düzleminden uzakta durun; göz-yüz korumasını ve uygun kesme aletini iş noktasında bulundurun.
+R-40-06|Havuza düşme ve boğulma|engineering|administrative|Kaygan kenar erişimini sınırlandırın; girişsiz kurtarma ekipmanını erişilebilir noktaya koyup kullanımını öğretin.
+R-40-07|H₂S maruziyetiyle bilinç kaybı ve ölüm|administrative|engineering|Gaz birikebilen çukur ve bağlantıları kapalı alan envanterine alın; girişi gereksiz kılan uzaktan ölçüm ve bakım yöntemini seçin.
+R-40-08|Koagülant sıçramasıyla göz ve cilt yanığı|engineering|administrative|Bağlantı sökmeden dozaj hattını basınçsız ve güvenli duruma alın; ürünle uyumlu döküntü müdahale malzemesi kullanın.
+R-40-09|Kurutucu yangını, patlama ve yanık|engineering|administrative|Çamurun değişen bileşim ve kuruluk verisini proses sınırlarıyla eşleştirin; sıcaklık sapmasında otomatik tekrar başlatmayın.
+R-40-10|Atık şevi kaymasıyla ezilme ve ölüm|engineering|administrative|Yağış ve dolgu değişimlerinde yaklaşma sınırlarını güncelleyin; makine operatörünü tek başına stabilite kararı vermeye zorlamayın.
+R-40-11|Fırlayan metal/camla göz ve gövde yaralanması|engineering|administrative|Kabulde basınçlı kap ve uygun olmayan iri parçaları ayırın; koruyucu kapak açıkken parçalama yapmayın.
+R-40-12|Yüksek basınçlı jetle kesilme ve doku hasarı|engineering|administrative|Hortum nozülünün kanal içinde güvenli konumunu kontrol edin; basınç varken hattı elle tutarak çıkarmayın.
+R-41-01|Kesici yaralanması ve biyolojik maruziyet|engineering|administrative|Atık torbasını elle bastırmayın; yatak ve yüzey altında görünmeyen kesiciyi kontrolsüz elle aramak yerine uygun araç kullanın.
+R-41-02|Çarpma, kas zorlanması ve ayak yaralanması|engineering|administrative|Rampada fren ve yük dengesini kontrol edin; görüşü kapatacak yüksek yüklemeyi önleyin.
+R-41-03|Yüksekten düşme ve ölüm|elimination|administrative|Pencere pervazına çıkmayı rutin temizlik yöntemi yapmayın; dış cephe işi için erişim ve kurtarmayı birlikte planlayın.
+R-41-04|El kesisi ve tendon yaralanması|engineering|administrative|Bıçağı güvenli sap ve keskinlikte tutun; kesim sırasında kayabilen gıdayı uygun tutucuyla sabitleyin.
+R-41-05|Kesilme ve parmak kaybı|engineering|administrative|Bıçağın durduğunu kontrol edin; korumayı sökme ve takma işlemini üretici temizlik talimatına bağlayın.
+R-41-06|Kaynar sıvıyla geniş yüzeyli yanık|engineering|administrative|Kabın doluluk ve ağırlığını taşıma yöntemine göre sınırlandırın; sıcak sıvıyla merdiven çıkmayı azaltın.
+R-41-07|Gaz yangını, patlama ve ölüm|engineering|administrative|Vana noktalarını erişilebilir ve tanımlı tutun; gaz şüphesinde elektrik anahtarlarıyla işlem yapmadan güvenli tahliyeyi öğretin.
+R-41-08|Klorlu gaz maruziyeti ve solunum hasarı|engineering|administrative|Asit ve dezenfektan hatlarını karıştırmayı önleyen bağlantı düzeni kurun; aynı aktarım aracını uyumsuz ürünler arasında kullanmayın.
+R-41-09|Sıcak presle sıkışma ve yanık|engineering|administrative|Besleme ve sıkışma giderme işlemlerini güvenli moda bağlayın; koruyucu ve durdurma donanımını işlev kontrolünde tutun.
+R-41-10|Dermatit ve solunum duyarlanması|substitution|ppe|Ürünle uyumlu eldiven seçip değiştirin; ürün karışım ve havalandırma koşullarını üretici talimatına göre uygulayın.
+R-41-11|Solvent maruziyetine bağlı toksik etkiler|engineering|administrative|Makine açma ve filtre bakımını güvenli çevrim sonuna bağlayın; atık solventi açık kapta bekletmeyin.
+R-41-12|Kayma, burkulma ve kırık|engineering|administrative|Islak alanı mümkün olduğunca yaya geçişinden ayırın; temizlik bitiminde kuru ve güvenli geçiş kontrolü yapın.
+R-42-01|Kimyasal yanık, göz hasarı ve zehirlenme|engineering|administrative|Deney maddesi ve miktarını yaş grubuna uygun seçin; gözetim, göz yıkama ve döküntü planını deneyden önce hazırlayın.
+R-42-02|Makine temasıyla ağır yaralanma|engineering|administrative|Eğitim amaçlı kullanımı koruma kaldırma gerekçesi yapmayın; yetkili eğitmen gözetimi ve güvenli kullanım sınırı belirleyin.
+R-42-03|Kitaplık devrilmesiyle ezilme ve baş yaralanması|engineering|administrative|Ağır malzemeleri alt raflara alın; ankrajı raf ve yapı elemanına uygun yetkin uygulamayla yapın.
+R-42-04|Düşme, kesilme ve sıkışma|engineering|administrative|Hasarlı ekipmanın kullanılmasını fiziksel olarak engelleyin; onarım sonrası güvenli olduğuna dair kontrolü tamamlamadan yeniden açmayın.
+R-42-05|Kalabalıkta düşme ve ezilme|engineering|administrative|Giriş-çıkış zamanlarını yoğunluğu azaltacak şekilde düzenleyin; kapı ve geçişleri depolama veya kilitli kontrol noktası yapmayın.
+R-42-06|Söndürücü gaz maruziyeti ve boğulma|engineering|administrative|Sistem türüne göre ön alarm, boşalma ve yeniden giriş koşullarını belirleyin; her gazlı sistemi aynı tahliye davranışıyla ele almayın.
+R-42-07|Sandalyeden düşme ve kırık|elimination|administrative|Sık kullanılan malzemeyi erişim yüksekliğine indirin; uygun basamak ekipmanını erişilebilir yerde bulundurun.
+R-42-08|Yüzeysel kesik ve delici yaralanma|engineering|administrative|Zımba sökücü ve güvenli evrak kesici kullanın; keskin atıkları normal kâğıt yığını içinde bırakmayın.
+R-42-09|Arşiv yangını, duman ve kaçışta gecikme|engineering|administrative|Raf yerleşimini kaçış ve yangın ekipmanına erişimi koruyacak biçimde düzenleyin; arşiv içinde uygunsuz elektrikli ısıtıcı kullanmayın.
+R-42-10|Bakım alanında öğrenciye çarpma veya cisim düşmesi|engineering|administrative|Bakımı ders ve geçiş yoğunluğundan ayrı planlayın; bakım sonunda alanı kontrol ederek tekrar kullanıma açın.
+R-42-11|Fiziksel saldırı ve psikolojik travma|engineering|administrative|Çalışanın güvenli geri çekilme yolunu açık tutun; alarm ve destek çağrısını erişilebilir noktada test edin.
+R-42-12|Elektrik kaynaklı yangın ve çarpılma|engineering|administrative|Çoklu prizleri birbirine zincirlemeyin; evdeki elektrik uygunluğu değerlendirilmeden uzaktan çalışma kaydına güvenli etiketi koymayın.
+R-43-01|Kalıp çökmesiyle ezilme ve çoklu ölüm|engineering|administrative|Beton döküm hızı, sıra ve yükleri projeyle eşleştirin; döküm öncesi kalıp-iskele kontrolünü kayıt altına alın.
+R-43-02|Savrulan hortumla ağır darbe yaralanması|engineering|administrative|Tıkanıklık açma işinde personeli hortum etki alanından çıkarın; basınç boşaltılmadan bağlantı çözmeyin.
+R-43-03|Donatı kafesi devrilmesiyle ezilme|engineering|administrative|Bağlantı ve destekler tamamlanmadan kaldırma aparatını ayırmayın; geçici rüzgâr ve darbe etkilerini hesaba katın.
+R-43-04|Panel devrilmesiyle ağır ezilme ve ölüm|engineering|administrative|Geçici destekleri proje onayı olmadan sökmeyin; kalıcı bağlantının tamamlandığını kayıtla doğrulayın.
+R-43-05|Montaj kararsızlığıyla çökme ve ölüm|engineering|administrative|Cıvata ve bağlantı tamamlama sırasını montaj ekibine bildirin; vinç desteğini bırakmadan stabilite koşulunu kontrol edin.
+R-43-06|Çimento kaynaklı kimyasal cilt yanığı|engineering|ppe|Su geçirmez işe uygun el/ayak koruması sağlayın; çizme veya giysi içine giren ıslak betonu gecikmeden güvenli şekilde uzaklaştırın.
+R-43-07|Duvar devrilmesiyle ezilme ve ölüm|engineering|administrative|Hava koşulu ve duvar dayanım gelişimine göre dışlama alanını koruyun; yeni duvara malzeme dayamayın.
+R-43-08|Demir bükme/kesmede el ezilmesi ve uzuv kaybı|engineering|administrative|Uzun donatının savrulma alanını boş tutun; kalıp ve ayar değişiminde makineyi izole edin.
+R-43-09|Geri sıçrayan betonla göz ve cilt hasarı|engineering|ppe|Yüz ve göz korumasını uygulama yönüne uygun seçin; hortum ve nozül kontrolünü eğitimli ekibe verin.
+R-43-10|Sıcak asfalt yanığı ve araç ezilmesi|engineering|administrative|Geri manevra ve malzeme aktarımını tek işaretçiyle koordine edin; sıcak yüzeye yaya yaklaşımını kapatın.
+R-43-11|Bitüm yanığı, yangın ve solunum maruziyeti|engineering|administrative|Isıtma sıcaklığını ürün ve ekipman talimatına göre kontrol edin; sıcak bitüme su karışmasını önleyin.
+R-43-12|Cephe paneli düşmesiyle ölüm|engineering|administrative|Panelin bağlama ve geçici tutma noktalarını önceden belirleyin; kaldırma sırasında alt alanı diğer işlerden ayırın.
+R-44-01|Kalıp kapanmasıyla ağır ezilme ve uzuv kaybı|engineering|administrative|Kalıp ayarını yetkili kişi ve güvenli modla yürütün; kapak kilidini üretim kolaylığı için atlamayın.
+R-44-02|Sıcak polimer sıçramasıyla göz ve cilt yanığı|engineering|ppe|Yüz ve ısıya uygun koruyucuyu purj işlemine göre seçin; dışlama alanını parça fırlama yönüne göre kurun.
+R-44-03|Basınçlı sıcak polimerle ağır yanık|engineering|administrative|Tıkanıklık açma sırasını üreticiye göre uygulayın; bağlantıyı gevşeterek basıncı çalışan üzerine tahliye etmeyin.
+R-44-04|Kırıcıya kapılma ve uzuv kaybı|engineering|administrative|Kısa parçayı besleme ağzına elle itmeyin; sıkışıklıkta tahrik ve artık hareketi izole edin.
+R-44-05|Vals aralığında ezilme ve uzuv kaybı|engineering|administrative|Acil durdurmanın erişimini gerçek çalışma konumunda test edin; merdaneyi elle temizlemeyi güvenli moda ve izolasyona bağlayın.
+R-44-06|Pres sıkışması ve sıcak yüzey yanığı|engineering|administrative|Parça çıkarma aracı kullanın; pres hareketi, ısı ve basınç enerjisini bakımda birlikte değerlendirin.
+R-44-07|İzosiyanat kaynaklı mesleki astım ve duyarlanma|engineering|administrative|Karışım, dolum ve temizlik maruziyetini ayrı ele alın; uygun koruyucu ve sağlık gözetimini işyeri hekimiyle planlayın.
+R-44-08|Stiren inhalasyonuna bağlı sağlık etkileri|substitution|engineering|Kapalı kalıp gibi düşük emisyonlu teknikleri değerlendirin; emişi çalışanın solunum bölgesinden önce buharı yakalayacak konumda kurun.
+R-44-09|Lifli tozla göz, cilt ve solunum etkilenmesi|engineering|administrative|Kesim ve zımpara temizliğini uygun vakumla yapın; lifli tozu giysiden hava tabancasıyla uçurmayın.
+R-44-10|Reçine reaksiyonuyla yanık ve yangın|administrative|engineering|Karışım kabı ve ısı uzaklaştırmayı ürün miktarına uygun seçin; kap içinde sıcaklık artışında üretici acil durum talimatını uygulayın.
+R-44-11|Basınçlı kalıpta ezilme ve sıcak malzeme yaralanması|engineering|administrative|Kapak kilidiyle basınç tahliyesi işlevini birlikte kontrol edin; basınç kalmışken kalıp bölgesine erişmeyin.
+R-44-12|Ruloya dolanma ve uzuv kaybı|engineering|administrative|Film başlatma ve kopuk giderme işlemini uygun aparatla yapın; döner ruloya elle sarım başlatmayın.
+R-45-01|Bobin yuvarlanmasıyla ezilme ve ölüm|engineering|administrative|Bobini gelişigüzel takoz veya dik konumda bırakmayın; taşıyıcının kavrama uygunluğunu bobin çapı ve ağırlığına göre kontrol edin.
+R-45-02|Merdaneye kapılma ve el-kol yaralanması|engineering|administrative|Temizlik beziyle dönen nip bölgesine yaklaşmayın; makineye özgü temizleme modunu ve durdurmayı uygulayın.
+R-45-03|Solvent buharıyla zehirlenme ve yangın|substitution|administrative|Kullanılmış solventli bezleri uygun kapalı atık kabında toplayın; açık kap ve tutuşturucu kaynakları baskı alanından uzaklaştırın.
+R-45-04|UV göz/cilt hasarı ve ozon inhalasyonu|engineering|administrative|Kabin ve emiş bakımını birlikte kontrol edin; ışınım kaynağı açıkken koruyucu kapakları sökmeyin.
+R-45-05|Giyotin bıçağıyla el ve parmak kaybı|engineering|administrative|Ön ve arka erişimi birlikte koruyun; kâğıt düzeltme için kesim hattına el sokmayı önleyen tutucu kullanın.
+R-45-06|Kalıp presinde ezilme ve uzuv kaybı|engineering|administrative|Kalıp ayarı ve sıkışan ürün alma işlemini güvenli duruşla yapın; algılama alanını malzeme akışı gerekçesiyle iptal etmeyin.
+R-45-07|Buhar kaçağıyla ağır yanık|engineering|administrative|Hat bakımını basınçsız ve soğumuş koşulda yürütün; kaçak noktaya yaklaşmayı fiziksel ayırmayla engelleyin.
+R-45-08|Laminasyon merdanesinde dolanma ve ezilme|engineering|administrative|Başlatma filmini uygun besleme aracıyla verin; nip korumasının ürün boyutu değişiminde de işlevsel olduğunu kontrol edin.
+R-45-09|Sıcak tutkal sıçramasıyla yanık|engineering|ppe|Sıcak tutkal bakımında uygun yüz ve el koruması kullanın; hat basıncı ve sıcaklığı güvenli seviyeye gelmeden bağlantı açmayın.
+R-45-10|Kâğıt tozu yangını ve duman maruziyeti|engineering|administrative|Elektrik motoru ve sıcak yüzey yakınındaki tozları temizlik planına alın; tozu çevreye savurmadan toplayın.
+R-45-11|Gergin çember darbesiyle yüz ve göz yaralanması|engineering|administrative|Çemberin serbest kalma hattında durmayın; kesmeden önce yükün kendi başına stabil olduğunu kontrol edin.
+R-45-12|Döner tablaya sıkışma ve ayak yaralanması|engineering|administrative|Sarma çevrimi sırasında yükü elle düzeltmeyin; erişim sonrası yeniden başlatmada kişi kontrolü yapın.
+R-46-01|Hücre hasarıyla yangın, yanık ve toksik duman|engineering|administrative|Düşen veya ezilen hücreleri olağan stoktan ayırın; hasarlı ürünün değerlendirme ve geri kabul koşulunu teknik sorumlu belirlesin.
+R-46-02|Batarya yangınında toksik duman maruziyeti, yanık ve patlama yaralanması|engineering|administrative|Şarj cihazı ve batarya uyumluluğunu doğrulayın; anormal ısınma ve şişmeyi durdurma ölçütüne bağlayın.
+R-46-03|Kısa devreyle yanık ve yangın|engineering|administrative|Taşıma ve depolamada uçları metal alet veya takıyla köprülemeyin; iş için uygun yalıtılmış takım kullanın.
+R-46-04|Gecikmeli batarya yangını ve toksik maruziyet|engineering|administrative|Karantina yerini kaçış yolundan ve yanıcı stoktan ayırın; izleme ve bertarafı batarya kimyası ve üretici bilgisine göre planlayın.
+R-46-05|Elektrolitle kimyasal yanık ve toksik maruziyet|engineering|administrative|Dolum ve atık sistemi malzemelerini elektrolite uygun seçin; döküntüde genel nötralizasyon reçetesi uygulamayın.
+R-46-06|Yanıcı ortamın tutuşmasıyla yanık, patlama yaralanması ve ölüm|engineering|administrative|ESD önlemlerini yalnız ürün koruması değil proses ateşleme tehlikesiyle birlikte değerlendirin; kullanılan malzemelerin uygunluğunu kontrol edin.
+R-46-07|Yüksek gerilimle çarpılma, ark yanığı ve ölüm|engineering|administrative|Araca özgü yüksek gerilim devre dışı bırakma prosedürünü yetkin personele uygulatın; bekleme süresi ve ölçüm şartını üreticiden alın.
+R-46-08|Batarya hasarıyla yangın ve araç düşmesi|engineering|administrative|Kaldırma noktalarını araç modeline göre kontrol edin; batarya muhafazasını destek noktası olarak varsaymayın.
+R-46-09|Lehim ve bozunma dumanıyla solunum maruziyeti|engineering|administrative|Emişi söküm noktasına yaklaştırın; sıcaklık artışıyla yanabilecek kaplama ve bileşenleri işlem öncesi belirleyin.
+R-46-10|Lazer demetiyle kalıcı göz hasarı|engineering|administrative|Kabin kilidini ve ışın kaçak noktalarını bakım sonrası kontrol edin; işaretleme parametresini değiştirmeden güvenlik sınırını değerlendirin.
+R-46-11|Batarya paketinin düşmesiyle ezilme ve kimyasal salım|engineering|administrative|Paket ağırlığı ve ağırlık merkezini kaldırma planında belirtin; sabitleme tamamlanmadan altına veya devrilme alanına girmeyin.
+R-46-12|Toksik batarya dumanıyla solunum hasarı ve ölüm|administrative|administrative|Görünür alev olmasa da gaz çıkışı ve yeniden tutuşmayı dikkate alın; yeniden girişi yetkili acil müdahale kararına bağlayın.
+R-47-01|Suya düşme, hipotermi ve boğulma|engineering|ppe|İşe uygun yüzdürme donanımı gereksinimini değerlendirin; kıyıdan kurtarma ekipmanını görünür ve erişilebilir tutun.
+R-47-02|Kopan halat darbesiyle ağır yaralanma ve ölüm|engineering|administrative|Halat geri savrulma alanını bağlama düzenine göre belirleyin; halat üzerinde veya kıvrım içinde personel bulundurmayın.
+R-47-03|Geçiş köprüsünden düşme ve boğulma|engineering|administrative|Gelgit, yükleme ve gemi hareketiyle köprü açısını takip edin; güvenli sınır dışında geçişi durdurun.
+R-47-04|Ambar atmosferinde zehirlenme ve boğulma|administrative|engineering|Kargo kaynaklı gazları ve oksijen tüketimini değerlendirin; kapağın açık olmasını güvenli atmosfer kanıtı saymayın.
+R-47-05|Tank patlaması, ağır yanık ve ölüm|administrative|administrative|Gazdan arındırma belgesini iş süresince değişebilen koşullarla yeniden değerlendirin; komşu tank ve hatları plana dahil edin.
+R-47-06|Kilitte sıkışma, yüksekten düşme ve ezilme|engineering|administrative|Konteynerin hareket etmesini önleyin; kilit erişimini uygunsuz tırmanma yerine güvenli çalışma düzeneğiyle sağlayın.
+R-47-07|Gemi destek kaybıyla ezilme ve yapı hasarı|engineering|administrative|Desteklerde değişikliği yalnız yetkin plan revizyonuyla yapın; personel ve ekipman hareketini havuzlama sınırlarına göre yönetin.
+R-47-08|Kaplama/toz maruziyeti ve solunum hasarı|engineering|administrative|Eski kaplamanın bileşimini değerlendirin; tozun komşu işlere yayılmasını kapalı alan ayrımı ve uygun atık yönetimiyle önleyin.
+R-47-09|Yakıt yangınında yanık ve duman zehirlenmesi; çevresel kirlenme|engineering|administrative|Transfer öncesi gemi-kıyı haberleşmesini ve acil durdurmayı deneyin; hortum hareket payını yük ve hava koşuluyla kontrol edin.
+R-47-10|Vinç altında ezilme ve ölüm|engineering|administrative|Yük altındaki araç ve yaya hareketini kaldırma süresince durdurun; işaretçi ve operatör arasında tek komuta düzeni kurun.
+R-47-11|Tekneler arasında düşme ve boğulma|engineering|administrative|Deniz ve hava koşulu sınırını yetkili kaptanla belirleyin; güvensiz aralığı atlayarak geçmeyi iş yöntemi yapmayın.
+R-47-12|Dalışta boğulma, basınç hasarı ve ölüm|administrative|administrative|Görevi yalnız yetkili profesyonel dalış ekibiyle planlayın; bu genel kayıt dalış ve kurtarma prosedürünün yerine geçmez.
+R-48-01|Araç çarpmasıyla ağır yaralanma ve ölüm|engineering|administrative|Çalışmayı trafik yoğunluğu ve görüşe göre zamanlayın; geçici trafik düzenini yetkili kurumun planına uygun kurun.
+R-48-02|Kamyon ve sıkıştırıcı arasında ezilme ve ölüm|engineering|administrative|Geri manevrada personelin konumunu kontrol edin; operatör göremediğinde hareketi durduran haberleşme kuralı uygulayın.
+R-48-03|Fırlayan taşla göz ve baş yaralanması|engineering|administrative|Biçme öncesi taş, metal ve atıkları alandan alın; yayaları üreticinin öngördüğü etki alanının dışında tutun.
+R-48-04|Dal düşmesiyle ağır yaralanma|engineering|administrative|Yaya geçişini kesim süresince durdurun; dalın enerji hattı ve yapı ile ilişkisini önceden değerlendirin.
+R-48-05|Açıklığa düşme, gaz maruziyeti ve boğulma|engineering|administrative|Izgara kaldırıldığında açıklığı fiziksel koruyun; içeri girişi gerektiren işte atmosfer ve kurtarma düzenini ayrı planlayın.
+R-48-06|Araç çarpması ve elektrik çarpmasıyla ölüm|administrative|engineering|Elektrik izolasyonu tamamlanmadan direğe erişmeyin; çalışma platformunu trafik ve enerji hattından güvenli ayırın.
+R-48-07|Biyosidal maruziyet ve kimyasal sağlık etkileri|engineering|administrative|Kullanım alanını ürün talimatına göre boşaltın; yeniden kullanım ve halka bilgilendirme koşullarını iş programına ekleyin.
+R-48-08|Araç kayması, çarpışma ve soğuk stresi|administrative|engineering|Aracın lastik ve çekiş donanımını güzergâha uygun seçin; görüş ve yol koşulu kötüleştiğinde işi durdurma ölçütü belirleyin.
+R-48-09|Mezar kazısı göçüğünde ezilme ve boğulma|engineering|administrative|Kazı yanında biriken yük ve kişileri kontrol edin; yağış veya zemin değişiminde korumayı yeniden değerlendirin.
+R-48-10|Kimyasal yanık, dermatit ve enfeksiyon|engineering|administrative|Asitli ve klorlu ürünleri karıştırmayın; kirli ekipman ve temiz malzemeyi ayırıp el yıkama imkânı sağlayın.
+R-48-11|Suda elektrik çarpması ve ölüm|engineering|administrative|Pompa ve aydınlatma devrelerini yetkili kişi izole etsin; yalnız anahtar kapalı konumuna güvenerek suya girmeyin.
+R-48-12|Isırık, ezilme ve zoonotik enfeksiyon|engineering|administrative|Hayvana müdahaleyi eğitimli ekiple yapın; yaralanma sonrası tıbbi değerlendirme ve olay bildirimini geciktirmeyin.
+R-49-01|Kaçışın engellenmesiyle duman maruziyeti ve ölüm|engineering|administrative|Çıkışın işgal sırasında güvenli açılmasını vardiya kontrolüne alın; güvenlik kilidini tahliye ihtiyacından bağımsız tasarlamayın.
+R-49-02|Tahliyede gecikme, düşme ve ezilme|engineering|administrative|Geçici sevkiyat ve temizlik arabasını da kaçış güzergâhından uzak tutun; yeri değişen istifleri düzenli kontrol edin.
+R-49-03|Karanlıkta düşme ve tahliye gecikmesi|engineering|administrative|Acil aydınlatmanın testini gerçek enerji kesintisi işleviyle planlayın; arızayı giderene kadar güvenli geçici düzen sağlayın.
+R-49-04|Tahliyenin gecikmesiyle duman zehirlenmesi ve ağır yaralanma|engineering|administrative|Alarmı gürültülü çalışma, kulak koruyucu ve farklı kişisel ihtiyaçlarla birlikte sınayın; görsel uyarıyı uygun yerde tamamlayın.
+R-49-05|Toplanma alanında ikincil yaralanma|engineering|administrative|Birincil ve alternatif alanı yangın, gaz bulutu ve yapı düşmesi yönünden ayrı değerlendirin; değişen komşu riskleri plana yansıtın.
+R-49-06|Kurtarmanın gecikmesiyle yaralanmanın ağırlaşması ve ölüm|administrative|administrative|Sayımı personel, yüklenici ve ziyaretçi kayıtlarıyla eşleştirin; eksik kişiyi aramak için çalışanları binaya geri göndermeyin.
+R-49-07|Geciken ilk müdahaleyle yanık, zehirlenme veya yaralanmanın ağırlaşması|administrative|administrative|Asıl ve yedek görevleri vardiya/izin koşullarıyla karşılaştırın; atama kaydı bulunmasını eğitim ve yeterlilik doğrulaması saymayın.
+R-49-08|Kurtarma gecikmesi ve ikincil kurtarıcı yaralanması|administrative|engineering|Kurtarma erişimi ve ekipmanını iş başlamadan hazırlayın; kapalı alan ve yüksekte çalışma için yalnız genel 112 çağrısına güvenmeyin.
+R-49-09|Yardım çağrısında gecikme ve yanlış yönlendirme|administrative|administrative|İletişim listesini görev değişikliği sonrası güncelleyin; internet kesildiğinde kullanılacak basılı kopyayı sahada bulundurun.
+R-49-10|Büyüyen yangın veya salımda yanık, zehirlenme ve ölüm|engineering|administrative|Kesme görevini yetkili teknik personele verin; yangın pompaları ve yaşam desteği gibi sistemleri genel kesme talimatıyla devre dışı bırakmayın.
+R-49-11|Yanlış tahliye davranışıyla düşme ve duman maruziyeti|administrative|administrative|İşe girişte gerçek güzergâh ve toplanma yerini gösterin; tatbikatta farklı vardiya, ziyaretçi ve erişilebilirliği değerlendirin.
+R-49-12|Erken dönüşte çökme, gaz veya elektrik maruziyeti|administrative|administrative|Geri giriş yetkisini ve aranacak teknik kontrolleri olay türüne göre belirleyin; alarmın susmasını dönüş izni saymayın.
+R-50-01|Asansör hareketiyle ezilme ve ölüm|administrative|engineering|Kuyu erişimini ve kabin hareketini bakım yöntemine uygun kilitleyin; yalnız çağrı düğmelerini kapatmakla yetinmeyin.
+R-50-02|Kabin üstünde sıkışma ve düşme|engineering|administrative|Bakım modu ve güvenli açıklıkları asansöre özgü değerlendirin; standart çalışanı kuyu veya kabin üstüne göndermeyin.
+R-50-03|Fan hareketiyle kesilme ve uzuv kaybı|engineering|administrative|Elektrik kesildikten sonra hava akımıyla dönme ihtimalini de giderin; kayış ve rotor tamamen güvenli olmadan erişmeyin.
+R-50-04|Yüksekten düşme ve aerosol kaynaklı hastalık|engineering|administrative|Kule temizliğinde aerosolün çevredeki kişilere yayılmasını kontrol edin; erişim platformu ve hijyen planını birlikte uygulayın.
+R-50-05|Sıcak/kimyasal akışkanla yanık ve zehirlenme|engineering|administrative|Sökülecek pompanın hat kimliğini yerinde kontrol edin; izolasyon sonrası kalan sıvıyı uyumlu kapta güvenli toplayın.
+R-50-06|Yanlış hat açılmasında sıcak akışkan yanığı, kimyasal hasar ve zehirlenme|engineering|administrative|Hat etiketini çizim ve yerinde izleme ile doğrulayın; bilinmeyen hatta deneme amaçlı gevşetme yapmayın.
+R-50-07|Filtre kapağının fırlaması ve basınç yaralanması|engineering|administrative|İki tarafta hapsedilen basıncı da tahliye edin; kapağı açmadan sıcaklık ve akışkan tehlikesini kontrol edin.
+R-50-08|Kayış veya kasnakta el sıkışması|engineering|administrative|Germe yöntemini üreticiye göre uygulayın; enerji izolasyonunu kaldırmadan koruyucuyu yerine takın.
+R-50-09|UPS/DC arkıyla ağır yanık ve elektrik çarpması|engineering|administrative|Akü beslemesi ve geri beslemeyi izolasyon listesine ekleyin; metal takıları çıkarıp işe uygun yalıtılmış takım kullanın.
+R-50-10|Test hareketi veya su jetiyle çarpma ve yaralanma|engineering|administrative|Test tahliyesini insan ve ekipman bulunmayan uygun yere yönlendirin; yangın korumasındaki geçici kaybı kesinti planıyla yönetin.
+R-50-11|Basınçlı kondens sıçramasıyla göz ve cilt yaralanması|engineering|administrative|Tahliyeyi çalışan üzerine veya yaya yoluna vermeyin; bakımda hattı güvenli basınç ve sıcaklığa getirin.
+R-50-12|Kazan dairesinde yanık, gaz veya elektrik yaralanması|engineering|administrative|Ziyaretçiyi refakat ve kısa alan bilgilendirmesiyle alın; kaçış ve acil vana noktalarını kapalı erişimle birlikte kullanılabilir tutun.

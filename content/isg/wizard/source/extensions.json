@@ -1,0 +1,123 @@
+{
+  "version": "isgada-v5.0.0",
+  "extra_options": {
+    "processes": {
+      "tank_mixer": "Karıştırıcılı tank içine girilerek çalışma",
+      "acid_dilution": "Asit çözeltisi hazırlama / seyreltme",
+      "solvent_dryer": "Solvent içeren ürünleri fırında kurutma",
+      "gas_evolving_battery_charge": "Gaz çıkaran kurşun asit akü şarjı",
+      "organic_dust_milling": "Yanıcı organik malzeme öğütme",
+      "switching_hv": "Yüksek / orta gerilim manevrası"
+    },
+    "energy": {
+      "hydraulic": "Hidrolik sistemler",
+      "vacuum": "Vakum sistemleri",
+      "pressure": "Basınçlı kap ve hatlar",
+      "portable_heater": "Taşınabilir ısıtıcı",
+      "compressed_gas": "Basınçlı gaz sistemi",
+      "ammonia": "Amonyak sistemi"
+    },
+    "people": {
+      "new_starter": "İşe yeni başlayan çalışanlar",
+      "high_occupancy": "Aynı anda yoğun kişi bulunması",
+      "young": "Genç çalışan / stajyer",
+      "support_needs": "Tahliyede destek ihtiyacı",
+      "high_workload": "Yoğun iş ve zaman baskısı",
+      "continuous_staffing": "Kesintisiz personel varlığı gerektiren işler"
+    },
+    "emergency_systems": {
+      "server_gas_system": "Gazlı söndürme bulunan sunucu odası",
+      "critical_automation": "Kritik otomasyon / haberleşme sistemi",
+      "critical_ventilation": "Kesilmesi tehlike oluşturan havalandırma",
+      "control_room": "Proses kontrol odası",
+      "process_alarm": "Kritik proses alarm sistemi"
+    }
+  },
+  "feature_implications": {
+    "tank_mixer": [
+      "confined_space",
+      "machinery"
+    ],
+    "acid_dilution": [
+      "corrosives",
+      "hazardous_chemicals"
+    ],
+    "solvent_dryer": [
+      "flammable_liquids"
+    ],
+    "organic_dust_milling": [
+      "combustible_dust"
+    ],
+    "hydraulic": [
+      "pressure"
+    ],
+    "new_starter": [
+      "training_required"
+    ]
+  },
+  "card_dependencies": {
+    "AD-039": [
+      "AD-040"
+    ],
+    "AD-021": [
+      "AD-022"
+    ]
+  },
+  "aliases": {
+    "S172": [
+      "yazılım",
+      "bilişim",
+      "büro"
+    ],
+    "E091": [
+      "hidrolik pres",
+      "hydraulic press"
+    ],
+    "T062": [
+      "akü şarjı",
+      "batarya şarjı"
+    ]
+  },
+  "control_overrides": {
+    "R-42-07": {
+      "C1": "engineering"
+    },
+    "R-27-02": {
+      "C1": "administrative"
+    },
+    "R-38-10": {
+      "C1": "engineering"
+    }
+  },
+  "roles": {
+    "employer": "İşveren / işveren vekili",
+    "facility": "Bina ve tesis sorumlusu",
+    "maintenance": "Bakım sorumlusu",
+    "operations": "Operasyon sorumlusu",
+    "logistics": "Depo ve lojistik sorumlusu",
+    "hr": "İnsan kaynakları sorumlusu",
+    "emergency_coordinator": "Acil durum koordinatörü",
+    "fleet": "Filo / sürüş sorumlusu"
+  },
+  "family_roles": {
+    "G01": "facility",
+    "G02": "maintenance",
+    "G03": "maintenance",
+    "G07": "operations",
+    "G08": "logistics",
+    "G09": "fleet",
+    "G10": "logistics",
+    "G11": "maintenance",
+    "G16": "maintenance",
+    "G20": "facility",
+    "G24": "employer",
+    "G26": "employer",
+    "G27": "employer",
+    "G28": "hr",
+    "G42": "facility",
+    "G49": "emergency_coordinator",
+    "G50": "maintenance",
+    "G51": "facility",
+    "G52": "fleet"
+  }
+}

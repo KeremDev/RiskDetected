@@ -1,0 +1,3274 @@
+[
+  {
+    "activation": {
+      "kind": "core",
+      "question_id": null
+    },
+    "assigned_team_actions": [
+      "Görevli ekip tahliyeyi ve sayımı yönetir; eğitim, ekipman ve güvenli kaçış koşulları sağlanmadan söndürmeye girmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Alarm verin; dumana girmeden güvenli çıkışa yönelin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Bina yangınına hazırlık",
+    "id": "AD-001",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Dumana girme; eşyayı almak için geri dönme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [],
+    "title_tr": "Genel bina yangını",
+    "trigger_tr": "Duman, alev veya doğrulanmış yangın alarmı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-002"
+    },
+    "assigned_team_actions": [
+      "Elektrik yetkilisi yalnız güvenli noktadan enerjiyi ayırır; söndürme ekibi enerji durumu ve müdahale sınırını doğrular."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Panodan uzaklaşın, alarm verin ve güvenli konumdan yardım çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Elektrik panoları",
+    "id": "AD-002",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Enerjili panoya yaklaşma veya su uygulama"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-02-03",
+      "R-02-04",
+      "R-20-03"
+    ],
+    "title_tr": "Elektrik panosu yangını",
+    "trigger_tr": "Panoda alev, yoğun duman veya ark"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-003"
+    },
+    "assigned_team_actions": [
+      "Eğitimli mutfak/söndürme ekibi yalnız uygun sistemle ve açık kaçış yolu varsa müdahale eder; güvenli enerji kesmeyi yetkili yapar."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Alarm verin; yanan kabı taşımadan ve su dökmeden uzaklaşın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Kızgın yağ kullanılan mutfaklar",
+    "id": "AD-003",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Yağa su dökme; yanan kabı taşıma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-20-04",
+      "R-34-05",
+      "R-41-06",
+      "R-41-07"
+    ],
+    "title_tr": "Mutfak yağ yangını",
+    "trigger_tr": "Kızgın yağ veya davlumbazda yangın"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-004"
+    },
+    "assigned_team_actions": [
+      "Koordinatör madde envanterini ve GBF'leri itfaiyeye aktarır; toksik duman veya patlama tehlikesinde çalışan müdahalesini durdurur."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Güvenli sınırın dışına çıkın ve alarm verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Solvent depolama veya kullanımı",
+    "id": "AD-004",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Döküntüye yaklaşma veya eğitimsiz müdahale etme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-18-02",
+      "R-18-06",
+      "R-18-07",
+      "R-20-08"
+    ],
+    "title_tr": "Solvent deposu yangını",
+    "trigger_tr": "Yanıcı sıvı deposunda duman veya alev"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-005"
+    },
+    "assigned_team_actions": [
+      "Proses yetkilisi önceden tasarlanmış güvenli duruşu uygular; uzman yangın/patlama müdahalesi ve yayılım izolasyonu hazırlanır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Alanı terk edin; filtre kapağını açmadan alarm verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Talaş veya yanıcı toz toplama sistemi",
+    "id": "AD-005",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Filtre kapağını açma; basınçlı havayla karıştırma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-21-01",
+      "R-21-02",
+      "R-21-06",
+      "R-21-07",
+      "R-32-06"
+    ],
+    "title_tr": "Talaş veya toz filtresi yangını",
+    "trigger_tr": "Filtrede sıcaklık artışı, kıvılcım veya duman"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-006"
+    },
+    "assigned_team_actions": [
+      "Yetkili ekip kimya, kapasite ve konumu uzman müdahale ekibine verir; yeniden tutuşma ve toksik gaz için alanı kontrollü tutar."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Dumandan uzaklaşın; bataryayı taşımadan alarm verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Lityum batarya, hasarlı batarya veya enerji depolama",
+    "id": "AD-006",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Hasarlı bataryayı elle taşıma; dumanı soluma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-39-12",
+      "R-46-01",
+      "R-46-02",
+      "R-46-03",
+      "R-46-04",
+      "R-46-05",
+      "R-46-06",
+      "R-46-12"
+    ],
+    "title_tr": "Batarya termal olayı",
+    "trigger_tr": "Bataryada şişme, tıslama, yoğun ısı veya duman"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-007"
+    },
+    "assigned_team_actions": [
+      "Görevli ekip trafiği güvenli mesafeden ayırır; yakıt ve batarya bilgisini itfaiyeye aktarır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Güvenliyse aracı durdurun; araçtan uzaklaşın ve yardım çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Motorlu araçlar",
+    "id": "AD-007",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Kaputu eğitimsiz açma; yakıt veya batarya bölgesine yaklaşma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-09-01",
+      "R-09-02",
+      "R-09-03",
+      "R-09-04",
+      "R-09-05",
+      "R-09-06",
+      "R-09-07",
+      "R-09-08",
+      "R-09-09",
+      "R-09-10",
+      "R-09-11"
+    ],
+    "title_tr": "Araç yangını",
+    "trigger_tr": "Araçta alev veya duman"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-008"
+    },
+    "assigned_team_actions": [
+      "Ekipler gizli boşluk, çatı erişimi ve yapısal tehlikeleri itfaiyeye bildirir; alt alanı boşaltır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Bina alarmını verin ve güvenli tahliye yolunu kullanın; çatıya çıkmayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Yanıcı çatı veya yalıtım katmanları",
+    "id": "AD-008",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Çatıya çıkarak kontrol etmeye çalışma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-01-04",
+      "R-05-02",
+      "R-05-03"
+    ],
+    "title_tr": "Çatı veya izolasyon yangını",
+    "trigger_tr": "Çatı katmanında alev veya gizli duman"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-009"
+    },
+    "assigned_team_actions": [
+      "Yetkili elektrik işletmesi izolasyonu ve yaklaşma sınırını belirler; diğer ekipler bu sınır dışında kalır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Tesise yaklaşmayın; elektrik sorumlusu ve itfaiyeyi uyarın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Transformatör veya yüksek gerilim tesisatı",
+    "id": "AD-009",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Yaklaşma mesafesini kendi başına tahmin edip trafoya girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-39-08",
+      "R-39-09"
+    ],
+    "title_tr": "Trafo yangını",
+    "trigger_tr": "Trafoda patlama sesi, duman veya yağ yangını"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-010"
+    },
+    "assigned_team_actions": [
+      "Koordinatör yerel makamlarla erken tahliye/korunma kararını ve alternatif çıkışları uygular."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Resmî uyarıyı izleyin; dumanlı veya kapalı güzergâha ilerlemeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Orman veya yoğun bitki örtüsüne komşuluk",
+    "id": "AD-010",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Dumanlı veya kapatılmış güzergâha ilerleme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-37-08",
+      "R-37-09",
+      "R-48-03",
+      "R-48-04"
+    ],
+    "title_tr": "Orman yangınının tesise yaklaşması",
+    "trigger_tr": "Resmî uyarı, yaklaşan duman veya alev"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-011"
+    },
+    "assigned_team_actions": [
+      "Ekip sayımı güvenli alanda yapar; uzmanlar ikincil patlama ve yapısal güvenliği değerlendirmeden geri giriş açılmaz."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "İkincil olay alanından uzaklaşın ve yardım çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Yanıcı gaz, toz veya patlama etkisi ihtimali",
+    "id": "AD-011",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Hasarlı yapıya veya patlamamış sisteme girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-19-01",
+      "R-19-07",
+      "R-19-08",
+      "R-21-01",
+      "R-21-02",
+      "R-21-03",
+      "R-21-04",
+      "R-21-05",
+      "R-21-06",
+      "R-21-07",
+      "R-21-08",
+      "R-21-09",
+      "R-21-10",
+      "R-21-11",
+      "R-21-12",
+      "R-38-02",
+      "R-38-03"
+    ],
+    "title_tr": "Patlama sonrası durum",
+    "trigger_tr": "Patlama, yapısal hasar veya ani basınç dalgası"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-012"
+    },
+    "assigned_team_actions": [
+      "Gaz işletmecisi/yetkili teknik ekip güvenli izolasyonu ve yeniden giriş ölçütlerini belirler."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Anahtar veya cihaz çalıştırmadan uzaklaşın; güvenli konumdan yardım çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Doğalgaz tesisatı veya yakındaki doğalgaz hattı",
+    "id": "AD-012",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Etkilenen alanda anahtar veya elektrikli cihaz çalıştırma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-17-10",
+      "R-41-07",
+      "R-50-12"
+    ],
+    "title_tr": "Doğalgaz kaçağı",
+    "trigger_tr": "Gaz alarmı, belirgin gaz kokusu veya doğrulanmış sızıntı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-013"
+    },
+    "assigned_team_actions": [
+      "Yetkili gaz ekibi izolasyon ve atmosfer kontrolünü sağlar; tahliye alanı gazın yayılımına göre belirlenir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Gazın birikebileceği alçak hacimlerden uzaklaşın ve güvenli yerden yardım çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "LPG tesisatı veya tüpü",
+    "id": "AD-013",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Kaçağı alevle arama; çukur veya bodruma girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-17-03"
+    ],
+    "title_tr": "LPG kaçağı",
+    "trigger_tr": "LPG alarmı veya bağlantıda kaçak bulgusu"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-014"
+    },
+    "assigned_team_actions": [
+      "Donanımlı uzman ekip sızıntıyı değerlendirir; koordinatör GBF, tesis planı ve maruz kalan kişi bilgisini aktarır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Buluttan uzak güvenli bölgeye geçin; kaçağı kapatmak için geri dönmeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Amonyaklı soğutma veya amonyak kullanımı",
+    "id": "AD-014",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Korunmasız kaçak kapatmaya gitme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-17-06"
+    ],
+    "title_tr": "Amonyak salımı",
+    "trigger_tr": "Amonyak alarmı veya doğrulanmış proses sızıntısı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-015"
+    },
+    "assigned_team_actions": [
+      "Uzman toksik gaz ekibi müdahaleyi yönetir; görevli ekip güvenli alandan erişimi sınırlar."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Alanı terk edin; tüpe veya kaçağa yaklaşmadan alarm verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Klor gazı veya klor açığa çıkarabilecek proses",
+    "id": "AD-015",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Tüpü eğitimsiz taşıma veya kaçağa yaklaşma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-17-07",
+      "R-41-08"
+    ],
+    "title_tr": "Klor salımı",
+    "trigger_tr": "Klor algılaması veya bağlantı kaçağı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-016"
+    },
+    "assigned_team_actions": [
+      "Hazır ve donanımlı uzman kurtarma düzeni devreye alınır; güvenli atmosfer doğrulanmadan girişe izin verilmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Alanı terk edin; içeride kalan kişiyi almak için girmeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Azot veya başka inert gaz kullanımı",
+    "id": "AD-016",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Bayılanı almak için korunmasız içeri girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-CONFINED"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-12-01",
+      "R-12-02",
+      "R-17-04"
+    ],
+    "title_tr": "Azotla oksijen azalması",
+    "trigger_tr": "Oksijen alarmı veya inert gaz kaçağı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-017"
+    },
+    "assigned_team_actions": [
+      "Yetkili ekip boşalmayı, atmosfer kontrolünü ve sayımı yönetir; görünüşe göre güvenli kararı verilmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Etkilenen hacmi ve bağlantılı alçak alanları terk edin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "CO2 gazlı proses veya söndürme sistemi",
+    "id": "AD-017",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "İçerisi berrak diye tekrar girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-17-05",
+      "R-34-08"
+    ],
+    "title_tr": "CO2 boşalması",
+    "trigger_tr": "CO2 sistem alarmı veya gaz boşalması"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-018"
+    },
+    "assigned_team_actions": [
+      "Önceden hazır uzman kurtarma ve gaz kontrol düzeni işletilir; 112 ve ilgili teknik sorumlu bilgilendirilir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Kokuya güvenmeden alanı terk edin; korunmasız kurtarma girişimi yapmayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Atıksu, gübre, jeotermal veya H2S oluşturabilecek proses",
+    "id": "AD-018",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Kokuya güvenerek alanı güvenli sayma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-CONFINED"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-12-03",
+      "R-37-07",
+      "R-39-10",
+      "R-39-11",
+      "R-40-07"
+    ],
+    "title_tr": "Hidrojen sülfür olayı",
+    "trigger_tr": "H2S alarmı veya şüpheli ani rahatsızlanma"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-019"
+    },
+    "assigned_team_actions": [
+      "Görevli ekip herkesi sayar; yetkili teknik ekip güvenli konumdan kaynağı ayırır ve atmosferi doğrular; ilkyardımcı yetkinliği içinde yardım eder."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Şüpheli alanı terk edip temiz havaya çıkın; 112'yi çağırın, kaynağı aramak için dönmeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "İçten yanmalı ekipman, yakıtlı ısıtıcı veya egzozun içeri ulaşabileceği alan",
+    "id": "AD-019",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Kaynağı aramak için içeri dönme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-NIOSH-CO"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-02-09",
+      "R-08-09",
+      "R-22-06",
+      "R-38-12",
+      "R-39-07",
+      "R-50-12"
+    ],
+    "title_tr": "Karbonmonoksit maruziyeti",
+    "trigger_tr": "CO alarmı veya aynı alanda çoklu rahatsızlanma"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-020"
+    },
+    "assigned_team_actions": [
+      "Yetkili ekip gaz oluşumu, oksijen azalması ve basınç tehlikelerine göre müdahale sınırını belirler."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Döküntüye temas etmeden ve kapalı hacme girmeden uzaklaşın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Kriyojenik sıvılar",
+    "id": "AD-020",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Sıvıya temas etme; kapalı hacme girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-17-08",
+      "R-17-09",
+      "R-36-04"
+    ],
+    "title_tr": "Kriyojenik döküntü",
+    "trigger_tr": "Kriyojenik sıvı yayılması veya oksijen alarmı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-021"
+    },
+    "assigned_team_actions": [
+      "Eğitimli ekip yalnız GBF, miktar ve koşullar kendi müdahale sınırındaysa uyumlu kit kullanır; aksi halde uzman müdahalesine yükseltir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Döküntüden uzaklaşın; maddeyi karıştırmadan sorumluya haber verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Küçük ve içeriği bilinen kimyasal dökülme ihtimali",
+    "id": "AD-021",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Bilinmeyen ürünü nötralize etmeye çalışma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-18-01",
+      "R-18-02",
+      "R-18-03",
+      "R-18-04",
+      "R-18-05",
+      "R-18-06",
+      "R-18-07",
+      "R-18-08",
+      "R-18-09",
+      "R-18-10",
+      "R-18-11",
+      "R-18-12"
+    ],
+    "title_tr": "Küçük tanımlı kimyasal döküntü",
+    "trigger_tr": "Kimliği bilinen ve eğitimli ekibin yetkinlik sınırındaki küçük salım"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-022"
+    },
+    "assigned_team_actions": [
+      "Uzman ekip maddeyi ve yayılımı değerlendirir; görevli ekip erişim, envanter ve dış kurum koordinasyonunu sağlar."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Etkilenen alandan uzaklaşın, güvenli konumda kalın ve alarm verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Büyük veya içeriği bilinmeyen kimyasal dökülme ihtimali",
+    "id": "AD-022",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Emici veya suyu rastgele uygulama"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-18-06",
+      "R-18-07",
+      "R-18-12",
+      "R-40-04"
+    ],
+    "title_tr": "Büyük veya bilinmeyen kimyasal döküntü",
+    "trigger_tr": "Kontrol dışı, kimliği belirsiz veya yoğun buharlı salım"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-023"
+    },
+    "assigned_team_actions": [
+      "Eğitimli ilkyardımcı ve kimyasal sorumlusu güvenli dekontaminasyon ve sağlık sevkini yönetir; GBF sağlık ekibine iletilir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Gecikmeden yardım isteyin; acil dekontaminasyon donanımı ve maddeye özgü talimat için 112/GBF yönlendirmesini izleyin; rastgele madde uygulamayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Göze veya cilde temas edebilecek kimyasallar",
+    "id": "AD-023",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Kimyasalları birbiriyle nötralize etmeye çalışma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-18-01",
+      "R-18-03",
+      "R-18-08",
+      "R-18-10",
+      "R-31-08",
+      "R-31-09"
+    ],
+    "title_tr": "Kimyasalın göze veya cilde teması",
+    "trigger_tr": "Sıçrama veya kimyasal bulaş bildirimi"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-024"
+    },
+    "assigned_team_actions": [
+      "Proses yetkilisi doğrulanmış güvenli duruş/soğutma senaryosunu uygular; görevli ekip tahliye sınırını yönetir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Alarm verip alandan uzaklaşın; reaktörü açmayın veya rastgele madde eklemeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Kontrolsüz ısı üretebilen kimyasal reaksiyon",
+    "id": "AD-024",
+    "mode": "CONTROLLED_SHUTDOWN",
+    "prohibited_actions": [
+      "Reaktörü açma; soğutucu veya söndürücü maddeyi rastgele ekleme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-19-01",
+      "R-19-02",
+      "R-19-03",
+      "R-19-04",
+      "R-19-09",
+      "R-19-10",
+      "R-44-10"
+    ],
+    "title_tr": "Kontrolsüz kimyasal reaksiyon",
+    "trigger_tr": "Sıcaklık/basınç artışı veya reaksiyon koruma alarmı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-025"
+    },
+    "assigned_team_actions": [
+      "Döküm/fırın yetkilisi tesise özel izolasyonu yönetir; görevli ekip yayılım alanını boşaltır ve itfaiyeyi bilgilendirir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Sıcak metalin akış yolundan uzaklaşın; su uygulamayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Sıvı metal",
+    "id": "AD-025",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Sıcak metal üzerine su dökme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-30-01",
+      "R-30-02",
+      "R-30-03",
+      "R-30-04",
+      "R-30-05",
+      "R-30-06",
+      "R-30-07",
+      "R-30-08",
+      "R-30-09",
+      "R-30-10",
+      "R-30-11",
+      "R-30-12"
+    ],
+    "title_tr": "Sıcak metal dökülmesi",
+    "trigger_tr": "Pota/fırından metalin kontrol dışı çıkışı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-026"
+    },
+    "assigned_team_actions": [
+      "Fırın yetkilisi sisteme özel güvenli süreç planını uygular; rastgele su, soğutma veya enerji müdahalesi yapılmaz."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Kaçak güzergâhından uzaklaşın ve fırın sorumlusunu uyarın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Cam ergitme fırını",
+    "id": "AD-026",
+    "mode": "CONTROLLED_SHUTDOWN",
+    "prohibited_actions": [
+      "Soğutma veya enerji sistemini rastgele kapatma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-29-03"
+    ],
+    "title_tr": "Cam fırını kaçağı",
+    "trigger_tr": "Refrakter hasarı veya sıcak cam sızıntısı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-027"
+    },
+    "assigned_team_actions": [
+      "Teknik yetkili yalnız güvenli noktadan izolasyon yapar; ekip sıcaklık ve görüş tehlikesi bitmeden erişimi açmaz."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Kaçağın olduğu alanı terk edin; vana aramak için buharın içine girmeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Buhar hatları",
+    "id": "AD-027",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Kaçağa yürüyerek vana arama"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-16-03",
+      "R-16-09",
+      "R-50-06"
+    ],
+    "title_tr": "Buhar hattı kopması",
+    "trigger_tr": "Yoğun buhar, yüksek ses veya basınç kaybı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-028"
+    },
+    "assigned_team_actions": [
+      "Basınçlı sistem yetkilisi güvenli izolasyonu sağlar; donanımlı uzman incelemesi olmadan hizmete dönüş yapılmaz."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Alanı boşaltın; kapağı açmadan ve bağlantıları sıkmadan haber verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Basınçlı kaplar",
+    "id": "AD-028",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Kapak açma veya basınçlı parçayı sıkma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-16-01",
+      "R-16-02",
+      "R-16-05",
+      "R-16-06",
+      "R-16-10",
+      "R-16-12"
+    ],
+    "title_tr": "Basınçlı kabın hasarı",
+    "trigger_tr": "Şişme, çatlak, anormal basınç veya koruma alarmı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-029"
+    },
+    "assigned_team_actions": [
+      "Koordinatör gaz türü ve konumu bildirir; uzman müdahale ekibi güvenli sınır ve soğutma kararını verir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Tüpe yaklaşmadan bölgeden uzaklaşın ve itfaiyeye haber verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Yangın veya ısıdan etkilenebilecek gaz tüpleri",
+    "id": "AD-029",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Tüpü soğukmuş gibi taşıma veya vanaya yaklaşma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-17-01",
+      "R-17-02",
+      "R-17-10",
+      "R-17-11",
+      "R-17-12"
+    ],
+    "title_tr": "Gaz tüpünün ısınması",
+    "trigger_tr": "Yangına maruz kalmış veya anormal ısınan tüp"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-030"
+    },
+    "assigned_team_actions": [
+      "Elektrik yetkilisi güvenli ayırmayı doğrular; ilkyardımcı ancak alan güvenliyken eğitimi ve 112 yönlendirmesi içinde yardım eder."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "112'yi çağırın; enerji güvenliği sağlanmadan kişiye dokunmayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Elektrik enerjisiyle temas olasılığı",
+    "id": "AD-030",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Enerji güvenliği sağlanmadan yaralıya dokunma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-02-01",
+      "R-02-02",
+      "R-02-03",
+      "R-02-04",
+      "R-02-05",
+      "R-02-06",
+      "R-02-07",
+      "R-02-08",
+      "R-02-09",
+      "R-02-10",
+      "R-02-11",
+      "R-02-12"
+    ],
+    "title_tr": "Elektrik çarpması",
+    "trigger_tr": "Enerjili sisteme temas şüphesi veya yaralı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-031"
+    },
+    "assigned_team_actions": [
+      "Yetkili elektrik ekibi izolasyon ve yeniden enerjilendirmeyi kontrol eder; ilkyardımcı güvenli alanda görev yapar."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Arızalı ekipmana yaklaşmayın; 112 ve elektrik sorumlusunu çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Ark oluşturabilecek elektriksel anahtarlama veya arıza",
+    "id": "AD-031",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Arızalı panoyu yeniden enerjilendirme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-02-03",
+      "R-02-04",
+      "R-02-09",
+      "R-39-01",
+      "R-39-09",
+      "R-46-07"
+    ],
+    "title_tr": "Ark flaşı olayı",
+    "trigger_tr": "Anahtarlama veya arıza sırasında ark/yanık"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-032"
+    },
+    "assigned_team_actions": [
+      "Teknik yetkili tüm enerjileri izole eder; eğitimli kurtarma ekibi makineyi rastgele ters çalıştırmadan kurtarma planını uygular."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Kendinizi riske atmadan erişilebiliyorsa acil durdurmayı kullanın ve yardım çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Sıkıştırabilen makine hareketleri",
+    "id": "AD-032",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Makineyi rastgele ters çalıştırma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-03-01",
+      "R-03-02",
+      "R-03-03",
+      "R-03-04",
+      "R-03-05",
+      "R-03-06",
+      "R-03-07",
+      "R-03-08",
+      "R-03-09",
+      "R-03-10",
+      "R-03-11",
+      "R-03-12",
+      "R-11-01",
+      "R-11-02",
+      "R-11-03",
+      "R-11-04",
+      "R-11-05",
+      "R-44-01",
+      "R-44-05",
+      "R-44-06"
+    ],
+    "title_tr": "Makineye sıkışma",
+    "trigger_tr": "Uzvun veya kişinin hareketli bölgede sıkışması"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-033"
+    },
+    "assigned_team_actions": [
+      "Yetkin kaldırma-kurtarma ekibi ikinci düşme ve ezilmeyi önleyen planı uygular; diğer kişiler dışlama alanında kalır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Yük alanından uzaklaşın; yükü oynatmadan 112'yi çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Kaldırılan veya devrilebilen ağır yükler",
+    "id": "AD-033",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Yükü plansız kaldırıp ikinci çökme oluşturma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-07-01",
+      "R-07-02",
+      "R-07-03",
+      "R-07-04",
+      "R-07-05",
+      "R-07-06",
+      "R-07-07",
+      "R-07-08",
+      "R-07-09",
+      "R-07-10",
+      "R-07-11",
+      "R-07-12",
+      "R-10-01",
+      "R-10-02",
+      "R-10-03",
+      "R-10-04",
+      "R-10-05",
+      "R-10-06",
+      "R-10-07",
+      "R-43-04",
+      "R-43-05"
+    ],
+    "title_tr": "Yük altında kalma",
+    "trigger_tr": "Düşen veya kayan yükün kişiyi sıkıştırması"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-034"
+    },
+    "assigned_team_actions": [
+      "İlkyardımcı güvenli erişimde eğitimine uygun yardım eder; kurtarma ekibi ek düşme tehlikesini kontrol eder."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "İkinci düşme alanına girmeden 112'yi çağırın; yakın bir tehlike yoksa yaralıyı gereksiz taşımayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Yüksek seviyede çalışma",
+    "id": "AD-034",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Yakın tehlike yoksa yaralıyı gereksiz taşıma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-05-01",
+      "R-05-02",
+      "R-05-03",
+      "R-05-04",
+      "R-05-05",
+      "R-05-06",
+      "R-05-07",
+      "R-05-08",
+      "R-05-09",
+      "R-05-10",
+      "R-05-11",
+      "R-05-12",
+      "R-06-01",
+      "R-06-02",
+      "R-06-03",
+      "R-06-04",
+      "R-06-05",
+      "R-06-06",
+      "R-06-07",
+      "R-06-08",
+      "R-06-09",
+      "R-06-10",
+      "R-06-11",
+      "R-06-12"
+    ],
+    "title_tr": "Yüksekten düşme",
+    "trigger_tr": "Düşme ve yaralanma bildirimi"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-035"
+    },
+    "assigned_team_actions": [
+      "İşe başlamadan hazır edilmiş eğitimli ve donanımlı kurtarma ekibi planı gecikmeden işletir; yalnız dış ekibin gelmesine güvenilmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Alarm verin; doğaçlama halatla kurtarmaya çalışmayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Düşüş durdurma sistemiyle askıda kalma ihtimali",
+    "id": "AD-035",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Doğaçlama halat sistemiyle kurtarmaya çalışma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-CONFINED"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-05-05",
+      "R-05-06",
+      "R-05-07",
+      "R-05-08",
+      "R-05-12"
+    ],
+    "title_tr": "Askıda kalma",
+    "trigger_tr": "Düşüş durdurma sisteminde kişinin asılı kalması"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-036"
+    },
+    "assigned_team_actions": [
+      "İşe özel önceden hazır kurtarma düzeni devreye alınır; donanım ve atmosfer koşulları uygun olmayan ekip içeri girmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Girişi engelleyin; 112 ve hazır uzman kurtarma ekibini çağırın, korunmasız girmeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Kapalı alana giriş",
+    "id": "AD-036",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Korunmasız kurtarma amacıyla içeri girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-CONFINED"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-12-01",
+      "R-12-02",
+      "R-12-03",
+      "R-12-04",
+      "R-12-05",
+      "R-12-06",
+      "R-12-07",
+      "R-12-08",
+      "R-12-09",
+      "R-12-10",
+      "R-12-11",
+      "R-12-12",
+      "R-47-04"
+    ],
+    "title_tr": "Kapalı alanda bilinç kaybı",
+    "trigger_tr": "İçeride yanıt alınamaması veya atmosfer alarmı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-037"
+    },
+    "assigned_team_actions": [
+      "Yetkili teknik ve kurtarma ekipleri zemin ve ikincil göçük riskini değerlendirir; plansız iş makinesi müdahalesi yapılmaz."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Kazı kenarından uzaklaşın; içine girmeden 112'yi çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Hendek veya kazı içinde çalışma",
+    "id": "AD-037",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Desteksiz kazıya girme veya iş makinesiyle rastgele kazma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-13-01",
+      "R-13-02",
+      "R-13-03",
+      "R-13-04",
+      "R-13-05",
+      "R-13-06",
+      "R-13-07",
+      "R-13-08",
+      "R-13-09",
+      "R-48-09"
+    ],
+    "title_tr": "Kazı göçüğü",
+    "trigger_tr": "Zemin hareketi veya kişinin göçük altında kalması"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-038"
+    },
+    "assigned_team_actions": [
+      "Koordinatör alanı kapatır; yetkin yapı değerlendirmesi ve kamu müdahalesi sağlanmadan geri giriş açılmaz."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Hasarlı yapıya yaklaşmadan güvenli çıkıştan uzaklaşın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Yapısal hasar veya çökme ihtimali",
+    "id": "AD-038",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Eşya almak veya fotoğraf çekmek için girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-01-12",
+      "R-14-01",
+      "R-14-08",
+      "R-14-12",
+      "R-43-01",
+      "R-43-04",
+      "R-43-05",
+      "R-43-07"
+    ],
+    "title_tr": "Yapısal çökme tehlikesi",
+    "trigger_tr": "Ani çatlama, eğilme veya taşıyıcı hasar"
+  },
+  {
+    "activation": {
+      "kind": "core",
+      "question_id": null
+    },
+    "assigned_team_actions": [
+      "Görevli ekip sarsıntı bittikten sonra güvenli güzergâhı değerlendirerek tahliye ve sayımı yönetir; açık alan ve özel proses koşulları ayrıca uyarlanır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Bulunduğunuz yere uygun korunma davranışını uygulayın; içeride sarsıntı sürerken merdivene veya çıkışa koşmayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Türkiye deprem hazırlığı temel kartı",
+    "id": "AD-039",
+    "mode": "PROTECT_THEN_EVACUATE",
+    "prohibited_actions": [
+      "Sarsıntıda merdivene veya çıkışa koşma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-AFAD-QUAKE"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [],
+    "title_tr": "Deprem — sarsıntı anı",
+    "trigger_tr": "Hissedilen sarsıntı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-040"
+    },
+    "assigned_team_actions": [
+      "Koordinatör yetkili yapı ve tesis değerlendirmesine göre geri giriş kararını belgeler; geçen süre tek başına ölçüt değildir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Güvenli alanda sayım için bekleyin; eşya almak için geri girmeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Deprem sonrası yapı veya tesis hasarı",
+    "id": "AD-040",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Takvim süresi doldu diye binaya dönme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-01-12"
+    ],
+    "title_tr": "Deprem — hasarlı tesise dönüş",
+    "trigger_tr": "Sarsıntı sonrası hasar veya artçı tehlikesi"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-041"
+    },
+    "assigned_team_actions": [
+      "Koordinatör yerel uyarıya göre erken tahliyeyi yönetir; elektrik izolasyonunu teknik yetkili güvenli noktadan yapar."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Akıntıdan ve su basmış elektrikli alanlardan uzak, erişilebilir güvenli yüksek alana yönelin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Sel, dere taşkını, bodrum veya drenaj kaynaklı su baskını ihtimali",
+    "id": "AD-041",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Akıntıya veya su basmış elektrikli hacme girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-13-04",
+      "R-40-06",
+      "R-48-05"
+    ],
+    "title_tr": "Sel ve ani su baskını",
+    "trigger_tr": "Yükselen su veya resmî taşkın uyarısı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-042"
+    },
+    "assigned_team_actions": [
+      "Yetkili ekip kaldırma ve geçici yapıları önceden belirlenmiş sınırlar içinde güvenli duruma alır; kopabilecek elemanların alanını kapatır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Açık alan/yüksekte işi güvenli biçimde bırakın; belirlenmiş sağlam korunağa geçin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Şiddetli rüzgâra açık çalışma veya yapı elemanları",
+    "id": "AD-042",
+    "mode": "SHELTER_IN_PLACE",
+    "prohibited_actions": [
+      "Kopabilecek eleman ve ağaç altında bekleme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-05-10",
+      "R-07-12",
+      "R-48-04"
+    ],
+    "title_tr": "Fırtına ve şiddetli rüzgâr",
+    "trigger_tr": "Uyarı veya kontrol kaybı yaratacak rüzgâr"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-043"
+    },
+    "assigned_team_actions": [
+      "Koordinatör açık saha işleri için önceden belirlenmiş durdurma ve geri dönüş ölçütlerini uygular."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "İşi bırakıp uygun kapalı korunağa geçin; tek ağaç altında beklemeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Yıldırıma açık saha",
+    "id": "AD-043",
+    "mode": "SHELTER_IN_PLACE",
+    "prohibited_actions": [
+      "Tek ağaç altında veya yüksek metal yanında bekleme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-05-01",
+      "R-05-10",
+      "R-37-01",
+      "R-37-08",
+      "R-48-01",
+      "R-48-03",
+      "R-48-04"
+    ],
+    "title_tr": "Yıldırım",
+    "trigger_tr": "Yaklaşan fırtına veya yıldırım uyarısı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-044"
+    },
+    "assigned_team_actions": [
+      "İlkyardımcı eğitimi ve 112 yönlendirmesi içinde yardım eder; sorumlu diğer çalışanların maruziyetini durdurur."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "İşi durdurup güvenli serin alana geçin; rahatsızlanan kişi için gecikmeden yardım çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Aşırı sıcak veya yüksek ısı yükü",
+    "id": "AD-044",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Rahatsız kişiyi çalışmaya devam ettirme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-05-11",
+      "R-23-04",
+      "R-37-11"
+    ],
+    "title_tr": "Aşırı sıcak ve ısı hastalığı",
+    "trigger_tr": "Sıcak ortamda ağır rahatsızlık veya bilinç değişikliği"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-045"
+    },
+    "assigned_team_actions": [
+      "Görevli ekip kişi sayımı ve güvenli erişimi yönetir; sağlık/kurtarma desteğini ihtiyaca göre çağırır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Güvenli sıcak alana geçin ve yardım isteyin; yalnız arama için geri çıkmayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Aşırı soğuk veya hava koşuluyla mahsur kalma ihtimali",
+    "id": "AD-045",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Korunmasız arama için ikinci kişiyi riske atma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-09-11",
+      "R-10-12",
+      "R-23-05"
+    ],
+    "title_tr": "Aşırı soğuk ve mahsur kalma",
+    "trigger_tr": "Soğukta bilinç, hareket veya iletişim kaybı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-046"
+    },
+    "assigned_team_actions": [
+      "Jeoteknik yetkili değerlendirmesi ve gerekirse kamu ekipleriyle alan sınırı oluşturulur; gözlem için şev altına girilmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Şevden uzak belirlenmiş güvenli alana gidin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Heyelan, şev veya zemin hareketi ihtimali",
+    "id": "AD-046",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Şev altına gözlem için yaklaşma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-13-08",
+      "R-38-05",
+      "R-40-10"
+    ],
+    "title_tr": "Heyelan veya şev hareketi",
+    "trigger_tr": "Çatlak, blok düşmesi veya hareket alarmı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-047"
+    },
+    "assigned_team_actions": [
+      "Yetkili asansör kurtarma/bakım ekibi müdahaleyi yönetir; diğer görevliler iletişimi sürdürür ve sağlık ihtiyacını bildirir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "İç iletişim/alarm düzenini kullanın; kapıyı zorlayıp çıkmaya çalışmayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Asansör",
+    "id": "AD-047",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Kapıyı zorlayıp kabinden atlamaya çalışma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-50-01",
+      "R-50-02"
+    ],
+    "title_tr": "Asansörde mahsur kalma",
+    "trigger_tr": "Kabin durması veya yardım alarmı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-048"
+    },
+    "assigned_team_actions": [
+      "Yetkili ekip güvenli açmayı, kişi sayımını ve sağlık değerlendirmesini sağlar; desteksiz ikinci kişiyi içeri göndermez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "İçeriden açma veya alarm düzenini kullanın; mahsur kişiyi fark ettiğinizde hemen yardım isteyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "İçine girilen soğuk depo",
+    "id": "AD-048",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Başka çalışanı iletişimsiz ve desteksiz içeri gönderme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-10-12",
+      "R-34-07"
+    ],
+    "title_tr": "Soğuk depoda mahsur kalma",
+    "trigger_tr": "İç alarm veya içeride kişi kalması bildirimi"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-049"
+    },
+    "assigned_team_actions": [
+      "Teknik yetkili kritik güvenlik sistemleri ve kontrollü duruşu yönetir; bütün enerjiyi rastgele kesmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "İşi güvenli biçimde bırakın ve belirlenmiş aydınlık güvenli alanda yönlendirme bekleyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Güvenlik veya proses işlevlerini etkileyen enerji kesintisi",
+    "id": "AD-049",
+    "mode": "CONTROLLED_SHUTDOWN",
+    "prohibited_actions": [
+      "Tüm kesicileri rastgele açıp kapama"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-02-09",
+      "R-49-03"
+    ],
+    "title_tr": "Büyük enerji kesintisi",
+    "trigger_tr": "Kritik besleme kaybı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-050"
+    },
+    "assigned_team_actions": [
+      "Proses yetkilisi önceden tasarlanmış güvenli duruşu ve gerekli yedek soğutmayı uygular."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Proses sorumlusuna haber verip tehlike alanından uzaklaşın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Güvenli çalışması soğutmaya bağlı proses",
+    "id": "AD-050",
+    "mode": "CONTROLLED_SHUTDOWN",
+    "prohibited_actions": [
+      "Yedek soğutmayı düşünmeden tüm enerjiyi kesme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-19-03",
+      "R-30-05"
+    ],
+    "title_tr": "Proses soğutma kaybı",
+    "trigger_tr": "Kritik soğutma debisi veya sıcaklık alarmı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-051"
+    },
+    "assigned_team_actions": [
+      "Teknik ve iş hijyeni yetkilileri hava akışı ve gerekli ölçümleri doğrular; yalnız fanın çalışması geri giriş için yeterli sayılmaz."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "İşi durdurup maruziyet alanından çıkın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Havalandırmaya bağlı maruziyet kontrolü",
+    "id": "AD-051",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Hava akışı geri geldi diye ölçümsüz yeniden girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-12-01",
+      "R-12-02",
+      "R-12-03",
+      "R-12-04",
+      "R-18-02",
+      "R-18-10",
+      "R-35-08"
+    ],
+    "title_tr": "Kritik havalandırma kaybı",
+    "trigger_tr": "Zararlı ortamda fan veya hava performansı alarmı"
+  },
+  {
+    "activation": {
+      "kind": "core",
+      "question_id": null
+    },
+    "assigned_team_actions": [
+      "İlkyardımcı olay yeri güvenliği, eğitim kapsamı ve 112 yönlendirmesi içinde yardım eder; başka görevli ambulans erişimini açar."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "112'yi hemen çağırın; konumu ve durumu bildirin; eğitiminiz dışındaki müdahaleyi veya ilaç vermeyi denemeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Her işyerinde tıbbi acil duruma hazırlık",
+    "id": "AD-052",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Eğitim dışı girişim veya rastgele ilaç verme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [],
+    "title_tr": "Ciddi tıbbi acil durum",
+    "trigger_tr": "Ani bilinç kaybı, ciddi yaralanma veya yaşam tehdidi"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-053"
+    },
+    "assigned_team_actions": [
+      "Koordinatör güvenli erişim ve kaynak düzenini sağlar; klinik önceliklendirmeyi yetkili sağlık ekipleri yürütür."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "112'ye konumu, tehlikeyi ve yaklaşık etkilenen kişi sayısını bildirin; tehlikeli bölgeye girmeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Birden fazla kişinin etkilenebileceği olay",
+    "id": "AD-053",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Kaynakları plansız dağıtıp profesyonel triyajı engelleme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-07-04",
+      "R-07-07",
+      "R-19-01",
+      "R-21-01",
+      "R-21-02",
+      "R-21-03",
+      "R-21-04",
+      "R-21-05",
+      "R-21-06",
+      "R-21-07",
+      "R-21-08",
+      "R-21-09",
+      "R-21-10",
+      "R-21-11",
+      "R-21-12"
+    ],
+    "title_tr": "Çoklu yaralanma",
+    "trigger_tr": "Birden fazla ağır yaralı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-054"
+    },
+    "assigned_team_actions": [
+      "İlkyardımcı/işyeri sağlık birimi güvenli temas sonrası süreci işletir; kişisel sağlık verileri yalnız yetkili kanalda tutulur."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Temas sonrası işyeri prosedürüne göre hemen yardım alın ve sağlık değerlendirmesini geciktirmeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Kan, biyolojik materyal veya kullanılmış kesici teması",
+    "id": "AD-054",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Olayı gizleme veya kontamine atığı elle araştırma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-25-01",
+      "R-25-02",
+      "R-25-08",
+      "R-25-11",
+      "R-25-12",
+      "R-35-01"
+    ],
+    "title_tr": "Biyolojik sıçrama veya kesici maruziyeti",
+    "trigger_tr": "Kan/vücut sıvısı temas bildirimi"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-055"
+    },
+    "assigned_team_actions": [
+      "Görevli ekip ürünü kullanımdan ayırır, parti/dağıtım bilgisini korur ve sağlık makamlarıyla koordinasyon sağlar."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Şüpheli ürünü tüketmeyi bırakın ve sağlık yardımı isteyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Toplu yiyecek sağlama veya tüketme",
+    "id": "AD-055",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Kusmaya zorlama veya sağlık değerlendirmesini geciktirme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-34-01",
+      "R-34-02",
+      "R-34-03",
+      "R-34-04",
+      "R-34-05",
+      "R-34-06",
+      "R-34-07",
+      "R-34-08",
+      "R-34-09",
+      "R-34-10",
+      "R-34-11",
+      "R-34-12",
+      "R-41-04",
+      "R-41-05",
+      "R-41-06",
+      "R-41-07"
+    ],
+    "title_tr": "Şüpheli toplu gıda zehirlenmesi",
+    "trigger_tr": "Aynı tüketim sonrası çoklu rahatsızlanma"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-056"
+    },
+    "assigned_team_actions": [
+      "İşyeri hekimi/yetkili sağlık birimi teması ve iş düzenini değerlendirir; tanılar toplu duyurularda paylaşılmaz."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Sağlık birimine haber verin ve mahremiyeti koruyarak verilen talimatı izleyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Bulaşıcı hastalık yayılımı açısından yakın temaslı çalışma",
+    "id": "AD-056",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Kişisel sağlık bilgisini toplu duyuruda paylaşma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-25-03",
+      "R-25-08",
+      "R-25-12",
+      "R-35-08"
+    ],
+    "title_tr": "Salgın şüphesi",
+    "trigger_tr": "Yetkili sağlık uyarısı veya ilişkili çoklu hastalık"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-057"
+    },
+    "assigned_team_actions": [
+      "Radyasyon güvenliği sorumlusu ve yetkili uzman kurum müdahaleyi yönetir; görevliler erişimi sınırlar."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Kaynağa dokunmadan alandan uzaklaşın ve sorumluya haber verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "İyonlaştırıcı radyasyon kaynağı",
+    "id": "AD-057",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Kaynağı elle alma veya yerine takmaya çalışma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-23-12",
+      "R-35-10"
+    ],
+    "title_tr": "Radyasyon kaynağı olayı",
+    "trigger_tr": "Kaynak kaybı, hasar veya radyasyon alarmı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-058"
+    },
+    "assigned_team_actions": [
+      "MR yetkilisi gaz boşalması ve oksijen güvenliğini değerlendirir; uygunsuz metal ekipmanın girişini önler."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "MR özel alarm/tahliye talimatına göre hacimden çıkın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "MR kriyojenik sistemi",
+    "id": "AD-058",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Uygunsuz metal ekipmanla MR alanına girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-35-04",
+      "R-35-05"
+    ],
+    "title_tr": "MR quench veya gaz olayı",
+    "trigger_tr": "MR gaz boşalması veya oksijen alarmı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-059"
+    },
+    "assigned_team_actions": [
+      "Eğitimli ve donanımlı ekip önceden hazırlanmış su kurtarma düzenini güvenli erişimle uygular; 112 desteği sağlanır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Alarm verin; güvencesiz biçimde suya atlamayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Su kenarı, havuz, deniz veya su üstünde çalışma",
+    "id": "AD-059",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Eğitimsiz ve güvencesiz suya atlama"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-39-05",
+      "R-40-06",
+      "R-41-08",
+      "R-41-12",
+      "R-47-01",
+      "R-47-11",
+      "R-47-12"
+    ],
+    "title_tr": "Suya düşme",
+    "trigger_tr": "Kişinin rıhtım veya tekneden suya düşmesi"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-060"
+    },
+    "assigned_team_actions": [
+      "Görevli ekip ikinci çarpmayı önler; ilkyardımcı güvenli alanda eğitim kapsamındaki yardımı sağlar."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Güvenli yerden trafik uyarısı yapın ve 112'yi çağırın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Araçlarla insanların etkileşebileceği iş alanı",
+    "id": "AD-060",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Yaralıyı veya aracı gereksiz hareket ettirme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-08-01",
+      "R-08-05",
+      "R-09-01",
+      "R-09-06",
+      "R-09-07",
+      "R-09-12",
+      "R-48-01",
+      "R-48-02"
+    ],
+    "title_tr": "Araç-yaya ağır kazası",
+    "trigger_tr": "Çarpma, devrilme veya sıkışma"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-061"
+    },
+    "assigned_team_actions": [
+      "Yetkili operasyon ve kurtarma ekipleri yük hareketini güvenli keser ve mühendislik kontrollü kurtarma planı uygular."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Elleçleme alanından uzaklaşın; kararsız yük altına girmeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Liman veya konteyner elleçleme",
+    "id": "AD-061",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Kararsız yük altına girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-47-06",
+      "R-47-10"
+    ],
+    "title_tr": "Liman yük olayı",
+    "trigger_tr": "Konteyner veya askı yükü düşmesi"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-062"
+    },
+    "assigned_team_actions": [
+      "Güvenlik görevlileri yetki ve eğitim sınırlarında alanı yönetir; kollukla koordinasyon kurulur."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Güvenli kaçış veya korunma seçin; saldırganla yüzleşmeden 112'ye haber verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Şiddet veya saldırı ihtimalinin değerlendirilmesi gereken hizmet alanı",
+    "id": "AD-062",
+    "mode": "SECURITY_PROTECTION",
+    "prohibited_actions": [
+      "Saldırganla yüzleşme veya müdahale için yaklaşma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-26-05",
+      "R-35-07",
+      "R-42-11"
+    ],
+    "title_tr": "Şiddet veya saldırı",
+    "trigger_tr": "Fiilî saldırı ya da yakın ciddi tehdit"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-063"
+    },
+    "assigned_team_actions": [
+      "Güvenlik koordinatörü kolluk yönlendirmesiyle alanı ayırır; inceleme ve taşıma yalnız yetkili uzmanlarca yapılır."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Pakete dokunmadan uzaklaşın ve güvenlik birimine haber verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Şüpheli paketle karşılaşılabilecek alan",
+    "id": "AD-063",
+    "mode": "SECURITY_PROTECTION",
+    "prohibited_actions": [
+      "Paketi açma, taşıma veya inceleme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-27-08",
+      "R-42-05"
+    ],
+    "title_tr": "Şüpheli paket",
+    "trigger_tr": "Kaynağı belirsiz ve şüpheli paket bildirimi"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-064"
+    },
+    "assigned_team_actions": [
+      "Koordinatör kollukla birlikte korunma/tahliye ve güvenli güzergâh kararını verir; sıradan çalışanlara arama görevi verilmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "İhbar bilgisini değiştirmeden sorumluya aktarın; şüpheli eşya aramaya çıkmayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Bomba veya sabotaj ihbarı ihtimali",
+    "id": "AD-064",
+    "mode": "SECURITY_PROTECTION",
+    "prohibited_actions": [
+      "Gelişigüzel arama veya tahliye güzergâhı tahmini yapma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-27-08",
+      "R-42-05"
+    ],
+    "title_tr": "Bomba ihbarı",
+    "trigger_tr": "Tehdit bildirimi"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-065"
+    },
+    "assigned_team_actions": [
+      "Koordinatör yetkili makamlarla karar verir; teknik ekip hava girişlerini önceden belirlenmiş güvenli plan kapsamında yönetir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Yerel resmî yönlendirmeye göre güvenli kapalı korunma alanında kalın; bulut içinden toplanma alanına yürümeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Komşu tesis veya ulaşım hattından gelebilecek toksik bulut",
+    "id": "AD-065",
+    "mode": "SHELTER_IN_PLACE",
+    "prohibited_actions": [
+      "Bulutun içinden rutin toplanma alanına gitme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-19-11",
+      "R-20-12"
+    ],
+    "title_tr": "Dış toksik bulut",
+    "trigger_tr": "Yetkili uyarı veya komşu tesisten toksik yayılım"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-066"
+    },
+    "assigned_team_actions": [
+      "Koordinatör komşu tesis ve kamu ekipleriyle etki alanını doğrular; tek tip otomatik tahliye kararı verilmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Yetkili uyarıya göre tahliye veya yerinde korunma talimatını izleyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Komşu tesis büyük kazasının etki alanında bulunma",
+    "id": "AD-066",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Komşu tesise gözlem veya yardım için izinsiz yaklaşma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-19-11",
+      "R-20-12"
+    ],
+    "title_tr": "Komşu tesis büyük kazası",
+    "trigger_tr": "Komşu tesisin alarmı veya resmî uyarı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-067"
+    },
+    "assigned_team_actions": [
+      "Yetkili çevre/kimyasal ekip can güvenliğini koruyarak uyumlu sınırlandırma ve dış kurum bildirimini yönetir."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Döküntüden uzaklaşın; sıvıyı suyla drenaja sürüklemeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Tehlikeli sıvının çevreye ulaşabileceği proses veya depo",
+    "id": "AD-067",
+    "mode": "LOCAL_ISOLATION",
+    "prohibited_actions": [
+      "Tehlikeli sıvıyı suyla kanalizasyona sürükleme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-18-06",
+      "R-18-07",
+      "R-18-12",
+      "R-40-04"
+    ],
+    "title_tr": "Çevreye tehlikeli sıvı yayılması",
+    "trigger_tr": "Drenaja veya çevreye kontrolsüz tehlikeli salım"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-068"
+    },
+    "assigned_team_actions": [
+      "Yetkili kişi kesinti planını, geçici önlemleri ve tekrar devreye alma doğrulamasını yönetir; bu kart aktif yangın talimatı yerine geçmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Kesinti uyarısına uyun; sınırlandırılmış faaliyeti sürdürmeyin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Yangın algılama veya söndürme sistemine bakım/kesinti uygulanması",
+    "id": "AD-068",
+    "mode": "CONTROLLED_SHUTDOWN",
+    "prohibited_actions": [
+      "Korumasız faaliyeti normal koşul gibi sürdürme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-20-09",
+      "R-20-10",
+      "R-20-11",
+      "R-50-10"
+    ],
+    "title_tr": "Yangın sistemi hizmet dışı",
+    "trigger_tr": "Kritik algılama veya söndürme kaybı"
+  },
+  {
+    "activation": {
+      "kind": "core",
+      "question_id": null
+    },
+    "assigned_team_actions": [
+      "Görevli ekip çalışan, ziyaretçi ve taşeron sayımını doğrular; eksik kişinin son yerini uzman kurtarma ekibine verir, korunmasız arama başlatmaz."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Güvenli çıkış ve toplanma düzenini izleyin; sayım görevlisine ulaşın, eksik kişiyi bildirin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Tahliye ve tüm bulunanların sayımı temel kartı",
+    "id": "AD-069",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Korunmasız arama için binaya girme"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [],
+    "title_tr": "Tahliye, sayım ve eksik kişi bildirimi",
+    "trigger_tr": "Sayımda kişiye ulaşılamaması"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-070"
+    },
+    "assigned_team_actions": [
+      "Eğitimli yardımcı ekip kişiye uygun plan, güvenli bekleme/çıkış ve uygun araçla görevini yürütür; kişinin tercih ve mahremiyeti korunur."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Önceden kararlaştırılmış yardım/iletişim düzenini kullanın; doğaçlama taşıma yapmayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Erişilebilirlik veya kişisel yardım gerektiren tahliye",
+    "id": "AD-070",
+    "mode": "EVACUATE",
+    "prohibited_actions": [
+      "Kişiyi eğitimsiz taşımaya veya yalnız bırakmaya çalışma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-28-04",
+      "R-28-05",
+      "R-28-06",
+      "R-28-12"
+    ],
+    "title_tr": "Erişilebilirlik desteği gereken tahliye",
+    "trigger_tr": "Tahliye gereği ve bireysel yardım ihtiyacı"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-071"
+    },
+    "assigned_team_actions": [
+      "Madenin yetkili ekipleri özel izleme, kaçış ve kurtarma düzenini işletir; genel bina planı bu gerekliliklerin yerine geçmez."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "İşletmeye özel geri çekilme ve haberleşme planını uygulayın.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "Yeraltı madeninde atmosfer veya su tehlikesi",
+    "id": "AD-071",
+    "mode": "SPECIALIST_RESPONSE",
+    "prohibited_actions": [
+      "Genel bina tahliyesini maden özel planı yerine kullanma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-38-01",
+      "R-38-02",
+      "R-38-03",
+      "R-38-04",
+      "R-38-11",
+      "R-38-12"
+    ],
+    "title_tr": "Madende atmosfer veya su olayı",
+    "trigger_tr": "Maden özel alarmı veya ani giriş"
+  },
+  {
+    "activation": {
+      "kind": "explicit_answer",
+      "question_id": "E-AD-072"
+    },
+    "assigned_team_actions": [
+      "Yetkili proses ekibi önceden tanımlı güvenli yerel moda ve alternatif haberleşmeye geçer; doğrulama olmadan otomatik çalışmayı açmaz."
+    ],
+    "content_version": 3,
+    "general_worker_actions": [
+      "Kontrol durumu belirsiz prosesi yeniden başlatmadan sorumluya haber verin.",
+      "Güvenli konumdan işyeri haberleşme düzenini kullanın; acil yardım gerektiren durumda 112’ye konum ve tehlikeyi bildirin."
+    ],
+    "hazard_context_tr": "İletişim veya otomasyona bağlı kritik proses",
+    "id": "AD-072",
+    "mode": "CONTROLLED_SHUTDOWN",
+    "prohibited_actions": [
+      "Kontrol durumu bilinmeyen prosesi yeniden başlatma"
+    ],
+    "publication_state": "editorial_candidate",
+    "reentry_tr": "Yetkili kişi ve olay türüne özgü güvenlik doğrulaması olmadan geri giriş yapılmaz; keyfî bekleme süresi güvenlik kanıtı değildir.",
+    "required_site_fields": [
+      "site_address",
+      "alarm_method",
+      "safe_route_or_refuge",
+      "assembly_or_waiting_area",
+      "team_contacts",
+      "external_access"
+    ],
+    "reviewed_by": null,
+    "source_ids": [
+      "M-HSE-RISK"
+    ],
+    "source_scope": "editorial_site_adaptation_required",
+    "specialist_boundary_tr": "Eğitim, yetki, uygun donanım ve güvenli erişim sağlanmadan tehlikeli alana girilmez. Özel kurtarma gerektiren işlerde işe başlamadan kurtarma düzeni hazır edilir; yalnız dış yardımın gelişine güvenilmez.",
+    "suggest_when_any_risk_ids": [
+      "R-03-10",
+      "R-19-03",
+      "R-19-04",
+      "R-19-12",
+      "R-26-10"
+    ],
+    "title_tr": "İletişim ve otomasyon kaybı",
+    "trigger_tr": "Kritik haberleşme veya kontrol altyapısının kesilmesi"
+  }
+]
