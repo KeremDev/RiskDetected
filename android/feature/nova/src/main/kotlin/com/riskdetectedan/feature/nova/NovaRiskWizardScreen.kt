@@ -58,11 +58,12 @@ private val stepTitles = mapOf("firm" to "İşyeri", "sector" to "Faaliyet", "ar
     "materials" to "Maddeler", "tasks" to "İşler", "cond" to "Çalışma koşulları", "mgmt" to "Genel konular", "method" to "Yöntem",
     "cols" to "Tablo sütunları", "summary" to "Özet")
 
-/** V6 risk analysis wizard (iOS `NovaRiskWizardScreen`): one question per page; answers live in RDBridge. */
+/** V6 risk analysis and emergency plan wizard (iOS `NovaRiskWizardScreen`): one question per page; answers live in RDBridge.
+ * `mode = "emergency"` runs the Acil Durum Planı flow on the same answers; its pages live in NovaEmergencyWizardPages.kt. */
 @Composable
 fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
                          workplacesSource: suspend (String) -> List<NovaWizardWorkplace>, files: () -> NovaFileClient,
-                         initialCompany: String? = null, onBack: () -> Unit) {
+                         initialCompany: String? = null, mode: String = "risk", emergencyClient: NovaEmergencyClient? = null, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val list = rememberLazyListState()
@@ -84,6 +85,15 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
     var busy by remember { mutableStateOf(false) }
     var archived by remember { mutableStateOf(false) }
     var download by remember { mutableStateOf<NovaWizardDownload?>(null) }
+    var plan by remember { mutableStateOf<EmergencyPlan?>(null) }
+    var planSaved by remember { mutableStateOf(false) }
+    var workplaces by remember { mutableStateOf<List<NovaWizardWorkplace>>(emptyList()) }
+    var workplace by remember { mutableStateOf<String?>(null) }
+    var workplaceChooser by remember { mutableStateOf(false) }
+    var cardHits by remember { mutableStateOf<List<EmergencyCard>>(emptyList()) }
+    var staff by remember { mutableStateOf<List<EmergencyWizardStaff>?>(null) }
+    var staffQuery by remember { mutableStateOf("") }
+    var openPerson by remember { mutableStateOf<String?>(null) }
 
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         val captured = download
@@ -101,7 +111,7 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
             val loaded = NovaRiskWizardRuntime(context)
             loaded.ready()
             runtime = loaded
-            view = loaded.start("", SimpleDateFormat("dd.MM.yyyy", Locale("tr", "TR")).format(Date()))
+            view = loaded.start("", SimpleDateFormat("dd.MM.yyyy", Locale("tr", "TR")).format(Date()), mode)
         } catch (e: CancellationException) { throw e } catch (_: Exception) { message = "Sihirbaz içeriği yüklenemedi." }
         try {
             companies = companiesSource()
@@ -112,13 +122,27 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
         } catch (e: CancellationException) { throw e } catch (_: Exception) { companies = emptyList() }
     }
     LaunchedEffect(step) { list.scrollToItem(0) }
+    LaunchedEffect(company) {
+        workplace = null; workplaces = emptyList(); staff = null
+        val selected = company ?: return@LaunchedEffect
+        if (mode != "emergency") return@LaunchedEffect
+        workplaces = try { workplacesSource(selected) } catch (e: CancellationException) { throw e } catch (_: Exception) { emptyList() }
+        if (workplaces.size == 1) workplace = workplaces.first().id
+        val client = emergencyClient ?: return@LaunchedEffect
+        staff = try {
+            val support = runCatching { client.catalogue(selected).supportStaff.map { it.fullName }.toSet() }.getOrDefault(emptySet())
+            client.employees(selected).map { EmergencyWizardStaff(it.id, it.name, listOfNotNull(it.jobTitle, it.department).joinToString(" · "), it.name in support) }
+                .sortedWith(compareBy({ !it.isSupportStaff }, { it.name }))
+        } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+    }
 
     fun perform(action: Map<String, Any?>, after: (suspend () -> Unit)? = null) {
         val rt = runtime ?: return
         scope.launch {
             try {
                 view = rt.act(action)
-                if (step == "result") result = rt.result()
+                if (step == "result" && view?.emergency != null) plan = rt.plan()
+                else if (step == "result") result = rt.result()
                 if (result != null) NovaForYouService.recordUse("risk_wizard")
                 after?.invoke()
             } catch (e: CancellationException) { throw e } catch (e: Exception) { message = e.message ?: "İşlem tamamlanamadı." }
@@ -133,7 +157,8 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
             try {
                 if (target == "areas") view = rt.act(mapOf("type" to "enter", "step" to "areas"))
                 if (target == "sector") sectorHits = rt.sectors("")
-                if (target == "result") result = rt.result()
+                if (target == "result" && view?.emergency != null) plan = rt.plan()
+                else if (target == "result") result = rt.result()
                 if (result != null) NovaForYouService.recordUse("risk_wizard")
             } catch (e: CancellationException) { throw e } catch (e: Exception) { message = e.message }
             step = target
@@ -148,6 +173,21 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
             try { val file = rt.download(format); download = file; save.launch(file.name) }
             catch (e: CancellationException) { throw e } catch (_: Exception) { message = "Dosya oluşturulamadı. Tekrar deneyebilirsiniz." }
             finally { busy = false }
+        }
+    }
+    fun savePlan() {
+        val rt = runtime ?: return
+        val client = emergencyClient ?: return
+        val selected = company ?: return
+        val emergency = view?.emergency ?: return
+        scope.launch {
+            busy = true
+            try {
+                EmergencyWizardSaver.save(rt, client, selected, workplace, emergency)
+                planSaved = true; message = emergency.text("result.saved")
+            } catch (e: CancellationException) { throw e } catch (e: Exception) {
+                message = (e as? NovaFileException)?.failure?.message ?: emergencyMessage(e)
+            } finally { busy = false }
         }
     }
     fun archive() {
@@ -169,8 +209,12 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             Column(Modifier.padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                NovaListHeading("Risk Analizi Sihirbazı", { back() })
-                NovaText(if (step == "result") "Analiz · ${result?.total ?: 0} madde"
+                val emergencyTexts = view?.emergency
+                NovaListHeading(emergencyTexts?.text("title") ?: "Risk Analizi Sihirbazı", { back() })
+                NovaText(if (emergencyTexts != null) {
+                        if (step == "result") emergencyTexts.text("step.result") + " · ${plan?.cards?.size ?: 0}"
+                        else "${index + 1} / ${steps.size - 1}" + (if (step.startsWith("fu:")) emergencyTexts.texts["step.fu"] else emergencyTexts.texts["step.$step"] ?: stepTitles[step])?.let { " · $it" }.orEmpty()
+                    } else if (step == "result") "Analiz · ${result?.total ?: 0} madde"
                     else "Adım ${index + 1} / ${steps.size - 1} · ${if (step.startsWith("fu:")) "Takip sorusu" else stepTitles[step].orEmpty()}",
                     style = NovaTypeToken.metaQuiet)
                 val progress by animateFloatAsState((index + 1f) / steps.size.coerceAtLeast(1), label = "progress")
@@ -187,11 +231,24 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
                         "equipment" to ("Hangi ekipman ve makineler kullanılıyor?" to "Yalnız işyerinde gerçekten kullanılanları seçin. Her ekipman kendi risklerini ekler."),
                         "materials" to ("Hangi kimyasal ve malzemelerle çalışılıyor?" to "Yakıtlar, gazlar, tozlar ve süreçte açığa çıkan maddeler dahil."),
                         "tasks" to ("Hangi işler yapılıyor?" to "Rutin ve periyodik işleri seçin; bakım, temizlik ve ikmal gibi işler de riski değiştirir."))
+                    val emergency = current.emergency
                     when {
                         step == "firm" -> firmPage(current, companies, company, chooser, { chooser = !chooser }, { id ->
                             company = id; chooser = false
                             perform(mapOf("type" to "firm", "field" to "name", "value" to (companies.firstOrNull { it.id == id }?.name ?: "")))
-                        }) { field, value -> perform(mapOf("type" to "firm", "field" to field, "value" to value)) }
+                        }, workplaces, workplace, workplaceChooser, { workplaceChooser = !workplaceChooser }, { workplace = it; workplaceChooser = false },
+                            { perform(mapOf("type" to "emp", "value" to it)) }) { field, value -> perform(mapOf("type" to "firm", "field" to field, "value" to value)) }
+                        emergency != null && step == "site" -> emergencySitePage(emergency) { perform(it) }
+                        emergency != null && step == "cards" -> emergencyCardsPage(emergency, query, cardHits, { value ->
+                            query = value; scope.launch { cardHits = if (value.length >= 2) runtime?.cards(value) ?: emptyList() else emptyList() }
+                        }) { action -> perform(action) { if (query.length >= 2) cardHits = runtime?.cards(query) ?: emptyList() } }
+                        emergency != null && step == "team" -> emergencyTeamPage(emergency, staff, staffQuery, openPerson, { staffQuery = it }, { openPerson = it }) { perform(it) }
+                        emergency != null && step == "fields" -> emergencyFieldsPage(emergency) { perform(it) }
+                        emergency != null && step == "summary" -> emergencySummaryPage(current, emergency) { go(it) }
+                        emergency != null && step == "result" -> plan?.let { p ->
+                            emergencyResultPage(p, emergency, busy, emergencyClient != null && company != null, planSaved, expanded,
+                                { id -> expanded = if (id in expanded) expanded - id else expanded + id }, { export(it) }) { savePlan() }
+                        }
                         step == "sector" -> sectorPage(current, query, sectorHits, { value ->
                             query = value; scope.launch { sectorHits = runtime?.sectors(value) ?: emptyList() }
                         }, { hc -> perform(mapOf("type" to "hc", "id" to hc)) }) { id ->
@@ -262,10 +319,14 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
             .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp + novaTabBarInset), horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically) {
             if (step != "firm") NovaButton("Geri", { back() }, symbol = "chevron.left", variant = NovaButtonVariant.Surface, compact = true)
-            if (step == "result") NovaButton("Excel indir", { export("xlsx") }, Modifier.weight(1f).testTag("riskWizard.excel"), symbol = "arrow.down.doc", enabled = !busy)
+            val emergencyTexts = current.emergency
+            if (step == "result" && emergencyTexts != null) NovaButton(emergencyTexts.text("result.download"), { export("docx") },
+                Modifier.weight(1f).testTag("emergencyWizard.download"), symbol = "arrow.down.doc", enabled = !busy)
+            else if (step == "result") NovaButton("Excel indir", { export("xlsx") }, Modifier.weight(1f).testTag("riskWizard.excel"), symbol = "arrow.down.doc", enabled = !busy)
             else {
                 val followup = current.followups.firstOrNull { "fu:" + it.id == step }
-                val label = if (step == "summary") "Analizi oluştur" else if (followup != null && followup.options.none { it.selected }) "Atla" else "Devam"
+                val label = if (emergencyTexts != null && step == "summary") emergencyTexts.text("next.summary")
+                    else if (step == "summary") "Analizi oluştur" else if (followup != null && followup.options.none { it.selected }) "Atla" else "Devam"
                 NovaButton(label, { if (index + 1 < steps.size) go(steps[index + 1]) }, Modifier.weight(1f).testTag("riskWizard.next"),
                     symbol = if (step == "summary") "sparkles" else "chevron.right", enabled = !busy && !(step == "sector" && current.sectors.isEmpty()))
             }
@@ -274,7 +335,7 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
 }
 
 @Composable
-private fun PageTitle(title: String, help: String) {
+internal fun PageTitle(title: String, help: String) {
     Column(Modifier.fillMaxWidth().padding(bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         NovaText(title, style = NovaTypeToken.sheetTitle)
         if (help.isNotEmpty()) NovaText(help, style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())
@@ -290,13 +351,13 @@ private fun LinkRow(label: String, action: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun Tag(text: String, background: Color, ink: Color) {
+internal fun Tag(text: String, background: Color, ink: Color) {
     NovaText(text, Modifier.background(background, RoundedCornerShape(6.dp)).padding(horizontal = 7.dp, vertical = 3.dp), style = NovaTypeToken.micro, color = ink)
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun OptionRow(title: String, subtitle: String, reasons: List<String>, badges: List<String>, selected: Boolean, single: Boolean = false, onClick: () -> Unit) {
+internal fun OptionRow(title: String, subtitle: String, reasons: List<String>, badges: List<String>, selected: Boolean, single: Boolean = false, onClick: () -> Unit) {
     val shape = RoundedCornerShape(14.dp)
     Row(Modifier.fillMaxWidth().clip(shape).background((if (selected) NovaColorToken.accentSoft else NovaColorToken.surface).color())
         .border(1.5.dp, if (selected) NovaColorToken.accent.color() else Color.Transparent, shape)
@@ -316,7 +377,7 @@ private fun OptionRow(title: String, subtitle: String, reasons: List<String>, ba
 }
 
 @Composable
-private fun InputField(label: String, value: String, placeholder: String, onChange: (String) -> Unit) {
+internal fun InputField(label: String, value: String, placeholder: String, onChange: (String) -> Unit) {
     var text by remember(value) { mutableStateOf(value) }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         NovaText(label, style = NovaTypeToken.label)
@@ -329,17 +390,30 @@ private fun InputField(label: String, value: String, placeholder: String, onChan
 }
 
 private fun LazyListScope.firmPage(v: RiskWizardView, companies: List<NovaCompanyOption>, company: String?, chooser: Boolean, toggleChooser: () -> Unit,
-                                   pickCompany: (String?) -> Unit, change: (String, String) -> Unit) {
-    item { PageTitle("Analiz hangi işyeri için?", "İsteğe bağlı; rapor kapağında ve dosya adında kullanılır. Çalışan sayısı kurul ve temsilci gibi genel konuları etkiler.") }
+                                   pickCompany: (String?) -> Unit, workplaces: List<NovaWizardWorkplace>, workplace: String?, workplaceChooser: Boolean,
+                                   toggleWorkplaces: () -> Unit, pickWorkplace: (String?) -> Unit, employees: (String) -> Unit, change: (String, String) -> Unit) {
+    val emergency = v.emergency
+    if (emergency != null) item { PageTitle(emergency.text("firm.title"), emergency.text("firm.help")) }
+    else item { PageTitle("Analiz hangi işyeri için?", "İsteğe bağlı; rapor kapağında ve dosya adında kullanılır. Çalışan sayısı kurul ve temsilci gibi genel konuları etkiler.") }
     if (companies.isNotEmpty()) {
         item { NovaChooserButton("Firma", companies.firstOrNull { it.id == company }?.name ?: "Firma seçmeden devam et", "riskWizard.company", open = chooser) { toggleChooser() } }
         if (chooser) item {
             NovaChooserPanel(listOf(NovaChooserOption(null, "Firma seçmeden devam et")) + companies.map { NovaChooserOption(it.id, it.name) }, company, "riskWizard.companies") { pickCompany(it) }
         }
     }
+    if (emergency != null && workplaces.size > 1) {
+        item { NovaChooserButton("İşyeri", workplaces.firstOrNull { it.id == workplace }?.name ?: "İşyeri seçmeden devam et", "emergencyWizard.workplace", open = workplaceChooser) { toggleWorkplaces() } }
+        if (workplaceChooser) item {
+            NovaChooserPanel(listOf(NovaChooserOption(null, "İşyeri seçmeden devam et")) + workplaces.map { NovaChooserOption(it.id, it.name) }, workplace, "emergencyWizard.workplaces") { pickWorkplace(it) }
+        }
+    }
     item { InputField("Firma / işyeri adı", v.firm.name, "Örn. Yıldız Sondaj Ltd.") { change("name", it) } }
     item { InputField("Adres", v.firm.address, "İlçe / il") { change("address", it) } }
-    item {
+    if (emergency != null) item {
+        Box(Modifier.testTag("emergencyWizard.employees")) {
+            InputField(emergency.text("firm.employees"), emergency.employees?.toString().orEmpty(), emergency.text("firm.employeesPlaceholder")) { employees(it) }
+        }
+    } else item {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaText("Çalışan sayısı", style = NovaTypeToken.label)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -349,7 +423,7 @@ private fun LazyListScope.firmPage(v: RiskWizardView, companies: List<NovaCompan
             }
         }
     }
-    item { InputField("Değerlendirme tarihi", v.firm.date, "gg.aa.yyyy") { change("date", it) } }
+    item { InputField(emergency?.text("firm.date") ?: "Değerlendirme tarihi", v.firm.date, "gg.aa.yyyy") { change("date", it) } }
 }
 
 private fun LazyListScope.sectorPage(v: RiskWizardView, query: String, hits: List<RiskWizardSectorHit>, onQuery: (String) -> Unit,

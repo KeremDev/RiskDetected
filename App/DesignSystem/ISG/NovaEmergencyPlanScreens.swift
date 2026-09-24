@@ -146,9 +146,9 @@ struct NovaEmergencyPlanScreen: View {
         // cover, so it blurs the real company page instead of an empty
         // intermediate board screen. See NovaPopup's own doc comment.
         if showingWizard || (startWithWizard && !wizardClosed) {
-            NovaDocumentWizardScreen(domain: "emergency", companiesSource: client.companies,
+            NovaRiskWizardScreen(mode: "emergency", companiesSource: client.companies,
                 workplacesSource: { company in try await client.catalogue(company).workplaces.map { .init(id: $0.id, name: $0.name) } },
-                files: client.fileClient, initialCompany: query.company ?? initialCompany,
+                files: client.fileClient, initialCompany: query.company ?? initialCompany, emergencyClient: client,
                 onBack: { showingWizard = false; wizardClosed = true })
         } else if startInAddMode {
             addFlow(savedDraft ?? .init(preparedOn: NovaDayField.text(Date())))

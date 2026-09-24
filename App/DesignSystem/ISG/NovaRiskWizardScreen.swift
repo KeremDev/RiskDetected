@@ -38,12 +38,16 @@ enum NovaRiskLevelTone {
     static let names = ["critical": "Tolerans dışı", "high": "Yüksek", "medium": "Önemli / orta", "low": "Olası / düşük", "insignificant": "Önemsiz"]
 }
 
-/// V6 risk analysis wizard: one question per page. Answers live in RDBridge; this view only sends actions.
+/// V6 risk analysis and emergency plan wizard: one question per page. Answers live in RDBridge; this view only sends actions.
+/// `mode: "emergency"` runs the Acil Durum Planı flow on the same answers; its pages live in NovaEmergencyWizardViews.swift.
 struct NovaRiskWizardScreen: View {
+    var mode = "risk"
     let companiesSource: () async throws -> [NovaAnalysisCompanyOption]
     let workplacesSource: (UUID) async throws -> [NovaWizardWorkplace]
     let files: NovaFileLibraryClient
     var initialCompany: UUID?
+    /// Emergency mode only: lists company personnel and saves the plan as a module record.
+    var emergencyClient: NovaEmergencyClient? = nil
     let onBack: () -> Void
 
     @Environment(\.colorScheme) private var scheme
@@ -51,6 +55,8 @@ struct NovaRiskWizardScreen: View {
     @State private var runtime: NovaRiskWizardRuntime?
     @State private var view: NovaRiskWizardView?
     @State private var result: NovaRiskWizardResult?
+    @State private var plan: NovaEmergencyWizardPlan?
+    @State private var planSaved = false
     @State private var step = "firm"
     @State private var companies: [NovaAnalysisCompanyOption] = []
     @State private var workplaces: [NovaWizardWorkplace] = []
@@ -77,7 +83,7 @@ struct NovaRiskWizardScreen: View {
         NovaPageSurface(onEdgeBack: back) {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 10) {
-                    NovaPageHeading(title: RDLocalization.string("localizable.nova.risk.wizard.screen.risk.analizi.sihirbazi.2b3e1d43", table: .localizable, fallback: "Risk Analizi Sihirbazı"), subtitle: stepLabel, onBack: back)
+                    NovaPageHeading(title: view?.emergency?.text("title") ?? RDLocalization.string("localizable.nova.risk.wizard.screen.risk.analizi.sihirbazi.2b3e1d43", table: .localizable, fallback: "Risk Analizi Sihirbazı"), subtitle: stepLabel, onBack: back)
                     progress
                 }.padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
                 ScrollViewReader { scroll in
@@ -110,6 +116,11 @@ struct NovaRiskWizardScreen: View {
     private var steps: [String] { (view?.steps ?? ["firm"]) + ["result"] }
     private var stepIndex: Int { steps.firstIndex(of: step) ?? 0 }
     private var stepLabel: String {
+        if let emergency = view?.emergency {
+            if step == "result" { return emergency.text("step.result") + " · \(plan?.cards.count ?? 0)" }
+            let title = step.hasPrefix("fu:") ? emergency.text("step.fu") : (emergency.texts["step." + step] ?? Self.titles[step] ?? "")
+            return "\(stepIndex + 1) / \(steps.count - 1)" + (title.isEmpty ? "" : " · " + title)
+        }
         if step == "result" { return RDLocalization.format("localizable.nova.risk.wizard.screen.analiz.1.madde.e620ebd5", table: .localizable, fallback: "Analiz · %1$@ madde", arguments: [String(describing: result?.total ?? 0)]) }
         let title = step.hasPrefix("fu:") ? "Takip sorusu" : (Self.titles[step] ?? "")
         return RDLocalization.format("localizable.nova.risk.wizard.screen.adim.1.2.3.f671c204", table: .localizable, fallback: "Adım %1$@ / %2$@ · %3$@", arguments: [String(describing: stepIndex + 1), String(describing: steps.count - 1), String(describing: title)])
@@ -129,7 +140,10 @@ struct NovaRiskWizardScreen: View {
                 NovaButton(label: "Geri", symbol: "chevron.left", variant: .surface, compact: true) { back() }
                     .frame(width: 110)
             }
-            if step == "result" {
+            if step == "result", let emergency = view?.emergency {
+                NovaButton(label: emergency.text("result.download"), symbol: "arrow.down.doc", isEnabled: !busy) { export("docx") }
+                    .accessibilityIdentifier("emergencyWizard.download")
+            } else if step == "result" {
                 NovaButton(label: RDLocalization.string("localizable.nova.risk.wizard.screen.excel.indir.3c929860", table: .localizable, fallback: "Excel indir"), symbol: "arrow.down.doc", isEnabled: !busy) { export("xlsx") }
                     .accessibilityIdentifier("riskWizard.excel")
             } else {
@@ -145,6 +159,9 @@ struct NovaRiskWizardScreen: View {
         }
     }
     private var nextLabel: String {
+        if let emergency = view?.emergency, step == "summary" || !step.hasPrefix("fu:") {
+            return emergency.text(step == "summary" ? "next.summary" : "next")
+        }
         if step == "summary" { return RDLocalization.string("localizable.nova.risk.wizard.screen.analizi.olustur.13eacc1a", table: .localizable, fallback: "Analizi oluştur") }
         if step.hasPrefix("fu:"), let followup = currentFollowup, !followup.options.contains(where: \.selected) { return "Atla" }
         return RDLocalization.string("localizable.nova.risk.wizard.screen.devam.a94a296d", table: .localizable, fallback: "Devam")
@@ -174,7 +191,7 @@ struct NovaRiskWizardScreen: View {
         do {
             let loaded = try NovaRiskWizardRuntime()
             runtime = loaded
-            view = try loaded.start(firmName: "", date: Date().formatted(.dateTime.day(.twoDigits).month(.twoDigits).year()))
+            view = try loaded.start(firmName: "", date: Date().formatted(.dateTime.day(.twoDigits).month(.twoDigits).year()), mode: mode)
         } catch { message = error.localizedDescription }
         do {
             companies = try await companiesSource()
@@ -198,6 +215,10 @@ struct NovaRiskWizardScreen: View {
         } catch { message = error.localizedDescription }
     }
     private func reloadResult() {
+        if view?.emergency != nil {
+            do { plan = try runtime?.plan() } catch { message = error.localizedDescription }
+            return
+        }
         do {
             let next = try runtime?.result()
             // The first finished draft is the use "Senin İçin" stops suggesting.
@@ -221,8 +242,9 @@ struct NovaRiskWizardScreen: View {
         case "mgmt": managementPage(v)
         case "method": methodPage(v)
         case "cols": columnsPage(v)
-        case "summary": summaryPage(v)
-        case "result": resultPage
+        case "site", "cards", "team", "fields": emergencyPage(v)
+        case "summary": if v.emergency != nil { emergencyPage(v) } else { summaryPage(v) }
+        case "result": if v.emergency != nil { emergencyResult } else { resultPage }
         default: if let followup = currentFollowup { followupPage(followup) }
         }
     }
@@ -236,7 +258,8 @@ struct NovaRiskWizardScreen: View {
 
     private func firmPage(_ v: NovaRiskWizardView) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            title("Analiz hangi işyeri için?", "İsteğe bağlı; rapor kapağında ve dosya adında kullanılır. Çalışan sayısı kurul ve temsilci gibi genel konuları etkiler.")
+            if let emergency = v.emergency { title(emergency.text("firm.title"), emergency.text("firm.help")) }
+            else { title("Analiz hangi işyeri için?", "İsteğe bağlı; rapor kapağında ve dosya adında kullanılır. Çalışan sayısı kurul ve temsilci gibi genel konuları etkiler.") }
             if !companies.isEmpty {
                 NovaCard(padding: 14) {
                     VStack(alignment: .leading, spacing: 8) {
@@ -256,13 +279,25 @@ struct NovaRiskWizardScreen: View {
             }
             field(RDLocalization.string("localizable.nova.risk.wizard.screen.firma.isyeri.adi.a8f12086", table: .localizable, fallback: "Firma / işyeri adı"), value: v.firm.name, placeholder: RDLocalization.string("localizable.nova.risk.wizard.screen.orn.yildiz.sondaj.ltd.8f11f81e", table: .localizable, fallback: "Örn. Yıldız Sondaj Ltd."), key: "name")
             field(RDLocalization.string("localizable.nova.risk.wizard.screen.adres.b7778653", table: .localizable, fallback: "Adres"), value: v.firm.address, placeholder: RDLocalization.string("localizable.nova.risk.wizard.screen.ilce.il.0c60db8b", table: .localizable, fallback: "İlçe / il"), key: "address")
-            VStack(alignment: .leading, spacing: 8) {
-                NovaText(text: RDLocalization.string("localizable.nova.risk.wizard.screen.calisan.sayisi.edbcee10", table: .localizable, fallback: "Çalışan sayısı"), style: .label)
-                chips([("1-9", "1–9"), ("10-49", "10–49"), ("50-249", "50–249"), ("250+", "250+")], selected: v.firm.employees) {
-                    perform(["type": "firm", "field": "employees", "value": $0])
+            if let emergency = v.emergency {
+                VStack(alignment: .leading, spacing: 6) {
+                    NovaText(text: emergency.text("firm.employees"), style: .label)
+                    TextField(emergency.text("firm.employeesPlaceholder"), text: Binding(get: { emergency.employees.map { String($0) } ?? "" },
+                                                                                        set: { perform(["type": "emp", "value": $0]) }))
+                        .keyboardType(.numberPad).font(NovaFont.font(.body))
+                        .padding(.horizontal, 14).padding(.vertical, 12)
+                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
+                        .accessibilityIdentifier("emergencyWizard.employees")
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    NovaText(text: RDLocalization.string("localizable.nova.risk.wizard.screen.calisan.sayisi.edbcee10", table: .localizable, fallback: "Çalışan sayısı"), style: .label)
+                    chips([("1-9", "1–9"), ("10-49", "10–49"), ("50-249", "50–249"), ("250+", "250+")], selected: v.firm.employees) {
+                        perform(["type": "firm", "field": "employees", "value": $0])
+                    }
                 }
             }
-            field(RDLocalization.string("localizable.nova.risk.wizard.screen.degerlendirme.tarihi.36ecad58", table: .localizable, fallback: "Değerlendirme tarihi"), value: v.firm.date, placeholder: "gg.aa.yyyy", key: "date")
+            field(v.emergency?.text("firm.date") ?? RDLocalization.string("localizable.nova.risk.wizard.screen.degerlendirme.tarihi.36ecad58", table: .localizable, fallback: "Değerlendirme tarihi"), value: v.firm.date, placeholder: "gg.aa.yyyy", key: "date")
         }
     }
     private func field(_ label: String, value: String, placeholder: String, key: String) -> some View {
@@ -439,6 +474,44 @@ struct NovaRiskWizardScreen: View {
         }
     }
 
+    // MARK: Emergency plan
+
+    @ViewBuilder private func emergencyPage(_ v: NovaRiskWizardView) -> some View {
+        if let emergency = v.emergency {
+            NovaEmergencyWizardPage(step: step, view: v, emergency: emergency, runtime: runtime,
+                                    staffSource: staffSource, perform: perform, go: go)
+        }
+    }
+    private var staffSource: (() async throws -> [NovaEmergencyWizardStaff])? {
+        guard let client = emergencyClient, let company else { return nil }
+        return {
+            let catalogue = try? await client.catalogue(company)
+            let support = Set((catalogue?.supportStaff ?? []).map(\.fullName))
+            let page = try await client.employees(company, "", nil)
+            return page.rows.filter { !$0.isArchived }.map {
+                NovaEmergencyWizardStaff(id: $0.id, name: $0.name, detail: [$0.jobTitle, $0.departmentName].compactMap { $0 }.joined(separator: " · "),
+                                         isSupportStaff: support.contains($0.name))
+            }.sorted { ($0.isSupportStaff ? 0 : 1, $0.name) < ($1.isSupportStaff ? 0 : 1, $1.name) }
+        }
+    }
+    @ViewBuilder private var emergencyResult: some View {
+        if let plan, let emergency = view?.emergency {
+            NovaEmergencyWizardResultView(plan: plan, emergency: emergency, busy: busy, canSave: emergencyClient != nil && company != nil,
+                                          saved: planSaved, export: export) { Task { await savePlan() } }
+        } else { ProgressView().frame(maxWidth: .infinity) }
+    }
+    private func savePlan() async {
+        guard let runtime, let client = emergencyClient, let company, let emergency = view?.emergency, !busy else { return }
+        busy = true; defer { busy = false }
+        do {
+            try await NovaEmergencyWizardSaver.save(runtime: runtime, client: client, company: company, workplace: workplace, texts: emergency)
+            planSaved = true
+            message = emergency.text("result.saved")
+        } catch let error as NovaEmergencyFailure { message = error.message }
+        catch let error as NovaFileFailure { message = NovaFileScreenWords.failure(error) }
+        catch { message = error.localizedDescription }
+    }
+
     // MARK: Result
 
     @ViewBuilder private var resultPage: some View {
@@ -599,7 +672,7 @@ struct NovaRiskWizardScreen: View {
     // MARK: Shared pieces
 
     private func scorePair(_ label: String, _ before: NovaRiskWizardResult.Score, _ after: NovaRiskWizardResult.Score) -> some View {
-        NovaRiskWrap(spacing: 6) {
+        NovaWizardWrap(spacing: 6) {
             NovaText(text: label, style: .micro).frame(width: 26, alignment: .leading)
             levelChip(before, showScore: true)
             Image(systemName: "arrow.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
@@ -617,18 +690,7 @@ struct NovaRiskWizardScreen: View {
         .padding(.vertical, 5).padding(.horizontal, 8)
         .background(tone.background, in: RoundedRectangle(cornerRadius: 8))
     }
-    private func tag(_ text: String, tone: String) -> some View {
-        let colors: (Color, Color) = {
-            switch tone {
-            case "info": return (NovaColorToken.statusInfoBg.color(in: scheme), NovaColorToken.statusInfoInk.color(in: scheme))
-            case "neutral": return (NovaColorToken.statusNeutralBg.color(in: scheme), NovaColorToken.statusNeutralInk.color(in: scheme))
-            default: let t = NovaRiskLevelTone.colors(tone, scheme); return (t.background, t.ink)
-            }
-        }()
-        return NovaText(text: text, style: .micro, color: colors.1)
-            .padding(.vertical, 3).padding(.horizontal, 7)
-            .background(colors.0, in: RoundedRectangle(cornerRadius: 6))
-    }
+    private func tag(_ text: String, tone: String) -> some View { NovaWizardTag(text: text, tone: tone) }
     private func distribution(title text: String, sets: [(String, [String: Int])]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             NovaText(text: text, style: .cardTitle)
@@ -658,33 +720,10 @@ struct NovaRiskWizardScreen: View {
         }
     }
     private func optionRow(title: String, subtitle: String, tags: [String], badges: [String], selected: Bool, single: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: selected ? (single ? "largecircle.fill.circle" : "checkmark.square.fill") : (single ? "circle" : "square"))
-                    .font(.system(size: 20))
-                    .foregroundStyle(selected ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textTertiary.color(in: scheme))
-                VStack(alignment: .leading, spacing: 4) {
-                    NovaText(text: title, style: .bodyStrong)
-                    if !subtitle.isEmpty { NovaText(text: subtitle, style: .meta, color: NovaColorToken.textSecondary.color(in: scheme)) }
-                    if !tags.isEmpty || !badges.isEmpty {
-                        NovaRiskWrap(spacing: 6) {
-                            ForEach(badges, id: \.self) { tag($0, tone: "neutral") }
-                            ForEach(tags, id: \.self) { tag($0, tone: "low") }
-                        }
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(14)
-            .background((selected ? NovaColorToken.accentSoft : NovaColorToken.surface).color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(selected ? NovaColorToken.accent.color(in: scheme) : .clear, lineWidth: 1.5))
-            .contentShape(RoundedRectangle(cornerRadius: 14))
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+        NovaWizardOptionRow(title: title, subtitle: subtitle, tags: tags, badges: badges, selected: selected, single: single, action: action)
     }
     private func chips(_ items: [(String, String)], selected: String, pick: @escaping (String) -> Void) -> some View {
-        NovaRiskWrap(spacing: 8) { ForEach(items, id: \.0) { item in chip(item.1, selected: selected == item.0) { pick(item.0) } } }
+        NovaWizardWrap(spacing: 8) { ForEach(items, id: \.0) { item in chip(item.1, selected: selected == item.0) { pick(item.0) } } }
     }
     private func chip(_ label: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -721,30 +760,6 @@ struct NovaRiskWizardScreen: View {
     }
 }
 
-/// Wrapping row for tags and chips; reports the wrapped height so cards grow with their content.
-private struct NovaRiskWrap: Layout {
-    var spacing: CGFloat = 6
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let limit = proposal.width ?? .infinity
-        var x: CGFloat = 0, y: CGFloat = 0, line: CGFloat = 0, widest: CGFloat = 0
-        for view in subviews {
-            let size = view.sizeThatFits(.init(width: limit, height: nil))
-            if x > 0 && x + size.width > limit { y += line + spacing; x = 0; line = 0 }
-            x += size.width + spacing; line = max(line, size.height); widest = max(widest, x - spacing)
-        }
-        return CGSize(width: proposal.width ?? widest, height: y + line)
-    }
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX, y = bounds.minY, line: CGFloat = 0
-        for view in subviews {
-            let size = view.sizeThatFits(.init(width: bounds.width, height: nil))
-            if x > bounds.minX && x + size.width > bounds.maxX { y += line + spacing; x = bounds.minX; line = 0 }
-            view.place(at: CGPoint(x: x, y: y), proposal: .init(size))
-            x += size.width + spacing; line = max(line, size.height)
-        }
-    }
-}
-
 /// Selected-item chips with a trailing remove symbol.
 private struct FlowChips: View {
     let items: [(String, String)]
@@ -753,7 +768,7 @@ private struct FlowChips: View {
     let tap: (String) -> Void
     @Environment(\.colorScheme) private var scheme
     var body: some View {
-        NovaRiskWrap(spacing: 8) {
+        NovaWizardWrap(spacing: 8) {
             ForEach(items, id: \.0) { item in
                 Button { tap(item.0) } label: {
                     HStack(spacing: 6) {

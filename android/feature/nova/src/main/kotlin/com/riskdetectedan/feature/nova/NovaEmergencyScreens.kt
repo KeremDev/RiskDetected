@@ -116,9 +116,8 @@ fun NovaEmergencyScreen(client: NovaEmergencyClient, canWrite: Boolean, onBack: 
     // A draft the expert set aside; it is never published and never listed.
     var savedDraft by remember { mutableStateOf<NovaEmergencyPlanDraft?>(null) }
     if (showingWizard) {
-        NovaDocumentWizardScreen("emergency", client.companies,
-            { company -> client.catalogue(company).workplaces.map { NovaWizardWorkplace(it.id, it.name) } },
-            client.files, query.company ?: initialCompany) { showingWizard = false }
+        NovaRiskWizardScreen(client.companies, { company -> client.catalogue(company).workplaces.map { NovaWizardWorkplace(it.id, it.name) } },
+            { client.files }, query.company ?: initialCompany, mode = "emergency", emergencyClient = client) { showingWizard = false }
         return
     }
 
