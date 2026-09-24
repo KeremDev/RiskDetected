@@ -1143,6 +1143,7 @@ struct NovaDashboardScreen: View {
     var onFinding: ((String) -> Void)?
     var trackingIdentity: NovaSessionIdentity?
     var trackingCanWrite = false
+    var trackingScope: UUID?
     /// Optional workspace-specific controls rendered inside the same scroll
     /// surface. This keeps OSGB company selection/actions on the shared home
     /// page instead of creating a second dashboard layout.
@@ -1220,7 +1221,8 @@ struct NovaDashboardScreen: View {
                     }
                 }
                 if let trackingIdentity {
-                    NovaHomeDeadlineBoard(identity: trackingIdentity, canWrite: trackingCanWrite)
+                    NovaHomeDeadlineBoard(identity: trackingIdentity, canWrite: trackingCanWrite,
+                        scopeID: trackingScope)
                         .padding(.horizontal, 20).padding(.top, 22)
                 }
                 if let footer {

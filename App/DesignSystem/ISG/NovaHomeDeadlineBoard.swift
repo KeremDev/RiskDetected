@@ -5,6 +5,7 @@ import SwiftUI
 struct NovaHomeDeadlineBoard: View {
     let identity: NovaSessionIdentity
     let canWrite: Bool
+    let scopeID: UUID?
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -25,7 +26,7 @@ struct NovaHomeDeadlineBoard: View {
     @State private var selectedTraining: NovaFollowupPage.Row?
 
     private var requestKey: String {
-        "\(identity.userID):\(identity.sessionID):\(revision)"
+        "\(identity.userID):\(identity.sessionID):\(scopeID?.uuidString ?? "personal"):\(revision)"
     }
 
     var body: some View {
