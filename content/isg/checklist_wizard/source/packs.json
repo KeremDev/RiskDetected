@@ -1,0 +1,668 @@
+{
+  "note": "Kontrol listesi sihirbazı genişleme paketleri. Mevcut katalog (docs/isg/checklists/ISG_ADASI_CHECKLIST_SEED.json) değiştirilmez; bu paketler yalnız sihirbaz kataloğuna eklenir. Madde: [yöntem, metin]. Yöntem G görsel, K kayıt/plan, Y yetkin kişinin işlev kontrolü.",
+  "packs": [
+    {
+      "code": "EARTHMOVE", "title": "İş makinesi kullanım öncesi kontrolü", "kind": "equipment",
+      "aliases": ["iş makinesi", "ekskavatör", "loder", "dozer", "kepçe", "yükleyici", "greyder", "silindir"],
+      "sources": ["UK-TRANSPORT", "UK-CONSTRUCTION", "TR-EQUIPMENT"],
+      "items": [
+        ["G", "Makinenin devrilmeye ve düşen cisimlere karşı koruyucu kabini görünür hasardan arınmış mı?"],
+        ["G", "Operatör emniyet kemeri takılı ve kullanılabilir durumda mı?"],
+        ["G", "Ayna, kamera ve diğer görüş yardımcıları temiz ve doğru ayarlı mı?"],
+        ["G", "Görülebilen hidrolik hortum ve silindirlerde sızıntı veya aşınma belirtisi bulunmuyor mu?"],
+        ["Y", "Fren, direksiyon ve kumanda kilitlerinin işlevi yetkili operatörce kontrol edilmiş mi?"],
+        ["Y", "Geri manevra alarmı ve ışıklı uyarıların çalıştığı operatörce doğrulanmış mı?"],
+        ["G", "Kova, ataşman ve hızlı bağlantı kilit pimi yerinde ve kilitli mi?"],
+        ["K", "Operatörün bu makine tipi için geçerli yetkinlik belgesi mevcut mu?"],
+        ["G", "Makinenin dönüş ve çalışma alanı yaya çalışanlardan ayrılmış mı?"],
+        ["K", "Enerji hatları, kazı kenarı ve eğimli zemin için çalışma sınırları operatöre bildirilmiş mi?"]
+      ]
+    },
+    {
+      "code": "FLEET", "title": "Şirket aracı ve ağır vasıta sefer öncesi kontrolü", "kind": "equipment",
+      "aliases": ["araç", "kamyon", "tır", "panelvan", "servis aracı", "otobüs", "minibüs", "sefer öncesi"],
+      "sources": ["UK-TRANSPORT", "TR-TRAFFIC"],
+      "items": [
+        ["G", "Lastiklerde görünür hasar, aşırı aşınma veya düşük basınç belirtisi bulunmuyor mu?"],
+        ["G", "Far, fren ve sinyal lambaları çalışır ve temiz mi?"],
+        ["Y", "Fren ve direksiyon işlevi sürücü tarafından sefer öncesinde kontrol edilmiş mi?"],
+        ["G", "Aynalar ve camlar görüşü engelleyen hasar veya kirden arınmış mı?"],
+        ["G", "Yük, kasada kaymayı ve devrilmeyi önleyecek biçimde bağlanmış mı?"],
+        ["G", "Araçta yangın söndürücü, ilk yardım çantası ve reflektif yelek bulunuyor mu?"],
+        ["K", "Aracın muayene, sigorta ve bakım tarihleri güncel mi?"],
+        ["K", "Sürücünün ehliyet sınıfı ve mesleki belgeleri araç ve yükle uyumlu mu?"],
+        ["K", "Sefer planında sürüş ve dinlenme süreleri değerlendirilmiş mi?"],
+        ["K", "Arıza, kaza veya yol kenarında bekleme durumunda izlenecek yöntem sürücüye açıklanmış mı?"]
+      ]
+    },
+    {
+      "code": "ADR", "title": "Tehlikeli madde taşıma ve tanker dolum-boşaltma", "kind": "activity",
+      "aliases": ["ADR", "tehlikeli madde taşıma", "tanker", "dolum", "boşaltma", "akaryakıt tankeri"],
+      "sources": ["TR-ADR", "UK-FIRE"],
+      "items": [
+        ["K", "Araç ve sürücünün tehlikeli madde taşımaya ilişkin belgeleri geçerli mi?"],
+        ["G", "Araç üzerindeki turuncu plakalar ve tehlike etiketleri taşınan maddeyle uyumlu mu?"],
+        ["K", "Taşıma evrakı ve yazılı talimatlar sürücü kabininde erişilebilir mi?"],
+        ["G", "Araçtaki ADR ekipman seti (takoz, uyarı işareti, göz yıkama, KKD, dökülme malzemesi) eksiksiz mi?"],
+        ["G", "Dolum veya boşaltma öncesinde araç sabitlenmiş, motor durdurulmuş ve topraklama bağlanmış mı?"],
+        ["Y", "Taşma önleme ve topraklama izleme düzeninin işlevi yetkili kişi tarafından doğrulanmış mı?"],
+        ["G", "Dolum ve boşaltma alanında ateşleme kaynakları ve ilgisiz kişiler uzak tutulmuş mu?"],
+        ["G", "Vana, hortum ve bağlantılarda sızıntı veya hasar belirtisi bulunmuyor mu?"],
+        ["K", "Dökülme veya sızıntıda ilk müdahale adımları ve bildirim numaraları sürücüye açıklanmış mı?"],
+        ["K", "Yüklü aracın park ve mola yerleri güzergâh planında belirlenmiş mi?"]
+      ]
+    },
+    {
+      "code": "FUEL", "title": "Akaryakıt ve LPG ikmal alanı", "kind": "sector",
+      "aliases": ["akaryakıt istasyonu", "benzinlik", "LPG otogaz", "pompa adası", "dolum tesisi", "tank sahası"],
+      "sources": ["TR-EPDK", "TR-ATEX", "UK-FIRE"],
+      "items": [
+        ["G", "Pompa adalarındaki acil durdurma butonu işaretli ve erişilebilir mi?"],
+        ["G", "Dispenser, tabanca ve hortumlarda sızıntı veya hasar belirtisi bulunmuyor mu?"],
+        ["G", "İkmal alanında sigara içilmeyeceğini ve motorun durdurulacağını gösteren işaretler görünür mü?"],
+        ["G", "Patlayıcı ortam bölgelerinde bu bölgelere uygun olmayan elektrikli cihaz kullanılmıyor mu?"],
+        ["K", "Tanker boşaltma öncesindeki araç sabitleme, topraklama ve gözetim adımları kayıt altına alınıyor mu?"],
+        ["G", "Dökülme kiti ve emici malzeme pompa adalarına yakın ve eksiksiz mi?"],
+        ["K", "Tank kaçak izleme veya otomatik tank ölçüm alarmları takip ediliyor mu?"],
+        ["G", "LPG tank sahası çitle çevrili, kilitli ve yetkisiz erişime kapalı mı?"],
+        ["K", "Patlamadan korunma dokümanı mevcut tesis düzeniyle güncel mi?"],
+        ["K", "Gece çalışan personel için nakit, şiddet ve yalnız çalışma önlemleri tanımlanmış mı?"]
+      ]
+    },
+    {
+      "code": "FOUNDRY", "title": "Ergitme, döküm ve sıcak metal alanı", "kind": "sector",
+      "aliases": ["döküm", "dökümhane", "ergitme", "indüksiyon ocağı", "pota", "sıvı metal", "çelikhane"],
+      "sources": ["UK-TEMPERATURE", "UK-FIRE", "TR-EQUIPMENT"],
+      "items": [
+        ["G", "Ergitme ve döküm alanında zemin kuru, düz ve su birikintisinden arınmış mı?"],
+        ["K", "Ocağa şarj edilecek hurdanın ıslak, kapalı kap veya patlayıcı içermediği kontrol ediliyor mu?"],
+        ["G", "Pota ve pota taşıma arabasında çatlak, aşınma veya kilit eksikliği görülmüyor mu?"],
+        ["G", "Sıvı metal taşıma güzergâhı yaya geçişinden ayrılmış ve işaretli mi?"],
+        ["G", "Çalışanlar sıvı metale uygun ısıya dayanıklı yüz siperi, önlük ve tozluk kullanıyor mu?"],
+        ["Y", "İndüksiyon ocağının soğutma suyu ve kaçak alarmının işlevi yetkin kişi kayıtlarıyla doğrulanmış mı?"],
+        ["G", "Ocak altı acil boşaltma çukuru kuru ve boş tutuluyor mu?"],
+        ["G", "Duman ve metal buharı için emiş düzeni çalışır durumda mı?"],
+        ["K", "Sıcak ortamda çalışma süresi, sıvı tüketimi ve dinlenme araları planlanmış mı?"],
+        ["K", "Sıvı metal sıçraması veya dökülmesinde izlenecek acil durum yöntemi çalışanlara açıklanmış mı?"]
+      ]
+    },
+    {
+      "code": "GLASS", "title": "Cam üretimi, kesim ve cam levha elleçleme", "kind": "sector",
+      "aliases": ["cam", "cam levha", "temperli cam", "cam kesim", "vantuz", "cam sehpası"],
+      "sources": ["UK-INSPECT", "UK-TEMPERATURE"],
+      "items": [
+        ["G", "Cam levha sehpaları devrilmeye karşı sabitlenmiş ve kapasitesine uygun yüklenmiş mi?"],
+        ["G", "Kırık cam parçaları için ayrılmış kaplar mevcut ve taşmamış mı?"],
+        ["G", "Cam taşıyan çalışanlar kesilmeye dayanıklı eldiven, kolluk ve önlük kullanıyor mu?"],
+        ["G", "Vantuzlu kaldırıcının vakum göstergesi ve pedleri hasarsız mı?"],
+        ["Y", "Vantuzlu kaldırma ekipmanının vakum kaybı uyarısı yetkili kişi tarafından kontrol edilmiş mi?"],
+        ["G", "Kesim masası ve kenar taşlama makinelerinin koruyucuları yerinde mi?"],
+        ["G", "Fırın ve temperleme hattı çevresindeki sıcak yüzeyler işaretli ve korunmuş mu?"],
+        ["K", "Temper çıkışında kırılma veya sıkışmaya müdahale yöntemi tanımlanmış mı?"],
+        ["G", "Cam levha taşıma güzergâhı engelsiz ve yeterli genişlikte mi?"],
+        ["K", "Büyük levhaların elle taşınması için kişi sayısı ve yardımcı ekipman belirlenmiş mi?"]
+      ]
+    },
+    {
+      "code": "PLASTIC", "title": "Plastik enjeksiyon, ekstrüder ve granül kırıcı", "kind": "equipment",
+      "aliases": ["plastik enjeksiyon", "ekstrüder", "granül kırıcı", "kauçuk", "kalıp", "şişirme"],
+      "sources": ["UK-ENGINEERING", "UK-INSPECT"],
+      "items": [
+        ["G", "Enjeksiyon makinesinin kalıp bölgesi koruyucu kapısı kapalı ve hasarsız mı?"],
+        ["Y", "Koruyucu kapı açıldığında kapanma hareketini durduran emniyet düzeninin işlevi yetkin kişi tarafından doğrulanmış mı?"],
+        ["G", "Kalıp üstünden ve arka taraftan tehlikeli bölgeye erişimi önleyen koruma mevcut mu?"],
+        ["G", "Ekstrüder kafası ve ısıtıcı bantlarında sıcak yüzey koruması veya uyarısı var mı?"],
+        ["K", "Purj işleminde sıcak malzeme sıçramasına karşı yöntem ve KKD belirlenmiş mi?"],
+        ["G", "Granül kırıcının besleme ağzından bıçaklara el ile ulaşılamıyor mu?"],
+        ["K", "Kırıcı bıçak değişimi ve temizliği enerji izolasyonuyla yapılıyor mu?"],
+        ["G", "Hidrolik hortum ve bağlantılarda sızıntı görülmüyor mu?"],
+        ["K", "Kalıp değişiminde kalıp ağırlığı ve kullanılacak kaldırma ekipmanı değerlendirilmiş mi?"],
+        ["G", "Proses dumanları için emiş veya havalandırma çalışır durumda mı?"]
+      ]
+    },
+    {
+      "code": "DUSTEX", "title": "Yanıcı toz ve patlayıcı ortam kontrolü", "kind": "hazard",
+      "aliases": ["yanıcı toz", "toz patlaması", "ATEX", "patlayıcı ortam", "toz toplama", "silo"],
+      "sources": ["TR-ATEX", "UK-FIRE", "UK-LEV"],
+      "items": [
+        ["K", "Yanıcı toz oluşan alanlar patlamadan korunma dokümanında bölge olarak sınıflandırılmış mı?"],
+        ["G", "Yatay yüzeylerde, kiriş ve makine üstlerinde toz birikintisi temizlenmiş mi?"],
+        ["K", "Toz temizliği süpürme veya basınçlı hava yerine uygun endüstriyel vakumla yapılıyor mu?"],
+        ["G", "Toz toplama filtresi ve silolardaki patlama tahliye panelleri engellenmemiş ve güvenli bir yöne mi açılıyor?"],
+        ["G", "Bölge sınırları içinde uygun olmayan elektrikli ekipman veya açık alev kaynağı bulunmuyor mu?"],
+        ["K", "Bölgelerde kullanılan ekipmanın Ex işaretlemesi bölge sınıfına uygun mu?"],
+        ["G", "Topraklama ve eş potansiyel bağlantıları görünür biçimde yerinde mi?"],
+        ["Y", "Kıvılcım algılama ve söndürme sisteminin işlevi yetkin kişi kayıtlarıyla doğrulanmış mı?"],
+        ["K", "Toz filtresi değişimi ve bakımı çalışma izni ve enerji izolasyonuyla mı yapılıyor?"],
+        ["K", "Çalışanlar yanıcı toz tehlikesi ve bölge kuralları konusunda bilgilendirilmiş mi?"]
+      ]
+    },
+    {
+      "code": "AMMONIA", "title": "Amonyaklı soğutma sistemi ve makine dairesi", "kind": "equipment",
+      "aliases": ["amonyak", "soğutma makine dairesi", "NH3", "endüstriyel soğutma"],
+      "sources": ["UK-PRESSURE", "UK-COSHH", "TR-SEVESO"],
+      "items": [
+        ["G", "Makine dairesi girişinde amonyak tehlike uyarısı ve yetkisiz giriş yasağı görünür mü?"],
+        ["Y", "Amonyak gaz algılama ve alarm sisteminin işlevi yetkin kişi kayıtlarıyla doğrulanmış mı?"],
+        ["G", "Acil havalandırma ve dışarıdan erişilen acil durdurma düğmesi işaretli mi?"],
+        ["G", "Makine dairesi çıkışındaki acil duş ve göz yıkama istasyonu çalışır ve erişilebilir mi?"],
+        ["G", "Uygun solunum koruyucu ve kaçak müdahale ekipmanı girişe yakın ve hazır mı?"],
+        ["K", "Basınçlı ekipmanın periyodik kontrol kayıtları güncel mi?"],
+        ["G", "Vana, boru ve bağlantılarda buzlanma, korozyon veya kaçak izi görülmüyor mu?"],
+        ["K", "Bakım ve yağ boşaltma işleri yazılı çalışma izniyle yürütülüyor mu?"],
+        ["K", "Kaçak durumunda tahliye yönü, rüzgâr ve toplanma yeri acil durum planında tanımlanmış mı?"],
+        ["K", "Sistemdeki amonyak miktarı ve buna bağlı yasal yükümlülükler değerlendirilmiş mi?"]
+      ]
+    },
+    {
+      "code": "PRESSURE", "title": "Basınçlı kap, otoklav ve basınç testleri", "kind": "equipment",
+      "aliases": ["basınçlı kap", "otoklav", "hidrostatik test", "pnömatik test", "emniyet ventili"],
+      "sources": ["UK-PRESSURE", "TR-EQUIPMENT"],
+      "items": [
+        ["K", "Basınçlı kapların periyodik kontrol raporları güncel ve ekipman kimliğiyle eşleşiyor mu?"],
+        ["G", "Emniyet ventillerinin tahliye çıkışı çalışanların bulunduğu yöne yönelmiyor mu?"],
+        ["G", "Manometreler okunaklı ve izin verilen çalışma basıncı işaretli mi?"],
+        ["Y", "Otoklav kapısının basınç altında açılmasını önleyen kilidin işlevi yetkin kişi tarafından doğrulanmış mı?"],
+        ["K", "Otoklav açılmadan önce basıncın tamamen boşaltıldığını doğrulama adımı tanımlanmış mı?"],
+        ["K", "Hidrostatik veya pnömatik test öncesinde test sınırı, basınç ve güvenli mesafe planlanmış mı?"],
+        ["G", "Test sırasında test bölgesi yetkisiz kişilere kapatılmış mı?"],
+        ["G", "Basınçlı hortum bağlantılarında kırbaçlanmayı önleyen emniyet düzeni kullanılıyor mu?"],
+        ["G", "Kap ve borularda korozyon, şişme veya kaçak belirtisi görülmüyor mu?"],
+        ["K", "Basınçlı ekipmanı kullanan çalışanlar yetkilendirilmiş ve eğitilmiş mi?"]
+      ]
+    },
+    {
+      "code": "ELEVATOR", "title": "Asansör, yürüyen merdiven ve yük asansörü", "kind": "equipment",
+      "aliases": ["asansör", "yürüyen merdiven", "yük asansörü", "yürüyen bant", "asansör kuyusu"],
+      "sources": ["TR-LIFT", "UK-LIFT"],
+      "items": [
+        ["K", "Asansörün periyodik kontrol etiketi geçerli ve kabinde görülebilir mi?"],
+        ["K", "Bakım sözleşmesi ve son bakım kaydı güncel mi?"],
+        ["Y", "Kabindeki acil çağrı düzeninin işlevi yetkili kişi tarafından kontrol edilmiş mi?"],
+        ["Y", "Kat kapısı kilitlerinin işlevi yetkili bakımcı tarafından doğrulanmış mı?"],
+        ["G", "Kabin ile kat arasında takılmaya yol açan seviye farkı görülmüyor mu?"],
+        ["G", "Makine dairesi ve kuyu erişim kapıları kilitli ve yetkisiz girişe kapalı mı?"],
+        ["G", "Yük asansöründe taşıma kapasitesi ve varsa insan taşıma yasağı işaretli mi?"],
+        ["G", "Yürüyen merdivenin acil durdurma düğmeleri işaretli ve engelsiz mi?"],
+        ["G", "Yürüyen merdiven basamak ve tarak plakalarında kırık veya eksik diş görülmüyor mu?"],
+        ["K", "Asansörde mahsur kalan kişiyi kurtarma yöntemi ve yetkili kişi belirlenmiş mi?"]
+      ]
+    },
+    {
+      "code": "CHAINSAW", "title": "Motorlu testere, ağaç kesimi ve budama", "kind": "equipment",
+      "aliases": ["motorlu testere", "ağaç kesimi", "budama", "dal öğütücü", "tırpan", "orman"],
+      "sources": ["UK-AGRI", "UK-VIBRATION", "TR-EQUIPMENT"],
+      "items": [
+        ["G", "Zincir freni, zincir yakalayıcı ve tetik kilidi yerinde ve hasarsız mı?"],
+        ["Y", "Zincir freninin işlevi kullanım öncesinde yetkili kullanıcı tarafından denenmiş mi?"],
+        ["G", "Kullanıcı kesilmeye dayanıklı pantolon, ayakkabı, eldiven ve siperli baret kullanıyor mu?"],
+        ["K", "Kullanıcının motorlu testere ve ağaç kesimi eğitimi belgelenmiş mi?"],
+        ["K", "Kesilecek ağacın devrilme yönü, kaçış yolu ve tehlike bölgesi kesimden önce belirlenmiş mi?"],
+        ["G", "Devrilme bölgesine (en az ağaç boyunun iki katı) yetkisiz giriş engellenmiş mi?"],
+        ["K", "Enerji hattına yakın ağaçlarda hat işletmecisiyle koordinasyon sağlanmış mı?"],
+        ["G", "Yakıt doldurma, motor soğukken ve ateşleme kaynaklarından uzakta mı yapılıyor?"],
+        ["K", "Ağaç üstünde çalışılıyorsa kurtarma planı ve yerde ikinci bir kişi bulunuyor mu?"],
+        ["K", "Titreşim ve gürültü maruziyetini sınırlamak için kullanım süresi planlanmış mı?"]
+      ]
+    },
+    {
+      "code": "PESTICIDE", "title": "Tarım ilacı ve biyosidal ürün uygulaması", "kind": "activity",
+      "aliases": ["ilaçlama", "pestisit", "tarım ilacı", "biyosidal", "fumigasyon", "haşere"],
+      "sources": ["TR-BIOCIDE", "TR-CHEMICAL", "UK-COSHH"],
+      "items": [
+        ["K", "Uygulanan ürünün ruhsatı ve etiket talimatı uygulama alanına uygun mu?"],
+        ["K", "Uygulayıcının bitki koruma veya biyosidal uygulama eğitimi belgelenmiş mi?"],
+        ["G", "İlaç deposu kilitli, havalandırmalı ve gıda ile yemden ayrı mı?"],
+        ["G", "Karışım hazırlama yerinde dökülmeye karşı tutma düzeni ve temiz su bulunuyor mu?"],
+        ["G", "Uygulayıcı etikette istenen solunum koruyucu, eldiven ve koruyucu tulumu kullanıyor mu?"],
+        ["G", "Pülverizatör ve hortumlarda sızıntı veya damlama görülmüyor mu?"],
+        ["K", "Uygulama sonrası alana yeniden giriş süresi belirlenmiş ve alan işaretlenmiş mi?"],
+        ["K", "Rüzgâr ve sıcaklık koşulları uygulama öncesinde değerlendirilmiş mi?"],
+        ["G", "Boş ambalajlar üç kez çalkalanıp ayrı ve kilitli bir alanda toplanıyor mu?"],
+        ["K", "Zehirlenme belirtilerinde ilk yardım ve Ulusal Zehir Danışma Merkezi (114) bilgisi erişilebilir mi?"]
+      ]
+    },
+    {
+      "code": "DRILLRIG", "title": "Sondaj makinesi ve kuyu başı çalışma alanı", "kind": "equipment",
+      "aliases": ["sondaj", "kuyu", "sondaj makinesi", "tij", "karot", "fore kazık", "ankraj"],
+      "sources": ["UK-INSPECT", "UK-CONSTRUCTION", "TR-EQUIPMENT"],
+      "items": [
+        ["K", "Sondaj noktası için yeraltı tesisatları ve havai enerji hatları sondaj öncesinde araştırılmış mı?"],
+        ["G", "Makine düz ve taşıma gücü yeterli zemine kurulmuş, destek ayakları oturmuş mu?"],
+        ["G", "Dönen tij ve dönen aksamlar çevresinde koruyucu veya erişim sınırı mevcut mu?"],
+        ["Y", "Acil durdurma düğmelerinin işlevi operatör tarafından iş başında kontrol edilmiş mi?"],
+        ["G", "Mast kaldırılırken ve çalışma sırasında tehlike bölgesinde gereksiz kişi bulunmuyor mu?"],
+        ["G", "Yüksek basınçlı hava ve çamur hortumlarında kırbaçlanma emniyeti takılı mı?"],
+        ["G", "Çamur havuzu ve kuyu ağzı düşmeye karşı korunmuş ve işaretli mi?"],
+        ["G", "Tij ve boru stoku yuvarlanmaya karşı takozlanmış mı?"],
+        ["K", "Sondaj ekibine tij ekleme-sökme sırasında el ve vücut konumu talimatı verilmiş mi?"],
+        ["K", "Gaz çıkışı, artezyen basıncı veya çökme görüldüğünde işi durdurma yöntemi tanımlanmış mı?"]
+      ]
+    },
+    {
+      "code": "LINEWORK", "title": "Enerji hattı ve trafo merkezi çalışması", "kind": "activity",
+      "aliases": ["enerji hattı", "OG", "AG", "trafo merkezi", "beş kural", "direk", "canlı hat"],
+      "sources": ["TR-HVFACILITY", "TR-EARTHING", "UK-ELECTRIC"],
+      "items": [
+        ["K", "Çalışma için yetkili kişiden yazılı çalışma izni ve manevra talimatı alınmış mı?"],
+        ["K", "Beş kural (ayırma, kilitleme, gerilimsizlik kontrolü, topraklama-kısa devre, komşu bölümlerin korunması) sırayla uygulanmış mı?"],
+        ["Y", "Gerilim dedektörü kullanım öncesinde denenerek gerilimsizlik doğrulanmış mı?"],
+        ["G", "Topraklama-kısa devre takımı iş noktasının her iki tarafına görünür biçimde bağlanmış mı?"],
+        ["G", "Yalıtkan eldiven, ıstanka ve paspasların test tarihi geçerli ve görünür hasarı yok mu?"],
+        ["K", "Enerjili bölümlere yaklaşma mesafeleri ekibe açıklanmış ve sahada işaretlenmiş mi?"],
+        ["G", "Direkte veya sepetli araçta çalışırken düşüş durdurma ekipmanı kullanılıyor mu?"],
+        ["G", "Çalışma alanı trafik ve yayalara karşı işaretlenmiş mi?"],
+        ["K", "Ark parlamasına karşı KKD seçimi işin enerji seviyesine göre belirlenmiş mi?"],
+        ["K", "İş bitiminde topraklamaların sökülmesi ve enerji verme sırası tanımlanmış mı?"]
+      ]
+    },
+    {
+      "code": "GASNET", "title": "Doğal gaz şebeke, iç tesisat ve cihaz servisi", "kind": "activity",
+      "aliases": ["doğal gaz", "kombi", "iç tesisat", "gaz şebekesi", "RMS", "gaz kaçağı"],
+      "sources": ["TR-GASINSTALL", "TR-ATEX", "UK-GAS"],
+      "items": [
+        ["K", "İşi yapacak kişilerin sertifika ve yetki belgeleri iş kapsamına uygun mu?"],
+        ["Y", "Çalışma öncesinde ve sırasında çok gazlı dedektörle ölçüm yapılıp kaydedilmiş mi?"],
+        ["G", "Çalışma noktası çevresinde ateşleme kaynakları uzaklaştırılmış ve sigara yasağı uygulanıyor mu?"],
+        ["K", "Gazlı hatta basınç düşürme, tapalama veya sıkma yöntemi yazılı talimatla belirlenmiş mi?"],
+        ["G", "Kullanılan elektrikli ekipman patlayıcı ortama uygun mu?"],
+        ["K", "Sızdırmazlık testi kayıt altına alınmadan gaz açılması önleniyor mu?"],
+        ["G", "Kombi ve cihaz servisinde baca bağlantısı ve havalandırma açıklığı kontrol ediliyor mu?"],
+        ["Y", "Baca gazı analizinde karbonmonoksit değeri ölçülüp kaydedilmiş mi?"],
+        ["K", "Gaz kaçağı ihbarında alanı boşaltma ve vana kapatma sırası ekibe açıklanmış mı?"],
+        ["K", "Müşteri adresinde yalnız çalışan teknisyen için iletişim ve acil durum yöntemi tanımlanmış mı?"]
+      ]
+    },
+    {
+      "code": "TOWERCLIMB", "title": "Kule, direk ve türbin tırmanışı", "kind": "activity",
+      "aliases": ["kule tırmanışı", "baz istasyonu", "rüzgâr türbini", "anten", "direk"],
+      "sources": ["UK-INSPECT", "UK-LONE", "TR-PPE"],
+      "items": [
+        ["K", "Tırmanacak kişilerin yüksekte çalışma ve kule tırmanışı eğitimi belgelenmiş mi?"],
+        ["K", "Tırmanış öncesinde rüzgâr, buzlanma ve yıldırım koşulları değerlendirilmiş mi?"],
+        ["G", "Dikey yaşam hattı ve kayar düşüş durdurucu görünür hasardan arınmış mı?"],
+        ["G", "Tam vücut kemeri, lanyard ve bağlantı elemanları kullanım öncesinde kontrol edilmiş mi?"],
+        ["K", "Askıda kalan kişiyi kurtarma planı ve kurtarma seti sahada hazır mı?"],
+        ["G", "Kule dibindeki alan düşen cisimlere karşı kapatılmış mı?"],
+        ["K", "RF yayan antenler için gücün kesilmesi veya güvenli mesafe koordinasyonu yapılmış mı?"],
+        ["K", "Tırmanış en az iki kişilik ekiple ve yerde bir gözcüyle mi yapılıyor?"],
+        ["G", "Yukarı çıkarılan alet ve malzemeler düşmeye karşı bağlanmış mı?"],
+        ["K", "Kule veya türbin içi servis asansörünün periyodik kontrol kaydı güncel mi?"]
+      ]
+    },
+    {
+      "code": "BATTERY", "title": "Akü şarj alanı, UPS ve lityum batarya", "kind": "hazard",
+      "aliases": ["akü şarj", "UPS", "lityum batarya", "enerji depolama", "şarj istasyonu", "forklift aküsü"],
+      "sources": ["UK-FIRE", "UK-ELECTRIC", "TR-ATEX"],
+      "items": [
+        ["G", "Akü şarj alanı iyi havalandırılmış ve ateşleme kaynaklarından arındırılmış mı?"],
+        ["G", "Şarj noktasında sigara ve açık alev yasağı işaretli mi?"],
+        ["G", "Akü asidine karşı göz yıkama imkânı şarj alanına yakın ve çalışır durumda mı?"],
+        ["G", "Şarj cihazı kablo ve bağlantılarında ezilme, erime veya aşırı ısınma izi yok mu?"],
+        ["K", "Lityum bataryalar üretici talimatına uygun ve gözetim altında mı şarj ediliyor?"],
+        ["G", "Hasarlı, şişmiş veya aşırı ısınmış bataryalar ayrı ve yanmaz bir kapta tutuluyor mu?"],
+        ["G", "UPS ve akü odası kilitli ve malzeme deposu olarak kullanılmıyor mu?"],
+        ["K", "Batarya yangınına uygun müdahale yöntemi ve söndürme ekipmanı belirlenmiş mi?"],
+        ["G", "Akü değişimi için yalıtımlı alet ve kaldırma yardımcısı bulunuyor mu?"],
+        ["K", "Enerji depolama sisteminin sıcaklık ve gaz algılama alarmları izleniyor mu?"]
+      ]
+    },
+    {
+      "code": "DATACENTER", "title": "Veri merkezi, sunucu odası ve gazlı söndürme", "kind": "sector",
+      "aliases": ["veri merkezi", "sunucu odası", "yükseltilmiş döşeme", "gazlı söndürme", "kabin"],
+      "sources": ["UK-ELECTRIC", "UK-FIRE", "TR-FIREBUILD"],
+      "items": [
+        ["G", "Yükseltilmiş döşemede açık bırakılmış panel veya düşme boşluğu bulunmuyor mu?"],
+        ["G", "Döşeme paneli kaldırılırken aparat ve açık panel uyarısı kullanılıyor mu?"],
+        ["G", "Kabinler devrilmeye karşı sabitlenmiş ve ağır ekipman alt raflara yerleştirilmiş mi?"],
+        ["K", "Gazlı söndürme boşalmadan önceki uyarı ve tahliye süresi çalışanlara açıklanmış mı?"],
+        ["G", "İçeride kişi varken gazlı söndürmeyi elle bekletme düzeni işaretli ve erişilebilir mi?"],
+        ["K", "Gazlı söndürme silindirlerinin basınç ve periyodik kontrol kayıtları güncel mi?"],
+        ["G", "Bara kanalı ve PDU bağlantılarında açık iletken veya ısınma izi görülmüyor mu?"],
+        ["K", "Enerjili bara kanalındaki işler yetkili kişiyle ve yazılı yöntemle mi yürütülüyor?"],
+        ["K", "Sıcak koridor ve kabin arkasında çalışmanın sıcaklık koşulları değerlendirilmiş mi?"],
+        ["K", "Veri salonunda yalnız çalışan teknisyen için iletişim düzeni tanımlanmış mı?"]
+      ]
+    },
+    {
+      "code": "STAGE", "title": "Sahne, truss ve etkinlik kurulumu", "kind": "sector",
+      "aliases": ["sahne", "truss", "etkinlik", "konser", "prodüksiyon", "film seti", "piroteknik"],
+      "sources": ["UK-LIFT", "UK-CONSTRUCTION", "TR-PYRO"],
+      "items": [
+        ["K", "Truss ve askı sisteminin yük hesabı ve askı noktası kapasiteleri belirlenmiş mi?"],
+        ["G", "Truss bağlantı pimleri ve emniyet kilitleri eksiksiz takılmış mı?"],
+        ["G", "Asılı ışık ve ses ekipmanları ikincil emniyet halatıyla bağlanmış mı?"],
+        ["K", "Zincirli motor vinçlerin periyodik kontrol kayıtları güncel mi?"],
+        ["G", "Kurulum sırasında askı altındaki alan yetkisiz kişilere kapatılmış mı?"],
+        ["G", "Sahne kenarı ve orkestra çukuru gibi düşme noktaları korunmuş veya işaretli mi?"],
+        ["G", "Seyirci ve ekip yollarındaki kablo geçişleri takılmaya karşı kapatılmış mı?"],
+        ["K", "Piroteknik ve özel efektler yetkili kişi tarafından, izinli ürünle ve güvenlik mesafesiyle mi uygulanıyor?"],
+        ["K", "Seyirci kapasitesi, bariyer önü düzeni ve tahliye yolları etkinlik planında belirlenmiş mi?"],
+        ["K", "Açık hava sahnesi için rüzgâr ve hava koşullarında işi durdurma ölçütü tanımlanmış mı?"]
+      ]
+    },
+    {
+      "code": "SALON", "title": "Kuaför, güzellik ve spa salonu", "kind": "sector",
+      "aliases": ["kuaför", "berber", "güzellik salonu", "lazer epilasyon", "spa", "sauna", "hamam"],
+      "sources": ["TR-HYGIENETRAINING", "TR-CHEMICAL", "UK-COSHH"],
+      "items": [
+        ["G", "Saç boyası, açıcı ve perma ürünleri etiketli kaplarda ve havalandırmalı alanda mı hazırlanıyor?"],
+        ["G", "Kimyasal uygulama sırasında çalışanlar uygun eldiven kullanıyor mu?"],
+        ["G", "Usturalar ve keskin aletler için kesici-delici atık kutusu bulunuyor mu?"],
+        ["K", "Alet dezenfeksiyon ve sterilizasyon yöntemi yazılı ve uygulanıyor mu?"],
+        ["G", "Fön makinesi, maşa ve düzleştiricilerin kablo ve fişleri hasarsız mı?"],
+        ["G", "Elektrikli cihazlar lavabo ve su sıçramasından uzak mı?"],
+        ["K", "Lazer ve IPL cihazları yetkili kişilerce ve uygun göz koruyucusuyla mı kullanılıyor?"],
+        ["G", "Sauna ve buhar odasında acil çağrı düzeni ve sıcak yüzey koruması mevcut mu?"],
+        ["K", "Çalışanların hijyen eğitimi ve sağlık muayeneleri güncel mi?"],
+        ["K", "Uzun süre ayakta çalışma ve tekrarlı hareketler için mola düzeni planlanmış mı?"]
+      ]
+    },
+    {
+      "code": "STONE", "title": "Doğal taş kesme ve plaka elleçleme", "kind": "sector",
+      "aliases": ["mermer", "granit", "katrak", "plaka", "taş kesme", "kuvars"],
+      "sources": ["UK-DUST", "UK-LIFT", "TR-DUST"],
+      "items": [
+        ["G", "Plaka A-sehpaları ve stok sehpaları devrilmeye karşı sabitlenmiş mi?"],
+        ["G", "Plaka sehpaları arasında güvenli çalışma için yeterli geçiş bırakılmış mı?"],
+        ["G", "Makaslı plaka kıskacının dişleri ve kilit mekanizması hasarsız mı?"],
+        ["K", "Blok ve plaka kaldırmada kullanılan sapan ve kıskacın kapasitesi yükle eşleştirilmiş mi?"],
+        ["G", "Kesme makinelerinde ıslak kesim ve toz bastırma çalışır durumda mı?"],
+        ["G", "Köprü tipi kesme makinesinin hareket alanına erişim korumayla sınırlandırılmış mı?"],
+        ["K", "Kristal silika maruziyeti için ortam ölçümü yapılmış ve sonuçları değerlendirilmiş mi?"],
+        ["G", "Islak zeminde kaymaya ve elektrik çarpmasına karşı önlem alınmış mı?"],
+        ["G", "Çamur havuzu ve filtre pres çevresi düşmeye karşı korunmuş mu?"],
+        ["K", "Asitle veya alevle yüzey işlemleri için ayrı yöntem ve KKD belirlenmiş mi?"]
+      ]
+    },
+    {
+      "code": "GRAIN", "title": "Tahıl silosu, yem ve gübre tesisi", "kind": "sector",
+      "aliases": ["silo", "tahıl", "hububat", "yem fabrikası", "gübre", "elevatör", "un değirmeni"],
+      "sources": ["TR-ATEX", "UK-CONFINED", "UK-AGRI"],
+      "items": [
+        ["K", "Siloya giriş kapalı alan izni olmadan yapılmıyor mu?"],
+        ["G", "Silo ve bunker giriş kapakları kilitli ve uyarı levhalı mı?"],
+        ["G", "Kovalı elevatör ve helezonların besleme ağızlarında koruyucu ızgara mevcut mu?"],
+        ["G", "Tahıl tozunun biriktiği yüzeyler düzenli temizleniyor mu?"],
+        ["K", "Elevatör ve kurutucu alanı patlayıcı ortam değerlendirmesine dahil edilmiş mi?"],
+        ["Y", "Elevatör bant kayma ve sıcaklık sensörlerinin işlevi yetkin kişi kayıtlarıyla doğrulanmış mı?"],
+        ["K", "Fumigasyon yetkili firma tarafından, uyarı işareti ve bekleme süresiyle mi yapılıyor?"],
+        ["K", "Amonyum nitratlı gübre yanıcı maddelerden ayrı ve izin verilen miktarda mı depolanıyor?"],
+        ["G", "Kamyon boşaltma çukuru ve alım ızgarası düşmeye karşı korunmuş mu?"],
+        ["K", "Silo üst galerisinde yüksekte çalışma ve kurtarma düzeni tanımlanmış mı?"]
+      ]
+    },
+    {
+      "code": "ASPHALT", "title": "Asfalt plenti ve sıcak bitüm işleri", "kind": "sector",
+      "aliases": ["asfalt", "bitüm", "plent", "yol kaplama", "finişer", "asfalt freze"],
+      "sources": ["UK-CONSTRUCTION", "UK-TEMPERATURE", "UK-FIRE"],
+      "items": [
+        ["G", "Bitüm tankları ve sıcak hatlar yalıtılmış veya temasa karşı korunmuş mu?"],
+        ["G", "Bitüm tankına üstten erişim yolunda korkuluk ve kaymaz basamak mevcut mu?"],
+        ["K", "Bitüm tankı dolumunda taşma ve köpürmeye karşı yöntem belirlenmiş mi?"],
+        ["Y", "Brülör alev algılama ve emniyet kapatmasının işlevi yetkin kişi kayıtlarıyla doğrulanmış mı?"],
+        ["G", "Kurutma tamburu ve bant konveyör aktarma noktalarında koruyucular yerinde mi?"],
+        ["G", "Sıcak asfalt ve bitümle çalışanlar ısıya dayanıklı eldiven, uzun kollu giysi ve yüz koruyucusu kullanıyor mu?"],
+        ["G", "Silindir, finişer ve kamyon güzergâhında yaya çalışanlar ayrılmış mı?"],
+        ["K", "Bitüm dumanına maruziyeti azaltmak için sıcaklık ve rüzgâr yönü dikkate alınıyor mu?"],
+        ["G", "Plent sahasındaki toz bastırma ve filtre sistemi çalışır durumda mı?"],
+        ["K", "Sıcak bitüm yanığında uygulanacak ilk yardım çalışanlara açıklanmış mı?"]
+      ]
+    },
+    {
+      "code": "ROADWORK", "title": "Trafiğe açık yolda çalışma alanı", "kind": "activity",
+      "aliases": ["yol çalışması", "şerit kapatma", "trafik işaretleme", "yol çizgi", "işaretçi", "gölge araç"],
+      "sources": ["TR-TRAFFIC", "UK-TRANSPORT"],
+      "items": [
+        ["K", "Çalışma alanı işaretlemesi karayolu trafik işaretleme kurallarına göre planlanmış mı?"],
+        ["G", "Uyarı levhaları ve koniler yol hızına uygun mesafeden başlayarak yerleştirilmiş mi?"],
+        ["G", "Şerit kapatmalarda gölge araç veya çarpma sönümleyici kullanılıyor mu?"],
+        ["G", "Tüm çalışanlar yüksek görünürlüklü giysi giyiyor mu?"],
+        ["K", "İşaretçi olarak görevlendirilen kişiler eğitilmiş ve güvenli bir konumda mı?"],
+        ["K", "İşaretlemenin kurulma ve toplanma sırası trafiğe karşı güvenli biçimde belirlenmiş mi?"],
+        ["G", "Çalışanlar ile trafik arasında tampon güvenlik bölgesi bırakılmış mı?"],
+        ["G", "Gece çalışmasında ışıklı uyarı ve alan aydınlatması yeterli mi?"],
+        ["G", "Araçtan inip binme ve malzeme alma trafiğe kapalı taraftan mı yapılıyor?"],
+        ["K", "Kötü hava ve düşük görüşte çalışmayı durdurma ölçütü tanımlanmış mı?"]
+      ]
+    },
+    {
+      "code": "RADIATION", "title": "İyonlaştırıcı radyasyon kaynakları", "kind": "hazard",
+      "aliases": ["radyasyon", "röntgen", "radyografi", "dozimetre", "radyoaktif kaynak"],
+      "sources": ["TR-RADIATION"],
+      "items": [
+        ["K", "Radyasyon kaynağının lisans veya izin belgesi geçerli mi?"],
+        ["K", "Radyasyondan korunma sorumlusu belirlenmiş ve iletişim bilgisi erişilebilir mi?"],
+        ["G", "Kontrollü ve gözetimli alanlar radyasyon uyarı işaretiyle belirlenmiş mi?"],
+        ["G", "Kontrollü alana yetkisiz kişilerin girişi önleniyor mu?"],
+        ["G", "Radyasyon görevlileri kişisel dozimetrelerini takıyor mu?"],
+        ["K", "Kişisel doz kayıtları düzenli olarak izleniyor mu?"],
+        ["K", "Radyografi çekimlerinde ölçümle belirlenen güvenlik sınırı ve bariyer uygulanıyor mu?"],
+        ["G", "Taşınabilir kaynaklar kilitli ve uyarılı kapta taşınıyor ve depolanıyor mu?"],
+        ["K", "Kaynak kaybı veya kaza durumunda izlenecek bildirim yöntemi tanımlanmış mı?"],
+        ["K", "Gebe çalışanlar için görev uyarlaması ve bildirim yolu açıklanmış mı?"]
+      ]
+    },
+    {
+      "code": "PATIENT", "title": "Hasta taşıma ve kaldırma", "kind": "activity",
+      "aliases": ["hasta taşıma", "hasta kaldırma lifti", "sedye", "transfer", "bakım"],
+      "sources": ["UK-HEALTH", "UK-ERGONOMICS", "TR-HANDLING"],
+      "items": [
+        ["K", "Hastanın hareket kabiliyeti değerlendirilip taşıma yöntemi belirlenmiş mi?"],
+        ["G", "Hasta kaldırma lifti, transfer tahtası ve kaydırma örtüsü erişilebilir mi?"],
+        ["K", "Hasta kaldırma liftinin periyodik kontrol ve bakım kayıtları güncel mi?"],
+        ["G", "Lift askılarında yırtık, aşınma veya dikiş açılması görülmüyor mu?"],
+        ["G", "Yatak ve sedyelerin fren ve yükseklik ayarı çalışır durumda mı?"],
+        ["K", "Tam bağımlı hasta transferleri yeterli sayıda personelle mi yapılıyor?"],
+        ["K", "Çalışanlar güvenli hasta taşıma tekniklerinde eğitilmiş mi?"],
+        ["G", "Oda ve koridorlarda transfer için yeterli alan bırakılmış mı?"],
+        ["K", "Merdivenden hasta indirmek için tahliye sandalyesi veya uygun yöntem belirlenmiş mi?"],
+        ["K", "Kas-iskelet şikâyeti bildiren çalışanlar için iş uyarlaması değerlendiriliyor mu?"]
+      ]
+    },
+    {
+      "code": "DOORS", "title": "Motorlu kapı, kepenk, turnike ve rampa", "kind": "equipment",
+      "aliases": ["otomatik kapı", "seksiyonel kapı", "kepenk", "turnike", "rampa", "sürgülü kapı"],
+      "sources": ["UK-WORKPLACE", "UK-INSPECT", "TR-BUILDINGS"],
+      "items": [
+        ["G", "Motorlu kapı ve kepenklerde sıkışma noktası koruması veya engel algılayıcı mevcut mu?"],
+        ["Y", "Kapının engel algıladığında durma veya geri dönme işlevi yetkili bakımcı tarafından kontrol edilmiş mi?"],
+        ["K", "Motorlu kapıların periyodik bakım kayıtları güncel mi?"],
+        ["G", "Seksiyonel kapı yay ve halatlarında kopma veya aşınma görülmüyor mu?"],
+        ["G", "Araç kapısının yanında ayrı bir yaya kapısı mevcut ve kullanılıyor mu?"],
+        ["G", "Elektrik kesintisinde elle açma düzeni erişilebilir ve işaretli mi?"],
+        ["G", "Rampa dengeleyici kenarlarındaki takılma ve düşme noktaları işaretli mi?"],
+        ["G", "Turnikeler acil durumda serbest geçişe izin verecek biçimde düzenlenmiş mi?"],
+        ["G", "Kepenk kumanda noktası kapının hareketini görecek konumda mı?"],
+        ["K", "Kapı arızasında kullanım dışı bırakma ve bildirim yöntemi tanımlanmış mı?"]
+      ]
+    },
+    {
+      "code": "CONTRACTOR", "title": "Alt işveren ve yüklenici çalışmaları", "kind": "activity",
+      "aliases": ["alt işveren", "taşeron", "yüklenici", "müteahhit", "dış firma"],
+      "sources": ["TR6331", "TR-CATALOG", "UK-CONSTRUCTION"],
+      "items": [
+        ["K", "Yüklenicinin yapacağı işin kapsamı ve çalışma alanı yazılı olarak tanımlanmış mı?"],
+        ["K", "Yükleniciyle risk değerlendirmesi ve alınacak önlemler paylaşılmış mı?"],
+        ["K", "Yüklenici çalışanlarının İSG eğitimi ve sağlık raporları işe başlamadan kontrol edilmiş mi?"],
+        ["K", "Yüklenici çalışanları işe başlamadan sahaya özgü tehlikeler hakkında bilgilendirilmiş mi?"],
+        ["K", "Yüksekte, sıcak veya kapalı alan işleri için çalışma izni süreci yükleniciye de uygulanıyor mu?"],
+        ["G", "Yüklenici çalışma alanı işyeri çalışanlarından ayrılmış ve işaretli mi?"],
+        ["G", "Yüklenicinin getirdiği ekipman kullanım öncesinde kontrol edilmiş mi?"],
+        ["K", "Aynı alanda birden fazla işverenin çalışması için koordinasyon sorumlusu belirlenmiş mi?"],
+        ["K", "Yüklenici çalışanları acil durum ve tahliye düzenine dahil edilmiş mi?"],
+        ["K", "İş sonunda alanın teslimi ve kontrolü kayıt altına alınıyor mu?"]
+      ]
+    },
+    {
+      "code": "VULNERABLE", "title": "Özel politika gerektiren çalışanlar", "kind": "hazard",
+      "aliases": ["genç çalışan", "stajyer", "gebe", "emziren", "engelli çalışan", "yeni başlayan"],
+      "sources": ["TR-YOUNG", "TR-PREGNANT", "TR-RISK"],
+      "items": [
+        ["K", "Genç çalışan ve stajyerlerin yasak işlerde çalıştırılmadığı kontrol edilmiş mi?"],
+        ["K", "Genç çalışan ve stajyerlere işe başlamadan eğitim verilmiş ve sorumlu kişi atanmış mı?"],
+        ["K", "Gebelik veya emzirme bildiren çalışanlar için risk değerlendirmesi yenilenmiş mi?"],
+        ["K", "Gebe çalışanların gece çalışmasından ve ağır işlerden uzak tutulması sağlanmış mı?"],
+        ["G", "Emziren çalışanlar için uygun dinlenme ve emzirme ortamı sağlanmış mı?"],
+        ["K", "Engelli çalışanlar için iş uyarlaması ve tahliye yardımı planlanmış mı?"],
+        ["K", "İşe yeni başlayanlara oryantasyon ve işbaşı eğitimi verilmiş mi?"],
+        ["K", "Dil veya okuma farkı olan çalışanlara talimatlar anlaşılır biçimde sunulmuş mu?"],
+        ["K", "Kronik hastalığı olan çalışanlar için işyeri hekiminin görüşü alınmış mı?"],
+        ["K", "Özel politika gerektiren grupların listesi gizlilik korunarak güncel tutuluyor mu?"]
+      ]
+    },
+    {
+      "code": "VIOLENCE", "title": "Müşteriyle temas, nakit ve şiddet riski", "kind": "hazard",
+      "aliases": ["şiddet", "saldırı", "kasa", "nakit", "müşteri", "güvenlik görevlisi", "panik butonu"],
+      "sources": ["UK-STRESS", "UK-LONE", "TR-RISK"],
+      "items": [
+        ["K", "Müşteri kaynaklı sözlü ve fiziksel şiddet riski değerlendirilmiş mi?"],
+        ["G", "Kasa ve banko düzeni çalışanı saldırıya karşı koruyacak mesafe veya engel içeriyor mu?"],
+        ["G", "Panik butonu veya acil çağrı düzeni çalışanın kolayca ulaşabileceği yerde mi?"],
+        ["K", "Kasada tutulan nakit miktarı sınırlandırılmış ve düzenli olarak aktarılıyor mu?"],
+        ["G", "Giriş, kasa ve otopark kamerayla izleniyor ve yeterince aydınlatılmış mı?"],
+        ["K", "Çalışanlar gerginliği azaltma ve saldırı anında güvenli davranış konusunda bilgilendirilmiş mi?"],
+        ["K", "Gece veya yalnız çalışan personel için güvenlik ve iletişim düzeni tanımlanmış mı?"],
+        ["K", "Şiddet olaylarının bildirilmesi ve kaydı için bir yöntem mevcut mu?"],
+        ["K", "Olay yaşayan çalışana psikolojik destek ve işe dönüş planı sağlanıyor mu?"],
+        ["K", "Kampanya ve etkinlik gibi kalabalık günler için ek personel ve kalabalık yönetimi planlanmış mı?"]
+      ]
+    },
+    {
+      "code": "DEMOLITION", "title": "Yıkım ve söküm işleri", "kind": "activity",
+      "aliases": ["yıkım", "söküm", "asbest", "kentsel dönüşüm", "moloz"],
+      "sources": ["TR-CONSTRUCTION", "TR-ASBESTOS", "UK-CONSTRUCTION"],
+      "items": [
+        ["K", "Yapının statik durumu ve yıkım yöntemi yıkım öncesinde yetkin kişi tarafından planlanmış mı?"],
+        ["K", "Yapıda asbest içeren malzeme için ön araştırma yapılmış mı?"],
+        ["K", "Asbest bulunduysa söküm, yıkımdan önce ve yetkili firma tarafından yapılmış mı?"],
+        ["K", "Elektrik, doğal gaz ve su bağlantılarının kesildiği yazılı olarak doğrulanmış mı?"],
+        ["G", "Yıkım alanının çevresi, düşen malzeme mesafesi dikkate alınarak kapatılmış mı?"],
+        ["G", "Komşu yapılar ve yollar düşen parçalara karşı korunmuş mu?"],
+        ["G", "Tozu bastırmak için su püskürtme uygulanıyor mu?"],
+        ["G", "İş makinesi operatörü düşen parçalara karşı korunmuş bir kabinde mi çalışıyor?"],
+        ["K", "Geçici destek gerektiren yapı elemanları için destekleme yöntemi belirlenmiş mi?"],
+        ["G", "Moloz tahliye yolu ve kanalları çalışanların geçişinden ayrılmış mı?"]
+      ]
+    },
+    {
+      "code": "STEELERECT", "title": "Çelik ve prefabrik eleman montajı", "kind": "activity",
+      "aliases": ["çelik montaj", "prefabrik", "prekast", "çelik konstrüksiyon", "sandviç panel"],
+      "sources": ["UK-CONSTRUCTION", "UK-LIFT", "TR-CONSTRUCTION"],
+      "items": [
+        ["K", "Montaj sırası ve geçici stabilite yöntemi yazılı montaj planında belirlenmiş mi?"],
+        ["K", "Kaldırılacak elemanların ağırlığı ve kaldırma noktaları biliniyor mu?"],
+        ["G", "Elemanlar dorseden indirilirken devrilmeye karşı sabitlenmiş mi?"],
+        ["G", "Montaj yapılan alanın altı düşen cisimlere karşı kapatılmış mı?"],
+        ["G", "Yüksekteki bağlantı işlerinde sepetli platform veya düşüş durdurma sistemi kullanılıyor mu?"],
+        ["G", "Geçici bağlantı elemanları (bulon, dikme, gergi) eksiksiz takılmış mı?"],
+        ["K", "Askıdaki elemanın altına girilmemesi ve kılavuz halatı kullanımı ekibe açıklanmış mı?"],
+        ["K", "Rüzgâr hızına bağlı olarak montajı durdurma ölçütü belirlenmiş mi?"],
+        ["G", "Stok sahasındaki elemanlar devrilmeyecek biçimde istiflenmiş mi?"],
+        ["K", "Kaynaklı bağlantılar için sıcak iş önlemleri planlanmış mı?"]
+      ]
+    },
+    {
+      "code": "WATERTREAT", "title": "Su ve atıksu arıtma tesisi", "kind": "sector",
+      "aliases": ["arıtma", "atıksu", "içme suyu", "pompa istasyonu", "çamur", "klor"],
+      "sources": ["UK-CONFINED", "UK-BIO", "UK-COSHH"],
+      "items": [
+        ["G", "Havuz ve kanal kenarlarında korkuluk veya düşmeyi önleyen koruma mevcut mu?"],
+        ["G", "Havuz kenarlarında can simidi ve kurtarma ekipmanı erişilebilir mi?"],
+        ["K", "Kuyu, rögar ve kapalı hacimlere giriş kapalı alan izniyle mi yapılıyor?"],
+        ["Y", "Hidrojen sülfür ve metan için gaz ölçüm cihazlarının işlevi yetkin kişi tarafından doğrulanmış mı?"],
+        ["G", "Klor ve dezenfeksiyon kimyasalları ayrı, havalandırmalı ve etiketli alanda mı depolanıyor?"],
+        ["G", "Klor alanında uygun gaz maskesi ve acil duş erişilebilir mi?"],
+        ["G", "Pompa ve karıştırıcıların dönen aksamı korunmuş mu?"],
+        ["K", "Çamur ve atıksuyla temas eden çalışanlar için aşılama ve hijyen önlemleri belirlenmiş mi?"],
+        ["G", "Islak ve kaygan yüzeylerde kaymaz zemin ve düzenli temizlik uygulanıyor mu?"],
+        ["K", "Tesiste yalnız çalışan personel için düzenli iletişim kontrolü yapılıyor mu?"]
+      ]
+    },
+    {
+      "code": "HVAC", "title": "Klima santrali ve soğutma kulesi", "kind": "equipment",
+      "aliases": ["klima santrali", "soğutma kulesi", "lejyonella", "chiller", "soğutucu akışkan", "klima servisi"],
+      "sources": ["UK-BIO", "UK-INSPECT", "TR-FGAS"],
+      "items": [
+        ["K", "Soğutma kulesi için Lejyonella risk değerlendirmesi ve su arıtma programı mevcut mu?"],
+        ["K", "Soğutma kulesinin temizlik ve dezenfeksiyon kayıtları güncel mi?"],
+        ["G", "Klima santrali kapakları açıldığında fanlara erişim korumayla engelleniyor mu?"],
+        ["K", "Santral bakımında fan ve ısıtıcılar için enerji izolasyonu uygulanıyor mu?"],
+        ["G", "Çatıdaki ünitelere erişim yolu ve çatı kenarı düşmeye karşı korunmuş mu?"],
+        ["K", "Soğutucu akışkanla çalışan teknisyenlerin yetki belgesi mevcut mu?"],
+        ["G", "Makine dairesinde soğutucu akışkan kaçağına karşı havalandırma ve uyarı mevcut mu?"],
+        ["G", "Kayış, kasnak ve dönen parçaların muhafazaları yerinde mi?"],
+        ["G", "Yoğuşma tavaları ve drenajlarda su birikmesi ve kirlenme görülmüyor mu?"],
+        ["K", "Filtre değişiminde toz ve biyolojik kirliliğe karşı KKD belirlenmiş mi?"]
+      ]
+    },
+    {
+      "code": "MOTO", "title": "Motosikletli dağıtım ve kurye", "kind": "activity",
+      "aliases": ["moto kurye", "motosiklet", "paket servis", "teslimat", "kurye"],
+      "sources": ["TR-TRAFFIC", "UK-TRANSPORT", "UK-LONE"],
+      "items": [
+        ["G", "Kurye onaylı kask, koruyucu mont, eldiven ve dizlik kullanıyor mu?"],
+        ["G", "Motosikletin lastik, fren ve ışıkları sefer öncesinde kontrol edilmiş mi?"],
+        ["K", "Motosikletin bakım ve muayene kayıtları güncel mi?"],
+        ["K", "Teslimat süresi hedefleri hız yapmaya zorlamayacak biçimde belirlenmiş mi?"],
+        ["K", "Yağmur, kar ve buzlanmada teslimatı durdurma veya erteleme ölçütü tanımlanmış mı?"],
+        ["G", "Taşıma kutusu motosiklete sağlam bağlanmış ve kapasitesi aşılmamış mı?"],
+        ["K", "Kuryeler trafikte güvenli sürüş eğitimi almış mı?"],
+        ["K", "Kaza veya saldırı durumunda kuryenin ulaşacağı iletişim ve yardım düzeni belirlenmiş mi?"],
+        ["G", "Gece teslimatında reflektif giysi ve ek aydınlatma kullanılıyor mu?"],
+        ["K", "Çalışma ve dinlenme süreleri yorgunluğu önleyecek biçimde planlanmış mı?"]
+      ]
+    },
+    {
+      "code": "FIELDVISIT", "title": "Müşteri adresinde saha servisi", "kind": "activity",
+      "aliases": ["saha servisi", "teknik servis", "müşteri adresi", "evde bakım", "kurulum"],
+      "sources": ["UK-LONE", "UK-ELECTRIC", "UK-ERGONOMICS"],
+      "items": [
+        ["K", "Teknisyene gideceği adres ve işle ilgili bilinen riskler önceden bildiriliyor mu?"],
+        ["K", "Yalnız çalışan teknisyen için giriş-çıkış bildirimi ve iletişim düzeni var mı?"],
+        ["G", "Ağır cihazları taşımak için taşıma kayışı veya el arabası kullanılıyor mu?"],
+        ["K", "Enerjili cihazda arıza tespiti yetkili kişi ve uygun ölçü aletiyle mi yapılıyor?"],
+        ["G", "Kullanılan ölçü aleti ve uzatma kablolarında hasar görülmüyor mu?"],
+        ["K", "Gaz kokusu, su basması veya saldırgan davranış gibi güvensiz bir durumda işi bırakma yetkisi açıklanmış mı?"],
+        ["G", "Balkon veya pencere dışında çalışırken düşmeye karşı koruma kullanılıyor mu?"],
+        ["G", "Servis aracında ilk yardım çantası ve yangın söndürücü bulunuyor mu?"],
+        ["K", "Günlük ziyaret sayısı ve sürüş süresi yorgunluğa yol açmayacak biçimde planlanmış mı?"],
+        ["K", "Müşteri adresinde yaşanan olayların bildirilmesi için bir yöntem mevcut mu?"]
+      ]
+    },
+    {
+      "code": "CRYO", "title": "Kriyojenik sıvı ve inert gazlar", "kind": "equipment",
+      "aliases": ["kriyojenik", "sıvı azot", "kuru buz", "CO2", "inert gaz", "oksijen azalması"],
+      "sources": ["UK-GAS", "UK-CONFINED", "UK-COSHH"],
+      "items": [
+        ["G", "Kriyojenik sıvı kapları ve tankları iyi havalandırılan bir alanda mı?"],
+        ["Y", "Oksijen azalması uyarı cihazının işlevi yetkin kişi kayıtlarıyla doğrulanmış mı?"],
+        ["G", "Kriyojenik sıvıyla çalışanlar yüz siperi ve yalıtımlı eldiven kullanıyor mu?"],
+        ["G", "Kapların basınç tahliye vanaları engellenmemiş mi?"],
+        ["K", "Kriyojenik kapların asansörde insanla birlikte taşınması önlenmiş mi?"],
+        ["G", "Azot veya CO2 kullanılan kapalı alanların girişinde boğulma tehlikesi uyarısı var mı?"],
+        ["K", "Kriyojenik sıvı transferi yalnız eğitimli kişilerce mi yapılıyor?"],
+        ["G", "Dökülmeye karşı zemin ve drenaj soğuğa dayanıklı ve uygun mu?"],
+        ["K", "Soğuk yanığında uygulanacak ilk yardım çalışanlara açıklanmış mı?"],
+        ["K", "Kuru buz kullanılan alanlarda CO2 birikmesine karşı havalandırma değerlendirilmiş mi?"]
+      ]
+    },
+    {
+      "code": "FURNACE", "title": "Endüstriyel fırın, ısıl işlem ve kurutma", "kind": "equipment",
+      "aliases": ["fırın", "ısıl işlem", "kurutma fırını", "tünel fırın", "brülör", "kalsinasyon"],
+      "sources": ["UK-TEMPERATURE", "UK-FIRE", "UK-INSPECT"],
+      "items": [
+        ["Y", "Brülör alev denetimi ve emniyet kapatmasının işlevi yetkin kişi kayıtlarıyla doğrulanmış mı?"],
+        ["G", "Fırın gövdesi ve kapı çevresindeki sıcak yüzeyler işaretli ve temasa karşı korunmuş mu?"],
+        ["G", "Fırın kapısı ve fırın arabası hareket alanındaki sıkışma noktaları korunmuş mu?"],
+        ["K", "Fırın içine veya araba sıkışmasına müdahale, soğutma ve enerji izolasyonundan sonra mı yapılıyor?"],
+        ["G", "Yakıt hattında görünür kaçak veya hasar yok ve kesme vanası işaretli mi?"],
+        ["G", "Fırın çevresinde yanıcı malzeme depolanmıyor mu?"],
+        ["K", "Isıl işlem banyoları ve koruyucu atmosfer gazları için ayrı risk değerlendirmesi yapılmış mı?"],
+        ["G", "Karbonmonoksit ve yanma gazları için havalandırma ve ölçüm düzeni var mı?"],
+        ["K", "Sıcak ortamda çalışanlar için sıvı tüketimi ve dinlenme araları planlanmış mı?"],
+        ["K", "Fırın arızası, alev sönmesi veya aşırı ısınmada acil durdurma yöntemi tanımlanmış mı?"]
+      ]
+    }
+  ]
+}

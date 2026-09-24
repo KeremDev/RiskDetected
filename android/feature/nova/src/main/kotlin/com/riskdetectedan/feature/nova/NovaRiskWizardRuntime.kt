@@ -46,8 +46,31 @@ internal data class RiskWizardView(
     val sectors: List<RiskWizardSector>, val followups: List<RiskWizardFollowup>, val picks: Map<String, RiskWizardPicks>,
     val conditions: List<RiskWizardItem>, val management: List<RiskWizardItem>, val method: String, val preset: String,
     val columns: List<RiskWizardColumn>, val rowCount: Int, val counts: Map<String, Map<String, Int>>,
-    val mode: String = "risk", val emergency: EmergencyWizardView? = null,
+    val mode: String = "risk", val emergency: EmergencyWizardView? = null, val checklist: ChecklistWizardView? = null,
 )
+
+/** Kontrol listesi modu (iOS `NovaChecklistWizardView`): metinler ve öneriler rd-checklist.js'den gelir. */
+internal data class ChecklistChoice(val id: String, val title: String, val help: String, val selected: Boolean)
+internal data class ChecklistTopic(val id: String, val title: String, val kind: String, val kindLabel: String, val reasons: List<String>, val core: Boolean,
+                                   val suggested: Boolean, val selected: Boolean, val isNew: Boolean, val questions: Int)
+internal data class ChecklistQuestion(val key: String, val text: String, val vm: String, val vmLabel: String, val isNew: Boolean, val selected: Boolean)
+internal data class ChecklistOwn(val index: Int, val pack: String, val text: String)
+internal data class ChecklistGroup(val id: String, val title: String, val kindLabel: String, val total: Int, val on: Int, val items: List<ChecklistQuestion>,
+                                   val custom: List<ChecklistOwn>)
+internal data class ChecklistWizardView(
+    val texts: Map<String, String>, val purpose: String, val freq: String, val layout: String, val title: String, val titleManual: Boolean,
+    val purposes: List<ChecklistChoice>, val freqs: List<ChecklistChoice>, val layouts: List<ChecklistChoice>, val topics: List<ChecklistTopic>,
+    val groups: List<ChecklistGroup>, val loose: List<ChecklistOwn>, val topicCount: Int, val itemCount: Int, val listCount: Int, val gaps: List<String>,
+) { fun text(key: String) = texts[key].orEmpty() }
+/** The finished list (iOS `NovaChecklistWizardList`): what the documents show and what Listelerim receives. */
+internal data class ChecklistRef(val template: String, val item: String)
+internal data class ChecklistEntry(val no: Int, val text: String, val vm: String, val vmLabel: String, val ref: ChecklistRef?, val isNew: Boolean, val own: Boolean)
+internal data class ChecklistSection(val id: String, val title: String, val kindLabel: String, val why: List<String>, val items: List<ChecklistEntry>)
+internal data class ChecklistSaveItem(val text: String, val section: String, val ref: ChecklistRef?, val allowsNotApplicable: Boolean)
+internal data class ChecklistSavedList(val title: String, val items: List<ChecklistSaveItem>)
+internal data class ChecklistWizardList(val title: String, val purposeLabel: String, val freqLabel: String, val sections: List<ChecklistSection>,
+                                        val lists: List<ChecklistSavedList>, val total: Int, val fromCatalog: Int, val newCatalog: Int, val own: Int,
+                                        val approvalNote: String, val note: String)
 
 /** Acil durum planı modu: bütün metinler ve hesaplar köprüden gelir (iOS `NovaRiskWizardView.Emergency`). */
 internal data class EmergencyWizardView(
@@ -96,6 +119,36 @@ private fun JsonObject.teams() = EmergencyTeams(wString("hazardClassLabel"), opt
     objects("roles").map { EmergencyRole(it.wString("id"), it.wString("label"), it.wString("duty"), it.optInt("required"), it.int("assigned"), it.wString("basis")) },
     (get("combined") as? JsonObject)?.optInt("required"), wString("note"))
 
+private fun JsonObject.checklistChoice() = ChecklistChoice(wString("id"), wString("title"), optString("help").orEmpty(), bool("selected"))
+private fun JsonObject.checklistTopic() = ChecklistTopic(wString("id"), wString("title"), wString("kind"), wString("kindLabel"), strings("reasons"), bool("core"),
+    bool("suggested"), bool("selected"), bool("isNew"), int("questions"))
+private fun JsonObject.checklistOwn() = ChecklistOwn(int("index"), wString("pack"), wString("text"))
+private fun JsonObject.checklistRef() = (get("ref") as? JsonObject)?.let { ChecklistRef(it.wString("template"), it.wString("item")) }
+
+internal fun checklistWizardView(o: JsonObject) = ChecklistWizardView(
+    texts = o.wObject("texts").mapValues { (_, v) -> (v as? JsonPrimitive)?.contentOrNull.orEmpty() }, purpose = o.wString("purpose"), freq = o.wString("freq"),
+    layout = o.wString("layout"), title = o.wString("title"), titleManual = o.bool("titleManual"),
+    purposes = o.objects("purposes").map { it.checklistChoice() }, freqs = o.objects("freqs").map { it.checklistChoice() },
+    layouts = o.objects("layouts").map { it.checklistChoice() }, topics = o.objects("topics").map { it.checklistTopic() },
+    groups = o.objects("groups").map { g ->
+        ChecklistGroup(g.wString("id"), g.wString("title"), g.wString("kindLabel"), g.int("total"), g.int("on"),
+            g.objects("items").map { ChecklistQuestion(it.wString("key"), it.wString("text"), it.wString("vm"), it.wString("vmLabel"), it.bool("isNew"), it.bool("selected")) },
+            g.objects("custom").map { it.checklistOwn() })
+    },
+    loose = o.objects("loose").map { it.checklistOwn() }, topicCount = o.int("topicCount"), itemCount = o.int("itemCount"), listCount = o.int("listCount"),
+    gaps = o.strings("gaps"),
+)
+internal fun checklistWizardList(o: JsonObject) = ChecklistWizardList(o.wString("title"), o.wString("purposeLabel"), o.wString("freqLabel"),
+    o.objects("sections").map { s ->
+        ChecklistSection(s.wString("id"), s.wString("title"), s.wString("kindLabel"), s.strings("why"), s.objects("items").map {
+            ChecklistEntry(it.int("no"), it.wString("text"), it.wString("vm"), it.wString("vmLabel"), it.checklistRef(), it.bool("isNew"), it.bool("own"))
+        })
+    },
+    o.objects("lists").map { l ->
+        ChecklistSavedList(l.wString("title"), l.objects("items").map { ChecklistSaveItem(it.wString("text"), it.wString("section"), it.checklistRef(), it.bool("allowsNotApplicable")) })
+    },
+    o.int("total"), o.int("fromCatalog"), o.int("newCatalog"), o.int("own"), o.wString("approvalNote"), o.wString("note"))
+
 internal fun emergencyWizardView(o: JsonObject) = EmergencyWizardView(
     texts = o.wObject("texts").mapValues { (_, v) -> (v as? JsonPrimitive)?.contentOrNull.orEmpty() }, employees = o.optInt("employees"),
     site = o.objects("site").map { EmergencySite(it.wString("id"), it.wString("title"), it.wString("help"), it.bool("selected")) },
@@ -136,6 +189,7 @@ internal fun riskWizardView(o: JsonObject) = RiskWizardView(
     columns = o.objects("columns").map { RiskWizardColumn(it.wString("id"), it.wString("title"), it.bool("required"), it.bool("residual"), it.bool("selected")) },
     rowCount = o.int("rowCount"), counts = o.counts("counts"),
     mode = o.optString("mode") ?: "risk", emergency = (o["emergency"] as? JsonObject)?.let { emergencyWizardView(it) },
+    checklist = (o["checklist"] as? JsonObject)?.let { checklistWizardView(it) },
 )
 internal fun riskWizardResult(o: JsonObject) = RiskWizardResult(o.counts("counts"), o.int("total"), o.int("removedCount"), o.wString("method"),
     o.objects("rows").map { r ->
@@ -157,10 +211,12 @@ internal class NovaRiskWizardRuntime(context: Context) {
     private var initialized = false
     private val initialization = Mutex()
     private val calls = Mutex()
-    private val scripts = listOf("rd-xlsx", "rd-report", "rd-engine", "rd-emergency", "rd-bridge").map { name ->
+    private val scripts = listOf("rd-xlsx", "rd-report", "rd-engine", "rd-emergency", "rd-bridge", "rd-checklist").map { name ->
         context.assets.open("isg_wizard_v6/$name.js").bufferedReader().use { it.readText() }
     }
     private val data = context.assets.open("isg_wizard_v6/rd-data.json").bufferedReader().use { it.readText() }
+    /** Optional: without it the risk and emergency modes still open. */
+    private val checklistData = runCatching { context.assets.open("isg_wizard_v6/rd-checklist.json").bufferedReader().use { it.readText() } }.getOrNull()
 
     init {
         view.settings.javaScriptEnabled = true
@@ -198,7 +254,9 @@ internal class NovaRiskWizardRuntime(context: Context) {
             evaluate("(globalThis.rdDataText = '', true)")
             // Large catalogues exceed a single evaluateJavascript payload comfortably; send the text in slices.
             for (chunk in data.chunked(32_000)) evaluate("(globalThis.rdDataText += ${JsonPrimitive(chunk)}, true)")
-            evaluate("(RDBridge.init(globalThis.rdDataText), globalThis.rdDataText = null, true)")
+            evaluate("(globalThis.rdChecklistText = '', true)")
+            checklistData?.let { text -> for (chunk in text.chunked(32_000)) evaluate("(globalThis.rdChecklistText += ${JsonPrimitive(chunk)}, true)") }
+            evaluate("(RDBridge.init(globalThis.rdDataText, globalThis.rdChecklistText || undefined), globalThis.rdDataText = null, globalThis.rdChecklistText = null, true)")
             initialized = true
         }
     }
@@ -208,6 +266,8 @@ internal class NovaRiskWizardRuntime(context: Context) {
     suspend fun start(firmName: String, date: String, mode: String = "risk"): RiskWizardView =
         riskWizardView(call("RDBridge.start(${JsonObject(mapOf("name" to JsonPrimitive(firmName), "date" to JsonPrimitive(date), "mode" to JsonPrimitive(mode)))})").jsonObject)
     suspend fun plan(): EmergencyPlan = emergencyPlan(call("RDBridge.result()").jsonObject)
+    suspend fun checklistList(): ChecklistWizardList = checklistWizardList(call("RDBridge.result()").jsonObject)
+    suspend fun checklistTopics(query: String): List<ChecklistTopic> = call("RDBridge.topics(${JsonPrimitive(query)})").jsonArray.map { it.jsonObject.checklistTopic() }
     suspend fun cards(query: String): List<EmergencyCard> = call("RDBridge.cards(${JsonPrimitive(query)})").jsonArray.map {
         val c = it.jsonObject
         EmergencyCard(c.wString("id"), c.wString("title"), c.wString("trigger"), c.wString("mode"), false, false, false, emptyList())

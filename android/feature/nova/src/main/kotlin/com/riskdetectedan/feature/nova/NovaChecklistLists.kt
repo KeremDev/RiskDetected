@@ -34,6 +34,7 @@ fun NovaChecklistListsScreen(client: NovaChecklistClient, canWrite: Boolean, ini
     var kind by remember { mutableStateOf<String?>(null) }
     var showingFilters by remember { mutableStateOf(false) }
     var showingCreate by remember { mutableStateOf(false) }
+    var showingWizard by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<NovaChecklistTemplateDetail?>(null) }
     var editing by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
@@ -91,6 +92,11 @@ fun NovaChecklistListsScreen(client: NovaChecklistClient, canWrite: Boolean, ini
         }
         return
     }
+    if (showingWizard) {
+        ChecklistWizard(client, initialCompany, onStart = { template -> showingWizard = false; onStart(template) },
+            onBack = { showingWizard = false; coroutines.launch { loadTemplates() } })
+        return
+    }
     androidx.activity.compose.BackHandler(onBack = onBack)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 12.dp, bottom = 30.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -98,6 +104,8 @@ fun NovaChecklistListsScreen(client: NovaChecklistClient, canWrite: Boolean, ini
             if (mine && canWrite) NovaListActionButton("Yeni liste", "plus", identifier = "nova.checklist.template.create") { showingCreate = true }
         }
         NovaSegmentedControl(listOf("Hazır listeler", "Listelerim"), if (mine) 1 else 0, Modifier.testTag("nova.checklist.lists.section")) { mine = it == 1 }
+        if (mine && canWrite) NovaButton(NovaChecklistWords.openWizard, { showingWizard = true }, Modifier.testTag("nova.checklist.lists.wizard"),
+            symbol = "sparkles", variant = NovaButtonVariant.Surface)
         if (!mine) {
             NovaListHint("Sektör, ekipman, faaliyet veya tehlikeye göre arayın; filtre düğmesiyle sonuçları daraltın.")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {

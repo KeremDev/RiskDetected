@@ -62,6 +62,9 @@ interface NovaChecklistClient {
     suspend fun deactivateAssignment(company: String, assignment: String)
     fun pendingAnswers(): Pair<Int, Int>
     suspend fun syncPendingAnswers(): Pair<Int, Int>
+    /** `setItem` with a section title; the checklist wizard files its own questions under their topic. */
+    suspend fun setSectionItem(company: String?, template: String, version: Int, revision: Long, itemCode: String, prompt: String, allowsNotApplicable: Boolean,
+                               position: Int, section: String) = setItem(company, template, version, revision, itemCode, prompt, allowsNotApplicable, position)
 }
 
 class NovaServiceChecklistClient(private val service: NovaChecklistService, private val queue: NovaChecklistOfflineQueue, private val files: NovaFileLibraryService,
@@ -104,6 +107,9 @@ class NovaServiceChecklistClient(private val service: NovaChecklistService, priv
     override suspend fun draftTemplate(company: String?, title: String) = service.draftTemplate(identity, company, title)
     override suspend fun setItem(company: String?, template: String, version: Int, revision: Long, itemCode: String, prompt: String, allowsNotApplicable: Boolean,
                                  position: Int) = service.setItem(identity, company, template, version, revision, itemCode, prompt, allowsNotApplicable, position)
+    override suspend fun setSectionItem(company: String?, template: String, version: Int, revision: Long, itemCode: String, prompt: String,
+                                        allowsNotApplicable: Boolean, position: Int, section: String) =
+        service.setItem(identity, company, template, version, revision, itemCode, prompt, allowsNotApplicable, position, section)
     override suspend fun copyItems(company: String?, template: String, version: Int, revision: Long, items: List<NovaChecklistItemSelection>) =
         service.copyItems(identity, company, template, version, revision, items)
     override suspend fun reorderItems(company: String?, template: String, version: Int, revision: Long, itemCodes: List<String>) =
@@ -182,6 +188,7 @@ fun NovaChecklistScreen(client: NovaChecklistClient, canWrite: Boolean, onBack: 
     var showingFilters by remember { mutableStateOf(false) }
     var showingStart by remember { mutableStateOf(false) }
     var showingLists by remember { mutableStateOf(false) }
+    var showingWizard by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<NovaChecklistRun?>(null) }
     var preselectedTemplate by remember { mutableStateOf<String?>(null) }
     var pending by remember { mutableStateOf(0 to 0) }
@@ -234,6 +241,12 @@ fun NovaChecklistScreen(client: NovaChecklistClient, canWrite: Boolean, onBack: 
         })
         return
     }
+    if (showingWizard) {
+        ChecklistWizard(client, initialCompany ?: query.company, onStart = { template ->
+            preselectedTemplate = template; showingWizard = false; showingStart = true
+        }, onBack = { showingWizard = false; reload() })
+        return
+    }
     LaunchedEffect(Unit) {
         sync()
         initialRunId?.let { id -> runCatching { client.detail(id) }.getOrNull()?.let { detail = it } }
@@ -245,6 +258,8 @@ fun NovaChecklistScreen(client: NovaChecklistClient, canWrite: Boolean, onBack: 
         NovaListHeading(headingOverride ?: "Kontroller", onBack, actionBelow = true) {
             if (canWrite) NovaListActionButton("Yeni kontrol", "plus", identifier = "nova.checklist.start") { showingStart = true }
         }
+        if (canWrite) NovaButton(NovaChecklistWords.openWizard, { showingWizard = true }, Modifier.testTag("nova.checklist.wizard"), symbol = "sparkles",
+            variant = NovaButtonVariant.Surface)
         Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).novaRowPress { showingLists = true }.testTag("nova.checklist.lists.open").padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             NovaIcon("list.bullet.rectangle", 17.dp, Modifier.width(28.dp))

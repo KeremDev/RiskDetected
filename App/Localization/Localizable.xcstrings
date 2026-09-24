@@ -12305,6 +12305,7 @@
         }
       }
     },
+    "localizable.nova.checklist.wizard.open": {"comment":"custom_ui_copy; App/DesignSystem/ISG/NovaChecklists.swift; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Build a list with the wizard"}},"tr":{"stringUnit":{"state":"translated","value":"Sihirbaz ile liste oluştur"}}}},
     "localizable.nova.company.create.flow.degistir.0b7915a0": {"comment":"swiftui_text; App/DesignSystem/ISG/NovaCompanyCreateFlow.swift:64; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Change"}},"tr":{"stringUnit":{"state":"translated","value":"Değiştir"}}}},
     "localizable.nova.company.create.flow.firma.ara.cf588545": {"comment":"swiftui_text; App/DesignSystem/ISG/NovaCompanyCreateFlow.swift:103; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Search companies"}},"tr":{"stringUnit":{"state":"translated","value":"Firma ara"}}}},
     "localizable.nova.company.create.flow.kaydi.eklemek.istediginiz.firmayi.secin.1381edd9": {"comment":"custom_ui_copy; App/DesignSystem/ISG/NovaCompanyCreateFlow.swift:97; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Choose the company you want to add the record to."}},"tr":{"stringUnit":{"state":"translated","value":"Kaydı eklemek istediğiniz firmayı seçin."}}}},

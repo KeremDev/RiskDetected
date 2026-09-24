@@ -28,6 +28,8 @@ struct NovaChecklistClient {
     let deactivateAssignment: (UUID, UUID) async throws -> Void
     let pendingAnswers: () -> (total: Int, conflicts: Int)
     let syncPendingAnswers: () async -> (total: Int, conflicts: Int)
+    /// `setItem` with a section title; the checklist wizard files its own questions under their topic.
+    var setSectionItem: ((UUID?, String, Int, Int64, String, String, Bool, Int, String) async throws -> Void)? = nil
 }
 
 /// The module opens on real controls. Reusable lists live on their own page,
@@ -50,6 +52,7 @@ struct NovaChecklistScreen: View {
     @State private var showingFilters = false
     @State private var showingStart = false
     @State private var showingLists = false
+    @State private var showingWizard = false
     @State private var detail: NovaChecklistRun?
     @State private var startedRun: NovaChecklistRun?
     @State private var preselectedTemplate: String?
@@ -66,6 +69,10 @@ struct NovaChecklistScreen: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
                     header
+                    if canWrite {
+                        NovaButton(label: NovaChecklistWords.openWizard, symbol: "sparkles", variant: .surface) { showingWizard = true }
+                            .accessibilityIdentifier("nova.checklist.wizard")
+                    }
                     templateLibraryLink
                     offlineNotice
                     statePicker
@@ -109,6 +116,17 @@ struct NovaChecklistScreen: View {
                         showingStart = true
                     }
                 })
+        }
+        .novaFullScreenCover(isPresented: $showingWizard) {
+            NovaRiskWizardScreen.checklist(client: client, initialCompany: initialCompany ?? query.company,
+                onStart: { template in
+                    showingWizard = false
+                    preselectedTemplate = template
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        startedRun = nil
+                        showingStart = true
+                    }
+                }, onBack: { showingWizard = false })
         }
         .novaFullScreenCover(isPresented: $showingStart, onDismiss: finishStarting) {
             NovaChecklistStartFlowScreen(client: client, initialCompany: initialCompany,

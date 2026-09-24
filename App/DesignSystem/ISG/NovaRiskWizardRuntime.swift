@@ -33,6 +33,8 @@ struct NovaRiskWizardView: Decodable {
     let counts: [String: [String: Int]]
     var mode: String?
     var emergency: Emergency?
+    /// Kontrol listesi modu (rd-checklist.js); its pages live in NovaChecklistWizardViews.swift.
+    var checklist: NovaChecklistWizardView?
 
     /// Acil durum planı modu: bütün metinler ve hesaplar köprüden gelir.
     struct Emergency: Decodable {
@@ -124,14 +126,16 @@ struct NovaRiskWizardResult: Decodable {
         }
         guard let vm = JSContext() else { throw NovaWizardError.unavailable }
         context = vm
-        for name in ["rd-xlsx", "rd-report", "rd-engine", "rd-emergency", "rd-bridge"] {
+        for name in ["rd-xlsx", "rd-report", "rd-engine", "rd-emergency", "rd-bridge", "rd-checklist"] {
             guard let code = String(data: try asset(name, "js"), encoding: .utf8) else { throw NovaWizardError.unavailable }
             vm.evaluateScript(code)
             if vm.exception != nil { throw NovaWizardError.unavailable }
         }
         guard let data = String(data: try asset("rd-data", "json"), encoding: .utf8),
               let value = vm.objectForKeyedSubscript("RDBridge"), !value.isUndefined else { throw NovaWizardError.unavailable }
-        let info = value.invokeMethod("init", withArguments: [data])
+        // The checklist catalogue is optional: without it the risk and emergency modes still open.
+        let checklist = (try? asset("rd-checklist", "json")).flatMap { String(data: $0, encoding: .utf8) }
+        let info = value.invokeMethod("init", withArguments: checklist.map { [data, $0] } ?? [data])
         if vm.exception != nil { throw NovaWizardError.unavailable }
         bridge = value
         catalogVersion = info?.forProperty("version")?.toString() ?? ""
@@ -151,6 +155,10 @@ struct NovaRiskWizardResult: Decodable {
         try call("start", [["name": firmName, "date": date, "mode": mode]], as: NovaRiskWizardView.self)
     }
     func plan() throws -> NovaEmergencyWizardPlan { try call("result", as: NovaEmergencyWizardPlan.self) }
+    func checklistList() throws -> NovaChecklistWizardList { try call("result", as: NovaChecklistWizardList.self) }
+    func checklistTopics(_ query: String) throws -> [NovaChecklistWizardView.Topic] {
+        try call("topics", [query], as: [NovaChecklistWizardView.Topic].self)
+    }
     func cards(_ query: String) throws -> [NovaRiskWizardView.Emergency.Card] {
         try call("cards", [query], as: [NovaRiskWizardView.Emergency.Card].self)
     }

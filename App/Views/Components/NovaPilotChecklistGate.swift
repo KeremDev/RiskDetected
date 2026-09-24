@@ -130,6 +130,12 @@ struct NovaPilotChecklistGate: View {
                 }
                 return (NovaChecklistOfflineQueue.shared.count(identity),
                         NovaChecklistOfflineQueue.shared.conflictCount(identity))
+            },
+            setSectionItem: { company, code, version, revision, item, prompt, allowsNA, position, section in
+                try await service.setItem(identity, company: company, template: code, version: version,
+                                          itemCode: item, prompt: prompt,
+                                          allowsNotApplicable: allowsNA, position: position,
+                                          expectedRevision: revision, sectionTitle: section)
             })
     }
 }

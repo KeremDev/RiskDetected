@@ -152,6 +152,8 @@ enum class NovaChecklistFailure(val message: String) {
 class NovaChecklistException(val failure: NovaChecklistFailure) : Exception(failure.name)
 
 object NovaChecklistWords {
+    /** The entry that opens the checklist wizard. */
+    const val openWizard = "Sihirbaz ile liste oluştur"
     const val neverAutomatic = "Olumsuz yanıt kendiliğinden uygunsuzluk kaydı açmaz. Kayıt açmak sizin seçiminizdir."
     const val catalogNotice = "Hazır listeler saha kontrolünü yapılandıran uzman yardımcılarıdır. Mevzuata uygunluk kararı değildir; firma, iş ve ekipman kapsamını uzman doğrular."
     const val selfApproved = "Yayımlamak listenin sizin onayınızdan geçtiği anlamına gelir; mevzuat onayı değildir."

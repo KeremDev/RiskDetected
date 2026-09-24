@@ -25,6 +25,7 @@ struct NovaChecklistListsScreen: View {
     @State private var kind: String?
     @State private var showingFilters = false
     @State private var showingCreate = false
+    @State private var showingWizard = false
     @State private var detail: NovaChecklistTemplateDetail?
     @State private var editingTemplateCode: String?
     @State private var loading = true
@@ -46,6 +47,10 @@ struct NovaChecklistListsScreen: View {
                     }
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("nova.checklist.lists.section")
+                    if section == .mine && canWrite {
+                        NovaButton(label: NovaChecklistWords.openWizard, symbol: "sparkles", variant: .surface) { showingWizard = true }
+                            .accessibilityIdentifier("nova.checklist.lists.wizard")
+                    }
                     if section == .ready { readyContent }
                     else { myListsContent }
                 }
@@ -82,6 +87,13 @@ struct NovaChecklistListsScreen: View {
                     onCopy: { await copy(detail) },
                     onAssign: { await assign(detail) })
             }
+        }
+        .novaFullScreenCover(isPresented: $showingWizard, onDismiss: { Task { await loadTemplates() } }) {
+            NovaRiskWizardScreen.checklist(client: client, initialCompany: initialCompany,
+                onStart: { template in
+                    showingWizard = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { onStart(template) }
+                }, onBack: { showingWizard = false })
         }
         .novaFullScreenCover(isPresented: $showingCreate) {
             NovaChecklistCreateListScreen(onBack: { showingCreate = false }) { title in

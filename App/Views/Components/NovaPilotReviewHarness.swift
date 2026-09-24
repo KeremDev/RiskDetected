@@ -80,6 +80,8 @@ struct NovaPilotReviewHarness: View {
         if CommandLine.arguments.contains("RD_UI_TEST_CHECKLIST_PICKER") {
             NovaChecklistStartFlowScreen(client: reviewChecklistClient, initialCompany: nil,
                 onStarted: { _ in }, onClose: {})
+        } else if CommandLine.arguments.contains("RD_UI_TEST_CHECKLIST_WIZARD") {
+            NovaRiskWizardScreen.checklist(client: reviewChecklistClient, initialCompany: nil, onStart: { _ in }, onBack: {})
         } else if CommandLine.arguments.contains("RD_UI_TEST_REPORT_CENTER") {
             NovaReportCenter(identity: identity, onBack: {})
         } else if CommandLine.arguments.contains("RD_UI_TEST_COMPANY_WIZARD") {

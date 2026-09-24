@@ -40,14 +40,19 @@ enum NovaRiskLevelTone {
 
 /// V6 risk analysis and emergency plan wizard: one question per page. Answers live in RDBridge; this view only sends actions.
 /// `mode: "emergency"` runs the Acil Durum Planı flow on the same answers; its pages live in NovaEmergencyWizardViews.swift.
+/// `mode: "checklist"` builds a Kontrol Listesi (rd-checklist.js); its pages live in NovaChecklistWizardViews.swift.
 struct NovaRiskWizardScreen: View {
     var mode = "risk"
     let companiesSource: () async throws -> [NovaAnalysisCompanyOption]
     let workplacesSource: (UUID) async throws -> [NovaWizardWorkplace]
-    let files: NovaFileLibraryClient
+    /// Risk mode files the Excel draft here; the other modes save through their own module.
+    let files: NovaFileLibraryClient?
     var initialCompany: UUID?
     /// Emergency mode only: lists company personnel and saves the plan as a module record.
     var emergencyClient: NovaEmergencyClient? = nil
+    /// Checklist mode only: publishes the list to Listelerim, then hands a run over to the start flow.
+    var checklistClient: NovaChecklistClient? = nil
+    var onChecklistStart: ((String) -> Void)? = nil
     let onBack: () -> Void
 
     @Environment(\.colorScheme) private var scheme
@@ -57,6 +62,8 @@ struct NovaRiskWizardScreen: View {
     @State private var result: NovaRiskWizardResult?
     @State private var plan: NovaEmergencyWizardPlan?
     @State private var planSaved = false
+    @State private var checklistList: NovaChecklistWizardList?
+    @State private var savedLists: [String] = []
     @State private var step = "firm"
     @State private var companies: [NovaAnalysisCompanyOption] = []
     @State private var workplaces: [NovaWizardWorkplace] = []
@@ -83,7 +90,7 @@ struct NovaRiskWizardScreen: View {
         NovaPageSurface(onEdgeBack: back) {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 10) {
-                    NovaPageHeading(title: view?.emergency?.text("title") ?? RDLocalization.string("localizable.nova.risk.wizard.screen.risk.analizi.sihirbazi.2b3e1d43", table: .localizable, fallback: "Risk Analizi Sihirbazı"), subtitle: stepLabel, onBack: back)
+                    NovaPageHeading(title: view?.emergency?.text("title") ?? view?.checklist?.text("title") ?? RDLocalization.string("localizable.nova.risk.wizard.screen.risk.analizi.sihirbazi.2b3e1d43", table: .localizable, fallback: "Risk Analizi Sihirbazı"), subtitle: stepLabel, onBack: back)
                     progress
                 }.padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
                 ScrollViewReader { scroll in
@@ -116,6 +123,11 @@ struct NovaRiskWizardScreen: View {
     private var steps: [String] { (view?.steps ?? ["firm"]) + ["result"] }
     private var stepIndex: Int { steps.firstIndex(of: step) ?? 0 }
     private var stepLabel: String {
+        if let checklist = view?.checklist {
+            if step == "result" { return checklist.text("step.result") + " · \(checklistList?.total ?? 0)" }
+            let title = checklist.text("step." + (step.hasPrefix("fu:") ? "fu" : step))
+            return "\(stepIndex + 1) / \(steps.count - 1)" + (title.isEmpty ? "" : " · " + title)
+        }
         if let emergency = view?.emergency {
             if step == "result" { return emergency.text("step.result") + " · \(plan?.cards.count ?? 0)" }
             let title = step.hasPrefix("fu:") ? emergency.text("step.fu") : (emergency.texts["step." + step] ?? Self.titles[step] ?? "")
@@ -140,7 +152,10 @@ struct NovaRiskWizardScreen: View {
                 NovaButton(label: "Geri", symbol: "chevron.left", variant: .surface, compact: true) { back() }
                     .frame(width: 110)
             }
-            if step == "result", let emergency = view?.emergency {
+            if step == "result", let checklist = view?.checklist {
+                NovaButton(label: checklist.text("result.download"), symbol: "arrow.down.doc", isEnabled: !busy && (checklistList?.total ?? 0) > 0) { export("docx") }
+                    .accessibilityIdentifier("checklistWizard.download")
+            } else if step == "result", let emergency = view?.emergency {
                 NovaButton(label: emergency.text("result.download"), symbol: "arrow.down.doc", isEnabled: !busy) { export("docx") }
                     .accessibilityIdentifier("emergencyWizard.download")
             } else if step == "result" {
@@ -148,7 +163,8 @@ struct NovaRiskWizardScreen: View {
                     .accessibilityIdentifier("riskWizard.excel")
             } else {
                 NovaButton(label: nextLabel, symbol: step == "summary" ? "sparkles" : "chevron.right",
-                           isEnabled: !busy && !(step == "sector" && (view?.sectors.isEmpty ?? true))) { next() }
+                           isEnabled: !busy && !(step == "sector" && (view?.sectors.isEmpty ?? true))
+                               && !(step == "summary" && view?.checklist?.itemCount == 0)) { next() }
                     .accessibilityIdentifier("riskWizard.next")
             }
         }
@@ -159,6 +175,11 @@ struct NovaRiskWizardScreen: View {
         }
     }
     private var nextLabel: String {
+        if let checklist = view?.checklist {
+            if step == "summary" { return checklist.text("next.summary") }
+            if step.hasPrefix("fu:"), let followup = currentFollowup, !followup.options.contains(where: \.selected) { return checklist.text("next.skip") }
+            return checklist.text("next")
+        }
         if let emergency = view?.emergency, step == "summary" || !step.hasPrefix("fu:") {
             return emergency.text(step == "summary" ? "next.summary" : "next")
         }
@@ -211,10 +232,16 @@ struct NovaRiskWizardScreen: View {
         guard let runtime else { return }
         do {
             view = try runtime.act(action)
+            // A changed checklist is a new list; saving it again is allowed.
+            if view?.checklist != nil { savedLists = [] }
             if step == "result" { reloadResult() }
         } catch { message = error.localizedDescription }
     }
     private func reloadResult() {
+        if view?.checklist != nil {
+            do { checklistList = try runtime?.checklistList() } catch { message = error.localizedDescription }
+            return
+        }
         if view?.emergency != nil {
             do { plan = try runtime?.plan() } catch { message = error.localizedDescription }
             return
@@ -242,9 +269,10 @@ struct NovaRiskWizardScreen: View {
         case "mgmt": managementPage(v)
         case "method": methodPage(v)
         case "cols": columnsPage(v)
+        case "purpose", "topics", "items": checklistPage(v)
         case "site", "cards", "team", "fields": emergencyPage(v)
-        case "summary": if v.emergency != nil { emergencyPage(v) } else { summaryPage(v) }
-        case "result": if v.emergency != nil { emergencyResult } else { resultPage }
+        case "summary": if v.checklist != nil { checklistPage(v) } else if v.emergency != nil { emergencyPage(v) } else { summaryPage(v) }
+        case "result": if v.checklist != nil { checklistResult } else if v.emergency != nil { emergencyResult } else { resultPage }
         default: if let followup = currentFollowup { followupPage(followup) }
         }
     }
@@ -259,6 +287,7 @@ struct NovaRiskWizardScreen: View {
     private func firmPage(_ v: NovaRiskWizardView) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             if let emergency = v.emergency { title(emergency.text("firm.title"), emergency.text("firm.help")) }
+            else if let checklist = v.checklist { title(checklist.text("firm.title"), checklist.text("firm.help")) }
             else { title("Analiz hangi işyeri için?", "İsteğe bağlı; rapor kapağında ve dosya adında kullanılır. Çalışan sayısı kurul ve temsilci gibi genel konuları etkiler.") }
             if !companies.isEmpty {
                 NovaCard(padding: 14) {
@@ -297,7 +326,7 @@ struct NovaRiskWizardScreen: View {
                     }
                 }
             }
-            field(v.emergency?.text("firm.date") ?? RDLocalization.string("localizable.nova.risk.wizard.screen.degerlendirme.tarihi.36ecad58", table: .localizable, fallback: "Değerlendirme tarihi"), value: v.firm.date, placeholder: "gg.aa.yyyy", key: "date")
+            field(v.emergency?.text("firm.date") ?? v.checklist?.text("firm.date") ?? RDLocalization.string("localizable.nova.risk.wizard.screen.degerlendirme.tarihi.36ecad58", table: .localizable, fallback: "Değerlendirme tarihi"), value: v.firm.date, placeholder: "gg.aa.yyyy", key: "date")
         }
     }
     private func field(_ label: String, value: String, placeholder: String, key: String) -> some View {
@@ -510,6 +539,30 @@ struct NovaRiskWizardScreen: View {
         } catch let error as NovaEmergencyFailure { message = error.message }
         catch let error as NovaFileFailure { message = NovaFileScreenWords.failure(error) }
         catch { message = error.localizedDescription }
+    }
+
+    // MARK: Checklist
+
+    @ViewBuilder private func checklistPage(_ v: NovaRiskWizardView) -> some View {
+        if let checklist = v.checklist {
+            NovaChecklistWizardPage(step: step, view: v, checklist: checklist, runtime: runtime, perform: perform, go: go)
+        }
+    }
+    @ViewBuilder private var checklistResult: some View {
+        if let checklistList, let checklist = view?.checklist {
+            NovaChecklistWizardResultView(list: checklistList, checklist: checklist, busy: busy, canSave: checklistClient != nil,
+                                          saved: savedLists, export: export, save: { Task { await saveChecklist() } }, start: onChecklistStart)
+        } else { ProgressView().frame(maxWidth: .infinity) }
+    }
+    private func saveChecklist() async {
+        guard let runtime, let client = checklistClient, let checklist = view?.checklist, !busy, savedLists.isEmpty else { return }
+        busy = true; defer { busy = false }
+        do {
+            let codes = try await NovaChecklistWizardSaver.save(runtime: runtime, client: client, company: company)
+            savedLists = codes
+            message = codes.count > 1 ? "\(codes.count) " + checklist.text("result.savedMany") : checklist.text("result.saved")
+        } catch let error as NovaChecklistFailure { message = error.message }
+        catch { message = NovaChecklistFailure.unavailable.message }
     }
 
     // MARK: Result
@@ -744,7 +797,7 @@ struct NovaRiskWizardScreen: View {
         } catch { message = error.localizedDescription }
     }
     private func archive() async {
-        guard let runtime, !busy else { return }
+        guard let runtime, let files, !busy else { return }
         busy = true; defer { busy = false }
         do {
             let download = try runtime.download(format: "xlsx")
