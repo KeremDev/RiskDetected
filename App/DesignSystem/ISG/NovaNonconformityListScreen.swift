@@ -20,6 +20,7 @@ struct NovaNonconformityListScreen: View {
     let today: String
     let onBack: () -> Void
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var entries: [NovaNonconformityEntry]?
     @State private var pictures: [UUID: UIImage] = [:]
     @State private var openFilter: String?
@@ -39,8 +40,15 @@ struct NovaNonconformityListScreen: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     header
+                    NovaListHint(text: "Kayıtları firma, durum ve kayıt türüne göre filtreleyin; karta dokunarak düzeltme sürecini açın.")
+                    if entries != nil { stats }
                     search
                     filters
+                    if let entries {
+                        NovaListSectionHeading(title: RDLocalization.string("localizable.nova.navigation.uygunsuzluklar", table: .localizable, fallback: "Uygunsuzluklar"),
+                            count: String(format: RDLocalization.string("localizable.nova.nonconformity.count", table: .localizable,
+                                fallback: "%1$d / %2$d kayıt"), visible.count, entries.count))
+                    }
                     summary
                     body_
                 }.padding(20).padding(.bottom, novaTabBarInset)
@@ -51,53 +59,36 @@ struct NovaNonconformityListScreen: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
-            NovaBackButton { onBack() }
-            NovaText(text: RDLocalization.string("localizable.nova.navigation.uygunsuzluklar", table: .localizable, fallback: "Uygunsuzluklar"), style: .screenTitle)
-            Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                NovaBackButton { onBack() }
+                NovaText(text: RDLocalization.string("localizable.nova.navigation.uygunsuzluklar", table: .localizable, fallback: "Uygunsuzluklar"), style: .screenTitle)
+                Spacer(minLength: 0)
+            }
             if let create = client.create {
-                Button(action: create) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus").font(.system(size: 13, weight: .bold))
-                        NovaText(text: RDLocalization.string("localizable.nova.nonconformity.new.short", table: .localizable, fallback: "Yeni"),
-                            style: .buttonSm, color: NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
-                    }
-                    .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
-                    .padding(.horizontal, 14).frame(minHeight: 40)
-                    .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
-                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("nonconformity.new")
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.nonconformity.new.short", table: .localizable, fallback: "Yeni kayıt ekle"),
+                    symbol: "plus", tone: .primary, identifier: "nonconformity.new", action: create)
             }
         }
     }
 
     private var search: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").font(.system(size: 14))
-                .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)).accessibilityHidden(true)
-            TextField(RDLocalization.string("localizable.nova.nonconformity.search", table: .localizable,
-                fallback: "Başlık, firma veya işyeri ara"), text: $filter.query)
-                .font(NovaFont.font(.body)).submitLabel(.done)
-                .accessibilityIdentifier("nonconformity.search")
-            if !filter.query.isEmpty {
-                Button { filter.query = "" } label: {
-                    Image(systemName: "xmark.circle").frame(width: 32, height: 32)
-                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                }.buttonStyle(NovaRowPressStyle())
-                    .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.nonconformity.search.clear", table: .localizable, fallback: "Aramayı temizle")))
-            }
-        }.padding(.horizontal, 14).frame(minHeight: 44)
-            .background(NovaColorToken.surface.color(in: scheme), in: Capsule())
+        NovaAnalysisSearchField(text: $filter.query,
+            placeholder: RDLocalization.string("localizable.nova.nonconformity.search", table: .localizable,
+                fallback: "Başlık, firma veya işyeri ara"), identifier: "nonconformity.search")
     }
 
     // MARK: filters
 
     private var filters: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 7) {
+            HStack(spacing: 8) {
                 filterButton(RDLocalization.string("localizable.nova.nonconformity.filter.company", table: .localizable, fallback: "Firma"),
                     key: "company", value: companies.first { $0.id == filter.companyID }?.name)
                 filterButton(RDLocalization.string("localizable.nova.nonconformity.filter.state", table: .localizable, fallback: "Durum"),
                     key: "state", value: filter.overdueOnly ? RDLocalization.string("localizable.nova.nonconformity.filter.overdue", table: .localizable, fallback: "Termini geçen") : filter.state.map { NovaNonconformityWords.state($0.rawValue) })
+            }
+            HStack(spacing: 8) {
                 filterButton(RDLocalization.string("localizable.nova.nonconformity.filter.kind", table: .localizable, fallback: "Kayıt türü"),
                     key: "kind", value: filter.kind.map(NovaNonconformityWords.recordKind))
             }
@@ -141,8 +132,6 @@ struct NovaNonconformityListScreen: View {
     @ViewBuilder private var summary: some View {
         if entries != nil {
             HStack(spacing: 8) {
-                NovaText(text: String(format: RDLocalization.string("localizable.nova.nonconformity.count", table: .localizable,
-                    fallback: "%1$d / %2$d kayıt"), visible.count, entries?.count ?? 0), style: .metaQuiet)
                 Spacer(minLength: 0)
                 if !filter.isEmpty {
                     Button { filter = NovaNonconformityFilter() } label: {
@@ -155,6 +144,19 @@ struct NovaNonconformityListScreen: View {
                 }.buttonStyle(NovaRowPressStyle())
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.nonconformity.refresh", table: .localizable, fallback: "Listeyi yenile")))
                     .accessibilityIdentifier("nonconformity.refresh")
+            }
+        }
+    }
+
+    private var stats: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8),
+                                 count: typeSize.isAccessibilitySize ? 1 : 2), spacing: 8) {
+            NovaListStat(title: "Toplam kayıt", symbol: "list.bullet", value: entries?.count ?? 0,
+                status: .neutral, isSelected: filter.isEmpty) { filter = NovaNonconformityFilter() }
+            NovaListStat(title: "Termini geçen", symbol: "clock.badge.exclamationmark", value: overdueCount,
+                status: .danger, isSelected: filter.overdueOnly) {
+                filter.overdueOnly.toggle()
+                if filter.overdueOnly { filter.state = nil }
             }
         }
     }

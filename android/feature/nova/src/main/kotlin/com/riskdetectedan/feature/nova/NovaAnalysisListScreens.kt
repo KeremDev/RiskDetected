@@ -316,12 +316,14 @@ fun NovaAnalysisReportsScreen(load: suspend (Int) -> Pair<List<NovaAnalysisRepor
             NovaMetricStripItem("excel", if (rows == null) "—" else "$spreadsheets", "Excel", "tablecells", NovaStatus.Neutral),
             NovaMetricStripItem("companies", if (rows == null) "—" else "${all.mapNotNull { it.companyName }.toSet().size}", "Firma", "building.2",
                 NovaStatus.Neutral)))
+        NovaListHint("Oluşturduğunuz PDF ve Excel raporlarını arayıp dosya türüne göre filtreleyin.")
         NovaSearchCapsule(query, "Rapor ara", "analysis.reports.search") { query = it }
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             ReportFilter.entries.forEach { value ->
                 NovaChoiceChip(value.title, filter == value, identifier = "analysis.reports.filter.${value.name}", inverse = true) { filter = value }
             }
         }
+        NovaListSectionHeading("Raporlar", "${visible.size} rapor")
         when {
             error != null -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText(error!!, style = NovaTypeToken.metaQuiet) }
             rows == null -> NovaLoadingView("Raporlar yükleniyor…")

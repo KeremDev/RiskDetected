@@ -242,10 +242,10 @@ fun NovaOsgbDomainScreen(client: NovaOsgbDomainClient, domain: IsgWorkspaceDomai
     }.sortedWith(compareBy<IsgWorkspaceRecord> { priority(domain, it) }.thenBy { recordTitle(domain, it, workplaces, employees) })
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset)
         .testTag("osgb.domain.${domain.name.lowercase()}"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        NovaListHeading(domain.title, onBack) {
-            if (create != null) NovaButton(addTitle(domain), { creating = true }, symbol = "plus", compact = true)
+        NovaListHeading(domain.title, onBack, actionBelow = true) {
+            if (create != null) NovaListActionButton(addTitle(domain), "plus", identifier = "osgb.domain.add") { creating = true }
         }
-        NovaSearchCapsule(query, "Kayıtlarda ara", "osgb.domain.search") { query = it }
+        NovaListHint("Bu alandaki kayıtları arayın; karta dokunarak ayrıntıları görüntüleyin.")
         snapshot?.let { value ->
             val metrics = displayMetrics(domain, value)
             if (metrics.isNotEmpty()) NovaMetricStrip(metrics.map {
@@ -253,6 +253,8 @@ fun NovaOsgbDomainScreen(client: NovaOsgbDomainClient, domain: IsgWorkspaceDomai
                     metricSymbol(domain, it.id), metricStatus(it.id))
             })
         }
+        NovaSearchCapsule(query, "Kayıtlarda ara", "osgb.domain.search") { query = it }
+        snapshot?.let { NovaListSectionHeading(domain.title, "${rows.size} / ${it.rows.size}") }
         when {
             loading -> NovaLoadingView("Kayıtlar yükleniyor…")
             error != null && snapshot == null -> {

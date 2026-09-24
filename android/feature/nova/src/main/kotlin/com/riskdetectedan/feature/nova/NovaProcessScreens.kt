@@ -106,10 +106,10 @@ fun NovaProcessGate(client: NovaProcessClient, kind: String, canWrite: Boolean, 
     LaunchedEffect(company) { load() }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        NovaListHeading(spec.title, onBack) {
-            NovaButton("Ekle", { creating = true }, Modifier.testTag("process.add"), symbol = "plus", compact = true, enabled = canWrite)
+        NovaListHeading(spec.title, onBack, actionBelow = true) {
+            NovaListActionButton("Ekle", "plus", identifier = "process.add", enabled = canWrite) { creating = true }
         }
-        NovaHelpHint(spec.help)
+        NovaListHint(spec.help)
         if (parent == null && initialCompany == null) {
             NovaChooserButton("Firma", companies.firstOrNull { it.id == company }?.name ?: "Tüm firmalar", "process.company", open = choosingCompany) {
                 choosingCompany = !choosingCompany
@@ -137,6 +137,7 @@ fun NovaProcessGate(client: NovaProcessClient, kind: String, canWrite: Boolean, 
         }
         NovaSearchCapsule(search, "Kayıt ara", "process.search") { search = it }
         LaunchedEffect(search) { kotlinx.coroutines.delay(350); load() }
+        NovaListSectionHeading(spec.title, "${rows.size}${if (hasMore) "+" else ""} kayıt")
         if (busy && rows.isEmpty()) NovaLoadingView("Yükleniyor…", Modifier.heightIn(max = 200.dp))
         failure?.let {
             NovaText(it, style = NovaTypeToken.meta, color = NovaColorToken.statusDangerInk.color())

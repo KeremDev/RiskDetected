@@ -115,20 +115,26 @@ fun NovaPPEScreen(client: NovaPPEClient, canWrite: Boolean, onBack: () -> Unit, 
     LaunchedEffect(Unit) { load(true); if (startInAddMode && query.company != null) startCreate() }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        NovaListHeading(headingOverride ?: NovaDestination.ppeHandovers.title, onBack) {
-            if (canWrite) NovaButton("Zimmet Ekle", ::startCreate, symbol = "plus", compact = true)
+        NovaListHeading(headingOverride ?: NovaDestination.ppeHandovers.title, onBack, actionBelow = true) {
+            if (canWrite) NovaListActionButton("Zimmet Ekle", "plus", identifier = "nova.ppe.add") { startCreate() }
         }
-        NovaHelpHint(NovaPPEWords.signedCopyNote)
+        NovaListHint(NovaPPEWords.signedCopyNote)
         board?.let { shown ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NovaPPEState.entries.forEach { state ->
                     NovaListStat(state.title, state.symbol, shown.count(state), Modifier.weight(1f).testTag("nova.ppe.stat.${state.wire}"),
-                        selected = query.state == state.wire) {
+                        selected = query.state == state.wire, status = when (state) {
+                            NovaPPEState.outstanding -> NovaStatus.Warning
+                            NovaPPEState.partial -> NovaStatus.Info
+                            NovaPPEState.closed -> NovaStatus.Success
+                        }) {
                         query = query.copy(state = if (query.state == state.wire) null else state.wire); reload()
                     }
                 }
             }
         }
+        NovaSearchCapsule(query.search, "Ekipman, kişi veya firma ara", "nova.ppe.search") { query = query.copy(search = it) }
+        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaChooserButton("Firma", companies.firstOrNull { it.id == query.company }?.name ?: "Tüm firmalar", "nova.ppe.chooser.company",
                 Modifier.weight(1f), open = chooser == "company") { chooser = if (chooser == "company") null else "company" }
@@ -141,9 +147,8 @@ fun NovaPPEScreen(client: NovaPPEClient, canWrite: Boolean, onBack: () -> Unit, 
             NovaPPEState.entries.map { NovaChooserOption(it.wire, it.title, board?.count(it), it.symbol) }, query.state, "nova.ppe.panel.state") {
             query = query.copy(state = it); chooser = null; reload()
         }
-        NovaSearchCapsule(query.search, "Ekipman, kişi veya firma ara", "nova.ppe.search") { query = query.copy(search = it) }
-        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         val shown = board
+        shown?.let { NovaListSectionHeading("KKD Zimmetleri", "${it.total} zimmet") }
         when {
             loading && shown == null -> Box(Modifier.fillMaxWidth().padding(vertical = 30.dp), contentAlignment = Alignment.Center) {
                 NovaSpinner(NovaColorToken.text.color(), size = 24.dp)

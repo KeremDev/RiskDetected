@@ -170,33 +170,15 @@ struct NovaMetricStripItem: Identifiable {
 
 struct NovaMetricStrip: View {
     let items: [NovaMetricStripItem]
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(items) { item in
-                    HStack(spacing: 6) {
-                        Image(systemName: item.symbol).font(.system(size: 12, weight: .semibold))
-                        NovaText(text: item.value, style: .bodyStrong)
-                        NovaText(text: item.label, style: .metaQuiet)
-                    }
-                    .padding(.horizontal, 11)
-                    .frame(minHeight: 38)
-                    .background(background(item.status), in: Capsule())
-                    .accessibilityElement(children: .combine)
-                }
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 8),
+                            count: max(1, min(items.count, typeSize.isAccessibilitySize ? 2 : 4)))
+        return LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(items) { item in
+                NovaListStat(title: item.label, symbol: item.symbol, value: item.value, status: item.status)
             }
-        }
-    }
-
-    private func background(_ status: NovaStatus) -> Color {
-        switch status {
-        case .success: return NovaColorToken.statusSuccessBg.color(in: scheme)
-        case .warning: return NovaColorToken.statusWarningBg.color(in: scheme)
-        case .danger: return NovaColorToken.statusDangerBg.color(in: scheme)
-        case .info: return NovaColorToken.statusInfoBg.color(in: scheme)
-        case .neutral: return NovaColorToken.surfaceMuted.color(in: scheme)
         }
     }
 }

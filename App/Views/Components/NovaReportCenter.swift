@@ -115,11 +115,13 @@ struct NovaReportCenter: View {
                             archive = true
                         }.accessibilityIdentifier("report.center.archive")
                     }
-                    NovaHelpHint(text: RDLocalization.string("reports.nova.report.center.firma.egitim.bekleyen.isler.tamamlanan.isler.ve..6d6b0372", table: .reports, fallback: "Firma, eğitim, bekleyen işler, tamamlanan işler ve ziyaretler için kapsamlı rapor oluşturun; PDF veya Excel çıktısını indirin."))
-                    NovaButton(label: RDLocalization.string("reports.nova.report.center.yeni.rapor.olustur.9bffaeea", table: .reports, fallback: "Yeni rapor oluştur"), symbol: "doc.badge.plus", variant: .primary) {
+                    NovaListHint(text: RDLocalization.string("reports.nova.report.center.firma.egitim.bekleyen.isler.tamamlanan.isler.ve..6d6b0372", table: .reports, fallback: "Firma, eğitim, bekleyen işler, tamamlanan işler ve ziyaretler için kapsamlı rapor oluşturun; PDF veya Excel çıktısını indirin."))
+                    NovaListActionButton(title: RDLocalization.string("reports.nova.report.center.yeni.rapor.olustur.9bffaeea", table: .reports, fallback: "Yeni rapor oluştur"), symbol: "doc.badge.plus", tone: .primary,
+                        identifier: "report.center.create") {
                         createRoute = .init(kind: .company, skipsTypeSelection: false)
-                    }.accessibilityIdentifier("report.center.create")
-                    NovaText(text: RDLocalization.string("reports.nova.report.center.rapor.turleri.ca33c777", table: .reports, fallback: "Rapor türleri"), style: .sectionTitle)
+                    }
+                    NovaListSectionHeading(title: RDLocalization.string("reports.nova.report.center.rapor.turleri.ca33c777", table: .reports, fallback: "Rapor türleri"),
+                        count: "\(NovaGeneratedReportKind.allCases.count) tür")
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(NovaGeneratedReportKind.allCases) { kind in
                             Button { createRoute = .init(kind: kind, skipsTypeSelection: true) } label: {
@@ -136,7 +138,8 @@ struct NovaReportCenter: View {
                         }
                     }
                     if !recent.isEmpty {
-                        NovaText(text: RDLocalization.string("reports.nova.report.center.son.olusturulanlar.3ee091ac", table: .reports, fallback: "Son oluşturulanlar"), style: .sectionTitle)
+                        NovaListSectionHeading(title: RDLocalization.string("reports.nova.report.center.son.olusturulanlar.3ee091ac", table: .reports, fallback: "Son oluşturulanlar"),
+                            count: "\(recent.count) rapor")
                         ForEach(recent.prefix(3)) { report in
                             Button { file = NovaGeneratedReportArchive.url(for: report) } label: {
                                 NovaCard(padding: 13) {

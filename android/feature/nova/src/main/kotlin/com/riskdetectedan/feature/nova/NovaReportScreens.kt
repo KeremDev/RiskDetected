@@ -104,10 +104,11 @@ fun NovaReportCenter(client: NovaReportClient, analysisReports: @Composable () -
             NovaButton("Arşiv", { page = ReportPage.Archive }, Modifier.testTag("report.center.archive"), variant = NovaButtonVariant.Surface,
                 symbol = "archivebox", compact = true)
         }
-        NovaHelpHint("Firma, eğitim, bekleyen işler, tamamlanan işler ve ziyaretler için kapsamlı rapor oluşturun; PDF veya Excel çıktısını indirin.")
-        NovaButton("Yeni rapor oluştur", { page = ReportPage.Create(NovaGeneratedReportKind.company, false) }, Modifier.fillMaxWidth().testTag("report.center.create"),
-            symbol = "doc.badge.plus")
-        NovaText("Rapor türleri", style = NovaTypeToken.sectionTitle)
+        NovaListHint("Firma, eğitim, bekleyen işler, tamamlanan işler ve ziyaretler için kapsamlı rapor oluşturun; PDF veya Excel çıktısını indirin.")
+        NovaListActionButton("Yeni rapor oluştur", "doc.badge.plus", identifier = "report.center.create") {
+            page = ReportPage.Create(NovaGeneratedReportKind.company, false)
+        }
+        NovaListSectionHeading("Rapor türleri", "${NovaGeneratedReportKind.entries.size} tür")
         NovaGeneratedReportKind.entries.chunked(2).forEach { pair ->
             Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 pair.forEach { kind ->
@@ -123,7 +124,7 @@ fun NovaReportCenter(client: NovaReportClient, analysisReports: @Composable () -
             }
         }
         if (recent.isNotEmpty()) {
-            NovaText("Son oluşturulanlar", style = NovaTypeToken.sectionTitle)
+            NovaListSectionHeading("Son oluşturulanlar", "${recent.size} rapor")
             failure?.let { NovaTaskErrorSummary(it) }
             recent.take(3).forEach { report -> GeneratedReportRow(report) { failure = shareReport(context, archive, report) } }
         }

@@ -37,6 +37,7 @@ internal fun NovaDocumentTrackingScreen(client: NovaDocumentTrackingClient, comp
     var error by remember { mutableStateOf<String?>(null) }
     var query by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<NovaDocumentStatus?>(null) }
+    var chooser by remember { mutableStateOf(false) }
     var shown by remember { mutableIntStateOf(NovaDocumentQuery().limit) }
     var inspecting by remember { mutableStateOf<NovaDocumentObligation?>(null) }
     var loading by remember { mutableStateOf(false) }
@@ -72,26 +73,35 @@ internal fun NovaDocumentTrackingScreen(client: NovaDocumentTrackingClient, comp
                     selectedName?.let { NovaText(it, style = NovaTypeToken.metaQuiet) }
                 }
             }
-            NovaHelpHint("Firma evraklarının güncel, yaklaşan ve süresi geçmiş kayıtlarını inceleyin.")
-            Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NovaDocumentStatus.entries.forEach { value ->
-                    NovaListStat(value.title, value.symbol, counts[value] ?: 0, Modifier.width(96.dp).testTag("document.stat.${value.wire}"),
-                        selected = status == value) { status = if (status == value) null else value; shown = NovaDocumentQuery().limit }
+            NovaListHint("Firma evraklarının güncel, yaklaşan ve süresi geçmiş kayıtlarını inceleyin.")
+            NovaDocumentStatus.entries.chunked(if (novaFontScaleIsAccessibility()) 2 else 4).forEach { chunk ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    chunk.forEach { value ->
+                        NovaListStat(value.title, value.symbol, counts[value] ?: 0, Modifier.weight(1f).testTag("document.stat.${value.wire}"),
+                            selected = status == value, status = when (value) {
+                                NovaDocumentStatus.missing -> NovaStatus.Neutral
+                                NovaDocumentStatus.dueSoon -> NovaStatus.Warning
+                                NovaDocumentStatus.expired -> NovaStatus.Danger
+                                NovaDocumentStatus.valid -> NovaStatus.Success
+                            }) { status = if (status == value) null else value; shown = NovaDocumentQuery().limit }
+                    }
+                    repeat((if (novaFontScaleIsAccessibility()) 2 else 4) - chunk.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
-            NovaHelpHint("Bu liste takip ettiğiniz evrakların sayımıdır; firmanın veya bir kişinin uygunluğuna dair karar değildir. " +
+            NovaListHint("Bu liste takip ettiğiniz evrakların sayımıdır; firmanın veya bir kişinin uygunluğuna dair karar değildir. " +
                 "Sağlık evrakı bu listede tutulmaz ve dosyanın kendisi burada saklanmaz.")
             NovaSearchCapsule(query, "Evrak ara", "document.tracking.search") { query = it }
             LaunchedEffect(query) { kotlinx.coroutines.delay(350); if (board != null) { shown = NovaDocumentQuery().limit; reload++ } }
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                NovaChoiceChip("Tümü", status == null, identifier = "document.tracking.filter.all") { status = null }
-                NovaDocumentStatus.entries.forEach { value ->
-                    NovaChoiceChip("${value.title} ${counts[value] ?: 0}", status == value, identifier = "document.tracking.filter.${value.wire}") {
-                        status = value
-                    }
-                }
+            NovaChooserButton("Durum", status?.title ?: "Tüm durumlar", "document.tracking.filter.state", open = chooser) {
+                chooser = !chooser
+            }
+            if (chooser) NovaChooserPanel(listOf(NovaChooserOption(null, "Tüm durumlar")) +
+                NovaDocumentStatus.entries.map { NovaChooserOption(it.wire, it.title, counts[it] ?: 0, it.symbol) },
+                status?.wire, "document.tracking.filter.state.options") {
+                status = it?.let(NovaDocumentStatus::of); shown = NovaDocumentQuery().limit; chooser = false
             }
             val shownBoard = board
+            shownBoard?.let { NovaListSectionHeading("Evrak Takibi", "${it.rows.size} / ${it.total} kayıt") }
             when {
                 error != null -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText(error!!, style = NovaTypeToken.metaQuiet) }
                 shownBoard == null -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText("Evrak takibi yükleniyor…", style = NovaTypeToken.metaQuiet) }
@@ -100,15 +110,12 @@ internal fun NovaDocumentTrackingScreen(client: NovaDocumentTrackingClient, comp
                     else NovaEmptyState("Bu filtreye uyan kayıt yok", "Filtreyi değiştirerek diğer evrak takip kayıtlarını görüntüleyebilirsiniz.")
                 else -> {
                     shownBoard.rows.forEach { row -> DocumentRow(row) { inspecting = row } }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        NovaText("${shownBoard.rows.size} / ${shownBoard.total} kayıt", Modifier.weight(1f), NovaTypeToken.micro,
-                            color = NovaColorToken.textTertiary.color())
-                        if (shownBoard.hasMore) Row(Modifier.heightIn(min = 40.dp).novaRowPress(enabled = !loading) { shown += NovaDocumentQuery().limit }
+                    if (shownBoard.hasMore) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        Row(Modifier.heightIn(min = 40.dp).novaRowPress(enabled = !loading) { shown += NovaDocumentQuery().limit }
                             .testTag("document.tracking.more"), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
                             if (loading) NovaText("…", style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
                             else NovaIcon("chevron.down", 11.dp, tint = NovaColorToken.accentInk.color())
                             NovaText("Daha fazla göster", style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
-                        }
                     }
                 }
             }

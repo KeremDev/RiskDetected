@@ -150,15 +150,19 @@ struct IsgWorkspaceDomainScreen: View {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    NovaListHeading(title: domain.title, onBack: onBack) {
+                    NovaListHeading(title: domain.title, onBack: onBack, actionBelow: true) {
                         if canOperate {
-                            NovaButton(label: addTitle, symbol: "plus", compact: true) {
+                            NovaListActionButton(title: addTitle, symbol: "plus", tone: .primary) {
                                 showingCreate = true
                             }
                         }
                     }
-                    search
+                    NovaListHint(text: helpText)
                     if let snapshot, !displayMetrics(snapshot.metrics).isEmpty { metrics(snapshot.metrics) }
+                    search
+                    if let snapshot {
+                        NovaListSectionHeading(title: domain.title, count: "\(rows.count) / \(snapshot.rows.count)")
+                    }
                     if loading {
                         NovaLoadingView(message: RDLocalization.string(
                             "localizable.nova.workspace.domain.loading", table: .localizable,

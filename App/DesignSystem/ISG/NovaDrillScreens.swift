@@ -18,9 +18,17 @@ struct NovaDrillStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
+    private var tone: NovaStatus {
+        switch group {
+        case .overdue: return .danger
+        case .dueSoon: return .warning
+        case .scheduled: return .info
+        case .closed: return .success
+        }
+    }
     var body: some View {
         NovaListStat(title: group.title, symbol: group.symbol, value: value,
-            isSelected: isSelected, onTap: onTap)
+            status: tone, isSelected: isSelected, onTap: onTap)
             .accessibilityIdentifier("nova.drill.stat.\(group.rawValue)")
     }
 }
@@ -130,7 +138,7 @@ struct NovaDrillScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
-                    NovaHelpHint(text: [
+                    NovaListHint(text: [
                         RDLocalization.string("localizable.nova.drill.page.hint", table: .localizable,
                             fallback: "Firmanın tatbikat kayıtlarını ve gerçekleşme sonuçlarını inceleyin."),
                         NovaDrillWords.planningIsNotPerforming,
@@ -187,9 +195,9 @@ struct NovaDrillScreen: View {
     }
 
     private var header: some View {
-        NovaListHeading(title: headingOverride ?? NovaDestination.drills.title, onBack: onBack) {
+        NovaListHeading(title: headingOverride ?? NovaDestination.drills.title, onBack: onBack, actionBelow: true) {
             if canWrite {
-                NovaButton(label: RDLocalization.string("localizable.nova.drill.screens.tatbikat.ekle.82b38112", table: .localizable, fallback: "Tatbikat Ekle"), symbol: "plus", compact: true) { startCreate() }
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.drill.screens.tatbikat.ekle.82b38112", table: .localizable, fallback: "Tatbikat Ekle"), symbol: "plus", tone: .primary) { startCreate() }
             }
         }
     }
@@ -270,18 +278,18 @@ struct NovaDrillScreen: View {
     }
 
     @ViewBuilder private func list(_ board: NovaDrillBoard) -> some View {
-        if board.rows.isEmpty {
+        VStack(spacing: 10) {
+            NovaListSectionHeading(title: headingOverride ?? NovaDestination.drills.title,
+                count: String(format: RDLocalization.string("localizable.nova.drill.count",
+                    table: .localizable, fallback: "%d / %d tatbikat"), board.rows.count, board.total))
+            if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.drill.empty.title",
                 table: .localizable, fallback: "Tatbikat kaydı yok"),
                 message: RDLocalization.string("localizable.nova.drill.screens.gerceklesen.tatbikati.fotograf.dosya.sure.ve.sen.e668a930", table: .localizable, fallback: "Gerçekleşen tatbikatı fotoğraf, dosya, süre ve senaryo bilgileriyle kaydedip takip edebilirsiniz."))
-        } else {
-            VStack(spacing: 10) {
+            } else {
                 ForEach(board.rows) { drill in
                     NovaDrillCard(drill: drill) { Task { await openDetail(drill) } }
                 }
-                NovaText(text: String(format: RDLocalization.string("localizable.nova.drill.count",
-                    table: .localizable, fallback: "%d / %d tatbikat"), board.rows.count, board.total),
-                    style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
                 if board.hasMore {
                     NovaButton(label: RDLocalization.string("localizable.nova.drill.more", table: .localizable,
                         fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface) {

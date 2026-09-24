@@ -11,7 +11,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
@@ -167,20 +166,19 @@ fun NovaEquipmentScreen(client: NovaEquipmentClient, canWrite: Boolean, onBack: 
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp, bottom = novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(11.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            NovaBackButton(onClick = onBack)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                NovaText(headingOverride ?: NovaDestination.periodicChecks.title, style = NovaTypeToken.screenTitle, maxLines = 1)
-                selectedName?.let { NovaText(it, style = NovaTypeToken.metaQuiet) }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                NovaBackButton(onClick = onBack)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    NovaText(headingOverride ?: NovaDestination.periodicChecks.title, style = NovaTypeToken.screenTitle)
+                    selectedName?.let { NovaText(it, style = NovaTypeToken.metaQuiet) }
+                }
             }
-            if (canWrite && company != null) Row(Modifier.heightIn(min = 44.dp).clip(CircleShape).background(NovaColorToken.accent.color(), CircleShape)
-                .novaRowPress { coroutines.launch { openInspection() } }.padding(horizontal = 14.dp).testTag("equipment.inspection.new"),
-                horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                NovaIcon("plus", 13.dp, tint = Color(0xFF111111))
-                NovaText("Ekle", style = NovaTypeToken.buttonSm, color = Color(0xFF111111))
+            if (canWrite && company != null) NovaListActionButton("Kontrol Ekle", "plus", identifier = "equipment.inspection.new") {
+                coroutines.launch { openInspection() }
             }
         }
-        NovaHelpHint(if (company == null) "Firmayı seçin; ekipmanı ve kontrol raporunu tek akışta ekleyin."
+        NovaListHint(if (company == null) "Firmayı seçin; ekipmanı ve kontrol raporunu tek akışta ekleyin."
             else "Ekipmanı seçin; kontrol sonucu, tarih ve rapor geçmişine kaydedilsin.")
         if (company == null) {
             NovaSearchCapsule(companyQuery, "Firma ara veya listeden seçin", "equipment.company.search") { companyQuery = it }
@@ -196,16 +194,24 @@ fun NovaEquipmentScreen(client: NovaEquipmentClient, canWrite: Boolean, onBack: 
             }
         } else {
             if (!locked) ChosenCompany(selectedName.orEmpty()) { changeCompany(null); companyQuery = "" }
-            Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NovaEquipmentGroup.entries.forEach { value ->
-                    NovaListStat(value.title, value.symbol, count(value), Modifier.width(102.dp).testTag("equipment.stat.${value.wire}"),
-                        selected = group == value) { group = if (group == value) null else value; shown = 10; chooser = null }
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NovaListActionButton("Ekipman Ekle", "shippingbox.badge.plus", Modifier.weight(1f), identifier = "equipment.add") { adding = true }
+                NovaListActionButton("Kontrol süreleri", "hourglass", Modifier.weight(1f), discovery = true,
+                    identifier = "equipment.periods") { editingPeriods = true }
             }
-            NovaCard(Modifier.fillMaxWidth(), padding = 8) {
+            val statColumns = if (novaFontScaleIsAccessibility()) 2 else 4
+            NovaEquipmentGroup.entries.chunked(statColumns).forEach { chunk ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CompactAction("Ekipman Ekle", "shippingbox.badge.plus", canWrite, Modifier.weight(1f)) { adding = true }
-                    CompactAction("Kontrol süreleri", "hourglass", canWrite, Modifier.weight(1f)) { editingPeriods = true }
+                    chunk.forEach { value ->
+                        NovaListStat(value.title, value.symbol, count(value), Modifier.weight(1f).testTag("equipment.stat.${value.wire}"),
+                            selected = group == value, status = when (value) {
+                                NovaEquipmentGroup.overdue, NovaEquipmentGroup.failed -> NovaStatus.Danger
+                                NovaEquipmentGroup.untracked -> NovaStatus.Neutral
+                                NovaEquipmentGroup.dueSoon -> NovaStatus.Warning
+                                NovaEquipmentGroup.current -> NovaStatus.Success
+                            }) { group = if (group == value) null else value; shown = 10; chooser = null }
+                    }
+                    repeat(statColumns - chunk.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
             NovaSearchCapsule(query, "Seri/kod veya tür ara", "equipment.search") { query = it }
@@ -229,6 +235,7 @@ fun NovaEquipmentScreen(client: NovaEquipmentClient, canWrite: Boolean, onBack: 
                 }
             }
             val current = board
+            current?.let { NovaListSectionHeading("Periyodik Kontroller", "${it.rows.size} / ${it.total} ekipman") }
             when {
                 error != null -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText(error!!, style = NovaTypeToken.metaQuiet) }
                 current == null -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText("Ekipman kayıtları yükleniyor…", style = NovaTypeToken.metaQuiet) }
@@ -236,20 +243,16 @@ fun NovaEquipmentScreen(client: NovaEquipmentClient, canWrite: Boolean, onBack: 
                     NovaEmptyState(if (trackedHere == 0) "Henüz ekipman kaydı yok" else "Bu filtreye uyan ekipman yok",
                         if (trackedHere == 0) "Periyodik kontrole giren ekipmanları ekleyerek kontrol tarihlerini ve raporlarını takip edebilirsiniz."
                         else "Arama veya filtreleri değiştirerek diğer ekipman kayıtlarını görüntüleyebilirsiniz.")
-                    if (canWrite && trackedHere == 0) NovaButton("Ekipman Ekle", { adding = true }, Modifier.testTag("equipment.empty.add"), symbol = "plus")
                 }
                 else -> NovaListEntrance(true) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         current.rows.forEachIndexed { index, row -> EquipmentCard(row, Modifier.novaRowEntrance(index)) { inspecting = row } }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            NovaText("${current.rows.size} / ${current.total} ekipman", Modifier.weight(1f), NovaTypeToken.micro,
-                                NovaColorToken.textTertiary.color())
-                            if (current.hasMore) Row(Modifier.heightIn(min = 40.dp).novaRowPress(enabled = !loading) { shown += 10 }.testTag("equipment.more"),
+                        if (current.hasMore) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                            Row(Modifier.heightIn(min = 40.dp).novaRowPress(enabled = !loading) { shown += 10 }.testTag("equipment.more"),
                                 horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
                                 if (loading) NovaText("…", style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
                                 else NovaIcon("chevron.down", 11.dp, tint = NovaColorToken.accentInk.color())
                                 NovaText("Daha fazla göster", style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
-                            }
                         }
                     }
                 }
@@ -296,16 +299,6 @@ private fun ChosenCompany(name: String, onChange: () -> Unit) {
             NovaIcon("arrow.left.arrow.right", 10.dp, tint = NovaColorToken.accentInk.color())
             NovaText("Firma değiştir", style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
         }
-    }
-}
-
-@Composable
-private fun CompactAction(title: String, symbol: String, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    Row(modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(13.dp)).background(NovaColorToken.surfaceMuted.color(), RoundedCornerShape(13.dp))
-        .novaRowPress(enabled = enabled, onClick = onClick), horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically) {
-        NovaIcon(symbol, 14.dp)
-        NovaText(title, style = NovaTypeToken.buttonSm, maxLines = 1)
     }
 }
 

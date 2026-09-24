@@ -159,26 +159,36 @@ fun NovaEmergencyScreen(client: NovaEmergencyClient, canWrite: Boolean, onBack: 
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        NovaListHeading(headingOverride ?: NovaDestination.emergencyPlans.title, onBack) {
-            if (canWrite) NovaButton("Plan Ekle", {
-                draftCompany = null; drafting = savedDraft ?: NovaEmergencyPlanDraft(preparedOn = NovaDay.today())
-            }, symbol = "plus", compact = true)
+        NovaListHeading(headingOverride ?: NovaDestination.emergencyPlans.title, onBack, actionBelow = true) {
+            if (canWrite) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NovaListActionButton("Plan Ekle", "plus", Modifier.weight(0.46f), identifier = "nova.emergency.add") {
+                    draftCompany = null; drafting = savedDraft ?: NovaEmergencyPlanDraft(preparedOn = NovaDay.today())
+                }
+                NovaListActionButton("Sihirbaz ile Oluştur", "sparkles", Modifier.weight(0.54f), discovery = true,
+                    identifier = "nova.emergency.wizard") { showingWizard = true }
+            }
         }
-        if (canWrite) NovaButton("Sihirbaz ile taslak oluştur", { showingWizard = true }, symbol = "sparkles", variant = NovaButtonVariant.Surface)
-        NovaHelpHint("Firmanın acil durum planını ve dosyasını ekleyin; geçerlilik tarihini buradan takip edin.")
+        NovaListHint("Firmanın acil durum planını ve dosyasını ekleyin; geçerlilik tarihini buradan takip edin.")
         board?.let { shown ->
             val columns = if (novaFontScaleIsAccessibility()) 2 else 4
             NovaEmergencyGroup.entries.chunked(columns).forEach { chunk ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     chunk.forEach { group ->
                         NovaListStat(group.title, group.symbol, shown.count(group), Modifier.weight(1f).testTag("nova.emergency.stat.${group.wire}"),
-                            selected = query.state == group.wire) {
+                            selected = query.state == group.wire, status = when (group) {
+                                NovaEmergencyGroup.expired -> NovaStatus.Danger
+                                NovaEmergencyGroup.untracked -> NovaStatus.Neutral
+                                NovaEmergencyGroup.dueSoon -> NovaStatus.Warning
+                                NovaEmergencyGroup.current -> NovaStatus.Success
+                            }) {
                             query = query.copy(state = if (query.state == group.wire) null else group.wire); reload()
                         }
                     }
                 }
             }
         }
+        NovaSearchCapsule(query.search, "Kapsam, işyeri veya firma ara", "nova.emergency.search") { query = query.copy(search = it) }
+        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaChooserButton("Firma", companies.firstOrNull { it.id == query.company }?.name ?: "Tüm firmalar", "nova.emergency.chooser.company",
                 Modifier.weight(1f), open = chooser == "company") { chooser = if (chooser == "company") null else "company" }
@@ -196,9 +206,8 @@ fun NovaEmergencyScreen(client: NovaEmergencyClient, canWrite: Boolean, onBack: 
                 .map { NovaChooserOption(it.wire, it.title, board?.counts?.get(it.wire)) }, query.state, "nova.emergency.panel.state") {
             query = query.copy(state = it); chooser = null; reload()
         }
-        NovaSearchCapsule(query.search, "Kapsam, işyeri veya firma ara", "nova.emergency.search") { query = query.copy(search = it) }
-        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         val shown = board
+        shown?.let { NovaListSectionHeading("Acil Durum Planları", "${it.total} plan") }
         when {
             loading && shown == null -> Box(Modifier.fillMaxWidth().padding(vertical = 30.dp), contentAlignment = Alignment.Center) {
                 NovaSpinner(NovaColorToken.text.color(), size = 24.dp)
@@ -217,7 +226,6 @@ fun NovaEmergencyScreen(client: NovaEmergencyClient, canWrite: Boolean, onBack: 
                             }
                         }
                     }
-                    NovaText("${shown.rows.size} / ${shown.total} plan", style = NovaTypeToken.meta, color = NovaColorToken.textMuted.color())
                     if (shown.hasMore) NovaButton("Daha fazla göster", { coroutines.launch { load(false) } }, variant = NovaButtonVariant.Surface,
                         symbol = "chevron.down")
                 }

@@ -18,9 +18,16 @@ struct NovaPPEStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
+    private var tone: NovaStatus {
+        switch state {
+        case .outstanding: return .warning
+        case .partial: return .info
+        case .closed: return .success
+        }
+    }
     var body: some View {
         NovaListStat(title: state.title, symbol: state.symbol, value: value,
-            isSelected: isSelected, onTap: onTap)
+            status: tone, isSelected: isSelected, onTap: onTap)
             .accessibilityIdentifier("nova.ppe.stat.\(state.rawValue)")
     }
 }
@@ -135,7 +142,7 @@ struct NovaPPEScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
-                    NovaHelpHint(text: NovaPPEWords.signedCopyNote)
+                    NovaListHint(text: NovaPPEWords.signedCopyNote)
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -186,9 +193,9 @@ struct NovaPPEScreen: View {
     }
 
     private var header: some View {
-        NovaListHeading(title: headingOverride ?? NovaDestination.ppeHandovers.title, onBack: onBack) {
+        NovaListHeading(title: headingOverride ?? NovaDestination.ppeHandovers.title, onBack: onBack, actionBelow: true) {
             if canWrite {
-                NovaButton(label: RDLocalization.string("localizable.nova.ppescreens.zimmet.ekle.77481f38", table: .localizable, fallback: "Zimmet Ekle"), symbol: "plus", compact: true) { startCreate() }
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.ppescreens.zimmet.ekle.77481f38", table: .localizable, fallback: "Zimmet Ekle"), symbol: "plus", tone: .primary) { startCreate() }
             }
         }
     }
@@ -262,18 +269,18 @@ struct NovaPPEScreen: View {
     }
 
     @ViewBuilder private func list(_ board: NovaPPEBoard) -> some View {
-        if board.rows.isEmpty {
+        VStack(spacing: 10) {
+            NovaListSectionHeading(title: headingOverride ?? NovaDestination.ppeHandovers.title,
+                count: String(format: RDLocalization.string("localizable.nova.ppe.count",
+                    table: .localizable, fallback: "%d / %d zimmet"), board.rows.count, board.total))
+            if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.ppe.empty.title",
                 table: .localizable, fallback: "Zimmet kaydı yok"),
                 message: RDLocalization.string("localizable.nova.ppescreens.firma.personeline.verilen.kisisel.koruyucu.donan.5415814f", table: .localizable, fallback: "Firma personeline verilen kişisel koruyucu donanımı kaydedebilir ve zimmet formunu oluşturabilirsiniz."))
-        } else {
-            VStack(spacing: 10) {
+            } else {
                 ForEach(board.rows) { row in
                     NovaPPEHandoverCard(handover: row) { Task { await openDetail(row) } }
                 }
-                NovaText(text: String(format: RDLocalization.string("localizable.nova.ppe.count",
-                    table: .localizable, fallback: "%d / %d zimmet"), board.rows.count, board.total),
-                    style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
                 if board.hasMore {
                     NovaButton(label: RDLocalization.string("localizable.nova.ppe.more", table: .localizable,
                         fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface) {

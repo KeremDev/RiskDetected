@@ -32,8 +32,9 @@ import androidx.compose.ui.unit.sp
 /** Shared title/action layout. Accessibility text sizes stack the action below. */
 @Composable
 fun NovaListHeading(title: String, onBack: () -> Unit, modifier: Modifier = Modifier,
+                    actionBelow: Boolean = false,
                     action: @Composable () -> Unit = {}) {
-    if (novaFontScaleIsAccessibility()) {
+    if (actionBelow || novaFontScaleIsAccessibility()) {
         Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaPageHeading(title, onBack = onBack)
             action()
@@ -49,28 +50,82 @@ fun NovaListHeading(title: String, onBack: () -> Unit, modifier: Modifier = Modi
 /** A compact, monochrome counter shared by module lists. */
 @Composable
 fun NovaListStat(title: String, symbol: String, value: String, modifier: Modifier = Modifier,
-                 selected: Boolean = false, onClick: (() -> Unit)? = null) {
-    val ink = NovaColorToken.text.color()
-    Column(modifier.heightIn(min = 64.dp).clip(RoundedCornerShape(16.dp)).novaControlBackground(16.dp)
-        .border(1.dp, if (selected) ink else Color.Transparent, RoundedCornerShape(16.dp))
+                 selected: Boolean = false, status: NovaStatus = NovaStatus.Neutral,
+                 onClick: (() -> Unit)? = null) {
+    val shape = RoundedCornerShape(16.dp)
+    Column(modifier.heightIn(min = 80.dp).clip(shape).background(NovaColorToken.surface.color(), shape)
+        .border(if (selected) 1.4.dp else 1.dp,
+            if (selected) NovaColorToken.accentInk.color() else NovaColorToken.border.color(), shape)
         .then(if (onClick != null) Modifier.novaRowPress(onClick = onClick) else Modifier)
         .semantics(mergeDescendants = true) {
             contentDescription = "$title, $value"
             this.selected = selected
         }
-        .padding(horizontal = 9.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        .padding(horizontal = 7.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally) {
         Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-            NovaIcon(symbol, 15.dp, tint = ink)
-            NovaSizedText(value, 19f, FontWeight.SemiBold, ink, maxLines = 1)
+            NovaIcon(symbol, 15.dp, tint = status.ink.color())
+            NovaSizedText(value, 19f, FontWeight.SemiBold, NovaColorToken.text.color(), maxLines = 1)
         }
-        NovaSizedText(title, 10f, FontWeight.Medium, ink, Modifier.heightIn(min = 26.dp), maxLines = 2)
+        NovaSizedText(title, 10f, FontWeight.Medium, NovaColorToken.textSecondary.color(),
+            Modifier.heightIn(min = 26.dp), maxLines = 2)
     }
 }
 
 @Composable
 fun NovaListStat(title: String, symbol: String, value: Int, modifier: Modifier = Modifier,
-                 selected: Boolean = false, onClick: (() -> Unit)? = null) =
-    NovaListStat(title, symbol, value.toString(), modifier, selected, onClick)
+                 selected: Boolean = false, status: NovaStatus = NovaStatus.Neutral,
+                 onClick: (() -> Unit)? = null) =
+    NovaListStat(title, symbol, value.toString(), modifier, selected, status, onClick)
+
+/** The compact explainer above module lists, with the same bulb and capsule everywhere. */
+@Composable
+fun NovaListHint(text: String, modifier: Modifier = Modifier, actionTitle: String? = null,
+                 onAction: (() -> Unit)? = null) {
+    Row(modifier.fillMaxWidth().heightIn(min = 48.dp).clip(CircleShape).background(NovaColorToken.surface.color())
+        .border(1.dp, NovaColorToken.border.color(), CircleShape).padding(start = 12.dp, end = 5.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+        NovaIcon("lightbulb", 15.dp, tint = NovaColorToken.statusWarningInk.color())
+        NovaText(text, Modifier.weight(1f), NovaTypeToken.metaQuiet, NovaColorToken.textSecondary.color())
+        if (actionTitle != null && onAction != null) {
+            Box(Modifier.widthIn(min = 44.dp).heightIn(min = 44.dp).novaRowPress(onClick = onAction)
+                .semantics { role = Role.Button; contentDescription = actionTitle },
+                contentAlignment = Alignment.Center) {
+                NovaText(actionTitle, style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
+            }
+        }
+    }
+}
+
+/** Paired list actions use blue for creating and amber for guided discovery. */
+@Composable
+fun NovaListActionButton(title: String, symbol: String, modifier: Modifier = Modifier,
+                         discovery: Boolean = false, identifier: String? = null,
+                         enabled: Boolean = true,
+                         onClick: () -> Unit) {
+    val fill = if (discovery) NovaColorToken.statusWarningBg.color() else NovaColorToken.statusInfoBg.color()
+    val ink = if (discovery) NovaColorToken.statusWarningInk.color() else NovaColorToken.statusInfoInk.color()
+    val shape = RoundedCornerShape(14.dp)
+    Row(modifier.fillMaxWidth().heightIn(min = 46.dp).clip(shape).background(fill, shape)
+        .border(1.dp, ink.copy(alpha = 0.16f), shape).novaPress(enabled = enabled, onClick = onClick)
+        .then(if (identifier != null) Modifier.testTag(identifier) else Modifier)
+        .graphicsAlpha(if (enabled) 1f else 0.45f)
+        .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically) {
+        NovaIcon(symbol, 15.dp, tint = ink)
+        NovaSizedText(title, 12f, FontWeight.SemiBold, ink, maxLines = 1)
+    }
+}
+
+@Composable
+fun NovaListSectionHeading(title: String, count: String, modifier: Modifier = Modifier) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        NovaText(title, Modifier.weight(1f), NovaTypeToken.screenTitle)
+        NovaText(count, style = NovaTypeToken.metaQuiet, color = NovaColorToken.textSubtle.color())
+    }
+}
 
 /** In-card secondary action with a full 44dp target. */
 @Composable

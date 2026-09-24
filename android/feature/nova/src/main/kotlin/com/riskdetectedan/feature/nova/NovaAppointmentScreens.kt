@@ -121,20 +121,28 @@ fun NovaAppointmentScreen(client: NovaAppointmentClient, canWrite: Boolean, onBa
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        NovaListHeading(headingOverride ?: NovaDestination.appointments.title, onBack) {
-            if (canWrite) NovaButton("Atama Ekle", { draftCompany = null; drafting = NovaAppointmentDraft(startsOn = NovaDay.today()) }, symbol = "plus", compact = true)
+        NovaListHeading(headingOverride ?: NovaDestination.appointments.title, onBack, actionBelow = true) {
+            if (canWrite) NovaListActionButton("Atama Ekle", "plus", identifier = "nova.appointment.add.header") {
+                draftCompany = null; drafting = NovaAppointmentDraft(startsOn = NovaDay.today())
+            }
         }
-        NovaHelpHint("Firmayı ve personeli seçerek görevlendirme kaydı oluşturun; belgesini aynı kayda ekleyin. ${NovaAppointmentWords.noQualificationNote} ${NovaAppointmentWords.noRequiredCountNote}")
+        NovaListHint("Firmayı ve personeli seçerek görevlendirme kaydı oluşturun; belgesini aynı kayda ekleyin. ${NovaAppointmentWords.noQualificationNote} ${NovaAppointmentWords.noRequiredCountNote}")
         board?.let { shown ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NovaAppointmentState.entries.forEach { state ->
                     NovaListStat(state.title, state.symbol, shown.count(state), Modifier.weight(1f).testTag("nova.appointment.stat.${state.wire}"),
-                        selected = query.state == state.wire) {
+                        selected = query.state == state.wire, status = when (state) {
+                            NovaAppointmentState.active -> NovaStatus.Success
+                            NovaAppointmentState.upcoming -> NovaStatus.Warning
+                            NovaAppointmentState.ended -> NovaStatus.Neutral
+                        }) {
                         query = query.copy(state = if (query.state == state.wire) null else state.wire); reload()
                     }
                 }
             }
         }
+        NovaSearchCapsule(query.search, "Kişi, işyeri veya firma ara", "nova.appointment.search") { query = query.copy(search = it) }
+        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaChooserButton("Firma", companies.firstOrNull { it.id == query.company }?.name ?: "Tüm firmalar", "nova.appointment.chooser.company",
                 Modifier.weight(1f), open = chooser == "company") { chooser = if (chooser == "company") null else "company" }
@@ -147,9 +155,8 @@ fun NovaAppointmentScreen(client: NovaAppointmentClient, canWrite: Boolean, onBa
         if (chooser == "role") NovaChooserPanel(listOf(NovaChooserOption(null, "Tüm görevler")) +
             (catalogue?.roles?.map { it.kind } ?: NovaAppointmentKind.entries).map { NovaChooserOption(it.wire, it.title) }, query.role,
             "nova.appointment.panel.role") { query = query.copy(role = it); chooser = null; reload() }
-        NovaSearchCapsule(query.search, "Kişi, işyeri veya firma ara", "nova.appointment.search") { query = query.copy(search = it) }
-        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         val shown = board
+        shown?.let { NovaListSectionHeading("Atamalar", "${it.total} görev") }
         when {
             loading && shown == null -> Box(Modifier.fillMaxWidth().padding(vertical = 30.dp), contentAlignment = Alignment.Center) {
                 NovaSpinner(NovaColorToken.text.color(), size = 24.dp)
@@ -168,7 +175,6 @@ fun NovaAppointmentScreen(client: NovaAppointmentClient, canWrite: Boolean, onBa
                             }
                         }
                     }
-                    NovaText("${shown.rows.size} / ${shown.total} görev", style = NovaTypeToken.meta, color = NovaColorToken.textMuted.color())
                     if (shown.hasMore) NovaButton("Daha fazla göster", { coroutines.launch { load(false) } }, variant = NovaButtonVariant.Surface,
                         symbol = "chevron.down")
                 }

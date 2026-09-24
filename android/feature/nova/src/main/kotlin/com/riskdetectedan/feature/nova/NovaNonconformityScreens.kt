@@ -117,14 +117,18 @@ fun NovaNonconformityBoardScreen(load: suspend () -> List<NovaNonconformityEntry
     val overdue = all.count { it.isOverdue(today) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp).padding(bottom = novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            NovaBackButton(onClick = onBack)
-            NovaText("Uygunsuzluklar", Modifier.weight(1f), NovaTypeToken.screenTitle)
-            if (onCreate != null) Row(Modifier.heightIn(min = 40.dp).clip(CircleShape).background(NovaColorToken.accent.color(), CircleShape)
-                .novaRowPress(onClick = onCreate).testTag("nonconformity.new").padding(horizontal = 14.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                NovaIcon("plus", 14.dp, tint = Color(0xFF111111))
-                NovaText("Yeni", style = NovaTypeToken.buttonSm, color = Color(0xFF111111))
+        NovaListHeading("Uygunsuzluklar", onBack, actionBelow = true) {
+            if (onCreate != null) NovaListActionButton("Yeni kayıt ekle", "plus", identifier = "nonconformity.new", onClick = onCreate)
+        }
+        NovaListHint("Kayıtları firma, durum ve kayıt türüne göre filtreleyin; karta dokunarak düzeltme sürecini açın.")
+        if (entries != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NovaListStat("Toplam kayıt", "list.bullet", all.size, Modifier.weight(1f),
+                    selected = filter.isEmpty) { filter = NovaNonconformityFilter() }
+                NovaListStat("Termini geçen", "clock.badge.exclamationmark", overdue, Modifier.weight(1f),
+                    status = NovaStatus.Danger, selected = filter.overdueOnly) {
+                    filter = filter.copy(overdueOnly = !filter.overdueOnly, state = null)
+                }
             }
         }
         NovaSearchCapsule(filter.query, "Başlık, firma veya işyeri ara", "nonconformity.search") { filter = filter.copy(query = it) }
@@ -133,6 +137,8 @@ fun NovaNonconformityBoardScreen(load: suspend () -> List<NovaNonconformityEntry
                 "nonconformity.filter.company", Modifier.weight(1f), open = openFilter == "company") { openFilter = if (openFilter == "company") null else "company" }
             NovaChooserButton("Durum", if (filter.overdueOnly) "Termini geçen" else filter.state?.let { NovaNonconformityWords.state(it.name) } ?: "Tümü",
                 "nonconformity.filter.state", Modifier.weight(1f), open = openFilter == "state") { openFilter = if (openFilter == "state") null else "state" }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             NovaChooserButton("Kayıt türü", filter.kind?.let(NovaNonconformityWords::recordKind) ?: "Tümü",
                 "nonconformity.filter.kind", Modifier.weight(1f), open = openFilter == "kind") { openFilter = if (openFilter == "kind") null else "kind" }
         }
@@ -162,8 +168,9 @@ fun NovaNonconformityBoardScreen(load: suspend () -> List<NovaNonconformityEntry
                 }
             }
         }
+        if (entries != null) NovaListSectionHeading("Uygunsuzluklar", "${visible.size} / ${all.size} kayıt")
         if (entries != null) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NovaText("${visible.size} / ${all.size} kayıt", Modifier.weight(1f), NovaTypeToken.metaQuiet)
+            Spacer(Modifier.weight(1f))
             if (!filter.isEmpty) Box(Modifier.heightIn(min = 32.dp).novaRowPress { filter = NovaNonconformityFilter() }
                 .testTag("nonconformity.filter.reset"), contentAlignment = Alignment.Center) {
                 NovaText("Filtreleri temizle", style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())

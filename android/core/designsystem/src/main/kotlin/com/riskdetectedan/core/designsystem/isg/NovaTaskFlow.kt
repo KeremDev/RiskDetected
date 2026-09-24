@@ -134,15 +134,14 @@ data class NovaMetricStripItem(val id: String, val value: String, val label: Str
 
 @Composable
 fun NovaMetricStrip(items: List<NovaMetricStripItem>, modifier: Modifier = Modifier) {
-    Row(modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items.forEach { item ->
-            val fill = if (item.status == NovaStatus.Neutral) NovaColorToken.surfaceMuted.color() else item.status.background.color()
-            Row(Modifier.heightIn(min = 38.dp).background(fill, CircleShape).semantics(mergeDescendants = true) {}
-                .padding(horizontal = 11.dp), horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically) {
-                NovaIcon(item.symbol, 14.dp)
-                NovaText(item.value, style = NovaTypeToken.bodyStrong)
-                NovaText(item.label, style = NovaTypeToken.metaQuiet)
+    val columns = if (novaFontScaleIsAccessibility()) 2 else 4
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.chunked(columns).forEach { chunk ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                chunk.forEach { item ->
+                    NovaListStat(item.label, item.symbol, item.value, Modifier.weight(1f), status = item.status)
+                }
+                repeat(columns - chunk.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }

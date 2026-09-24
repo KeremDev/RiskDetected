@@ -18,9 +18,16 @@ struct NovaAppointmentStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
+    private var tone: NovaStatus {
+        switch state {
+        case .active: return .success
+        case .upcoming: return .warning
+        case .ended: return .neutral
+        }
+    }
     var body: some View {
         NovaListStat(title: state.title, symbol: state.symbol, value: value,
-            isSelected: isSelected, onTap: onTap)
+            status: tone, isSelected: isSelected, onTap: onTap)
             .accessibilityIdentifier("nova.appointment.stat.\(state.rawValue)")
     }
 }
@@ -140,7 +147,7 @@ struct NovaAppointmentScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
-                    NovaHelpHint(text: RDLocalization.format("localizable.nova.appointment.screens.firmayi.ve.personeli.secerek.gorevlendirme.kaydi.6dbf8606", table: .localizable, fallback: "Firmayı ve personeli seçerek görevlendirme kaydı oluşturun; belgesini aynı kayda ekleyin. %1$@ %2$@", arguments: [String(describing: NovaAppointmentWords.noQualificationNote), String(describing: NovaAppointmentWords.noRequiredCountNote)]))
+                    NovaListHint(text: RDLocalization.format("localizable.nova.appointment.screens.firmayi.ve.personeli.secerek.gorevlendirme.kaydi.6dbf8606", table: .localizable, fallback: "Firmayı ve personeli seçerek görevlendirme kaydı oluşturun; belgesini aynı kayda ekleyin. %1$@ %2$@", arguments: [String(describing: NovaAppointmentWords.noQualificationNote), String(describing: NovaAppointmentWords.noRequiredCountNote)]))
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -200,9 +207,9 @@ struct NovaAppointmentScreen: View {
     }
 
     private var header: some View {
-        NovaListHeading(title: headingOverride ?? NovaDestination.appointments.title, onBack: onBack) {
+        NovaListHeading(title: headingOverride ?? NovaDestination.appointments.title, onBack: onBack, actionBelow: true) {
             if canWrite {
-                NovaButton(label: RDLocalization.string("localizable.nova.appointment.screens.atama.ekle.684b4a9e", table: .localizable, fallback: "Atama Ekle"), symbol: "plus", compact: true) { startCreate() }
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.appointment.screens.atama.ekle.684b4a9e", table: .localizable, fallback: "Atama Ekle"), symbol: "plus", tone: .primary) { startCreate() }
             }
         }
     }
@@ -279,18 +286,18 @@ struct NovaAppointmentScreen: View {
     }
 
     @ViewBuilder private func list(_ board: NovaAppointmentBoard) -> some View {
-        if board.rows.isEmpty {
+        VStack(spacing: 10) {
+            NovaListSectionHeading(title: headingOverride ?? NovaDestination.appointments.title,
+                count: String(format: RDLocalization.string("localizable.nova.appointment.count",
+                    table: .localizable, fallback: "%d / %d görev"), board.rows.count, board.total))
+            if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.appointment.empty.title",
                 table: .localizable, fallback: "Atama kaydı yok"),
                 message: RDLocalization.string("localizable.nova.appointment.screens.firma.personelinden.temsilci.destek.elemani.veya.4a1c7448", table: .localizable, fallback: "Firma personelinden temsilci, destek elemanı veya ekip üyesi seçerek görev süresini takip edebilirsiniz."))
-        } else {
-            VStack(spacing: 10) {
+            } else {
                 ForEach(board.rows) { row in
                     NovaAppointmentCard(entry: row) { Task { await openDetail(row) } }
                 }
-                NovaText(text: String(format: RDLocalization.string("localizable.nova.appointment.count",
-                    table: .localizable, fallback: "%d / %d görev"), board.rows.count, board.total),
-                    style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
                 if board.hasMore {
                     NovaButton(label: RDLocalization.string("localizable.nova.appointment.more", table: .localizable,
                         fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface) {

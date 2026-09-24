@@ -79,24 +79,13 @@ private fun NovaRiskGroup.statusDot() = when (this) {
 @Composable
 private fun RiskStatCard(group: NovaRiskGroup, value: Int, modifier: Modifier = Modifier,
                          selected: Boolean = false, onClick: () -> Unit) {
-    val tint = group.statusInk()
-    val shape = RoundedCornerShape(15.dp)
-    Column(modifier.heightIn(min = 58.dp).clip(shape)
-        .background(NovaColorToken.surface.color(), shape)
-        .border(1.dp, if (selected) Color(0xFF0B2F53).copy(alpha = 0.62f) else NovaColorToken.border.color(), shape)
-        .novaRowPress(onClick = onClick)
-        .semantics(mergeDescendants = true) {
-            contentDescription = "${group.title}, $value"
-            this.selected = selected
-        }
-        .padding(horizontal = 5.dp, vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-            NovaIcon(group.symbol, 12.dp, tint = tint)
-            NovaSizedText(value.toString(), 16f, FontWeight.SemiBold, NovaColorToken.text.color(), maxLines = 1)
-        }
-        NovaSizedText(group.title, 11f, FontWeight.Medium, NovaColorToken.textSecondary.color(), maxLines = 2)
+    val tone = when (group) {
+        NovaRiskGroup.expired -> NovaStatus.Danger
+        NovaRiskGroup.untracked -> NovaStatus.Neutral
+        NovaRiskGroup.dueSoon -> NovaStatus.Warning
+        NovaRiskGroup.current -> NovaStatus.Success
     }
+    NovaListStat(group.title, group.symbol, value, modifier, selected, tone, onClick)
 }
 
 @Composable
@@ -162,22 +151,6 @@ private fun RiskFact(symbol: String, label: String, value: String) {
     }
 }
 
-@Composable
-private fun RiskActionButton(label: String, symbol: String, fill: Color, ink: Color,
-                             modifier: Modifier = Modifier, accessibilityLabel: String = label,
-                             border: Color, symbolTint: Color = ink, onClick: () -> Unit) {
-    Row(modifier.height(44.dp).clip(RoundedCornerShape(14.dp)).background(fill)
-        .border(1.dp, border, RoundedCornerShape(14.dp))
-        .novaPress(onClickLabel = accessibilityLabel, onClick = onClick)
-        .semantics(mergeDescendants = true) { contentDescription = accessibilityLabel }
-        .padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically) {
-        NovaIcon(symbol, 16.dp, tint = symbolTint)
-        NovaSizedText(label, 12f, FontWeight.SemiBold, ink, maxLines = 1)
-    }
-}
-
 /** Risk Değerlendirmesi: the whole account in one read, narrowed to a company on request. */
 @Composable
 fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit, initialCompany: String? = null,
@@ -238,24 +211,13 @@ fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         if (headerContext?.current != NovaDestination.riskAssessments) NovaBackButton(onClick = onBack)
         if (canWrite) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            RiskActionButton("Kayıt Ekle", "plus", Color(0xFFEAF1F7), Color(0xFF0B2F53),
-                Modifier.weight(0.4f).testTag("nova.risk.create"), "Kayıt Ekle", Color(0xFFD5E1EB)) { creating = true }
-            RiskActionButton("Sihirbaz ile Oluştur", "sparkles", Color(0xFFFFF7DE), Color(0xFF0B2F53),
-                Modifier.weight(0.6f).testTag("nova.risk.wizard"), "Sihirbaz ile oluştur", Color(0xFFEFE3BC), Color(0xFFD89500)) {
+            NovaListActionButton("Kayıt Ekle", "plus", Modifier.weight(0.4f), identifier = "nova.risk.create") { creating = true }
+            NovaListActionButton("Sihirbaz ile Oluştur", "sparkles", Modifier.weight(0.6f), discovery = true, identifier = "nova.risk.wizard") {
                 showingWizard = true
             }
         }
-        NovaCard(Modifier.fillMaxWidth(), padding = 10) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                NovaIcon("lightbulb", 14.dp, tint = NovaColorToken.statusWarningInk.color())
-                NovaText("Geçerlilik süresi kayıt bazında belirlenir.", Modifier.weight(1f), NovaTypeToken.metaQuiet,
-                    NovaColorToken.textSecondary.color())
-                Box(Modifier.heightIn(min = 32.dp).novaRowPress { showingPeriodInfo = true }
-                    .testTag("nova.risk.period.info.open"), contentAlignment = Alignment.Center) {
-                    NovaText("Detay", style = NovaTypeToken.meta, color = Color(0xFF0B2F53))
-                }
-            }
-        }
+        NovaListHint("Geçerlilik süresi kayıt bazında belirlenir.", actionTitle = "Detay",
+            onAction = { showingPeriodInfo = true })
         board?.let { current ->
             val columns = if (novaFontScaleIsAccessibility()) 2 else 4
             NovaRiskGroup.entries.chunked(columns).forEach { chunk ->
@@ -304,10 +266,7 @@ fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit
             }
             failure != null -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText(failure!!, color = NovaColorToken.statusDangerInk.color()) }
             current != null -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    NovaSizedText("Risk Değerlendirmeleri", 21f, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                    NovaSizedText("${current.total} kayıt", 14f, FontWeight.Normal, NovaColorToken.textSubtle.color())
-                }
+                NovaListSectionHeading("Risk Değerlendirmeleri", "${current.total} kayıt")
                 if (current.rows.isEmpty()) NovaEmptyState("Henüz risk değerlendirmesi kaydı yok",
                     "Risk değerlendirmesi ekleyerek sürümleri, geçerlilik tarihini ve bağlı dosyayı tek yerden takip edebilirsiniz.")
                 else NovaListEntrance(current.rows.isNotEmpty()) {

@@ -170,26 +170,37 @@ fun NovaTrainingScreen(client: NovaTrainingClient, canWrite: Boolean, onBack: ()
     val trained = completed.flatMap { scope -> scope.participants.filter { it.attended }.map { it.id.lowercase() } }.toSet()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        NovaListHeading("Eğitimler", onBack) {
-            if (canWrite) NovaButton("Eğitim Ekle", { requestCreate() }, Modifier.testTag("training.add.header"), symbol = "plus", compact = true)
+        NovaListHeading("Eğitimler", onBack, actionBelow = true) {
+            if (canWrite) NovaListActionButton("Eğitim Ekle", "plus", identifier = "training.add.header") { requestCreate() }
         }
-        NovaFilterField("Firma", listOf(NovaChooserOption(null, "Tüm firmalar")) + companies.map { NovaChooserOption(it.id, it.name) }, company,
-            "training.company") { company = it }
-        NovaHelpHint("Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz.")
+        NovaListHint("Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz.")
         createMessage?.let { NovaHelpHint(it) }
-        NovaMetricStrip(listOf(
-            NovaMetricStripItem("minutes", hours(completed.sumOf { it.durationMinutes }), "Eğitim saati", "clock", NovaStatus.Neutral),
-            NovaMetricStripItem("people", trained.size.toString(), "Eğitim alan", "person.2", NovaStatus.Success),
-            NovaMetricStripItem("person-minutes", hours(completed.sumOf { scope -> scope.durationMinutes * scope.participants.count { it.attended } }),
-                "Adam × saat", "person.badge.clock", NovaStatus.Neutral),
-            NovaMetricStripItem("missing", employeeTotal?.let { maxOf(0, it - trained.size).toString() } ?: "—", "Eğitimi eksik",
-                "person.crop.circle.badge.exclamationmark", NovaStatus.Warning),
-        ), Modifier.testTag("training.stats"))
+        val trainingStats = listOf(
+            Triple("Eğitim saati", hours(completed.sumOf { it.durationMinutes }), NovaStatus.Neutral),
+            Triple("Eğitim alan", trained.size.toString(), NovaStatus.Success),
+            Triple("Adam × saat", hours(completed.sumOf { scope -> scope.durationMinutes * scope.participants.count { it.attended } }), NovaStatus.Neutral),
+            Triple("Eğitimi eksik", employeeTotal?.let { maxOf(0, it - trained.size).toString() } ?: "—", NovaStatus.Warning),
+        )
+        val statColumns = if (novaFontScaleIsAccessibility()) 2 else 4
+        val statSymbols = listOf("clock", "person.2", "person.badge.clock", "person.crop.circle.badge.exclamationmark")
+        trainingStats.chunked(statColumns).forEachIndexed { chunkIndex, chunk ->
+            Row(Modifier.testTag("training.stats"), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                chunk.forEachIndexed { index, metric ->
+                    NovaListStat(metric.first, statSymbols[chunkIndex * statColumns + index],
+                        metric.second, Modifier.weight(1f), status = metric.third)
+                }
+                repeat(statColumns - chunk.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
         NovaSearchCapsule(query, "Eğitim veya eğitmen ara…", "training.search") { query = it }
-        NovaFilterField("Eğitim türü", listOf(NovaChooserOption(null, "Tüm eğitim türleri")) +
-            NovaEducationScope.cycles.map { NovaChooserOption(it.first, it.second) }, cycle, "training.cycle") { cycle = it }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NovaFilterField("Firma", listOf(NovaChooserOption(null, "Tüm firmalar")) + companies.map { NovaChooserOption(it.id, it.name) }, company,
+                "training.company", Modifier.weight(1f)) { company = it }
+            NovaFilterField("Eğitim türü", listOf(NovaChooserOption(null, "Tüm eğitim türleri")) +
+                NovaEducationScope.cycles.map { NovaChooserOption(it.first, it.second) }, cycle, "training.cycle", Modifier.weight(1f)) { cycle = it }
+        }
         NovaTextField("Tarih (YYYY-AA-GG)", dateFilter, { dateFilter = it }, identifier = "training.date", keyboardType = KeyboardType.Number)
-        NovaText("${visible.size} eğitim", style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())
+        NovaListSectionHeading("Eğitimler", "${visible.size} eğitim")
         when {
             loading && sessions == null -> Box(Modifier.fillMaxWidth().padding(vertical = 30.dp), contentAlignment = Alignment.Center) {
                 NovaSpinner(NovaColorToken.text.color(), size = 24.dp)

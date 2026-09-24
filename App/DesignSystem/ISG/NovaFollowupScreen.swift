@@ -78,53 +78,24 @@ struct NovaFollowupScreen: View {
     @State private var selected: NovaFollowupPage.Row?
     @State private var trainingSource: NovaFollowupPage.Row?
     @State private var revision = 0
+    @Environment(\.dynamicTypeSize) private var typeSize
     private var requestKey: String { "\(company?.uuidString ?? "all"):\(status):\(kind ?? "all"):\(revision)" }
     var body: some View {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     NovaPageHeading(title: RDLocalization.string("localizable.nova.followup.screen.evrak.takibi.72eac10a", table: .localizable, fallback: "Evrak Takibi"), onBack: onBack)
-                    NovaHelpHint(text: RDLocalization.string("localizable.nova.followup.screen.eklenen.evraklari.firma.ve.ture.gore.izleyin.kay.f039c4fa", table: .localizable, fallback: "Eklenen evrakları firma ve türe göre izleyin. Kayıt tarihi ve varsa geçerlilik süresi kaynağından gelir; karta dokunarak belge detayını açın."))
-                    HStack(spacing: 8) {
-                        if initialCompany == nil {
-                            NovaFileChooserButton(label: "Firma", value: companies.first { $0.id == company }?.name ?? "Tüm firmalar",
-                                isOpen: openFilter == "company", identifier: "followup.company") {
-                                openFilter = openFilter == "company" ? nil : "company"
-                            }
-                        }
-                        NovaFileChooserButton(label: "Durum", value: status.isEmpty ? "Tüm durumlar" : NovaFollowupPage.statusTitle(status),
-                            isOpen: openFilter == "status", identifier: "followup.status") {
-                            openFilter = openFilter == "status" ? nil : "status"
-                        }
-                    }
-                    if openFilter == "company" {
-                        NovaFileChooserPanel(options: [.init(id: nil, title: RDLocalization.string("localizable.nova.followup.screen.tum.firmalar.7a489774", table: .localizable, fallback: "Tüm firmalar"))] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
-                            selected: company?.uuidString, identifier: "followup.company.options") { value in
-                            company = value.flatMap(UUID.init(uuidString:)); openFilter = nil
-                        }
-                    }
-                    if openFilter == "status" {
-                        NovaFileChooserPanel(options: [.init(id: nil, title: RDLocalization.string("localizable.nova.followup.screen.tum.durumlar.1867ff2d", table: .localizable, fallback: "Tüm durumlar"))] + ["current", "soon", "expired", "undated"].map {
-                            .init(id: $0, title: NovaFollowupPage.statusTitle($0))
-                        }, selected: status.isEmpty ? nil : status, identifier: "followup.status.options") { value in
-                            status = value ?? ""; openFilter = nil
-                        }
-                    }
-                    NovaFileChooserButton(label: RDLocalization.string("localizable.nova.followup.screen.evrak.turu.a1b560c1", table: .localizable, fallback: "Evrak türü"), value: NovaFollowupPage.kindTitle(kind),
-                        isOpen: openFilter == "kind", identifier: "followup.kind") {
-                        openFilter = openFilter == "kind" ? nil : "kind"
-                    }
-                    if openFilter == "kind" {
-                        NovaFileChooserPanel(options: [.init(id: nil, title: RDLocalization.string("localizable.nova.followup.screen.tum.evrak.turleri.45995fed", table: .localizable, fallback: "Tüm evrak türleri"))] + NovaFollowupPage.kindOptions.map { .init(id: $0.id, title: $0.title) },
-                            selected: kind, identifier: "followup.kind.options") { value in
-                            kind = value; openFilter = nil
-                        }
-                    }
+                    NovaListHint(text: RDLocalization.string("localizable.nova.followup.screen.eklenen.evraklari.firma.ve.ture.gore.izleyin.kay.f039c4fa", table: .localizable, fallback: "Eklenen evrakları firma ve türe göre izleyin. Kayıt tarihi ve varsa geçerlilik süresi kaynağından gelir; karta dokunarak belge detayını açın."))
                     if let page { summary(page) }
-                    HStack { Image(systemName: "magnifyingglass"); TextField(RDLocalization.string("localizable.nova.followup.screen.evrak.veya.firma.ara.7a66a46d", table: .localizable, fallback: "Evrak veya firma ara"), text: $query).onSubmit { revision += 1 }; Button("Ara") { revision += 1 } }
-                        .padding(12).background(.white, in: RoundedRectangle(cornerRadius: 14))
+                    NovaAnalysisSearchField(text: $query,
+                        placeholder: RDLocalization.string("localizable.nova.followup.screen.evrak.veya.firma.ara.7a66a46d", table: .localizable, fallback: "Evrak veya firma ara"),
+                        identifier: "followup.search")
+                        .onSubmit { revision += 1 }
+                    filters
                     if busy && rows.isEmpty { ProgressView("Evraklar yükleniyor…").frame(maxWidth: .infinity) }
                     if failure { NovaText(text: RDLocalization.string("localizable.nova.followup.screen.evrak.takibi.alinamadi.8599ee59", table: .localizable, fallback: "Evrak takibi alınamadı."), style: .meta); Button(RDLocalization.string("localizable.nova.followup.screen.yeniden.dene.c5c2272a", table: .localizable, fallback: "Yeniden dene")) { revision += 1 } }
+                    NovaListSectionHeading(title: "Evraklar",
+                        count: "\(rows.count)\(page?.has_more == true ? "+" : "") kayıt")
                     if !busy && !failure && rows.isEmpty {
                         NovaEmptyState(title: RDLocalization.string("localizable.nova.followup.screen.bu.filtrede.evrak.yok.fe176eb3", table: .localizable, fallback: "Bu filtrede evrak yok"),
                             message: RDLocalization.string("localizable.nova.followup.screen.firma.evrak.turu.veya.durum.filtresini.degistiri.9ee2bc44", table: .localizable, fallback: "Firma, evrak türü veya durum filtresini değiştirin."))
@@ -156,12 +127,52 @@ struct NovaFollowupScreen: View {
             NovaFollowupDestination(identity: identity, row: row, canWrite: canWrite, onBack: { trainingSource = nil })
         }
     }
+    private var filters: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                if initialCompany == nil {
+                    NovaFileChooserButton(label: "Firma", value: companies.first { $0.id == company }?.name ?? "Tüm firmalar",
+                        isOpen: openFilter == "company", identifier: "followup.company") {
+                        openFilter = openFilter == "company" ? nil : "company"
+                    }
+                }
+                NovaFileChooserButton(label: "Durum", value: status.isEmpty ? "Tüm durumlar" : NovaFollowupPage.statusTitle(status),
+                    isOpen: openFilter == "status", identifier: "followup.status") {
+                    openFilter = openFilter == "status" ? nil : "status"
+                }
+            }
+            if openFilter == "company" {
+                NovaFileChooserPanel(options: [.init(id: nil, title: RDLocalization.string("localizable.nova.followup.screen.tum.firmalar.7a489774", table: .localizable, fallback: "Tüm firmalar"))] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
+                    selected: company?.uuidString, identifier: "followup.company.options") { value in
+                    company = value.flatMap(UUID.init(uuidString:)); openFilter = nil
+                }
+            }
+            if openFilter == "status" {
+                NovaFileChooserPanel(options: [.init(id: nil, title: RDLocalization.string("localizable.nova.followup.screen.tum.durumlar.1867ff2d", table: .localizable, fallback: "Tüm durumlar"))] + ["current", "soon", "expired", "undated"].map {
+                    .init(id: $0, title: NovaFollowupPage.statusTitle($0))
+                }, selected: status.isEmpty ? nil : status, identifier: "followup.status.options") { value in
+                    status = value ?? ""; openFilter = nil
+                }
+            }
+            NovaFileChooserButton(label: RDLocalization.string("localizable.nova.followup.screen.evrak.turu.a1b560c1", table: .localizable, fallback: "Evrak türü"), value: NovaFollowupPage.kindTitle(kind),
+                isOpen: openFilter == "kind", identifier: "followup.kind") {
+                openFilter = openFilter == "kind" ? nil : "kind"
+            }
+            if openFilter == "kind" {
+                NovaFileChooserPanel(options: [.init(id: nil, title: RDLocalization.string("localizable.nova.followup.screen.tum.evrak.turleri.45995fed", table: .localizable, fallback: "Tüm evrak türleri"))] + NovaFollowupPage.kindOptions.map { .init(id: $0.id, title: $0.title) },
+                    selected: kind, identifier: "followup.kind.options") { value in
+                    kind = value; openFilter = nil
+                }
+            }
+        }
+    }
     private func summary(_ page: NovaFollowupPage) -> some View {
-        LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 8) {
-            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.guncel.56e5ec8b", table: .localizable, fallback: "Güncel"), symbol: "checkmark.circle", value: page.current)
-            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.yaklasiyor.89e7eb9b", table: .localizable, fallback: "Yaklaşıyor"), symbol: "clock", value: page.soon)
-            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.suresi.doldu.fe9be698", table: .localizable, fallback: "Süresi doldu"), symbol: "exclamationmark.triangle", value: page.expired)
-            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.tarih.yok.56ba7a76", table: .localizable, fallback: "Tarih yok"), symbol: "calendar", value: page.undated)
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8),
+                                 count: typeSize.isAccessibilitySize ? 2 : 4), spacing: 8) {
+            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.guncel.56e5ec8b", table: .localizable, fallback: "Güncel"), symbol: "checkmark.circle", value: page.current, status: .success)
+            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.yaklasiyor.89e7eb9b", table: .localizable, fallback: "Yaklaşıyor"), symbol: "clock", value: page.soon, status: .warning)
+            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.suresi.doldu.fe9be698", table: .localizable, fallback: "Süresi doldu"), symbol: "exclamationmark.triangle", value: page.expired, status: .danger)
+            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.tarih.yok.56ba7a76", table: .localizable, fallback: "Tarih yok"), symbol: "calendar", value: page.undated, status: .neutral)
         }
     }
     private func destination(_ row: NovaFollowupPage.Row) -> some View {

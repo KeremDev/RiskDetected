@@ -132,24 +132,33 @@ fun NovaKatipScreen(client: NovaKatipClient, canWrite: Boolean, onBack: () -> Un
     LaunchedEffect(Unit) { load(true) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        NovaListHeading(headingOverride ?: NovaDestination.katipContracts.title, onBack) {
+        NovaListHeading(headingOverride ?: NovaDestination.katipContracts.title, onBack, actionBelow = true) {
             // A contract belongs to one company, so adding waits for one to be chosen.
-            if (canWrite && query.company != null) NovaButton("Sözleşme Ekle", { drafting = NovaKatipDraft(startsOn = NovaDay.today()) }, symbol = "plus", compact = true)
+            if (canWrite && query.company != null) NovaListActionButton("Sözleşme Ekle", "plus", identifier = "nova.katip.add") {
+                drafting = NovaKatipDraft(startsOn = NovaDay.today())
+            }
         }
-        NovaHelpHint("Firmanın sözleşmesini kaydedin; hizmet süresini ve belgesini takip edin.")
+        NovaListHint("Firmanın sözleşmesini kaydedin; hizmet süresini ve belgesini takip edin.")
         board?.let { shown ->
             val columns = if (novaFontScaleIsAccessibility()) 2 else 4
             NovaKatipGroup.entries.chunked(columns).forEach { chunk ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     chunk.forEach { group ->
                         NovaListStat(group.title, group.symbol, shown.count(group), Modifier.weight(1f).testTag("nova.katip.stat.${group.wire}"),
-                            selected = query.state == group.wire) {
+                            selected = query.state == group.wire, status = when (group.wire) {
+                                "expired" -> NovaStatus.Danger
+                                "expiring" -> NovaStatus.Warning
+                                "current" -> NovaStatus.Success
+                                else -> NovaStatus.Neutral
+                            }) {
                             query = query.copy(state = if (query.state == group.wire) null else group.wire); reload()
                         }
                     }
                 }
             }
         }
+        NovaSearchCapsule(query.search, "Kurum, kapsam veya firma ara", "nova.katip.search") { query = query.copy(search = it) }
+        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaChooserButton("Firma", companies.firstOrNull { it.id == query.company }?.name ?: "Tüm firmalar", "nova.katip.chooser.company",
                 Modifier.weight(1f), open = chooser == "company") { chooser = if (chooser == "company") null else "company" }
@@ -166,8 +175,6 @@ fun NovaKatipScreen(client: NovaKatipClient, canWrite: Boolean, onBack: () -> Un
                 .map { NovaChooserOption(it.wire, it.title, board?.counts?.get(it.wire)) }, query.state, "nova.katip.panel.state") {
             query = query.copy(state = it); chooser = null; reload()
         }
-        NovaSearchCapsule(query.search, "Kurum, kapsam veya firma ara", "nova.katip.search") { query = query.copy(search = it) }
-        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         if (pending && canWrite) NovaCard(Modifier.fillMaxWidth(), padding = 16) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 NovaText("Gönderimi tamamlanmamış bir sözleşme işlemi var.")
@@ -181,6 +188,7 @@ fun NovaKatipScreen(client: NovaKatipClient, canWrite: Boolean, onBack: () -> Un
             }
         }
         val shown = board
+        shown?.let { NovaListSectionHeading("İSG-KATİP Sözleşmeleri", "${it.rows.size} / ${it.total} sözleşme") }
         when {
             loading && shown == null -> Box(Modifier.fillMaxWidth().padding(vertical = 30.dp), contentAlignment = Alignment.Center) {
                 NovaSpinner(NovaColorToken.text.color(), size = 24.dp)
@@ -195,7 +203,6 @@ fun NovaKatipScreen(client: NovaKatipClient, canWrite: Boolean, onBack: () -> Un
                             coroutines.launch { detail = runCatching { client.detail(row.id) }.getOrDefault(row) }
                         }
                     }
-                    NovaText("${shown.rows.size} / ${shown.total} sözleşme", style = NovaTypeToken.meta, color = NovaColorToken.textMuted.color())
                     if (shown.hasMore) NovaButton("Daha fazla göster", { coroutines.launch { load(false) } }, variant = NovaButtonVariant.Surface,
                         symbol = "chevron.down")
                 }

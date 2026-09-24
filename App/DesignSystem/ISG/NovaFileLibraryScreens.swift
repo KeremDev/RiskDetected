@@ -35,8 +35,7 @@ struct NovaFileStatCard: View {
     let onTap: () -> Void
     var body: some View {
         NovaListStat(title: group.title, symbol: group.symbol, value: value,
-            isSelected: isSelected, onTap: onTap)
-            .frame(width: 92)
+            status: NovaFileScreenWords.tone(group), isSelected: isSelected, onTap: onTap)
             .accessibilityIdentifier("file.stat.\(group.rawValue)")
     }
 }
@@ -196,6 +195,7 @@ struct NovaFileLibraryScreen: View {
     /// immediately instead of landing on the list first.
     var startInAddMode = false
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var board: NovaFileLibrary?
     @State private var catalogue: [NovaFileCategory] = []
     @State private var accepts: [NovaFileAcceptance] = []
@@ -261,7 +261,7 @@ struct NovaFileLibraryScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 11) {
                     header
-                    NovaHelpHint(text: RDLocalization.string("localizable.nova.file.library.screens.modullerdeki.ve.ayrica.yuklediginiz.dosyalari.fi.7357f36b", table: .localizable, fallback: "Modüllerdeki ve ayrıca yüklediğiniz dosyaları firma ve başlığa göre bulun."))
+                    NovaListHint(text: RDLocalization.string("localizable.nova.file.library.screens.modullerdeki.ve.ayrica.yuklediginiz.dosyalari.fi.7357f36b", table: .localizable, fallback: "Modüllerdeki ve ayrıca yüklediğiniz dosyaları firma ve başlığa göre bulun."))
                     archive
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
@@ -313,25 +313,19 @@ struct NovaFileLibraryScreen: View {
     }
 
     private var header: some View {
-        HStack(spacing: 8) {
-            NovaBackButton { onBack() }
-            VStack(alignment: .leading, spacing: 2) {
-                NovaText(text: headingOverride ?? NovaDestination.documents.title, style: .screenTitle)
-                if let selectedName { NovaText(text: selectedName, style: .metaQuiet) }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                NovaBackButton { onBack() }
+                VStack(alignment: .leading, spacing: 2) {
+                    NovaText(text: headingOverride ?? NovaDestination.documents.title, style: .screenTitle)
+                    if let selectedName { NovaText(text: selectedName, style: .metaQuiet) }
+                }
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
             // Personal and company files share one archive.
             if canWrite {
-                Button { adding = true } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus").font(.system(size: 13, weight: .bold))
-                        NovaText(text: RDLocalization.string("localizable.nova.file.add.short", table: .localizable, fallback: "Dosya"),
-                            style: .buttonSm, color: NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
-                    }
-                    .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
-                    .padding(.horizontal, 14).frame(minHeight: 44)
-                    .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
-                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("file.library.new")
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.file.add.short", table: .localizable, fallback: "Dosya Ekle"),
+                    symbol: "plus", tone: .primary, identifier: "file.library.new") { adding = true }
             }
         }
     }
@@ -456,16 +450,16 @@ struct NovaFileLibraryScreen: View {
     /// Four counters in the home page's own card shape. Tapping one is the same
     /// filter the chips below carry, and it narrows to exactly what it counted.
     private var stats: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: 8) {
-                ForEach(NovaFileGroup.allCases) { value in
-                    NovaFileStatCard(group: value, value: count(value),
-                        isSelected: group == value) {
-                            group = group == value ? nil : value
-                            openChooser = nil
-                        }
-                }
-            }.padding(.vertical, 2)
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 8),
+                            count: typeSize.isAccessibilitySize ? 2 : 4)
+        return LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(NovaFileGroup.allCases) { value in
+                NovaFileStatCard(group: value, value: count(value),
+                    isSelected: group == value) {
+                        group = group == value ? nil : value
+                        openChooser = nil
+                    }
+            }
         }
     }
 
@@ -556,32 +550,32 @@ struct NovaFileLibraryScreen: View {
                 NovaText(text: RDLocalization.string("localizable.nova.file.loading", table: .localizable,
                     fallback: "Dosyalar yükleniyor…"), style: .metaQuiet)
             }
-        } else if board?.rows.isEmpty ?? true {
-            VStack(alignment: .leading, spacing: 10) {
-                NovaEmptyState(title: filedHere == 0 ? "Henüz dosya yok" : "Bu filtreye uyan dosya yok",
-                    message: filedHere == 0
-                        ? "Dosya ekleyerek belgelerinizi etiket, not ve bağlı kayıt bilgileriyle tek arşivde saklayabilirsiniz."
-                        : "Arama veya filtreleri değiştirerek diğer dosyaları görüntüleyebilirsiniz.")
-                if canWrite && filedHere == 0 {
-                    NovaButton(label: RDLocalization.string("localizable.nova.file.add.title", table: .localizable,
-                        fallback: "Dosya ekle"), symbol: "folder.badge.plus") { adding = true }
-                        .accessibilityIdentifier("file.library.empty.add")
-                }
-            }
         } else if let board {
-            ForEach(board.rows) { row in card(row) }
-            footer(board)
+            VStack(alignment: .leading, spacing: 10) {
+                NovaListSectionHeading(title: headingOverride ?? NovaDestination.documents.title,
+                    count: String(format: RDLocalization.string("localizable.nova.file.page", table: .localizable,
+                        fallback: "%1$d / %2$d dosya"), board.rows.count, board.total))
+                if board.rows.isEmpty {
+                    NovaEmptyState(title: filedHere == 0 ? "Henüz dosya yok" : "Bu filtreye uyan dosya yok",
+                        message: filedHere == 0
+                            ? "Dosya ekleyerek belgelerinizi etiket, not ve bağlı kayıt bilgileriyle tek arşivde saklayabilirsiniz."
+                            : "Arama veya filtreleri değiştirerek diğer dosyaları görüntüleyebilirsiniz.")
+                    if canWrite && filedHere == 0 {
+                        NovaButton(label: RDLocalization.string("localizable.nova.file.add.title", table: .localizable,
+                            fallback: "Dosya ekle"), symbol: "folder.badge.plus") { adding = true }
+                            .accessibilityIdentifier("file.library.empty.add")
+                    }
+                } else {
+                    ForEach(board.rows) { row in card(row) }
+                }
+                footer(board)
+            }
         }
     }
 
     /// The page shows ten at a time and says how many are still behind it.
     @ViewBuilder private func footer(_ board: NovaFileLibrary) -> some View {
-        HStack(spacing: 8) {
-            NovaText(text: String(format: RDLocalization.string("localizable.nova.file.page", table: .localizable,
-                fallback: "%1$d / %2$d dosya"), board.rows.count, board.total), style: .micro,
-                color: NovaColorToken.textTertiary.color(in: scheme))
-            Spacer(minLength: 0)
-            if board.hasMore {
+        if board.hasMore {
                 Button {
                     shown += NovaFileQuery().limit
                     reload = UUID()
@@ -594,7 +588,6 @@ struct NovaFileLibraryScreen: View {
                     }.foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 40)
                 }.buttonStyle(NovaRowPressStyle()).disabled(loading)
                     .accessibilityIdentifier("file.library.more")
-            }
         }
     }
 

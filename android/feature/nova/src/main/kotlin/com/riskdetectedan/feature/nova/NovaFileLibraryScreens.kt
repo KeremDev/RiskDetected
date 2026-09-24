@@ -79,19 +79,20 @@ fun NovaFileLibraryScreen(client: NovaFileClient, companiesSource: suspend () ->
     if (source != null && openSource != null) { openSource(source) { openedSource = null; reload++ }; return }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp, bottom = novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(11.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            NovaBackButton(onClick = onBack)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                NovaText(headingOverride ?: NovaDestination.documents.title, style = NovaTypeToken.screenTitle)
-                selectedName?.let { NovaText(it, style = NovaTypeToken.metaQuiet) }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                NovaBackButton(onClick = onBack)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    NovaText(headingOverride ?: NovaDestination.documents.title, style = NovaTypeToken.screenTitle)
+                    selectedName?.let { NovaText(it, style = NovaTypeToken.metaQuiet) }
+                }
             }
             // Personal and company files share one archive.
-            if (canWrite) Row(Modifier.heightIn(min = 44.dp).clip(CircleShape).background(NovaColorToken.accent.color(), CircleShape).novaRowPress { adding = true }
-                .padding(horizontal = 14.dp).testTag("file.library.new"), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                NovaIcon("plus", 13.dp, tint = Color(0xFF111111)); NovaText("Dosya", style = NovaTypeToken.buttonSm, color = Color(0xFF111111))
+            if (canWrite) NovaListActionButton("Dosya ekle", "plus", identifier = "file.library.new") {
+                adding = true
             }
         }
-        NovaHelpHint("Modüllerdeki ve ayrıca yüklediğiniz dosyaları firma ve başlığa göre bulun.")
+        NovaListHint("Modüllerdeki ve ayrıca yüklediğiniz dosyaları firma ve başlığa göre bulun.")
         if (initialCompany == null) {
             NovaChooserButton("Firma", selectedName ?: "Tüm firmalar", "file.company.filter", open = chooser == "company") {
                 chooser = if (chooser == "company") null else "company"
@@ -99,11 +100,20 @@ fun NovaFileLibraryScreen(client: NovaFileClient, companiesSource: suspend () ->
             if (chooser == "company") NovaChooserPanel(listOf(NovaChooserOption(null, "Tüm firmalar")) + companies.map { NovaChooserOption(it.id, it.name) }, company,
                 "file.company.filter.options") { company = it; group = null; category = null; query = ""; shown = 10; chooser = null }
         }
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NovaFileGroup.entries.forEach { value ->
-                NovaListStat(value.title, value.symbol, count(value), Modifier.width(92.dp).testTag("file.stat.${value.name}"), selected = group == value) {
-                    group = if (group == value) null else value; shown = 10; chooser = null
+        NovaFileGroup.entries.chunked(if (novaFontScaleIsAccessibility()) 2 else 4).forEach { chunk ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                chunk.forEach { value ->
+                    NovaListStat(value.title, value.symbol, count(value), Modifier.weight(1f).testTag("file.stat.${value.name}"), selected = group == value,
+                        status = when (value) {
+                            NovaFileGroup.filed -> NovaStatus.Success
+                            NovaFileGroup.working -> NovaStatus.Info
+                            NovaFileGroup.rejected -> NovaStatus.Danger
+                            NovaFileGroup.unchecked -> NovaStatus.Warning
+                        }) {
+                        group = if (group == value) null else value; shown = 10; chooser = null
+                    }
                 }
+                repeat((if (novaFontScaleIsAccessibility()) 2 else 4) - chunk.size) { Spacer(Modifier.weight(1f)) }
             }
         }
         NovaSearchCapsule(query, "Dosya ara", "file.library.search") { query = it }
@@ -125,6 +135,7 @@ fun NovaFileLibraryScreen(client: NovaFileClient, companiesSource: suspend () ->
                 category, "file.library.category") { category = it; shown = 10; chooser = null }
         }
         val current = board
+        current?.let { NovaListSectionHeading("Dosyalar", "${it.rows.size} / ${it.total} dosya") }
         when {
             error != null -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText(error!!, style = NovaTypeToken.metaQuiet) }
             current == null -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText("Dosyalar yükleniyor…", style = NovaTypeToken.metaQuiet) }
@@ -132,14 +143,12 @@ fun NovaFileLibraryScreen(client: NovaFileClient, companiesSource: suspend () ->
                 NovaEmptyState(if (filedHere == 0) "Henüz dosya yok" else "Bu filtreye uyan dosya yok",
                     if (filedHere == 0) "Dosya ekleyerek belgelerinizi etiket, not ve bağlı kayıt bilgileriyle tek arşivde saklayabilirsiniz."
                     else "Arama veya filtreleri değiştirerek diğer dosyaları görüntüleyebilirsiniz.")
-                if (canWrite && filedHere == 0) NovaButton("Dosya ekle", { adding = true }, Modifier.testTag("file.library.empty.add"), symbol = "folder.badge.plus")
             }
             else -> NovaListEntrance(true) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     current.rows.forEachIndexed { index, row -> FileCard(row, Modifier.novaRowEntrance(index)) { inspecting = row } }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        NovaText("${current.rows.size} / ${current.total} dosya", Modifier.weight(1f), NovaTypeToken.micro, NovaColorToken.textTertiary.color())
-                        if (current.hasMore) Row(Modifier.heightIn(min = 40.dp).novaRowPress(enabled = !loading) { shown += 10 }.testTag("file.library.more"),
+                    if (current.hasMore) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        Row(Modifier.heightIn(min = 40.dp).novaRowPress(enabled = !loading) { shown += 10 }.testTag("file.library.more"),
                             horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
                             if (loading) NovaText("…", style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
                             else NovaIcon("chevron.down", 11.dp, tint = NovaColorToken.accentInk.color())
@@ -346,14 +355,16 @@ private fun FileRenameSheet(entry: NovaFileEntry, categories: List<NovaFileCateg
 @Composable
 fun NovaFollowupScreen(load: suspend (company: String?, status: String?, kind: String?, query: String, offset: Int) -> NovaFollowupPage,
                        companiesSource: suspend () -> List<NovaCompanyOption>, events: kotlinx.coroutines.flow.Flow<Unit>, openSource: NovaRecordOpener,
-                       onBack: () -> Unit, initialCompany: String? = null) {
+                       onBack: () -> Unit, initialCompany: String? = null,
+                       /** Opened from a home card: the list starts on the status the card counted. */
+                       initialStatus: String? = null) {
     val coroutines = rememberCoroutineScope()
     var company by remember { mutableStateOf(initialCompany) }
     var companies by remember { mutableStateOf<List<NovaCompanyOption>>(emptyList()) }
     var page by remember { mutableStateOf<NovaFollowupPage?>(null) }
     var rows by remember { mutableStateOf<List<NovaFollowupPage.Row>>(emptyList()) }
     var query by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf<String?>(null) }
+    var status by remember { mutableStateOf(initialStatus?.takeIf { it in setOf("current", "soon", "expired", "undated") }) }
     var kind by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var failure by remember { mutableStateOf(false) }
@@ -377,7 +388,28 @@ fun NovaFollowupScreen(load: suspend (company: String?, status: String?, kind: S
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         NovaPageHeading("Evrak Takibi", onBack = onBack)
-        NovaHelpHint("Eklenen evrakları firma ve türe göre izleyin. Kayıt tarihi ve varsa geçerlilik süresi kaynağından gelir; karta dokunarak belge detayını açın.")
+        NovaListHint("Eklenen evrakları firma ve türe göre izleyin. Kayıt tarihi ve varsa geçerlilik süresi kaynağından gelir; karta dokunarak belge detayını açın.")
+        page?.let { shown ->
+            val statColumns = if (novaFontScaleIsAccessibility()) 2 else 4
+            val stats = listOf(
+                Triple("Güncel", shown.current, NovaStatus.Success),
+                Triple("Yaklaşıyor", shown.soon, NovaStatus.Warning),
+                Triple("Süresi doldu", shown.expired, NovaStatus.Danger),
+                Triple("Tarih yok", shown.undated, NovaStatus.Neutral),
+            )
+            val symbols = listOf("checkmark.circle", "clock", "exclamationmark.triangle", "calendar")
+            stats.chunked(statColumns).forEachIndexed { chunkIndex, chunk ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    chunk.forEachIndexed { index, metric ->
+                        NovaListStat(metric.first, symbols[chunkIndex * statColumns + index], metric.second,
+                            Modifier.weight(1f), status = metric.third)
+                    }
+                    repeat(statColumns - chunk.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+        NovaSearchCapsule(query, "Evrak veya firma ara", "followup.search") { query = it }
+        LaunchedEffect(query) { kotlinx.coroutines.delay(350); if (page != null) revision++ }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (initialCompany == null) NovaChooserButton("Firma", companies.firstOrNull { it.id == company }?.name ?: "Tüm firmalar",
                 "followup.company", Modifier.weight(1f), open = chooser == "company") {
@@ -401,18 +433,7 @@ fun NovaFollowupScreen(load: suspend (company: String?, status: String?, kind: S
             NovaFollowupPage.kindOptions.map { NovaChooserOption(it.first, it.second) }, kind, "followup.kind.options") {
             kind = it; chooser = null
         }
-        page?.let { shown ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NovaListStat("Güncel", "checkmark.circle", shown.current, Modifier.weight(1f))
-                NovaListStat("Yaklaşıyor", "clock", shown.soon, Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NovaListStat("Süresi doldu", "exclamationmark.triangle", shown.expired, Modifier.weight(1f))
-                NovaListStat("Tarih yok", "calendar", shown.undated, Modifier.weight(1f))
-            }
-        }
-        NovaSearchCapsule(query, "Evrak veya firma ara", "followup.search") { query = it }
-        LaunchedEffect(query) { kotlinx.coroutines.delay(350); if (page != null) revision++ }
+        NovaListSectionHeading("Evraklar", "${rows.size}${if (page?.hasMore == true) "+" else ""} kayıt")
         if (busy && rows.isEmpty()) NovaLoadingView("Evraklar yükleniyor…", Modifier.heightIn(max = 200.dp))
         if (failure) {
             NovaText("Evrak takibi alınamadı.", style = NovaTypeToken.meta)

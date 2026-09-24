@@ -123,23 +123,32 @@ fun NovaDrillScreen(client: NovaDrillClient, canWrite: Boolean, onBack: () -> Un
     LaunchedEffect(Unit) { load(true) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        NovaListHeading(headingOverride ?: NovaDestination.drills.title, onBack) {
-            if (canWrite) NovaButton("Tatbikat Ekle", { draftCompany = null; planning = NovaDrillPlanDraft(plannedOn = NovaDay.today()) }, symbol = "plus", compact = true)
+        NovaListHeading(headingOverride ?: NovaDestination.drills.title, onBack, actionBelow = true) {
+            if (canWrite) NovaListActionButton("Tatbikat Ekle", "plus", identifier = "nova.drill.add") {
+                draftCompany = null; planning = NovaDrillPlanDraft(plannedOn = NovaDay.today())
+            }
         }
-        NovaHelpHint("Firmanın tatbikat kayıtlarını ve gerçekleşme sonuçlarını inceleyin. ${NovaDrillWords.planningIsNotPerforming} ${NovaDrillWords.noPlan}")
+        NovaListHint("Firmanın tatbikat kayıtlarını ve gerçekleşme sonuçlarını inceleyin. ${NovaDrillWords.planningIsNotPerforming} ${NovaDrillWords.noPlan}")
         board?.let { shown ->
             val columns = if (novaFontScaleIsAccessibility()) 2 else 4
             NovaDrillGroup.entries.chunked(columns).forEach { chunk ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     chunk.forEach { group ->
                         NovaListStat(group.title, group.symbol, shown.count(group), Modifier.weight(1f).testTag("nova.drill.stat.${group.wire}"),
-                            selected = query.state == group.wire) {
+                            selected = query.state == group.wire, status = when (group) {
+                                NovaDrillGroup.overdue -> NovaStatus.Danger
+                                NovaDrillGroup.dueSoon -> NovaStatus.Warning
+                                NovaDrillGroup.scheduled -> NovaStatus.Info
+                                NovaDrillGroup.closed -> NovaStatus.Success
+                            }) {
                             query = query.copy(state = if (query.state == group.wire) null else group.wire); reload()
                         }
                     }
                 }
             }
         }
+        NovaSearchCapsule(query.search, "Plan, işyeri veya firma ara", "nova.drill.search") { query = query.copy(search = it) }
+        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaChooserButton("Firma", companies.firstOrNull { it.id == query.company }?.name ?: "Tüm firmalar", "nova.drill.chooser.company",
                 Modifier.weight(1f), open = chooser == "company") { chooser = if (chooser == "company") null else "company" }
@@ -157,9 +166,8 @@ fun NovaDrillScreen(client: NovaDrillClient, canWrite: Boolean, onBack: () -> Un
                 .map { NovaChooserOption(it.wire, it.title, board?.counts?.get(it.wire)) }, query.state, "nova.drill.panel.state") {
             query = query.copy(state = it); chooser = null; reload()
         }
-        NovaSearchCapsule(query.search, "Plan, işyeri veya firma ara", "nova.drill.search") { query = query.copy(search = it) }
-        LaunchedEffect(query.search) { if (board != null) { kotlinx.coroutines.delay(350); load(true) } }
         val shown = board
+        shown?.let { NovaListSectionHeading("Tatbikatlar", "${it.total} tatbikat") }
         when {
             loading && shown == null -> Box(Modifier.fillMaxWidth().padding(vertical = 30.dp), contentAlignment = Alignment.Center) {
                 NovaSpinner(NovaColorToken.text.color(), size = 24.dp)
@@ -178,7 +186,6 @@ fun NovaDrillScreen(client: NovaDrillClient, canWrite: Boolean, onBack: () -> Un
                             }
                         }
                     }
-                    NovaText("${shown.rows.size} / ${shown.total} tatbikat", style = NovaTypeToken.meta, color = NovaColorToken.textMuted.color())
                     if (shown.hasMore) NovaButton("Daha fazla göster", { coroutines.launch { load(false) } }, variant = NovaButtonVariant.Surface,
                         symbol = "chevron.down")
                 }

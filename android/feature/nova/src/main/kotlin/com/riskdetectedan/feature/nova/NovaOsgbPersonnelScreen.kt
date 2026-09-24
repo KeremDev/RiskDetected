@@ -94,33 +94,34 @@ fun NovaOsgbPersonnelScreen(scope: NovaOsgbScope, canManageDirectory: Boolean, o
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset)
         .testTag("osgb.personnel"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        NovaPageHeading(IsgWorkspaceDomain.PERSONNEL.title, onBack = onBack)
-        NovaHelpHint("${scope.companyName} firmasına ait yetkili OSGB kayıtları gösteriliyor.")
-        counts?.let { values ->
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(Triple(NovaOsgbPersonnelSection.employee, "person.2", "employees"), Triple(NovaOsgbPersonnelSection.workplace, "building.2", "workplaces"),
-                    Triple(NovaOsgbPersonnelSection.department, "square.grid.2x2", "departments"), Triple(NovaOsgbPersonnelSection.jobRole, "briefcase", "job_roles"),
-                    Triple(NovaOsgbPersonnelSection.contractor, "building.2.crop.circle", "contractors"),
-                    Triple(NovaOsgbPersonnelSection.assignment, "arrow.triangle.branch", "assignments")).forEach { (item, symbol, key) ->
-                    NovaListStat(item.title, symbol, (values[key] ?: 0).toString(), Modifier.widthIn(min = 112.dp))
+        NovaListHeading(IsgWorkspaceDomain.PERSONNEL.title, onBack, actionBelow = true) {
+            if (canAdd) NovaListActionButton("${section.title} ekle", "plus", identifier = "osgb.personnel.add") {
+                route = when (section) {
+                    NovaOsgbPersonnelSection.employee -> PersonnelRoute.Employee(null)
+                    NovaOsgbPersonnelSection.workplace -> PersonnelRoute.Directory("workplace", null)
+                    NovaOsgbPersonnelSection.department -> PersonnelRoute.Directory("department", null)
+                    else -> PersonnelRoute.Advanced(section, null)
                 }
             }
         }
+        NovaListHint("${scope.companyName} firmasına ait yetkili OSGB kayıtları gösteriliyor.")
+        counts?.let { values ->
+            NovaMetricStrip(listOf(
+                NovaMetricStripItem("employees", (values["employees"] ?: 0).toString(), NovaOsgbPersonnelSection.employee.title, "person.2", NovaStatus.Neutral),
+                NovaMetricStripItem("workplaces", (values["workplaces"] ?: 0).toString(), NovaOsgbPersonnelSection.workplace.title, "building.2", NovaStatus.Neutral),
+                NovaMetricStripItem("departments", (values["departments"] ?: 0).toString(), NovaOsgbPersonnelSection.department.title, "square.grid.2x2", NovaStatus.Neutral),
+                NovaMetricStripItem("job_roles", (values["job_roles"] ?: 0).toString(), NovaOsgbPersonnelSection.jobRole.title, "briefcase", NovaStatus.Neutral),
+                NovaMetricStripItem("contractors", (values["contractors"] ?: 0).toString(), NovaOsgbPersonnelSection.contractor.title, "building.2.crop.circle", NovaStatus.Neutral),
+                NovaMetricStripItem("assignments", (values["assignments"] ?: 0).toString(), NovaOsgbPersonnelSection.assignment.title, "arrow.triangle.branch", NovaStatus.Neutral),
+            ))
+        }
+        NovaSearchCapsule(query, "Kayıtlarda ara", "osgb.personnel.search") { query = it }
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaOsgbPersonnelSection.entries.forEach { item ->
                 NovaChoiceChip(item.title, section == item, identifier = "osgb.personnel.section.${item.name}", inverse = true) { section = item }
             }
         }
-        NovaSearchCapsule(query, "Kayıtlarda ara", "osgb.personnel.search") { query = it }
-        if (canAdd) NovaCompactActionButton("${section.title} ekle", "plus", Modifier.width(IntrinsicSize.Max), prominent = true,
-            identifier = "osgb.personnel.add") {
-            route = when (section) {
-                NovaOsgbPersonnelSection.employee -> PersonnelRoute.Employee(null)
-                NovaOsgbPersonnelSection.workplace -> PersonnelRoute.Directory("workplace", null)
-                NovaOsgbPersonnelSection.department -> PersonnelRoute.Directory("department", null)
-                else -> PersonnelRoute.Advanced(section, null)
-            }
-        }
+        NovaListSectionHeading(section.title, "${rows.size} kayıt")
         when {
             loading -> NovaLoadingView("Kayıtlar yükleniyor…")
             error != null -> {

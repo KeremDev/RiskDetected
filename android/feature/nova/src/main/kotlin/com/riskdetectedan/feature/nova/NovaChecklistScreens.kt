@@ -236,8 +236,8 @@ fun NovaChecklistScreen(client: NovaChecklistClient, canWrite: Boolean, onBack: 
     LaunchedEffect(query.search) { delay(280); if (board != null) load(true) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        NovaListHeading(headingOverride ?: "Kontroller", onBack) {
-            if (canWrite) NovaButton("Yeni kontrol", { showingStart = true }, Modifier.testTag("nova.checklist.start"), symbol = "plus", compact = true)
+        NovaListHeading(headingOverride ?: "Kontroller", onBack, actionBelow = true) {
+            if (canWrite) NovaListActionButton("Yeni kontrol", "plus", identifier = "nova.checklist.start") { showingStart = true }
         }
         Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).novaRowPress { showingLists = true }.testTag("nova.checklist.lists.open").padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -100,9 +100,9 @@ struct NovaChecklistListsScreen: View {
     }
 
     private var header: some View {
-        NovaListHeading(title: RDLocalization.string("localizable.nova.checklist.list.flow.kontrol.listeleri.aeafb108", table: .localizable, fallback: "Kontrol Listeleri"), onBack: onBack) {
+        NovaListHeading(title: RDLocalization.string("localizable.nova.checklist.list.flow.kontrol.listeleri.aeafb108", table: .localizable, fallback: "Kontrol Listeleri"), onBack: onBack, actionBelow: true) {
             if section == .mine && canWrite {
-                NovaButton(label: RDLocalization.string("localizable.nova.checklist.list.flow.yeni.liste.863025ed", table: .localizable, fallback: "Yeni liste"), symbol: "plus", compact: true) { showingCreate = true }
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.checklist.list.flow.yeni.liste.863025ed", table: .localizable, fallback: "Yeni liste"), symbol: "plus", tone: .primary) { showingCreate = true }
                     .accessibilityIdentifier("nova.checklist.template.create")
             }
         }
@@ -110,7 +110,7 @@ struct NovaChecklistListsScreen: View {
 
     private var readyContent: some View {
         Group {
-            NovaHelpHint(text: RDLocalization.string("localizable.nova.checklist.list.flow.sektor.ekipman.faaliyet.veya.tehlikeye.gore.aray.d027eff6", table: .localizable, fallback: "Sektör, ekipman, faaliyet veya tehlikeye göre arayın; filtre düğmesiyle sonuçları daraltın."))
+            NovaListHint(text: RDLocalization.string("localizable.nova.checklist.list.flow.sektor.ekipman.faaliyet.veya.tehlikeye.gore.aray.d027eff6", table: .localizable, fallback: "Sektör, ekipman, faaliyet veya tehlikeye göre arayın; filtre düğmesiyle sonuçları daraltın."))
             HStack(spacing: 10) {
                 NovaAnalysisSearchField(text: $search, placeholder: RDLocalization.string("localizable.nova.checklist.list.flow.sektor.ekipman.veya.is.ara.992bc133", table: .localizable, fallback: "Sektör, ekipman veya iş ara"),
                     identifier: "nova.checklist.library.search")

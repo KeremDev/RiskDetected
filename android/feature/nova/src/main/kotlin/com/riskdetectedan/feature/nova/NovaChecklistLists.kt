@@ -94,12 +94,12 @@ fun NovaChecklistListsScreen(client: NovaChecklistClient, canWrite: Boolean, ini
     androidx.activity.compose.BackHandler(onBack = onBack)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 12.dp, bottom = 30.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        NovaListHeading("Kontrol Listeleri", onBack) {
-            if (mine && canWrite) NovaButton("Yeni liste", { showingCreate = true }, Modifier.testTag("nova.checklist.template.create"), symbol = "plus", compact = true)
+        NovaListHeading("Kontrol Listeleri", onBack, actionBelow = true) {
+            if (mine && canWrite) NovaListActionButton("Yeni liste", "plus", identifier = "nova.checklist.template.create") { showingCreate = true }
         }
         NovaSegmentedControl(listOf("Hazır listeler", "Listelerim"), if (mine) 1 else 0, Modifier.testTag("nova.checklist.lists.section")) { mine = it == 1 }
         if (!mine) {
-            NovaHelpHint("Sektör, ekipman, faaliyet veya tehlikeye göre arayın; filtre düğmesiyle sonuçları daraltın.")
+            NovaListHint("Sektör, ekipman, faaliyet veya tehlikeye göre arayın; filtre düğmesiyle sonuçları daraltın.")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) { NovaSearchCapsule(search, "Sektör, ekipman veya iş ara", "nova.checklist.library.search") { search = it } }
                 Box(Modifier.size(46.dp).clip(RoundedCornerShape(12.dp)).background(NovaColorToken.surface.color(), RoundedCornerShape(12.dp))

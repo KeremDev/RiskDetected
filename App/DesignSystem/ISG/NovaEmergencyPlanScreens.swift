@@ -25,9 +25,17 @@ struct NovaEmergencyStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
+    private var tone: NovaStatus {
+        switch group {
+        case .expired: return .danger
+        case .untracked: return .neutral
+        case .dueSoon: return .warning
+        case .current: return .success
+        }
+    }
     var body: some View {
         NovaListStat(title: group.title, symbol: group.symbol, value: value,
-            isSelected: isSelected, onTap: onTap)
+            status: tone, isSelected: isSelected, onTap: onTap)
             .accessibilityIdentifier("nova.emergency.stat.\(group.rawValue)")
     }
 }
@@ -149,7 +157,7 @@ struct NovaEmergencyPlanScreen: View {
                     if canWrite {
                         NovaButton(label: RDLocalization.string("localizable.nova.emergency.plan.screens.sihirbaz.ile.taslak.olustur.b4e75540", table: .localizable, fallback: "Sihirbaz ile taslak oluştur"), symbol: "sparkles", variant: .surface) { showingWizard = true }
                     }
-                    NovaHelpHint(text: RDLocalization.string("localizable.nova.emergency.plan.screens.firmanin.acil.durum.planini.ve.dosyasini.ekleyin.69acbe04", table: .localizable, fallback: "Firmanın acil durum planını ve dosyasını ekleyin; geçerlilik tarihini buradan takip edin."))
+                    NovaListHint(text: RDLocalization.string("localizable.nova.emergency.plan.screens.firmanin.acil.durum.planini.ve.dosyasini.ekleyin.69acbe04", table: .localizable, fallback: "Firmanın acil durum planını ve dosyasını ekleyin; geçerlilik tarihini buradan takip edin."))
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -220,9 +228,9 @@ struct NovaEmergencyPlanScreen: View {
     }
 
     private var header: some View {
-        NovaListHeading(title: headingOverride ?? NovaDestination.emergencyPlans.title, onBack: onBack) {
+        NovaListHeading(title: headingOverride ?? NovaDestination.emergencyPlans.title, onBack: onBack, actionBelow: true) {
             if canWrite {
-                NovaButton(label: RDLocalization.string("localizable.nova.emergency.plan.screens.plan.ekle.c35e3b6a", table: .localizable, fallback: "Plan Ekle"), symbol: "plus", compact: true) { startCreate() }
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.emergency.plan.screens.plan.ekle.c35e3b6a", table: .localizable, fallback: "Plan Ekle"), symbol: "plus", tone: .primary) { startCreate() }
             }
         }
     }
@@ -303,18 +311,18 @@ struct NovaEmergencyPlanScreen: View {
     }
 
     @ViewBuilder private func list(_ board: NovaEmergencyBoard) -> some View {
-        if board.rows.isEmpty {
+        VStack(spacing: 10) {
+            NovaListSectionHeading(title: headingOverride ?? NovaDestination.emergencyPlans.title,
+                count: String(format: RDLocalization.string("localizable.nova.emergency.count",
+                    table: .localizable, fallback: "%d / %d plan"), board.rows.count, board.total))
+            if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.emergency.empty.title",
                 table: .localizable, fallback: "Plan yok"),
                 message: RDLocalization.string("localizable.nova.emergency.plan.screens.plan.ekleyerek.ekibi.dosyayi.ve.gecerlilik.tarih.58b42265", table: .localizable, fallback: "Plan ekleyerek ekibi, dosyayı ve geçerlilik tarihini dijital ortamda takip edebilirsiniz."))
-        } else {
-            VStack(spacing: 10) {
+            } else {
                 ForEach(board.rows) { plan in
                     NovaEmergencyPlanCard(plan: plan) { Task { await openDetail(plan) } }
                 }
-                NovaText(text: String(format: RDLocalization.string("localizable.nova.emergency.count",
-                    table: .localizable, fallback: "%d / %d plan"), board.rows.count, board.total),
-                    style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
                 if board.hasMore {
                     NovaButton(label: RDLocalization.string("localizable.nova.emergency.more", table: .localizable,
                         fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface) {

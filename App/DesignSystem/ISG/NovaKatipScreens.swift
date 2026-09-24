@@ -23,9 +23,17 @@ struct NovaKatipStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
+    private var tone: NovaStatus {
+        switch group {
+        case .expired: return .danger
+        case .expiring: return .warning
+        case .current: return .success
+        case .archived: return .neutral
+        }
+    }
     var body: some View {
         NovaListStat(title: group.title, symbol: group.symbol, value: value,
-            isSelected: isSelected, onTap: onTap)
+            status: tone, isSelected: isSelected, onTap: onTap)
             .accessibilityIdentifier("nova.katip.stat.\(group.rawValue)")
     }
 }
@@ -130,7 +138,7 @@ struct NovaKatipScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
-                    NovaHelpHint(text: RDLocalization.string("localizable.nova.katip.screens.firmanin.sozlesmesini.kaydedin.hizmet.suresini.v.8fd89900", table: .localizable, fallback: "Firmanın sözleşmesini kaydedin; hizmet süresini ve belgesini takip edin."))
+                    NovaListHint(text: RDLocalization.string("localizable.nova.katip.screens.firmanin.sozlesmesini.kaydedin.hizmet.suresini.v.8fd89900", table: .localizable, fallback: "Firmanın sözleşmesini kaydedin; hizmet süresini ve belgesini takip edin."))
                     if let board { counters(board) }
                     filters
                     if pending && canWrite {
@@ -194,9 +202,9 @@ struct NovaKatipScreen: View {
     }
 
     private var header: some View {
-        NovaListHeading(title: headingOverride ?? NovaDestination.katipContracts.title, onBack: onBack) {
+        NovaListHeading(title: headingOverride ?? NovaDestination.katipContracts.title, onBack: onBack, actionBelow: true) {
             if canWrite, query.company != nil {
-                NovaButton(label: RDLocalization.string("localizable.nova.katip.screens.sozlesme.ekle.130743d1", table: .localizable, fallback: "Sözleşme Ekle"), symbol: "plus", compact: true) { drafting = .init(startsOn: NovaDayField.text(Date())) }
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.katip.screens.sozlesme.ekle.130743d1", table: .localizable, fallback: "Sözleşme Ekle"), symbol: "plus", tone: .primary) { drafting = .init(startsOn: NovaDayField.text(Date())) }
             }
         }
     }
@@ -277,18 +285,18 @@ struct NovaKatipScreen: View {
     }
 
     @ViewBuilder private func list(_ board: NovaKatipBoard) -> some View {
-        if board.rows.isEmpty {
+        VStack(spacing: 10) {
+            NovaListSectionHeading(title: headingOverride ?? NovaDestination.katipContracts.title,
+                count: String(format: RDLocalization.string("localizable.nova.katip.count",
+                    table: .localizable, fallback: "%d / %d sözleşme"), board.rows.count, board.total))
+            if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.katip.empty.title",
                 table: .localizable, fallback: "Sözleşme kaydı yok"),
                 message: RDLocalization.string("localizable.nova.katip.screens.isg.hizmeti.sozlesmesini.ekleyerek.baslangic.bit.0b09375d", table: .localizable, fallback: "İSG hizmeti sözleşmesini ekleyerek başlangıç, bitiş ve bağlı dosya bilgilerini takip edebilirsiniz."))
-        } else {
-            VStack(spacing: 10) {
+            } else {
                 ForEach(board.rows) { row in
                     NovaKatipContractCard(entry: row) { Task { await openDetail(row) } }
                 }
-                NovaText(text: String(format: RDLocalization.string("localizable.nova.katip.count",
-                    table: .localizable, fallback: "%d / %d sözleşme"), board.rows.count, board.total),
-                    style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
                 if board.hasMore {
                     NovaButton(label: RDLocalization.string("localizable.nova.katip.more", table: .localizable,
                         fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface) {

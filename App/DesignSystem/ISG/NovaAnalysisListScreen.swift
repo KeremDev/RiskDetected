@@ -47,11 +47,12 @@ struct NovaAnalysisSearchField: View {
     @Binding var text: String
     let placeholder: String
     var identifier = "analysis.search"
+    var symbol = "magnifyingglass"
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").font(.system(size: 13, weight: .semibold))
+            Image(systemName: symbol).font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
             TextField(placeholder, text: $text)
                 .font(NovaFont.font(.body))

@@ -82,14 +82,10 @@ struct NovaWorkPermitLibraryScreen: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     NovaPageHeading(title: RDLocalization.string("localizable.nova.work.permit.library.screen.calisma.izni.ornekleri.c37a490d", table: .localizable, fallback: "Çalışma İzni Örnekleri"), onBack: onBack)
-                    NovaHelpHint(text: RDLocalization.string("localizable.nova.work.permit.library.screen.56.duzenlenebilir.word.ornegi.uygun.formu.arayin.a258ccc9", table: .localizable, fallback: "56 düzenlenebilir Word örneği. Uygun formu arayın, indirin ve kendi saha prosedürünüze göre uyarlayın. Bu örnekler çalışma onayı veya izin kaydı oluşturmaz."))
-                    HStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass")
-                        TextField(RDLocalization.string("localizable.nova.work.permit.library.screen.form.is.veya.kelime.ara.4a1cdb74", table: .localizable, fallback: "Form, iş veya kelime ara"), text: $query)
-                            .accessibilityIdentifier("permit.search")
-                    }
-                    .padding(12)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                    NovaListHint(text: RDLocalization.string("localizable.nova.work.permit.library.screen.56.duzenlenebilir.word.ornegi.uygun.formu.arayin.a258ccc9", table: .localizable, fallback: "56 düzenlenebilir Word örneği. Uygun formu arayın, indirin ve kendi saha prosedürünüze göre uyarlayın. Bu örnekler çalışma onayı veya izin kaydı oluşturmaz."))
+                    NovaAnalysisSearchField(text: $query,
+                        placeholder: RDLocalization.string("localizable.nova.work.permit.library.screen.form.is.veya.kelime.ara.4a1cdb74", table: .localizable, fallback: "Form, iş veya kelime ara"),
+                        identifier: "permit.search")
                     HStack(spacing: 8) {
                         NovaFileChooserButton(label: RDLocalization.string("localizable.nova.work.permit.library.screen.sektor.40d89aaf", table: .localizable, fallback: "Sektör"), value: sector ?? "Tüm sektörler",
                             isOpen: openFilter == "sector", identifier: "permit.sector") {
@@ -111,7 +107,8 @@ struct NovaWorkPermitLibraryScreen: View {
                             self.openFilter = nil
                         }
                     }
-                    NovaText(text: RDLocalization.format("localizable.nova.work.permit.library.screen.1.2.ornek.form.27f33b22", table: .localizable, fallback: "%1$@ / %2$@ örnek form", arguments: [String(describing: visible.count), String(describing: templates.count)]), style: .metaQuiet)
+                    NovaListSectionHeading(title: "Örnek Formlar",
+                        count: RDLocalization.format("localizable.nova.work.permit.library.screen.1.2.ornek.form.27f33b22", table: .localizable, fallback: "%1$@ / %2$@ örnek form", arguments: [String(describing: visible.count), String(describing: templates.count)]))
                     if let exportError { NovaText(text: exportError, style: .metaQuiet) }
                     if templates.isEmpty {
                         NovaEmptyState(title: RDLocalization.string("localizable.nova.work.permit.library.screen.formlar.yuklenemedi.2d408e6c", table: .localizable, fallback: "Formlar yüklenemedi"), message: RDLocalization.string("localizable.nova.work.permit.library.screen.uygulama.paketindeki.word.katalogu.bulunamadi.78218506", table: .localizable, fallback: "Uygulama paketindeki Word kataloğu bulunamadı."))

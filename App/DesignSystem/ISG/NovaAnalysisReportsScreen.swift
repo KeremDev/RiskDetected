@@ -51,10 +51,12 @@ struct NovaAnalysisReportsScreen: View {
                 VStack(alignment: .leading, spacing: 11) {
                     header
                     overview
+                    NovaListHint(text: "Oluşturduğunuz PDF ve Excel raporlarını arayıp dosya türüne göre filtreleyin.")
                     NovaAnalysisSearchField(text: $query,
                         placeholder: RDLocalization.string("localizable.nova.analysis.reports.search", table: .localizable, fallback: "Rapor ara"),
                         identifier: "analysis.reports.search")
                     chips
+                    NovaListSectionHeading(title: "Raporlar", count: "\(visible.count) rapor")
                     list.novaAsyncContent(isLoading: rows == nil)
                         .novaListEntrance(hasRecords: !(rows ?? []).isEmpty)
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)

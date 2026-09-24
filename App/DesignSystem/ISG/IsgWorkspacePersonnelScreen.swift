@@ -39,6 +39,7 @@ struct IsgWorkspacePersonnelScreen: View {
     let canOperate: Bool
     let canManageDirectory: Bool
     let onBack: () -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var section: IsgPersonnelSection
     @State private var workplaces: [IsgWorkspaceDirectoryEntry] = []
     @State private var departments: [IsgWorkspaceDirectoryEntry] = []
@@ -71,12 +72,18 @@ struct IsgWorkspacePersonnelScreen: View {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    NovaPageHeading(title: IsgWorkspaceDomain.personnel.title, onBack: onBack)
-                    NovaHelpHint(text: String(format: RDLocalization.string(
+                    NovaListHeading(title: IsgWorkspaceDomain.personnel.title, onBack: onBack, actionBelow: true) {
+                        if canAdd {
+                            NovaListActionButton(title: addTitle, symbol: "plus", tone: .primary,
+                                identifier: "osgb.personnel.add") { openCreate() }
+                        }
+                    }
+                    NovaListHint(text: String(format: RDLocalization.string(
                         "localizable.nova.workspace.domain.scope", table: .localizable,
                         fallback: "%@ firmasına ait yetkili OSGB kayıtları gösteriliyor."), companyName))
                     if let metrics {
-                        ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 8) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8),
+                                                 count: typeSize.isAccessibilitySize ? 2 : 4), spacing: 8) {
                             NovaListStat(title: IsgPersonnelSection.employee.title, symbol: "person.2",
                                          value: String(metrics.employees.active))
                             NovaListStat(title: IsgPersonnelSection.workplace.title, symbol: "building.2",
@@ -89,13 +96,11 @@ struct IsgWorkspacePersonnelScreen: View {
                                          value: String(metrics.contractors.active))
                             NovaListStat(title: IsgPersonnelSection.assignment.title, symbol: "arrow.triangle.branch",
                                          value: String(metrics.assignments.current))
-                        } }
+                        }
                     }
-                    sectionPicker
                     searchField
-                    if canAdd {
-                        NovaCompactActionButton(title: addTitle, symbol: "plus", prominent: true) { openCreate() }
-                    }
+                    sectionPicker
+                    NovaListSectionHeading(title: section.title, count: "\(visibleCount) kayıt")
                     if loading {
                         NovaLoadingView(message: RDLocalization.string("localizable.nova.workspace.domain.loading",
                             table: .localizable, fallback: "Kayıtlar yükleniyor…"))
@@ -146,16 +151,9 @@ struct IsgWorkspacePersonnelScreen: View {
     }
 
     private var searchField: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-            TextField(RDLocalization.string("localizable.nova.workspace.domain.search", table: .localizable,
-                fallback: "Kayıtlarda ara"), text: $query).font(NovaFont.font(.body))
-            if !query.isEmpty {
-                Button { query = "" } label: { Image(systemName: "xmark.circle").frame(width: 36, height: 36) }
-                    .buttonStyle(NovaRowPressStyle()).accessibilityLabel(RDLocalization.string(
-                        "localizable.nova.nonconformity.search.clear", table: .localizable, fallback: "Aramayı temizle"))
-            }
-        }.padding(.horizontal, 12).frame(minHeight: 48).novaControlBackground(cornerRadius: 16)
+        NovaAnalysisSearchField(text: $query,
+            placeholder: RDLocalization.string("localizable.nova.workspace.domain.search", table: .localizable,
+                fallback: "Kayıtlarda ara"), identifier: "osgb.personnel.search")
     }
 
     @ViewBuilder private var records: some View {

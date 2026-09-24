@@ -71,9 +71,17 @@ struct NovaDocumentStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
+    private var tone: NovaStatus {
+        switch status {
+        case .missing: return .neutral
+        case .dueSoon: return .warning
+        case .expired: return .danger
+        case .valid: return .success
+        }
+    }
     var body: some View {
         NovaListStat(title: NovaDocumentWords.status(status), symbol: NovaDocumentWords.symbol(status),
-            value: value, isSelected: isSelected, onTap: onTap)
+            value: value, status: tone, isSelected: isSelected, onTap: onTap)
             .accessibilityIdentifier("document.stat.\(status.rawValue)")
     }
 }
@@ -93,6 +101,7 @@ struct NovaDocumentTrackingScreen: View {
     var initialKinds: [String]?
     var headingOverride: String?
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var board: NovaDocumentPortfolio?
     @State private var companies: [NovaAnalysisCompanyOption] = []
     @State private var error: String?
@@ -106,6 +115,7 @@ struct NovaDocumentTrackingScreen: View {
     @State private var loading = false
     @State private var reload = UUID()
     @State private var started = false
+    @State private var statusFilterOpen = false
     @FocusState private var searchingCompany: Bool
 
     /// The company page hands one in; there it is never changed on this screen.
@@ -145,7 +155,7 @@ struct NovaDocumentTrackingScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 11) {
                     header
-                    NovaHelpHint(text: RDLocalization.string("localizable.nova.document.page.hint", table: .localizable,
+                    NovaListHint(text: RDLocalization.string("localizable.nova.document.page.hint", table: .localizable,
                         fallback: "Firma evraklarının güncel, yaklaşan ve süresi geçmiş kayıtlarını inceleyin."))
                     if company == nil { picker } else { tracker }
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
@@ -183,25 +193,20 @@ struct NovaDocumentTrackingScreen: View {
     }
 
     private var header: some View {
-        HStack(spacing: 8) {
-            NovaBackButton { onBack() }
-            VStack(alignment: .leading, spacing: 2) {
-                NovaText(text: headingOverride ?? NovaDestination.documentChecklist.title, style: .screenTitle)
-                if let selectedName { NovaText(text: selectedName, style: .metaQuiet) }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                NovaBackButton { onBack() }
+                VStack(alignment: .leading, spacing: 2) {
+                    NovaText(text: headingOverride ?? NovaDestination.documentChecklist.title, style: .screenTitle)
+                    if let selectedName { NovaText(text: selectedName, style: .metaQuiet) }
+                }
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
             // Adding needs a company, so the control appears once there is one.
             if canWrite && company != nil {
-                Button { adding = true } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus").font(.system(size: 13, weight: .bold))
-                        NovaText(text: RDLocalization.string("localizable.nova.nonconformity.new.short", table: .localizable, fallback: "Yeni"),
-                            style: .buttonSm, color: NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
-                    }
-                    .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
-                    .padding(.horizontal, 14).frame(minHeight: 44)
-                    .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
-                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("document.tracking.new")
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.document.add.title", table: .localizable,
+                    fallback: "Takibe evrak ekle"), symbol: "plus", tone: .primary,
+                    identifier: "document.tracking.new") { adding = true }
             }
         }
     }
@@ -210,7 +215,7 @@ struct NovaDocumentTrackingScreen: View {
 
     @ViewBuilder private var picker: some View {
         companyField
-        NovaHelpHint(text: RDLocalization.string("localizable.nova.document.pick.company", table: .localizable,
+        NovaListHint(text: RDLocalization.string("localizable.nova.document.pick.company", table: .localizable,
             fallback: "İlk önce firma seçimi yapın. Seçtiğiniz firmanın evrak kontrolü hemen aşağıda açılır."))
         if let error {
             NovaCard(padding: 16) { NovaText(text: error, style: .metaQuiet) }
@@ -302,8 +307,8 @@ struct NovaDocumentTrackingScreen: View {
 
     @ViewBuilder private var tracker: some View {
         if !isCompanyLocked { chosenCompany }
-        stats
         hint
+        stats
         search
         chips
         list
@@ -332,19 +337,19 @@ struct NovaDocumentTrackingScreen: View {
     /// Four counters for the chosen company, in the home page's own card shape.
     /// Tapping one is the same filter the chips below carry.
     private var stats: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: 8) {
-                ForEach(NovaDocumentStatus.allCases) { state in
-                    NovaDocumentStatCard(status: state, value: count(state),
-                        isSelected: status == state) { status = status == state ? nil : state }
-                }
-            }.padding(.vertical, 2)
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 8),
+                            count: typeSize.isAccessibilitySize ? 2 : 4)
+        return LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(NovaDocumentStatus.allCases) { state in
+                NovaDocumentStatCard(status: state, value: count(state),
+                    isSelected: status == state) { status = status == state ? nil : state }
+            }
         }
     }
 
     /// Two things the screen has to say out loud rather than let a reader assume.
     private var hint: some View {
-        NovaHelpHint(text: RDLocalization.string("localizable.nova.document.hint", table: .localizable,
+        NovaListHint(text: RDLocalization.string("localizable.nova.document.hint", table: .localizable,
             fallback: "Bu liste takip ettiğiniz evrakların sayımıdır; firmanın veya bir kişinin uygunluğuna dair karar değildir. Sağlık evrakı bu listede tutulmaz ve dosyanın kendisi burada saklanmaz."))
     }
 
@@ -356,14 +361,20 @@ struct NovaDocumentTrackingScreen: View {
     }
 
     private var chips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
-                NovaAnalysisFilterChip(title: RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"),
-                    isOn: status == nil, identifier: "document.tracking.filter.all") { status = nil }
-                ForEach(NovaDocumentStatus.allCases) { value in
-                    NovaAnalysisFilterChip(title: "\(NovaDocumentWords.status(value)) \(count(value))",
-                        isOn: status == value,
-                        identifier: "document.tracking.filter.\(value.rawValue)") { status = value }
+        VStack(spacing: 8) {
+            NovaFileChooserButton(label: RDLocalization.string("localizable.nova.file.filter.state", table: .localizable,
+                fallback: "Durum"), value: status.map(NovaDocumentWords.status) ?? RDLocalization.string(
+                    "localizable.nova.document.filter.all", table: .localizable, fallback: "Tüm durumlar"),
+                symbol: status.map(NovaDocumentWords.symbol) ?? "line.3.horizontal.decrease", isOpen: statusFilterOpen,
+                identifier: "document.tracking.filter.state") { statusFilterOpen.toggle() }
+            if statusFilterOpen {
+                NovaFileChooserPanel(options: [.init(id: nil, title: RDLocalization.string(
+                    "localizable.nova.document.filter.all", table: .localizable, fallback: "Tüm durumlar"))]
+                    + NovaDocumentStatus.allCases.map { .init(id: $0.rawValue,
+                        title: NovaDocumentWords.status($0), count: count($0), symbol: NovaDocumentWords.symbol($0)) },
+                    selected: status?.rawValue, identifier: "document.tracking.filter.state.options") { value in
+                    status = value.flatMap(NovaDocumentStatus.init(rawValue:))
+                    statusFilterOpen = false
                 }
             }
         }
@@ -377,38 +388,33 @@ struct NovaDocumentTrackingScreen: View {
                 NovaText(text: RDLocalization.string("localizable.nova.document.loading", table: .localizable,
                     fallback: "Evrak takibi yükleniyor…"), style: .metaQuiet)
             }
-        } else if board?.rows.isEmpty ?? true {
-            VStack(alignment: .leading, spacing: 10) {
-                NovaEmptyState(title: trackedHere == 0
-                    ? RDLocalization.string("localizable.nova.document.empty.title", table: .localizable,
-                        fallback: "Henüz takip edilen evrak yok")
-                    : RDLocalization.string("localizable.nova.document.empty.filtered.title", table: .localizable,
-                        fallback: "Bu filtreye uyan kayıt yok"),
-                    message: trackedHere == 0
-                        ? RDLocalization.string("localizable.nova.document.empty.detail", table: .localizable,
-                            fallback: "Modüllere eklediğiniz süreli belgelerin güncel, yaklaşan ve süresi geçen durumlarını burada izleyebilirsiniz.")
-                        : RDLocalization.string("localizable.nova.document.empty.filtered.detail", table: .localizable,
-                            fallback: "Filtreyi değiştirerek diğer evrak takip kayıtlarını görüntüleyebilirsiniz."))
-                if canWrite && trackedHere == 0 {
-                    NovaButton(label: RDLocalization.string("localizable.nova.document.add.title", table: .localizable,
-                        fallback: "Takibe evrak ekle"), symbol: "plus") { adding = true }
-                        .accessibilityIdentifier("document.tracking.empty.add")
-                }
-            }
         } else if let board {
-            ForEach(board.rows) { row in card(row) }
-            footer(board)
+            VStack(alignment: .leading, spacing: 10) {
+                NovaListSectionHeading(title: headingOverride ?? NovaDestination.documentChecklist.title,
+                    count: String(format: RDLocalization.string("localizable.nova.document.page", table: .localizable,
+                        fallback: "%1$d / %2$d kayıt"), board.rows.count, board.total))
+                if board.rows.isEmpty {
+                    NovaEmptyState(title: trackedHere == 0
+                        ? RDLocalization.string("localizable.nova.document.empty.title", table: .localizable,
+                            fallback: "Henüz takip edilen evrak yok")
+                        : RDLocalization.string("localizable.nova.document.empty.filtered.title", table: .localizable,
+                            fallback: "Bu filtreye uyan kayıt yok"),
+                        message: trackedHere == 0
+                            ? RDLocalization.string("localizable.nova.document.empty.detail", table: .localizable,
+                                fallback: "Modüllere eklediğiniz süreli belgelerin güncel, yaklaşan ve süresi geçen durumlarını burada izleyebilirsiniz.")
+                            : RDLocalization.string("localizable.nova.document.empty.filtered.detail", table: .localizable,
+                                fallback: "Filtreyi değiştirerek diğer evrak takip kayıtlarını görüntüleyebilirsiniz."))
+                } else {
+                    ForEach(board.rows) { row in card(row) }
+                }
+                footer(board)
+            }
         }
     }
 
     /// The page shows ten at a time and says how many are still behind it.
     @ViewBuilder private func footer(_ board: NovaDocumentPortfolio) -> some View {
-        HStack(spacing: 8) {
-            NovaText(text: String(format: RDLocalization.string("localizable.nova.document.page", table: .localizable,
-                fallback: "%1$d / %2$d kayıt"), board.rows.count, board.total), style: .micro,
-                color: NovaColorToken.textTertiary.color(in: scheme))
-            Spacer(minLength: 0)
-            if board.hasMore {
+        if board.hasMore {
                 Button {
                     shown += NovaDocumentQuery().limit
                     reload = UUID()
@@ -421,7 +427,6 @@ struct NovaDocumentTrackingScreen: View {
                     }.foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 40)
                 }.buttonStyle(NovaRowPressStyle()).disabled(loading)
                     .accessibilityIdentifier("document.tracking.more")
-            }
         }
     }
 

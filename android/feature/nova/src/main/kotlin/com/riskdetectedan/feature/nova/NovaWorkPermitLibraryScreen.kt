@@ -78,7 +78,7 @@ fun NovaWorkPermitLibraryScreen(onBack: () -> Unit) {
         .padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         NovaListHeading("Çalışma İzni Örnekleri", onBack)
-        NovaHelpHint("56 düzenlenebilir Word örneği. Uygun formu arayın, indirin ve kendi saha prosedürünüze göre uyarlayın. Bu örnekler çalışma onayı veya izin kaydı oluşturmaz.")
+        NovaListHint("56 düzenlenebilir Word örneği. Uygun formu arayın, indirin ve kendi saha prosedürünüze göre uyarlayın. Bu örnekler çalışma onayı veya izin kaydı oluşturmaz.")
         NovaSearchCapsule(query, "Form, iş veya kelime ara", "permit.search") { query = it }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaChooserButton("Sektör", sector ?: "Tüm sektörler", "permit.sector", Modifier.weight(1f), open = openFilter == "sector") {
@@ -92,7 +92,7 @@ fun NovaWorkPermitLibraryScreen(onBack: () -> Unit) {
             sector, "permit.sector.options") { sector = it; openFilter = null }
         if (openFilter == "job") NovaChooserPanel(listOf(NovaChooserOption(null, "Tüm işler")) + jobs.map { NovaChooserOption(it, it) },
             job, "permit.job.options") { job = it; openFilter = null }
-        NovaText("${visible.size} / ${catalog.size} örnek form", style = NovaTypeToken.metaQuiet)
+        NovaListSectionHeading("Örnek Formlar", "${visible.size} / ${catalog.size} örnek form")
         message?.let { NovaText(it, style = NovaTypeToken.meta) }
         when {
             catalog.isEmpty() -> NovaEmptyState("Formlar yüklenemedi", "Uygulama paketindeki Word kataloğu bulunamadı.")

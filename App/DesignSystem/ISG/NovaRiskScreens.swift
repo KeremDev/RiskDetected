@@ -26,43 +26,18 @@ struct NovaRiskStatCard: View {
     let onTap: () -> Void
     @Environment(\.colorScheme) private var scheme
 
-    private var statusInk: Color {
+    private var tone: NovaStatus {
         switch group {
-        case .expired: return NovaColorToken.statusDangerInk.color(in: scheme)
-        case .untracked: return NovaColorToken.statusNeutralInk.color(in: scheme)
-        case .dueSoon: return NovaColorToken.statusWarningInk.color(in: scheme)
-        case .current: return NovaColorToken.statusSuccessInk.color(in: scheme)
+        case .expired: return .danger
+        case .untracked: return .neutral
+        case .dueSoon: return .warning
+        case .current: return .success
         }
     }
 
     var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 4) {
-                HStack(spacing: 5) {
-                    Image(systemName: group.symbol)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(statusInk)
-                    Text(verbatim: String(value))
-                        .font(.custom("PlusJakartaSans-SemiBold", size: 16, relativeTo: .body))
-                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
-                        .lineLimit(1).minimumScaleFactor(0.8)
-                }
-                Text(verbatim: group.title)
-                    .font(.custom("PlusJakartaSans-Medium", size: 11, relativeTo: .caption))
-                    .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
-                    .lineLimit(2).minimumScaleFactor(0.85)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .padding(.horizontal, 5).padding(.vertical, 4)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 15))
-            .overlay(RoundedRectangle(cornerRadius: 15)
-                .strokeBorder(isSelected ? Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255).opacity(0.62) : NovaColorToken.border.color(in: scheme), lineWidth: 1))
-            .contentShape(RoundedRectangle(cornerRadius: 15))
-        }
-        .buttonStyle(NovaRowPressStyle())
-        .accessibilityLabel("\(group.title), \(value)")
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        NovaListStat(title: group.title, symbol: group.symbol, value: value, status: tone,
+            isSelected: isSelected, onTap: onTap)
             .accessibilityIdentifier("nova.risk.stat.\(group.rawValue)")
     }
 }
@@ -304,18 +279,11 @@ struct NovaRiskScreen: View {
             let gap: CGFloat = 8
             let availableWidth = max(0, geometry.size.width - gap)
             HStack(spacing: gap) {
-                riskActionButton(title: RDLocalization.string("localizable.nova.risk.screens.kayit.ekle.a2079ece", table: .localizable, fallback: "Kayıt Ekle"), symbol: "plus",
-                    fill: Color(red: 234.0 / 255, green: 241.0 / 255, blue: 247.0 / 255),
-                    ink: Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255),
-                    border: Color(red: 213.0 / 255, green: 225.0 / 255, blue: 235.0 / 255),
-                    identifier: "nova.risk.create") { creating = true }
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.risk.screens.kayit.ekle.a2079ece", table: .localizable, fallback: "Kayıt Ekle"),
+                    symbol: "plus", tone: .primary, identifier: "nova.risk.create") { creating = true }
                     .frame(width: availableWidth * 0.4)
-                riskActionButton(title: RDLocalization.string("localizable.nova.risk.screens.sihirbaz.ile.olustur.e59b1788", table: .localizable, fallback: "Sihirbaz ile Oluştur"), symbol: "sparkles",
-                    fill: Color(red: 255.0 / 255, green: 247.0 / 255, blue: 222.0 / 255),
-                    ink: Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255),
-                    border: Color(red: 239.0 / 255, green: 227.0 / 255, blue: 188.0 / 255),
-                    identifier: "nova.risk.wizard",
-                    symbolTint: Color(red: 216.0 / 255, green: 149.0 / 255, blue: 0.0 / 255)) { showingWizard = true }
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.risk.screens.sihirbaz.ile.olustur.e59b1788", table: .localizable, fallback: "Sihirbaz ile Oluştur"),
+                    symbol: "sparkles", tone: .discovery, identifier: "nova.risk.wizard") { showingWizard = true }
                     .frame(width: availableWidth * 0.6)
             }
         }
@@ -323,46 +291,8 @@ struct NovaRiskScreen: View {
     }
 
     private var riskPeriodHint: some View {
-        NovaCard(padding: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "lightbulb")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(NovaColorToken.statusWarningInk.color(in: scheme))
-                Text(verbatim: "Geçerlilik süresi kayıt bazında belirlenir.")
-                    .font(.custom("PlusJakartaSans-Regular", size: 12, relativeTo: .caption))
-                    .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
-                    .fixedSize(horizontal: false, vertical: true)
-                Button("Detay") { showingPeriodInfo = true }
-                    .font(.custom("PlusJakartaSans-SemiBold", size: 12, relativeTo: .caption))
-                    .foregroundStyle(Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255))
-                    .buttonStyle(NovaRowPressStyle())
-                    .accessibilityIdentifier("nova.risk.period.info.open")
-            }
-        }
-    }
-
-    private func riskActionButton(title: String, symbol: String, fill: Color, ink: Color,
-                                  border: Color, identifier: String,
-                                  symbolTint: Color? = nil,
-                                  action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: symbol)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(symbolTint ?? ink)
-                Text(title)
-                    .font(NovaFont.font(.buttonSm))
-                    .foregroundStyle(ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-            }
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .background(fill, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(border, lineWidth: 1))
-            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        }
-        .buttonStyle(NovaPressStyle())
-        .accessibilityIdentifier(identifier)
+        NovaListHint(text: "Geçerlilik süresi kayıt bazında belirlenir.", actionTitle: "Detay",
+            action: { showingPeriodInfo = true })
     }
 
     @ViewBuilder private func counters(_ board: NovaRiskBoard) -> some View {
@@ -488,15 +418,7 @@ struct NovaRiskScreen: View {
 
     @ViewBuilder private func list(_ board: NovaRiskBoard) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(verbatim: "Risk Değerlendirmeleri")
-                    .font(.custom("PlusJakartaSans-SemiBold", size: 21, relativeTo: .title3))
-                    .foregroundStyle(NovaColorToken.text.color(in: scheme))
-                Spacer()
-                Text(verbatim: "\(board.total) kayıt")
-                    .font(.custom("PlusJakartaSans-Regular", size: 14, relativeTo: .subheadline))
-                    .foregroundStyle(NovaColorToken.textSubtle.color(in: scheme))
-            }
+            NovaListSectionHeading(title: "Risk Değerlendirmeleri", count: "\(board.total) kayıt")
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.risk.empty.title", table: .localizable,
                 fallback: "Kayıt yok"),

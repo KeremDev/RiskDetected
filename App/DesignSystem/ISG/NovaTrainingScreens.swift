@@ -10,18 +10,21 @@ struct NovaTrainingHub: View {
     var createOnOpen = false
     @State private var createRequest = 0
     var body: some View {
-        VStack(spacing: 8) {
-            HStack {
-                NovaBackButton(action: onBack)
-                NovaText(text: RDLocalization.string("localizable.nova.training.screens.egitimler.b7f2e2e3", table: .localizable, fallback: "Eğitimler"), style: .screenTitle)
-                Spacer()
+        VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    NovaBackButton(action: onBack)
+                    NovaText(text: RDLocalization.string("localizable.nova.training.screens.egitimler.b7f2e2e3", table: .localizable, fallback: "Eğitimler"), style: .screenTitle)
+                    Spacer(minLength: 0)
+                }
                 if canWrite {
-                    NovaButton(label: RDLocalization.string("localizable.nova.training.screens.egitim.ekle.a755e696", table: .localizable, fallback: "Eğitim Ekle"), symbol: "plus", compact: true) {
+                    NovaListActionButton(title: RDLocalization.string("localizable.nova.training.screens.egitim.ekle.a755e696", table: .localizable, fallback: "Eğitim Ekle"),
+                        symbol: "plus", tone: .primary, identifier: "training.add.header") {
                         createRequest += 1
                     }
-                    .accessibilityIdentifier("training.add.header")
                 }
-            }.padding(.horizontal, 18).padding(.top, 12)
+            }
+            .padding(.horizontal, 18).padding(.top, 12)
             NovaTrainingRegister(identity: identity, personnel: personnel, canWrite: canWrite,
                 initialCompany: nil, createOnOpen: createOnOpen, createRequest: createRequest)
         }
@@ -68,6 +71,7 @@ struct NovaTrainingRegister: View {
     @State private var editor: Editor?
     @State private var certificatePage: CertificatePage?
     @State private var certificatePageAfterEditor: CertificatePage?
+    @Environment(\.dynamicTypeSize) private var typeSize
     private struct Editor: Identifiable { let id = UUID(); let session: NovaTrainingSession? }
     private struct CertificatePage: Identifiable {
         let id = UUID()
@@ -104,20 +108,25 @@ struct NovaTrainingRegister: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
-                    NovaFilterField(label: "Firma", options: [.init(id: nil, title: RDLocalization.string("localizable.nova.training.screens.tum.firmalar.5b83def5", table: .localizable, fallback: "Tüm firmalar"))] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
-                        selected: company?.uuidString, identifier: "training.company") { company = $0.flatMap(UUID.init(uuidString:)) }
-                }
-                NovaHelpHint(text: RDLocalization.string("localizable.nova.training.screens.gerceklesen.egitimi.ve.katilimcilarini.kaydedin..d89372f5", table: .localizable, fallback: "Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz."))
+                NovaListHint(text: RDLocalization.string("localizable.nova.training.screens.gerceklesen.egitimi.ve.katilimcilarini.kaydedin..d89372f5", table: .localizable, fallback: "Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz."))
                 if let createMessage { NovaHelpHint(text: createMessage) }
                 trainingStats
-                NovaCard(padding: 12) {
-                    HStack { Image(systemName: "magnifyingglass"); TextField(RDLocalization.string("localizable.nova.training.screens.egitim.veya.egitmen.ara.e5972c31", table: .localizable, fallback: "Eğitim veya eğitmen ara…"), text: $query) }
+                NovaAnalysisSearchField(text: $query,
+                    placeholder: RDLocalization.string("localizable.nova.training.screens.egitim.veya.egitmen.ara.e5972c31", table: .localizable, fallback: "Eğitim veya eğitmen ara…"),
+                    identifier: "training.search")
+                NovaAnalysisSearchField(text: $dateFilter,
+                    placeholder: RDLocalization.string("localizable.nova.training.screens.tarih.yyyy.aa.gg.d01f7dc7", table: .localizable, fallback: "Tarih (YYYY-AA-GG)"),
+                    identifier: "training.date", symbol: "calendar")
+                HStack(spacing: 8) {
+                    NovaFilterField(label: "Firma", options: [.init(id: nil, title: RDLocalization.string("localizable.nova.training.screens.tum.firmalar.5b83def5", table: .localizable, fallback: "Tüm firmalar"))] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
+                        selected: company?.uuidString, identifier: "training.company") { company = $0.flatMap(UUID.init(uuidString:)) }
+                        .frame(maxWidth: .infinity)
+                    NovaFilterField(label: RDLocalization.string("localizable.nova.training.screens.egitim.turu.1d83c7fd", table: .localizable, fallback: "Eğitim türü"), options: [.init(id: nil, title: RDLocalization.string("localizable.nova.training.screens.tum.egitim.turleri.eed447b6", table: .localizable, fallback: "Tüm eğitim türleri"))] + NovaEducationScope.cycles.map { .init(id: $0.0, title: $0.1) },
+                        selected: cycleFilter.isEmpty ? nil : cycleFilter, identifier: "training.cycle") { cycleFilter = $0 ?? "" }
+                        .frame(maxWidth: .infinity)
                 }
-                NovaFilterField(label: RDLocalization.string("localizable.nova.training.screens.egitim.turu.1d83c7fd", table: .localizable, fallback: "Eğitim türü"), options: [.init(id: nil, title: RDLocalization.string("localizable.nova.training.screens.tum.egitim.turleri.eed447b6", table: .localizable, fallback: "Tüm eğitim türleri"))] + NovaEducationScope.cycles.map { .init(id: $0.0, title: $0.1) },
-                    selected: cycleFilter.isEmpty ? nil : cycleFilter, identifier: "training.cycle") { cycleFilter = $0 ?? "" }
-                TextField(RDLocalization.string("localizable.nova.training.screens.tarih.yyyy.aa.gg.d01f7dc7", table: .localizable, fallback: "Tarih (YYYY-AA-GG)"), text: $dateFilter).font(NovaFont.font(.meta))
-                Text(RDLocalization.format("localizable.nova.training.screens.1.egitim.07b9d9c8", table: .localizable, fallback: "%1$@ eğitim", arguments: [String(describing: visible.count)])).font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+                NovaListSectionHeading(title: RDLocalization.string("localizable.nova.training.screens.egitimler.b7f2e2e3", table: .localizable, fallback: "Eğitimler"),
+                    count: RDLocalization.format("localizable.nova.training.screens.1.egitim.07b9d9c8", table: .localizable, fallback: "%1$@ eğitim", arguments: [String(describing: visible.count)]))
                 if pending {
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.training.screens.onceki.islemin.sonucu.bekleniyor.ayni.kaydi.guve.840d8402", table: .localizable, fallback: "Önceki işlemin sonucu bekleniyor. Aynı kaydı güvenle tamamlayın."))
                     NovaButton(label: RDLocalization.string("localizable.nova.training.screens.bekleyen.islemi.tamamla.8e8fc724", table: .localizable, fallback: "Bekleyen işlemi tamamla"), symbol: "arrow.clockwise", isEnabled: canWrite && !loading) {
@@ -189,12 +198,12 @@ struct NovaTrainingRegister: View {
             }
     }
     private var trainingStats: some View {
-        NovaMetricStrip(items: [
-            .init(id: "minutes", value: hours(trainingMinutes), label: RDLocalization.string("localizable.nova.training.screens.egitim.saati.e609ca65", table: .localizable, fallback: "Eğitim saati"), symbol: "clock", status: .neutral),
-            .init(id: "people", value: "\(trainedPeople.count)", label: RDLocalization.string("localizable.nova.training.screens.egitim.alan.9b6e442b", table: .localizable, fallback: "Eğitim alan"), symbol: "person.2", status: .success),
-            .init(id: "person-minutes", value: hours(personMinutes), label: RDLocalization.string("localizable.nova.training.screens.adam.saat.5bf33e14", table: .localizable, fallback: "Adam × saat"), symbol: "person.badge.clock", status: .neutral),
-            .init(id: "missing", value: employeeTotal.map { String(max(0, $0 - trainedPeople.count)) } ?? "—", label: RDLocalization.string("localizable.nova.training.screens.egitimi.eksik.b6d8ae8f", table: .localizable, fallback: "Eğitimi eksik"), symbol: "person.crop.circle.badge.exclamationmark", status: .warning)
-        ]).accessibilityIdentifier("training.stats")
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: typeSize.isAccessibilitySize ? 2 : 4), spacing: 8) {
+            NovaListStat(title: RDLocalization.string("localizable.nova.training.screens.egitim.saati.e609ca65", table: .localizable, fallback: "Eğitim saati"), symbol: "clock", value: hours(trainingMinutes))
+            NovaListStat(title: RDLocalization.string("localizable.nova.training.screens.egitim.alan.9b6e442b", table: .localizable, fallback: "Eğitim alan"), symbol: "person.2", value: "\(trainedPeople.count)", status: .success)
+            NovaListStat(title: RDLocalization.string("localizable.nova.training.screens.adam.saat.5bf33e14", table: .localizable, fallback: "Adam × saat"), symbol: "person.badge.clock", value: hours(personMinutes))
+            NovaListStat(title: RDLocalization.string("localizable.nova.training.screens.egitimi.eksik.b6d8ae8f", table: .localizable, fallback: "Eğitimi eksik"), symbol: "person.crop.circle.badge.exclamationmark", value: employeeTotal.map { String(max(0, $0 - trainedPeople.count)) } ?? "—", status: .warning)
+        }.accessibilityIdentifier("training.stats")
     }
     @MainActor private func loadEmployeeTotal() async {
         employeeTotal = nil

@@ -38,6 +38,9 @@ struct NovaChecklistScreen: View {
     var canWrite = true
     var initialCompany: UUID?
     var headingOverride: String?
+    /// A run to open as soon as the screen appears ("Senin İçin" continues
+    /// an open check).
+    var initialRunID: UUID? = nil
 
     @State private var board: NovaChecklistBoard?
     @State private var companies: [NovaAnalysisCompanyOption] = []
@@ -76,7 +79,11 @@ struct NovaChecklistScreen: View {
             }
             .refreshable { await syncPending(); await load(reset: true) }
         }
-        .task { await syncPending(); await load(reset: true) }
+        .task {
+            await syncPending()
+            if let initialRunID, let run = try? await client.detail(initialRunID) { detail = run }
+            await load(reset: true)
+        }
         .task(id: query.search) {
             do { try await Task.sleep(nanoseconds: 280_000_000) }
             catch { return }
@@ -124,9 +131,9 @@ struct NovaChecklistScreen: View {
     }
 
     private var header: some View {
-        NovaListHeading(title: headingOverride ?? "Kontroller", onBack: onBack) {
+        NovaListHeading(title: headingOverride ?? "Kontroller", onBack: onBack, actionBelow: true) {
             if canWrite {
-                NovaButton(label: RDLocalization.string("localizable.nova.checklist.screens.yeni.kontrol.050e3985", table: .localizable, fallback: "Yeni kontrol"), symbol: "plus", compact: true) {
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.checklist.screens.yeni.kontrol.050e3985", table: .localizable, fallback: "Yeni kontrol"), symbol: "plus", tone: .primary) {
                     showingStart = true
                 }
                 .accessibilityIdentifier("nova.checklist.start")
