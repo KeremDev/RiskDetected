@@ -5,6 +5,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.selected
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -54,9 +59,43 @@ class NovaServiceRiskClient(private val service: NovaRiskService, private val id
 
 internal fun riskMessage(error: Throwable) = (error as? NovaRiskException)?.failure?.message ?: NovaRiskFailure.unavailable.message
 
-private fun NovaRiskGroup.status() = when (this) {
-    NovaRiskGroup.expired -> NovaStatus.Danger; NovaRiskGroup.untracked -> NovaStatus.Warning
-    NovaRiskGroup.dueSoon -> NovaStatus.Info; NovaRiskGroup.current -> NovaStatus.Success
+@Composable
+private fun NovaRiskGroup.statusInk() = when (this) {
+    NovaRiskGroup.expired -> NovaColorToken.statusDangerInk.color()
+    NovaRiskGroup.untracked -> NovaColorToken.statusNeutralInk.color()
+    NovaRiskGroup.dueSoon -> NovaColorToken.statusWarningInk.color()
+    NovaRiskGroup.current -> NovaColorToken.statusSuccessInk.color()
+}
+
+@Composable
+private fun NovaRiskGroup.statusDot() = when (this) {
+    NovaRiskGroup.expired -> NovaColorToken.statusDangerDot.color()
+    NovaRiskGroup.untracked -> NovaColorToken.statusNeutralDot.color()
+    NovaRiskGroup.dueSoon -> NovaColorToken.statusWarningDot.color()
+    NovaRiskGroup.current -> NovaColorToken.statusSuccessDot.color()
+}
+
+@Composable
+private fun RiskStatCard(group: NovaRiskGroup, value: Int, modifier: Modifier = Modifier,
+                         selected: Boolean = false, onClick: () -> Unit) {
+    val tint = group.statusInk()
+    val shape = RoundedCornerShape(15.dp)
+    Column(modifier.heightIn(min = 58.dp).clip(shape)
+        .background(NovaColorToken.surface.color(), shape)
+        .border(1.dp, if (selected) Color(0xFF0B2F53).copy(alpha = 0.62f) else NovaColorToken.border.color(), shape)
+        .novaRowPress(onClick = onClick)
+        .semantics(mergeDescendants = true) {
+            contentDescription = "${group.title}, $value"
+            this.selected = selected
+        }
+        .padding(horizontal = 5.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+            NovaIcon(group.symbol, 12.dp, tint = tint)
+            NovaSizedText(value.toString(), 19f, FontWeight.SemiBold, NovaColorToken.text.color(), maxLines = 1)
+        }
+        NovaSizedText(group.title, 11f, FontWeight.Medium, NovaColorToken.textSecondary.color(), maxLines = 2)
+    }
 }
 
 /** One workplace's record as a row; the state and its reason come from the server. */
@@ -71,7 +110,8 @@ private fun RiskRowCard(row: NovaRiskRow, modifier: Modifier, onClick: () -> Uni
                     val workplace = row.workplaceName
                     if (workplace != null && novaFold(workplace) != novaFold(row.companyName.orEmpty())) NovaText(workplace, style = NovaTypeToken.metaQuiet)
                 }
-                NovaStatusPill(row.state.title, row.group.status())
+                Box(Modifier.size(8.dp).background(row.group.statusDot(), CircleShape)
+                    .semantics { contentDescription = row.state.title })
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.validUntil?.let { RiskFact("calendar", "Geçerlilik", NovaDay.label(it)) }
@@ -145,7 +185,7 @@ fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit
             NovaRiskGroup.entries.chunked(columns).forEach { chunk ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     chunk.forEach { group ->
-                        NovaListStat(group.title, group.symbol, current.count(group), Modifier.weight(1f).testTag("nova.risk.stat.${group.wire}"),
+                        RiskStatCard(group, current.count(group), Modifier.weight(1f).testTag("nova.risk.stat.${group.wire}"),
                             selected = query.state == group.wire) {
                             query = query.copy(state = if (query.state == group.wire) null else group.wire); reload()
                         }

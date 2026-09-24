@@ -24,9 +24,45 @@ struct NovaRiskStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
+    @Environment(\.colorScheme) private var scheme
+
+    private var statusInk: Color {
+        switch group {
+        case .expired: return NovaColorToken.statusDangerInk.color(in: scheme)
+        case .untracked: return NovaColorToken.statusNeutralInk.color(in: scheme)
+        case .dueSoon: return NovaColorToken.statusWarningInk.color(in: scheme)
+        case .current: return NovaColorToken.statusSuccessInk.color(in: scheme)
+        }
+    }
+
     var body: some View {
-        NovaListStat(title: group.title, symbol: group.symbol, value: value,
-            isSelected: isSelected, onTap: onTap)
+        Button(action: onTap) {
+            VStack(spacing: 4) {
+                HStack(spacing: 5) {
+                    Image(systemName: group.symbol)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(statusInk)
+                    Text(verbatim: String(value))
+                        .font(.custom("PlusJakartaSans-SemiBold", size: 19, relativeTo: .body))
+                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                }
+                Text(verbatim: group.title)
+                    .font(.custom("PlusJakartaSans-Medium", size: 11, relativeTo: .caption))
+                    .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
+                    .lineLimit(2).minimumScaleFactor(0.85)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .padding(.horizontal, 5).padding(.vertical, 4)
+            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 15))
+            .overlay(RoundedRectangle(cornerRadius: 15)
+                .strokeBorder(isSelected ? Color(red: 11.0 / 255, green: 47.0 / 255, blue: 83.0 / 255).opacity(0.62) : NovaColorToken.border.color(in: scheme), lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 15))
+        }
+        .buttonStyle(NovaRowPressStyle())
+        .accessibilityLabel("\(group.title), \(value)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
             .accessibilityIdentifier("nova.risk.stat.\(group.rawValue)")
     }
 }
@@ -38,12 +74,12 @@ struct NovaRiskRowCard: View {
     let onTap: () -> Void
     @Environment(\.colorScheme) private var scheme
 
-    private var status: NovaStatus {
+    private var statusDot: Color {
         switch row.group {
-        case .expired: return .danger
-        case .untracked: return .warning
-        case .dueSoon: return .info
-        case .current: return .success
+        case .expired: return NovaColorToken.statusDangerDot.color(in: scheme)
+        case .untracked: return NovaColorToken.statusNeutralDot.color(in: scheme)
+        case .dueSoon: return NovaColorToken.statusWarningDot.color(in: scheme)
+        case .current: return NovaColorToken.statusSuccessDot.color(in: scheme)
         }
     }
 
@@ -61,7 +97,11 @@ struct NovaRiskRowCard: View {
                             }
                         }
                         Spacer(minLength: 0)
-                        NovaStatusPill(label: NovaRiskWords.state(row.state), status: status)
+                        Circle()
+                            .fill(statusDot)
+                            .frame(width: 8, height: 8)
+                            .accessibilityElement()
+                            .accessibilityLabel(Text(verbatim: NovaRiskWords.state(row.state)))
                     }
                     HStack(spacing: 10) {
                         if let until = row.validUntil {
