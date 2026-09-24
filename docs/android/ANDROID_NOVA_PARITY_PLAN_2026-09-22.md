@@ -125,6 +125,18 @@ sırası, aynı durum geçişleri, aynı boş/hata/yükleniyor durumları, aynı
 | Profil "Arkadaşını davet et" (referral kodu, paylaşım, ödül başlatma, kod kullanma, davet bağlantısı) | Tamam | `025d7e95` |
 | Eğitim kaydetme kuralları (seçilen firma listesi + kaldır, eğitici kaldırma, sunucu sınırları, arka planda sertifika) | Tamam | `96bad3f7` |
 | Kayıt sonrası sertifika sayfası (kişi kartları, görüntüle/indir/paylaş, sürümler) + editör görünüm güncellemesi | Tamam | `f3fa6c43` |
+| Onboarding sonrası "Reveal" ekranı (splash → reveal → intro) | Tamam | `52b6c234` |
+| Etkinlik kaydı RPC'si yalnız tanımlı argümanlarla çağrılıyor | Tamam | `b5f63c71` |
+| Firma kontrol listesi çalıştırmaları "Bağımsız kontrol" diye etiketlenmiyor (firma adı dolduruluyor) | Tamam | `a6d2df3e` |
+| Eğitim türü seçilmeden konu/gün boş; kayıtlı eğitimi düzenleme, katılımcı çıkarma, silme | Tamam | `200b8b36` |
+| Çevrimdışı uyarısı 4 sn gecikmeli ve yalnız ön planda (iOS `4d7a7c67`) | Tamam | `135fb689` |
+| Boş ekiple acil durum planı yayımlanabiliyor (sunucu 0..200); risk kayıt mesajı düzeltildi | Tamam | `2afeaf08` |
+| Ana sayfa "Süresi Geçenler / Yaklaşan" panosu, pilot ve OSGB yönetici ana sayfasında (iOS `afb22c91`, `2b945e0b`) | Tamam | `cf2931b1` |
+| Pilot profili iOS'taki gruplu İSGADA düzeni (iOS `1be96712`, `266f692c`, `6576827c`) | Tamam | `0dacedc7` |
+
+Oturum açmış ve dönen kullanıcı yönlendirmesi (iOS `c027cfd9`) Android'de zaten `AppBootstrapStore.markAuthenticated`
+ile vardı; Reduce Motion düzeltmelerinin (iOS `08215e86`, `1c942f20`) karşılıkları da Android onboarding ve
+`NovaMotion.gated` içinde mevcut.
 
 iOS'ta erişilemeyen (ölü) olduğu için taşınmayanlar: `NovaPPEFormPDF` (KKD form PDF'i),
 `IsgWorkspaceTrainingAdvancedScreen`, analiz bölüm başlığı/risk özet kartı/madde çubuğu/defter paneli,
