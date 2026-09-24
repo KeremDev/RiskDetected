@@ -178,7 +178,7 @@
     },
     {
       "id": "ppeHandovers",
-      "title": "KKD Zimmet Formları",
+      "title": "KKD Zimmet Formu Örneği",
       "tab": "home",
       "iosSymbol": "shield.checkered"
     },
@@ -208,7 +208,7 @@
     },
     {
       "id": "workPermits",
-      "title": "Çalışma İzni Formları",
+      "title": "Çalışma İzni Örnekleri",
       "tab": "home",
       "iosSymbol": "doc.text"
     },
