@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { deliverToAPNs } from "../send-push-notification/apns-delivery.ts";
+import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 
 const base64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 const encode = (value: unknown) => base64url(new TextEncoder().encode(JSON.stringify(value)));
@@ -39,7 +40,8 @@ Deno.serve(async (request) => {
         const result = await deliverToAPNs({ url: `https://${host}/3/device/${device.token}`,
           headers: { authorization: `bearer ${token}`, "apns-topic": device.application_id,
             "apns-push-type": "alert", "apns-priority": "10", "apns-collapse-id": job.id },
-          payload: { aps: { alert: { title: "Kişisel hatırlatıcı", body: "Not defterinizdeki hatırlatıcının zamanı geldi." }, sound: "default" },
+          payload: { aps: { alert: { title: userFacingCopy("notebookReminderTitle", device.language),
+            body: userFacingCopy("notebookReminderBody", device.language) }, sound: "default" },
             kind: "personal_reminder", data: { destination: "notebook" } },
           maxAttempts: 3 });
         // Unknown transport outcome is never automatically retried: no duplicate pushes.

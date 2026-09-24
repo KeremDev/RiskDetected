@@ -331,6 +331,14 @@ const COPY = {
     tr: "Analiz sonucu kaydedilemedi.",
     en: "The analysis result could not be saved.",
   },
+  notebookReminderTitle: {
+    tr: "Kişisel hatırlatıcı",
+    en: "Personal reminder",
+  },
+  notebookReminderBody: {
+    tr: "Not defterinizdeki hatırlatıcının zamanı geldi.",
+    en: "It's time for a reminder in your notebook.",
+  },
 } as const;
 
 export type UserFacingCopyKey = keyof typeof COPY;

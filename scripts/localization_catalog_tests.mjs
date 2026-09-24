@@ -293,13 +293,12 @@ test("L10N-004", "Swift user-facing hard-coded literal debt is zero", () => {
 test("L10N-005", "backend user-facing literal scan matches approved baseline", () => {
   assertLiteralSurfaceSnapshot(
     ["backend"],
-    // 2026-09-24: reviewed against 63a338fe: 23 new units, none removed.
-    // 21 are Turkish fallbacks and PDF headings in the OSGB photo-analysis
-    // job (process-isg-workspace-jobs); 2 are the Turkish-only notebook
-    // reminder push (process-notebook-reminders), still to be paired with
-    // English.
-    271,
-    "eeaa1a722004e243ea248cde900a88466e55d99e9d3603046f2f51883f567a2c",
+    // 2026-09-24: reviewed against 63a338fe: 21 new units, none removed:
+    // Turkish fallbacks and PDF headings in the OSGB photo-analysis job
+    // (process-isg-workspace-jobs). The notebook reminder push moved to
+    // _shared/user-facing-copy.ts with an English pair.
+    269,
+    "c6d946b40f95eccde254828a0e0ab56791ad3e77b769b5962c34c9f5e12bdab1",
   );
 });
 
