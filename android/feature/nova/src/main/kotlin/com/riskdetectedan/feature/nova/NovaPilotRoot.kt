@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.riskdetectedan.feature.profile.novaClient
 import com.riskdetectedan.feature.profile.novaDirectoryClient
+import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -211,7 +213,11 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
         }
     }
     noticeRecord?.let { row ->
-        Box(Modifier.fillMaxSize()) { recordOpener(services, identity, state.writable, state.userName)(row) { noticeRecord = null } }
+        // Opaque and touch-absorbing: the record sits over the shell, never beside it.
+        Box(Modifier.fillMaxSize().background(NovaColorToken.canvas.color())
+            .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }) {
+            recordOpener(services, identity, state.writable, state.userName)(row) { noticeRecord = null }
+        }
     }
     NovaNoticeDialog(state.message, "İSGADA pilot", viewModel::dismissMessage)
 }
