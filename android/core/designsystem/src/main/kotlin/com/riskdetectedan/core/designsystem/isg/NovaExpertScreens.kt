@@ -57,28 +57,35 @@ internal fun NovaSizeText(text: String, size: Float, weight: FontWeight = FontWe
 /**
  * Home (iOS `NovaDashboardScreen`). [tracking] and [footer] are host-owned
  * slots so the data-bound module tracking card and OSGB controls live inside
- * the same scroll surface without forking the layout.
+ * the same scroll surface without forking the layout. [forYou] is the
+ * "Senin İçin" section; when present it replaces the summary counters (the
+ * OSGB manager home keeps the counters until its own variant).
  */
 @Composable
 fun NovaDashboardScreen(data: NovaDashboardData, onNavigate: (NovaDestination) -> Unit, onPhoto: () -> Unit,
                         showsPhotoCapture: Boolean = true,
                         analysisThumbnail: (suspend (String) -> androidx.compose.ui.graphics.ImageBitmap?)? = null,
                         onOpenAnalysis: ((String) -> Unit)? = null,
-                        tracking: (@Composable () -> Unit)? = null, footer: (@Composable () -> Unit)? = null) {
+                        tracking: (@Composable () -> Unit)? = null, footer: (@Composable () -> Unit)? = null,
+                        forYou: (@Composable () -> Unit)? = null) {
     val muted = NovaColorToken.textMuted.color()
     val accentInk = NovaColorToken.accentInk.color()
     val wide = LocalDensity.current.fontScale >= 1.5f
     Column(Modifier.fillMaxSize().background(NovaColorToken.canvas.color()).verticalScroll(rememberScrollState())
         .testTag("nova.home.scroll").padding(bottom = 122.dp)) {
-        Row(Modifier.padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-            NovaText("Özet", Modifier.weight(1f), NovaTypeToken.sectionTitle)
-            NovaText("Güncel", style = NovaTypeToken.meta, color = muted)
-        }
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 18.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-            data.metrics.forEach { metric ->
-                NovaListStat(metric.label, metric.symbol, metric.value, Modifier.width(if (wide) 160.dp else 86.dp)
-                    .testTag("nova.metric.${metric.id}")) { onNavigate(metric.destination) }
+        if (forYou != null) {
+            Box(Modifier.padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 22.dp)) { forYou() }
+        } else {
+            Row(Modifier.padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                NovaText("Özet", Modifier.weight(1f), NovaTypeToken.sectionTitle)
+                NovaText("Güncel", style = NovaTypeToken.meta, color = muted)
+            }
+            Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 18.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                data.metrics.forEach { metric ->
+                    NovaListStat(metric.label, metric.symbol, metric.value, Modifier.width(if (wide) 160.dp else 86.dp)
+                        .testTag("nova.metric.${metric.id}")) { onNavigate(metric.destination) }
+                }
             }
         }
         if (showsPhotoCapture) NovaCaptureCard(onPhoto, { onNavigate(NovaDestination.newFinding) },

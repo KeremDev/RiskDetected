@@ -432,13 +432,45 @@ class NovaTrainingService @Inject constructor(@ApplicationContext context: Conte
 
     fun preserve(identity: IsgWorkspaceIdentity, draft: NovaEducationDraft) {
         check(identity)
-        storage.edit().putString(draftKey(identity, draft.id), json.encodeToString(NovaEducationDraft.serializer(), draft)).apply()
+        val editor = storage.edit().putString(draftKey(identity, draft.id), json.encodeToString(NovaEducationDraft.serializer(), draft))
+        if (draft.id == null) {
+            val previous = storage.getString(key(identity, "draft-stamp:new"), null)
+                ?.let { runCatching { json.decodeFromString(DraftStamp.serializer(), it) }.getOrNull() }
+            editor.putString(key(identity, "draft-stamp:new"), json.encodeToString(DraftStamp.serializer(),
+                DraftStamp(previous?.ref ?: UUID.randomUUID().toString(), System.currentTimeMillis(), companyOf(draft))))
+        }
+        editor.apply()
     }
+
+    /**
+     * The home page offers to finish an unsaved new training (iOS
+     * `NovaEducationService.DraftStamp`). It needs the draft's own id and last
+     * edit; they are kept next to the draft, whose stored format does not change.
+     */
+    @Serializable data class DraftStamp(val ref: String, val updatedAt: Long, val companyId: String? = null)
+
+    /** The unsaved new-training draft, when it holds a title, a trainer or a company. */
+    fun newDraftStamp(identity: IsgWorkspaceIdentity): DraftStamp? {
+        val draft = draft(identity, null) ?: return null
+        if (draft.title.isBlank() && draft.trainers.isEmpty() && draft.scopes.isEmpty()) return null
+        storage.getString(key(identity, "draft-stamp:new"), null)
+            ?.let { runCatching { json.decodeFromString(DraftStamp.serializer(), it) }.getOrNull() }
+            ?.let { return it.copy(companyId = companyOf(draft)) }
+        // Saved before stamps existed: it gets an id now and counts as edited now.
+        val stamp = DraftStamp(UUID.randomUUID().toString(), System.currentTimeMillis(), companyOf(draft))
+        storage.edit().putString(key(identity, "draft-stamp:new"), json.encodeToString(DraftStamp.serializer(), stamp)).apply()
+        return stamp
+    }
+
+    private fun companyOf(draft: NovaEducationDraft): String? =
+        draft.scopes.map { it.companyId.lowercase() }.toSet().singleOrNull()
 
     /** Drops the autosave so the next open starts genuinely fresh. */
     fun discardDraft(identity: IsgWorkspaceIdentity, id: String?) {
         check(identity)
-        storage.edit().remove(draftKey(identity, id)).apply()
+        val editor = storage.edit().remove(draftKey(identity, id))
+        if (id == null) editor.remove(key(identity, "draft-stamp:new"))
+        editor.apply()
     }
 
     fun pending(identity: IsgWorkspaceIdentity): NovaEducationDraft? {
@@ -462,6 +494,7 @@ class NovaTrainingService @Inject constructor(@ApplicationContext context: Conte
                 throw NovaTrainingException("ACCESS_DENIED")
             val editor = storage.edit().remove(pendingKey)
             if (draft.action != "curriculum") editor.remove(draftKey(identity, draft.id))
+            if (draft.action != "curriculum" && draft.id == null) editor.remove(key(identity, "draft-stamp:new"))
             editor.apply()
             events.recordsChanged(identity.userId)
             events.succeeded(identity.userId, when (draft.action) {

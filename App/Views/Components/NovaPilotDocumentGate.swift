@@ -16,11 +16,13 @@ struct NovaPilotDocumentGate: View {
     var initialRecordID: UUID?
     var initialKinds: [String]?
     var headingOverride: String?
+    /// A home card's status filter ("expired" or "soon").
+    var initialStatus: String?
 
     private var service: NovaDocumentTrackingService { .live(currentScope: currentScope) }
 
     var body: some View {
-        NovaFollowupScreen(identity: identity, initialCompany: initialCompany, canWrite: canWrite, onBack: onBack, legacy: { row, close in
+        NovaFollowupScreen(identity: identity, initialCompany: initialCompany, initialStatus: initialStatus, canWrite: canWrite, onBack: onBack, legacy: { row, close in
             AnyView(NovaDocumentTrackingScreen(client: client, onBack: close, canWrite: false,
                 initialCompany: row.company_id, initialRecordID: row.record_id, initialKinds: initialKinds,
                 headingOverride: RDLocalization.string("localizable.nova.document.previous.title", table: .localizable,

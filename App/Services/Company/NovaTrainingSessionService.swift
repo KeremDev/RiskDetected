@@ -38,6 +38,8 @@ struct NovaTrainingSession: Codable, Identifiable {
     let deleted_at: String?
     let companies: [Company]
     var education: NovaEducationRecord? = nil
+    /// Who recorded the session; an organization's "mine" filter reads it.
+    var created_by_user_id: UUID? = nil
     var isLegacyPlan: Bool { companies.contains { $0.state == "planned" } }
     var count: Int { companies.reduce(0) { $0 + $1.participants.count } }
 }

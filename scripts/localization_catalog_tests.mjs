@@ -782,7 +782,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 6_410, "Turkish localized-unit count");
+  assert.equal(rows.length, 6_516, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
@@ -819,7 +819,10 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // 2026-09-25: the risk wizard's score note drops "Yeni maddeler uzman
     // incelemesi bekleyen taslaklardır." (no expert-approval step, owner
     // decision); that one unit changed, none added or removed.
-    "ac9e677fb91f0882720222c033db9844e6e84c50a638d016e2d6640fae66fb44",
+    // 2026-09-24: 106 new Localizable units: 103 localizable.nova.foryou.*
+    // for the "Senin İçin" home section and 3 localizable.nova.shell.pending.*
+    // for the home header's pending count; none removed or changed.
+    "5712440aee22d2bda3f67700c3c4402fa8c59967fbdf2fe6ac1f6e9b9acb80ae",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

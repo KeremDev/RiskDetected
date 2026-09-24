@@ -198,7 +198,12 @@ struct NovaRiskWizardScreen: View {
         } catch { message = error.localizedDescription }
     }
     private func reloadResult() {
-        do { result = try runtime?.result() } catch { message = error.localizedDescription }
+        do {
+            let next = try runtime?.result()
+            // The first finished draft is the use "Senin İçin" stops suggesting.
+            if result == nil, next != nil { NovaForYouOutbox.recordUse("risk_wizard") }
+            result = next
+        } catch { message = error.localizedDescription }
     }
 
     // MARK: Pages

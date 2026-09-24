@@ -26,14 +26,16 @@ import javax.inject.Singleton
                                  @SerialName("equipment_type") val equipmentType: String? = null,
                                  @SerialName("equipment_type_label") val equipmentTypeLabel: String? = null) {
         val key: String get() = kind + recordId
-        val typeTitle: String get() = when (kind) {
+        val typeTitle: String get() = NovaFollowupPage.typeTitle(kind)
+    }
+
+    companion object {
+        /** The record type as Evrak Takibi names it; the home cards use the same words. */
+        fun typeTitle(kind: String): String = when (kind) {
             "training" -> "Eğitim"; "equipment" -> "Periyodik kontrol"; "risk_assessment" -> "Risk analizi"
             "emergency_plan" -> "Acil durum planı"; "appointment" -> "Atama"; "document" -> "Önceki evrak kaydı"; "file" -> "Dosya"
             else -> NovaProcessKind.get(kind).title
         }
-    }
-
-    companion object {
         fun statusTitle(status: String) = mapOf("current" to "Güncel", "soon" to "Yaklaşıyor", "expired" to "Süresi doldu", "undated" to "Süre takibi yok")[status] ?: status
         val kindOptions = listOf(
             "risk_assessment" to "Risk analizi", "training" to "Eğitim", "equipment" to "Periyodik kontrol",

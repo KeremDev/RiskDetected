@@ -112,10 +112,13 @@ struct NovaEmergencyPlanScreen: View {
     /// Opened from the company page's own empty-state "Ekle" action.
     var startInAddMode = false
     var management: ((UUID, UUID) -> AnyView)?
+    /// Opened from a home suggestion: the wizard first, the list behind it.
+    var startWithWizard = false
     @State private var draftCompany: UUID?
 
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showingWizard = false
+    @State private var wizardClosed = false
     @State private var board: NovaEmergencyBoard?
     @State private var catalogue: NovaEmergencyCatalogue?
     @State private var companies: [NovaAnalysisCompanyOption] = []
@@ -142,11 +145,11 @@ struct NovaEmergencyPlanScreen: View {
         // Opened straight into "add": the create flow alone is the entire
         // cover, so it blurs the real company page instead of an empty
         // intermediate board screen. See NovaPopup's own doc comment.
-        if showingWizard {
+        if showingWizard || (startWithWizard && !wizardClosed) {
             NovaDocumentWizardScreen(domain: "emergency", companiesSource: client.companies,
                 workplacesSource: { company in try await client.catalogue(company).workplaces.map { .init(id: $0.id, name: $0.name) } },
                 files: client.fileClient, initialCompany: query.company ?? initialCompany,
-                onBack: { showingWizard = false })
+                onBack: { showingWizard = false; wizardClosed = true })
         } else if startInAddMode {
             addFlow(savedDraft ?? .init(preparedOn: NovaDayField.text(Date())))
         } else {

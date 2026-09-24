@@ -36,6 +36,10 @@ struct NovaNonconformityRow: Equatable, Identifiable, Codable {
     /// opened before evidence attach existed.
     var evidence_asset_ids: [UUID]? = nil
     var evidence_downloads: [NovaEvidenceDownload]? = nil
+    /// When and by whom the record was written; list rows carry them so the
+    /// list can narrow to "recorded in these days" and "mine".
+    var created_at: String? = nil
+    var created_by_user_id: UUID? = nil
     /// A record that came from a photo analysis keeps pointing at that finding;
     /// the finding itself is never rewritten.
     var camefromFinding: Bool { source_kind == "legacy_finding" || source_kind == "analysis_finding" }

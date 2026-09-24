@@ -9,6 +9,7 @@ struct NovaPilotEmergencyGate: View {
     var initialRecordID: UUID?
     var headingOverride: String?
     var startInAddMode = false
+    var startWithWizard = false
     let onBack: () -> Void
 
     private var service: NovaEmergencyPlanService { .live() }
@@ -18,7 +19,8 @@ struct NovaPilotEmergencyGate: View {
         NovaEmergencyPlanScreen(client: client, onBack: onBack, canWrite: canWrite,
             initialCompany: initialCompany, initialRecordID: initialRecordID,
             headingOverride: headingOverride, startInAddMode: startInAddMode,
-            management: { company, record in AnyView(NovaModuleEditor(identity: identity, module: "emergency_plan", company: company, record: record, fileClient: fileClient)) })
+            management: { company, record in AnyView(NovaModuleEditor(identity: identity, module: "emergency_plan", company: company, record: record, fileClient: fileClient)) },
+            startWithWizard: startWithWizard)
     }
 
     private var client: NovaEmergencyClient {

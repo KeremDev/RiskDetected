@@ -2198,6 +2198,17 @@ struct NovaPilotRoot: View {
     @State private var notices = NovaNoticeFeed.empty
     @State private var noticeRevision = UUID()
     @State private var profileAvatarImage: Image?
+    /// "Senin İçin": the last answer (it also feeds the menu's next action) and
+    /// what a card asked its destination to open with. Each destination clears
+    /// its request when it leaves the screen.
+    @State private var forYouFeed: NovaForYouFeed?
+    @State private var pendingFollowupStatus: String?
+    @State private var pendingRiskRecordID: UUID?
+    @State private var pendingRiskWizard = false
+    @State private var pendingEmergencyWizard = false
+    @State private var pendingChecklistRunID: UUID?
+    @State private var pendingRecord: NovaRecordTarget?
+    @State private var pendingListPreset: NovaListPreset?
 
     init(identity: NovaSessionIdentity, previewOnly: Bool = false,
          workspaceLabel: String? = nil, onWorkspaceSwitch: (() -> Void)? = nil,
@@ -2222,17 +2233,6 @@ struct NovaPilotRoot: View {
     private var menuAnalysisCount: Int? {
         if let value = workspaceStore?.dashboard?.nonconformities.first { return Int(value) }
         return activeCompanies?.reduce(0) { $0 + ($1.finding_count ?? 0) }
-    }
-    private var menuProgressCompleted: Int {
-        guard let companies = activeCompanies, !companies.isEmpty else { return 0 }
-        var completed = 1 // firma bilgileri
-        if (menuAnalysisCount ?? 0) > 0 { completed += 1 }
-        if (equipmentBoard?.tracked ?? 0) > 0 { completed += 1 }
-        if let board = workspaceStore?.dashboard {
-            if (board.training.second ?? 0) > 0 { completed += 1 }
-            if (board.visits.first ?? 0) > 0 { completed += 1 }
-        }
-        return min(completed, 8)
     }
     private var menuOverdueCount: Int? {
         if let value = workspaceStore?.dashboard?.nonconformities.second { return Int(value) }
@@ -2259,32 +2259,15 @@ struct NovaPilotRoot: View {
                   symbol: "photo.on.rectangle.angled", destination: .analyses)
         ]
     }
+    /// The menu's "Sıradaki işin" is the first unfinished item or first step
+    /// the home section offers; nothing is shown when there is none.
     private var menuNextAction: NovaMenuNextAction? {
-        guard let companies = activeCompanies else { return nil }
-        if companies.isEmpty {
-            return .init(title: RDLocalization.string("localizable.nova.pilot.main.gate.firma.ekle.468e3f2a", table: .localizable, fallback: "Firma ekle"), symbol: "building.2.crop.circle",
-                destination: isWorkspaceExpert ? .companies : .newCompany, completed: 0, total: 1)
-        }
-        if (menuAnalysisCount ?? 0) == 0 {
-            return .init(title: RDLocalization.string("localizable.nova.pilot.main.gate.fotograf.analiz.et.3c42a9f8", table: .localizable, fallback: "Fotoğraf analiz et"), symbol: "camera", destination: .newAnalysis,
-                completed: 0, total: 8)
-        }
-        return .init(title: RDLocalization.string("localizable.nova.pilot.main.gate.risk.analizi.ekle.eb81fbaf", table: .localizable, fallback: "Risk analizi ekle"), symbol: "shield.lefthalf.filled", destination: .riskAssessments,
-            completed: menuProgressCompleted, total: 8)
-    }
-    private var metrics: [NovaMetricItem] {
-        [
-            .init(id: "companies", value: activeCompanies.map { String($0.count) } ?? "—", label: "Firmalar", footer: RDLocalization.string("localizable.nova.pilot.main.gate.aktif.pilot.1a73541a", table: .localizable, fallback: "Aktif pilot"), symbol: "building.2", tone: .accent, destination: .companies),
-            .init(id: "personnel", value: activeCompanies.map { String($0.reduce(0) { $0 + $1.personnel_count }) } ?? "—", label: "Personel", footer: RDLocalization.string("localizable.nova.pilot.main.gate.aktif.kayit.f0e78da1", table: .localizable, fallback: "Aktif kayıt"), symbol: "person.2", tone: .accent, destination: .companies),
-            .init(id: "workplaces", value: activeCompanies.map { String($0.reduce(0) { $0 + $1.workplace_count }) } ?? "—", label: RDLocalization.string("localizable.nova.pilot.main.gate.isyerleri.40b87276", table: .localizable, fallback: "İşyerleri"), footer: RDLocalization.string("localizable.nova.pilot.main.gate.aktif.kayit.c051f94b", table: .localizable, fallback: "Aktif kayıt"), symbol: "building.2", tone: .accent, destination: .companies),
-            .init(id: "departments", value: activeCompanies.map { String($0.reduce(0) { $0 + $1.department_count }) } ?? "—", label: "Departman", footer: RDLocalization.string("localizable.nova.pilot.main.gate.aktif.kayit.0f6ad151", table: .localizable, fallback: "Aktif kayıt"), symbol: "square.grid.2x2", tone: .accent, destination: .companies),
-            // Equipment whose recorded date has passed or whose last report was
-            // negative. A count of records, never a verdict about a company.
-            .init(id: "equipment", value: equipmentBoard.map { String($0.needsAttention) } ?? "—",
-                  label: RDLocalization.string("localizable.nova.equipment.metric.label", table: .localizable, fallback: "Kontrol"),
-                  footer: RDLocalization.string("localizable.nova.equipment.metric.footer", table: .localizable, fallback: "ilgi bekleyen"),
-                  symbol: "checkmark.shield", tone: .accent, destination: .periodicChecks)
-        ]
+        let steps: Set<String> = ["motivation.first_company", "motivation.first_personnel", "motivation.first_analysis"]
+        guard let feed = forYouFeed,
+              let card = (feed.cards + feed.more).first(where: { $0.kind == "continue" || steps.contains($0.key) }),
+              let copy = NovaForYouCopy.make(card, kindTitle: NovaFollowupPage.typeTitle(kind:)) else { return nil }
+        return .init(title: copy.title, symbol: copy.symbol, destination: .home, completed: 0, total: 0,
+            onSelect: { openForYou(card) })
     }
     private var name: String { app.profile?.fullName ?? "" }
     private var ready: Bool {
@@ -2333,7 +2316,7 @@ struct NovaPilotRoot: View {
             case .home:
                 VStack(spacing: 0) {
                     NovaDashboardScreen(data: .init(firstName: name.split(separator: " ").first.map(String.init) ?? "",
-                        openCount: nil, metrics: metrics, activity: nil,
+                        openCount: nil, metrics: [], activity: nil,
                         trainingMessage: RDLocalization.string("localizable.nova.pilot.main.gate.gerceklesen.egitimler.ve.katilimci.kayitlari.48805280", table: .localizable, fallback: "Gerçekleşen eğitimler ve katılımcı kayıtları"),
                         recentAnalyses: recentAnalyses.map { analysis in
                             NovaRecentAnalysis(id: analysis.id.uuidString.lowercased(),
@@ -2351,6 +2334,9 @@ struct NovaPilotRoot: View {
                             pendingDashboardAnalysisID = id
                             navigate(.analyses)
                         },
+                        forYou: ready ? AnyView(NovaForYouHost(identity: identity, personal: !isWorkspaceExpert,
+                            routes: forYouRoutes, refreshKey: overviewKey,
+                            onOpen: openForYou, onFeed: { forYouFeed = $0 })) : AnyView(EmptyView()),
                         deadlines: ready ? AnyView(NovaHomeDeadlineBoard(identity: identity, canWrite: controller.canWrite,
                             scopeID: nil, onPendingActionCount: { homePendingActionCount = $0 })) : nil)
                 }
@@ -2367,14 +2353,20 @@ struct NovaPilotRoot: View {
                 Group {
                     NovaTrainingHub(identity: identity, scope: controller.scope, personnel: controller.personnelClient,
                         canWrite: writable, select: controller.select,
-                        onBack: { navigate(.home) }, createOnOpen: destination == .newTraining)
+                        onBack: { navigate(.home) }, createOnOpen: destination == .newTraining,
+                        initialPreset: destination == .training ? pendingListPreset : nil,
+                        onPresetCleared: { pendingListPreset = nil })
                         .id(destination)
+                        .onDisappear { pendingListPreset = nil }
                 }
             case .findings:
-                nonconformities(.board)
+                nonconformities(.board, initialRecord: pendingRecord,
+                    onInitialRecordOpened: { pendingRecord = nil }, initialPreset: pendingListPreset)
+                    .onDisappear { pendingListPreset = nil }
             case .analyses:
                 nonconformities(.analyses, initialAnalysisID: pendingDashboardAnalysisID,
-                    onInitialAnalysisOpened: { pendingDashboardAnalysisID = nil })
+                    onInitialAnalysisOpened: { pendingDashboardAnalysisID = nil }, initialPreset: pendingListPreset)
+                    .onDisappear { pendingListPreset = nil }
             case .newAnalysis:
                 nonconformities(.newAnalysis)
             case .newFinding:
@@ -2579,7 +2571,9 @@ struct NovaPilotRoot: View {
         if ready {
             NovaPilotDocumentGate(identity: identity, scope: controller.scope, canWrite: writable,
                 select: { controller.select($0) }, currentScope: { controller.scope },
-                onBack: { navigate(.home) }, onCompanies: { navigate(.companies) })
+                onBack: { navigate(.home) }, onCompanies: { navigate(.companies) },
+                initialStatus: pendingFollowupStatus)
+                .onDisappear { pendingFollowupStatus = nil }
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
         }
@@ -2589,8 +2583,9 @@ struct NovaPilotRoot: View {
     /// when the expert picks one.
     @ViewBuilder private var risk: some View {
         if ready {
-            NovaPilotRiskGate(identity: identity, canWrite: writable, showBackButton: true,
-                onBack: { navigate(.home) })
+            NovaPilotRiskGate(identity: identity, canWrite: writable, initialRecordID: pendingRiskRecordID,
+                showBackButton: true, startWithWizard: pendingRiskWizard, onBack: { navigate(.home) })
+                .onDisappear { pendingRiskRecordID = nil; pendingRiskWizard = false }
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
         }
@@ -2598,8 +2593,9 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var checklists: some View {
         if ready {
-            NovaPilotChecklistGate(identity: identity, canWrite: writable,
+            NovaPilotChecklistGate(identity: identity, canWrite: writable, initialRunID: pendingChecklistRunID,
                 onBack: { navigate(.home) })
+                .onDisappear { pendingChecklistRunID = nil }
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
         }
@@ -2607,8 +2603,9 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var emergencyPlans: some View {
         if ready {
-            NovaPilotEmergencyGate(identity: identity, canWrite: writable,
+            NovaPilotEmergencyGate(identity: identity, canWrite: writable, startWithWizard: pendingEmergencyWizard,
                 onBack: { navigate(.home) })
+                .onDisappear { pendingEmergencyWizard = false }
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
         }
@@ -2680,12 +2677,17 @@ struct NovaPilotRoot: View {
     /// Each menu entry lands on exactly one page; the surface says which.
     @ViewBuilder private func nonconformities(_ surface: NovaFindingsSurface,
         initialAnalysisID: UUID? = nil,
-        onInitialAnalysisOpened: (() -> Void)? = nil) -> some View {
+        onInitialAnalysisOpened: (() -> Void)? = nil,
+        initialRecord: NovaRecordTarget? = nil,
+        onInitialRecordOpened: (() -> Void)? = nil,
+        initialPreset: NovaListPreset? = nil) -> some View {
         if ready {
             NovaPilotFindingsGate(identity: identity, scope: controller.scope, canWrite: controller.canWrite,
                 select: controller.select, currentScope: { controller.scope }, surface: surface,
                 onNavigate: navigate, onCompanies: { navigate(.companies) }, onHome: { navigate(.home) },
-                initialAnalysisID: initialAnalysisID, onInitialAnalysisOpened: onInitialAnalysisOpened)
+                initialAnalysisID: initialAnalysisID, onInitialAnalysisOpened: onInitialAnalysisOpened,
+                initialRecord: initialRecord, onInitialRecordOpened: onInitialRecordOpened,
+                initialPreset: initialPreset, onPresetCleared: { pendingListPreset = nil })
                 .id("\(controller.host.navigation.epoch):\(surface)")
         } else {
             ScrollView {
@@ -2795,6 +2797,97 @@ struct NovaPilotRoot: View {
             noticeSource = .init(kind: entry.kind == .drill ? "completed_drill" : entry.kind.rawValue, company_id: company,
                 company_name: entry.companyName ?? "", record_id: record, source_id: record, title: entry.title,
                 recorded_on: nil, due_on: entry.dueOn, status: entry.severity == .overdue ? "expired" : "soon")
+        }
+    }
+
+    /// Targets this session can open with every filter the card carries. A
+    /// card whose target is missing here is never sent by the server.
+    private var forYouRoutes: [String] {
+        let routes: [(String, NovaDestination?)] = [
+            ("followup_record", nil), ("followup", .documentChecklist),
+            ("nonconformity", .findings), ("checklist_run", .checklists),
+            ("nonconformities", .findings), ("analyses", .analyses), ("trainings", .training), ("checklists", .checklists),
+            ("analysis", .analyses), ("photo_analysis", .newAnalysis), ("statistics", .statistics),
+            ("risk_assessment", .riskAssessments), ("risk_wizard", .riskAssessments), ("emergency_wizard", .emergencyPlans),
+            ("training_create", .newTraining), ("nonconformity_create", .newFinding), ("equipment", .periodicChecks),
+            ("personnel", .companies), ("work_permit_forms", .workPermits), ("ppe_form", .ppeHandovers),
+            ("company_create", .newCompany)]
+        return routes.compactMap { route, destination in
+            if route == "company_create" && isWorkspaceExpert { return nil }
+            // An organization's check list holds every member's runs and has
+            // no "mine" filter, so it cannot show what the card counted.
+            if route == "checklists" && isWorkspaceExpert { return nil }
+            if let destination, !navigation.canOpen(destination) { return nil }
+            return route
+        }
+    }
+
+    private func openForYou(_ card: NovaForYouCard) {
+        let target = card.target
+        switch target.route {
+        case "followup_record":
+            guard let kind = target.kind, let record = target.id, let company = target.company_id else {
+                pendingFollowupStatus = target.status; navigate(.documentChecklist); return
+            }
+            Task { await openFollowupRecord(kind: kind, record: record, company: company, status: target.status) }
+        case "followup":
+            pendingFollowupStatus = target.status
+            navigate(.documentChecklist)
+        case "analysis":
+            pendingDashboardAnalysisID = target.id
+            navigate(.analyses)
+        case "nonconformity":
+            if let id = target.id, let company = target.company_id { pendingRecord = .init(id: id, companyID: company) }
+            navigate(.findings)
+        case "checklist_run":
+            pendingChecklistRunID = target.id
+            navigate(.checklists)
+        case "nonconformities", "analyses", "trainings":
+            pendingListPreset = NovaListPreset(
+                title: NovaForYouCopy.make(card, kindTitle: NovaFollowupPage.typeTitle(kind:))?.title ?? "",
+                target: target, actor: identity.userID)
+            navigate(target.route == "nonconformities" ? .findings : target.route == "analyses" ? .analyses : .training)
+        case "checklists": navigate(.checklists)
+        case "photo_analysis": navigate(.newAnalysis)
+        case "statistics": navigate(.statistics)
+        case "risk_assessment":
+            pendingRiskRecordID = target.id
+            navigate(.riskAssessments)
+        case "risk_wizard":
+            pendingRiskWizard = true
+            navigate(.riskAssessments)
+        case "emergency_wizard":
+            pendingEmergencyWizard = true
+            navigate(.emergencyPlans)
+        case "training_create": navigate(.newTraining)
+        case "nonconformity_create": navigate(.newFinding)
+        case "equipment": navigate(.periodicChecks)
+        case "personnel":
+            // Personnel lives on the company page; with a single company, open it.
+            if let companies = activeCompanies, companies.count == 1 { controller.select(companies[0].id) }
+            navigate(.companies)
+        case "work_permit_forms": navigate(.workPermits)
+        case "ppe_form": navigate(.ppeHandovers)
+        case "company_create": if !isWorkspaceExpert { showingCreate = true }
+        default: break
+        }
+    }
+
+    /// Opens a dated record the way the deadline board does: the row comes
+    /// from the same read, so its type, dates and source are the board's own.
+    private func openFollowupRecord(kind: String, record: UUID, company: UUID, status: String?) async {
+        let owner = identity
+        do {
+            let page = try await NovaFollowupService(identity: owner).load(company: company, status: status, kind: kind)
+            guard ready, identity == owner else { return }
+            if let row = page.rows.first(where: { $0.record_id == record }) {
+                if row.kind == "training" { trainingNoticeSource = row } else { noticeSource = row }
+            } else {
+                pendingFollowupStatus = status
+                navigate(.documentChecklist)
+            }
+        } catch {
+            if identity == owner { notice = RDLocalization.string("localizable.nova.foryou.open.failed", table: .localizable, fallback: "Kayıt açılamadı. Yeniden deneyin.") }
         }
     }
 

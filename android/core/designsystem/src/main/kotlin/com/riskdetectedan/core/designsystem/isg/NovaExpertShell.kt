@@ -80,7 +80,9 @@ data class NovaMenuStat(val id: String, val title: String, val value: String, va
 
 /** The next best action, supplied from the account's current data. */
 data class NovaMenuNextAction(val title: String, val symbol: String, val destination: NovaDestination,
-                              val completed: Int, val total: Int) {
+                              val completed: Int, val total: Int,
+                              /** Set when the action comes from a "Senin İçin" card: the card opens its own target. */
+                              val onSelect: (() -> Unit)? = null) {
     val progress: Float get() = if (total <= 0) 0f else (completed.toFloat() / total).coerceIn(0f, 1f)
 }
 
@@ -203,7 +205,7 @@ fun NovaShellTopBar(current: NovaDestination, userName: String, hasUnread: Boole
             Column(Modifier.height(48.dp), verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)) {
                 NovaText("Merhaba, ${userName.split(' ').firstOrNull()?.takeIf(String::isNotBlank) ?: "İSGADA"}",
                     style = NovaTypeToken.cardTitle, color = NovaColorToken.text.color(), maxLines = 1)
-                NovaText(pendingActionCount?.let { if (it == 0) "Bugün bekleyen işlem yok" else "Bugün $it işlem bekliyor" } ?: "İşlemler yükleniyor…",
+                NovaText(pendingActionCount?.let { if (it == 0) "Bekleyen işlem yok" else "$it işlem dikkat bekliyor" } ?: "İşlemler yükleniyor…",
                     style = NovaTypeToken.metaQuiet, color = NovaColorToken.textMuted.color(), maxLines = 1)
             }
         } else if (current == NovaDestination.riskAssessments) {
@@ -452,12 +454,12 @@ private fun NovaDrawer(selected: NovaDestination, canOpen: (NovaDestination) -> 
         Spacer(Modifier.height(7.dp))
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).testTag("nova.panel.scroll")) {
             if (nextAction != null) {
-                val enabled = openable(nextAction.destination)
+                val enabled = nextAction.onSelect != null || openable(nextAction.destination)
                 val accentInk = NovaColorToken.accentInk.color()
                 val accent = NovaColorToken.accent.color()
                 Column(Modifier.padding(bottom = 8.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp))
                     .background(accent.copy(alpha = 0.11f), RoundedCornerShape(16.dp))
-                    .novaRowPress(enabled) { go(nextAction.destination); send(NovaNavigationEvent.Dismiss) }
+                    .novaRowPress(enabled) { nextAction.onSelect?.invoke() ?: go(nextAction.destination); send(NovaNavigationEvent.Dismiss) }
                     .graphicsAlpha(if (enabled) 1f else 0.45f).testTag("nova.menu.next-action").padding(9.dp),
                     verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -468,11 +470,14 @@ private fun NovaDrawer(selected: NovaDestination, canOpen: (NovaDestination) -> 
                             NovaText("Sıradaki işin", style = NovaTypeToken.micro, color = NovaColorToken.textMuted.color())
                             NovaText(nextAction.title, style = NovaTypeToken.body)
                         }
-                        NovaText("${nextAction.completed}/${nextAction.total}", style = NovaTypeToken.metaQuiet, color = accentInk)
+                        if (nextAction.total > 0) NovaText("${nextAction.completed}/${nextAction.total}", style = NovaTypeToken.metaQuiet, color = accentInk)
+                        else NovaIcon("chevron.right", 12.dp, tint = accentInk)
                     }
-                    val progress by animateFloatAsState(nextAction.progress, NovaMotion.easeOut(NovaMotion.Duration.progress), label = "nextAction")
-                    LinearProgressIndicator({ progress }, Modifier.fillMaxWidth().height(5.dp), color = accentInk,
-                        trackColor = accentInk.copy(alpha = 0.15f), strokeCap = StrokeCap.Round, gapSize = 0.dp, drawStopIndicator = {})
+                    if (nextAction.total > 0) {
+                        val progress by animateFloatAsState(nextAction.progress, NovaMotion.easeOut(NovaMotion.Duration.progress), label = "nextAction")
+                        LinearProgressIndicator({ progress }, Modifier.fillMaxWidth().height(5.dp), color = accentInk,
+                            trackColor = accentInk.copy(alpha = 0.15f), strokeCap = StrokeCap.Round, gapSize = 0.dp, drawStopIndicator = {})
+                    }
                 }
             }
             if (isManager) {

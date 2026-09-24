@@ -22,6 +22,9 @@ struct NovaStatisticsScreen: View {
     private var companyName: String { companyOptions.first { $0.id == company }?.name ?? "Tüm firmalar" }
 
     var body: some View {
+        content.onAppear { NovaForYouOutbox.recordUse("statistics") }
+    }
+    @ViewBuilder private var content: some View {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {

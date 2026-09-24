@@ -17,6 +17,7 @@ private const val PPE_EXAMPLE_FILE = "ISGADA_KKD_Zimmet_ve_Teslim_Formu_Duzenlen
 @Composable
 fun NovaPPEExampleScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    LaunchedEffect(Unit) { com.riskdetectedan.core.data.nova.NovaForYouService.recordUse("ppe_form") }
     var message by remember { mutableStateOf<String?>(null) }
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) { uri ->
         if (uri != null) message = runCatching {

@@ -98,8 +98,10 @@ private fun EmergencyPlanCard(plan: NovaEmergencyPlan, modifier: Modifier, onCli
 /** Acil Durum Planları (iOS `NovaEmergencyPlanScreen`). */
 @Composable
 fun NovaEmergencyScreen(client: NovaEmergencyClient, canWrite: Boolean, onBack: () -> Unit, initialCompany: String? = null,
-                        headingOverride: String? = null, startInAddMode: Boolean = false, initialRecordId: String? = null) {
-    var showingWizard by remember { mutableStateOf(false) }
+                        headingOverride: String? = null, startInAddMode: Boolean = false, initialRecordId: String? = null,
+                        /** Opened from a home suggestion: the wizard first, the list behind it. */
+                        startWithWizard: Boolean = false) {
+    var showingWizard by remember { mutableStateOf(startWithWizard) }
     val coroutines = rememberCoroutineScope()
     var board by remember { mutableStateOf<NovaEmergencyBoard?>(null) }
     var catalogue by remember { mutableStateOf<NovaEmergencyCatalogue?>(null) }

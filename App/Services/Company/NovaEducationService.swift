@@ -39,6 +39,38 @@ import Supabase
     }
     func preserve(_ draft: NovaEducationDraft) throws {
         try check(); try storage.write(JSONEncoder().encode(draft), account: key("draft:" + (draft.id?.uuidString ?? "new")))
+        if draft.id == nil { stampNewDraft(draft) }
+    }
+    /// The home page offers to finish an unsaved new training. It needs the
+    /// draft's own id and last edit; they are kept next to the draft, whose
+    /// stored format does not change.
+    struct DraftStamp: Codable, Equatable { let ref: UUID; var updatedAt: Date; var companyID: UUID? }
+    private func stampNewDraft(_ draft: NovaEducationDraft) {
+        let previous = (try? storage.read(account: key("draft-stamp:new"))).flatMap { $0 }.flatMap { try? JSONDecoder().decode(DraftStamp.self, from: $0) }
+        let stamp = DraftStamp(ref: previous?.ref ?? UUID(), updatedAt: Date(), companyID: Self.company(of: draft))
+        try? storage.write(JSONEncoder().encode(stamp), account: key("draft-stamp:new"))
+    }
+    /// The unsaved new-training draft, when it holds something the expert
+    /// entered: a title, a trainer or a company. An untouched editor is not
+    /// unfinished work.
+    func newDraftStamp() throws -> DraftStamp? {
+        guard let draft = try draft(id: nil), Self.hasContent(draft) else { return nil }
+        if let data = try storage.read(account: key("draft-stamp:new")),
+           var stamp = try? JSONDecoder().decode(DraftStamp.self, from: data) {
+            stamp.companyID = Self.company(of: draft)
+            return stamp
+        }
+        // Saved before stamps existed: it gets an id now and counts as edited now.
+        let stamp = DraftStamp(ref: UUID(), updatedAt: Date(), companyID: Self.company(of: draft))
+        try? storage.write(JSONEncoder().encode(stamp), account: key("draft-stamp:new"))
+        return stamp
+    }
+    static func hasContent(_ draft: NovaEducationDraft) -> Bool {
+        !draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !draft.trainers.isEmpty || !draft.scopes.isEmpty
+    }
+    private static func company(of draft: NovaEducationDraft) -> UUID? {
+        let companies = Set(draft.scopes.map(\.company_id))
+        return companies.count == 1 ? companies.first : nil
     }
     /// Drops the autosaved draft for this record (or for a new one, when `id`
     /// is nil) so the next open starts genuinely fresh instead of restoring
@@ -46,6 +78,7 @@ import Supabase
     /// preserved before a change to what counts as a "fresh" record.
     func discardDraft(id: UUID?) throws {
         try check(); try storage.remove(account: key("draft:" + (id?.uuidString ?? "new")))
+        if id == nil { try? storage.remove(account: key("draft-stamp:new")) }
     }
     func pending() throws -> NovaEducationDraft? {
         try check()
@@ -70,6 +103,7 @@ import Supabase
                   result.row == nil || result.row?.owner_id == identity.userID else { throw NovaPersonnelFailure.denied }
             try storage.remove(account: key("pending"))
             if draft.action != "curriculum" { try storage.remove(account: key("draft:" + (draft.id?.uuidString ?? "new"))) }
+            if draft.action != "curriculum", draft.id == nil { try? storage.remove(account: key("draft-stamp:new")) }
             NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
             NotificationCenter.default.post(name: Notification.Name("isgada.mutation.succeeded"), object: identity.userID,
                 userInfo: ["message": draft.action == "delete" ? "Eğitim başarıyla kaldırıldı!" : draft.action == "curriculum"

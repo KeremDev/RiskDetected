@@ -19,6 +19,9 @@ struct NovaNonconformityListScreen: View {
     /// clock and time zone rather than guessed inside the view.
     let today: String
     let onBack: () -> Void
+    /// Opens on the records a home card counted, until the filter is removed.
+    var initialPreset: NovaListPreset? = nil
+    var onPresetCleared: () -> Void = {}
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var entries: [NovaNonconformityEntry]?
@@ -27,6 +30,7 @@ struct NovaNonconformityListScreen: View {
     @State private var filter = NovaNonconformityFilter()
     @State private var error: String?
     @State private var reload = UUID()
+    @State private var presetApplied = false
 
     private var visible: [NovaNonconformityEntry] {
         (entries ?? []).filter { $0.matches(filter, today: today) }
@@ -44,6 +48,9 @@ struct NovaNonconformityListScreen: View {
                     if entries != nil { stats }
                     search
                     filters
+                    if let preset = filter.preset {
+                        NovaListPresetChip(preset: preset) { filter.preset = nil }
+                    }
                     if let entries {
                         NovaListSectionHeading(title: RDLocalization.string("localizable.nova.navigation.uygunsuzluklar", table: .localizable, fallback: "Uygunsuzluklar"),
                             count: String(format: RDLocalization.string("localizable.nova.nonconformity.count", table: .localizable,
@@ -55,7 +62,11 @@ struct NovaNonconformityListScreen: View {
             }
         }
 
-        .task(id: reload) { await load() }
+        .task(id: reload) {
+            if !presetApplied { presetApplied = true; filter.preset = initialPreset }
+            await load()
+        }
+        .onChange(of: filter.preset) { if $0 == nil { onPresetCleared() } }
     }
 
     private var header: some View {

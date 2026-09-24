@@ -154,9 +154,11 @@ private fun RiskFact(symbol: String, label: String, value: String) {
 /** Risk Değerlendirmesi: the whole account in one read, narrowed to a company on request. */
 @Composable
 fun NovaRiskScreen(client: NovaRiskClient, canWrite: Boolean, onBack: () -> Unit, initialCompany: String? = null,
-                   headingOverride: String? = null, startInAddMode: Boolean = false, initialRecordId: String? = null) {
+                   headingOverride: String? = null, startInAddMode: Boolean = false, initialRecordId: String? = null,
+                   /** Opened from a home suggestion: the wizard first, the list behind it. */
+                   startWithWizard: Boolean = false) {
     if (startInAddMode) { RiskAddFlow(client, initialCompany, onBack); return }
-    var showingWizard by remember { mutableStateOf(false) }
+    var showingWizard by remember { mutableStateOf(startWithWizard) }
     val coroutines = rememberCoroutineScope()
     var board by remember { mutableStateOf<NovaRiskBoard?>(null) }
     var catalogue by remember { mutableStateOf<NovaRiskCatalogue?>(null) }

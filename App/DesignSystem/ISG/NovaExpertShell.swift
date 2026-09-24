@@ -185,7 +185,10 @@ struct NovaShellTopBar: View {
                         arguments: [userName.split(separator: " ").first.map(String.init) ?? "İSGADA"]))
                         .font(NovaFont.font(.cardTitle))
                         .foregroundStyle(NovaColorToken.text.color(in: scheme))
-                    Text(pendingActionCount.map { $0 == 0 ? "Bugün bekleyen işlem yok" : "Bugün \($0) işlem bekliyor" } ?? "İşlemler yükleniyor…")
+                    Text(pendingActionCount.map { $0 == 0
+                        ? RDLocalization.string("localizable.nova.shell.pending.none", table: .localizable, fallback: "Bekleyen işlem yok")
+                        : RDLocalization.format("localizable.nova.shell.pending.count", table: .localizable, fallback: "%1$@ işlem dikkat bekliyor", arguments: [String($0)]) }
+                        ?? RDLocalization.string("localizable.nova.shell.pending.loading", table: .localizable, fallback: "İşlemler yükleniyor…"))
                         .font(NovaFont.font(.metaQuiet))
                         .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
                 }
@@ -483,6 +486,9 @@ struct NovaMenuNextAction {
     let destination: NovaDestination
     let completed: Int
     let total: Int
+    /// Set when the action comes from a "Senin İçin" card: the card opens its
+    /// own target, and there is no step count to show.
+    var onSelect: (() -> Void)? = nil
 
     var progress: Double {
         guard total > 0 else { return 0 }
@@ -682,9 +688,10 @@ struct NovaShellPanel: View {
     }
 
     private func menuNextActionCard(_ action: NovaMenuNextAction) -> some View {
-        let enabled = canOpen(action.destination) && (action.destination != .newCompany || onCompanyCreate != nil)
+        let enabled = action.onSelect != nil || canOpen(action.destination) && (action.destination != .newCompany || onCompanyCreate != nil)
         return Button {
-            if action.destination == .newCompany { onCompanyCreate?() }
+            if let select = action.onSelect { select() }
+            else if action.destination == .newCompany { onCompanyCreate?() }
             else {
                 onDestination?(action.destination)
                 send(.navigate(action.destination))
@@ -702,11 +709,18 @@ struct NovaShellPanel: View {
                         NovaText(text: action.title, style: .body)
                     }
                     Spacer(minLength: 4)
-                    NovaText(text: "\(action.completed)/\(action.total)", style: .metaQuiet, color: NovaColorToken.accentInk.color(in: scheme))
+                    if action.total > 0 {
+                        NovaText(text: "\(action.completed)/\(action.total)", style: .metaQuiet, color: NovaColorToken.accentInk.color(in: scheme))
+                    } else {
+                        Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                    }
                 }
-                ProgressView(value: action.progress)
-                    .tint(NovaColorToken.accentInk.color(in: scheme))
-                    .scaleEffect(x: 1, y: 1.2, anchor: .center)
+                if action.total > 0 {
+                    ProgressView(value: action.progress)
+                        .tint(NovaColorToken.accentInk.color(in: scheme))
+                        .scaleEffect(x: 1, y: 1.2, anchor: .center)
+                }
             }
             .foregroundStyle(NovaColorToken.text.color(in: scheme))
             .padding(9)
@@ -1231,6 +1245,9 @@ struct NovaDashboardScreen: View {
     var analysisThumbnail: (UUID) async -> UIImage? = { _ in nil }
     var onOpenAnalysis: ((UUID) -> Void)? = nil
     var onFinding: ((String) -> Void)?
+    /// "Senin İçin", built by the app. When present it replaces the summary
+    /// counters; the OSGB manager home keeps the counters until its own variant.
+    var forYou: AnyView?
     /// Home deadline board, built by the app (it reads the workspace backend).
     var deadlines: AnyView?
     /// Optional workspace-specific controls rendered inside the same scroll
@@ -1248,22 +1265,26 @@ struct NovaDashboardScreen: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                HStack {
-                    NovaText(text: RDLocalization.string("localizable.nova.expert.shell.ozet.79587bac", table: .localizable, fallback: "Özet"), style: .sectionTitle)
-                    Spacer()
-                    NovaText(text: RDLocalization.string("localizable.nova.dashboard.current", table: .localizable, fallback: "Güncel"), style: .meta, color: muted)
-                }.padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 9)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: 8) {
-                        ForEach(data.metrics) { metric in
-                            NovaListStat(title: metric.label, symbol: metric.symbol, value: metric.value) {
-                                onNavigate(metric.destination)
+                if let forYou {
+                    forYou.padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 22)
+                } else {
+                    HStack {
+                        NovaText(text: RDLocalization.string("localizable.nova.expert.shell.ozet.79587bac", table: .localizable, fallback: "Özet"), style: .sectionTitle)
+                        Spacer()
+                        NovaText(text: RDLocalization.string("localizable.nova.dashboard.current", table: .localizable, fallback: "Güncel"), style: .meta, color: muted)
+                    }.padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 9)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: 8) {
+                            ForEach(data.metrics) { metric in
+                                NovaListStat(title: metric.label, symbol: metric.symbol, value: metric.value) {
+                                    onNavigate(metric.destination)
+                                }
+                                .frame(width: typeSize.isAccessibilitySize ? 160 : 86)
+                                .accessibilityIdentifier("nova.metric.\(metric.id)")
                             }
-                            .frame(width: typeSize.isAccessibilitySize ? 160 : 86)
-                            .accessibilityIdentifier("nova.metric.\(metric.id)")
-                        }
-                    }.padding(.horizontal, 16)
-                }.padding(.bottom, 18)
+                        }.padding(.horizontal, 16)
+                    }.padding(.bottom, 18)
+                }
                 if showsPhotoCapture {
                     capture.padding(.horizontal, 20).padding(.bottom, 22)
                 }

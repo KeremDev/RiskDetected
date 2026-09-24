@@ -104,6 +104,49 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             }
         }.getOrDefault(emptyList())
     }
+    // "Senin İçin" (iOS `forYouFeed`): the last answer, which also feeds the menu's next action, and what a
+    // card asked its destination to open with. Each destination clears its request when it leaves.
+    var forYouFeed by remember(identity) { mutableStateOf(services.forYou.cached(identity)) }
+    var pendingFollowupStatus by remember(identity) { mutableStateOf<String?>(null) }
+    var pendingRiskRecord by remember(identity) { mutableStateOf<String?>(null) }
+    var pendingRiskWizard by remember(identity) { mutableStateOf(false) }
+    var pendingEmergencyWizard by remember(identity) { mutableStateOf(false) }
+    val routes = forYouRoutes(state.navigation, state.isWorkspaceExpert)
+    fun openForYou(card: NovaForYouCard) {
+        val target = card.target
+        when (target.route) {
+            // A dated record opens the way the deadline board opens it: the row comes from the same read.
+            "followup_record" -> {
+                val kind = target.kind; val record = target.id; val company = target.companyId
+                if (kind == null || record == null || company == null) {
+                    pendingFollowupStatus = target.status; navigate(NovaDestination.documentChecklist)
+                } else coroutines.launch {
+                    try {
+                        val page = services.followup(identity, company, target.status, "", 0, kind)
+                        page.rows.firstOrNull { it.recordId.equals(record, true) }?.let { noticeRecord = it } ?: run {
+                            pendingFollowupStatus = target.status; navigate(NovaDestination.documentChecklist)
+                        }
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled } catch (_: Exception) {
+                        viewModel.showMessage("Kayıt açılamadı. Yeniden deneyin.")
+                    }
+                }
+            }
+            "followup" -> { pendingFollowupStatus = target.status; navigate(NovaDestination.documentChecklist) }
+            "analysis" -> { pendingAnalysis = target.id; navigate(NovaDestination.analyses) }
+            "photo_analysis" -> navigate(NovaDestination.newAnalysis)
+            "statistics" -> navigate(NovaDestination.statistics)
+            "risk_assessment" -> { pendingRiskRecord = target.id; navigate(NovaDestination.riskAssessments) }
+            "risk_wizard" -> { pendingRiskWizard = true; navigate(NovaDestination.riskAssessments) }
+            "emergency_wizard" -> { pendingEmergencyWizard = true; navigate(NovaDestination.emergencyPlans) }
+            "training_create" -> navigate(NovaDestination.newTraining)
+            "nonconformity_create" -> navigate(NovaDestination.newFinding)
+            "equipment" -> navigate(NovaDestination.periodicChecks)
+            "personnel" -> navigate(NovaDestination.companies)
+            "work_permit_forms" -> navigate(NovaDestination.workPermits)
+            "ppe_form" -> navigate(NovaDestination.ppeHandovers)
+            "company_create" -> if (!state.isWorkspaceExpert) navigate(NovaDestination.newCompany)
+        }
+    }
     // The notebook is offered only when the server's personal_notes rollout says so (iOS NotebookUIRelease).
     var notebookAvailable by remember { mutableStateOf(false) }
     LaunchedEffect(identity) { notebookAvailable = services.notebook.enabled() }
@@ -113,7 +156,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
     LaunchedEffect(referralRequested) { if (referralRequested) navigate(NovaDestination.profile) }
     NovaExpertShell(state.navigation, state.userName, viewModel::apply,
         profileAvatar = state.avatar, menuRoleTitle = "İSG Uzmanı", notebookAvailable = notebookAvailable,
-        menuStats = menuStats(state, equipmentBoard), menuNextAction = nextAction(state, equipmentBoard),
+        menuStats = menuStats(state, equipmentBoard), menuNextAction = forYouNextAction(forYouFeed, ::openForYou),
         hasUnread = notices.unread > 0, unreadCount = notices.unread,
         pendingActionCount = homePendingActionCount,
         notices = notices.rows.map(::noticeItem),
@@ -146,6 +189,13 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                     NovaHomeDeadlineBoard({ status, offset -> services.followup(identity, null, status, "", offset) },
                         recordChanges, scopeKey = workspaceId, onPendingActionCount = { homePendingActionCount = it },
                         onOpen = { row -> noticeRecord = row })
+                },
+                forYou = {
+                    NovaForYouHost(load = { services.forYou.load(identity, routes, personal = !state.isWorkspaceExpert) },
+                        pending = { services.forYou.pending(services.forYou.namespace(identity)) },
+                        record = { services.forYou.record(identity, it) }, changes = recordChanges,
+                        refreshKey = listOf(workspaceId, state.overview, routes), onOpen = ::openForYou,
+                        onFeed = { forYouFeed = it }, cached = services.forYou.cached(identity))
                 })
             NovaDestination.notifications -> NovaNoticeCenterScreen(services.noticeClient(identity),
                 onOpen = { raw -> NovaDestination.entries.firstOrNull { it.name == raw }?.let(navigate) },
@@ -167,12 +217,18 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 CompaniesDestination(services, identity, state, workspace, workspaceStore, navigate, viewModel::reload,
                     startCreating = destination == NovaDestination.newCompany)
             }
-            NovaDestination.riskAssessments -> NovaRiskScreen(services.riskClient(identity), state.writable,
-                onBack = { navigate(NovaDestination.home) })
+            NovaDestination.riskAssessments -> {
+                DisposableEffect(Unit) { onDispose { pendingRiskRecord = null; pendingRiskWizard = false } }
+                NovaRiskScreen(services.riskClient(identity), state.writable, onBack = { navigate(NovaDestination.home) },
+                    initialRecordId = pendingRiskRecord, startWithWizard = pendingRiskWizard)
+            }
             NovaDestination.periodicChecks -> NovaEquipmentScreen(services.equipmentClient(identity), state.writable,
                 onBack = { navigate(NovaDestination.home) })
-            NovaDestination.emergencyPlans -> NovaEmergencyScreen(services.emergencyClient(identity), state.writable,
-                onBack = { navigate(NovaDestination.home) })
+            NovaDestination.emergencyPlans -> {
+                DisposableEffect(Unit) { onDispose { pendingEmergencyWizard = false } }
+                NovaEmergencyScreen(services.emergencyClient(identity), state.writable, onBack = { navigate(NovaDestination.home) },
+                    startWithWizard = pendingEmergencyWizard)
+            }
             NovaDestination.drills -> NovaDrillScreen(services.drillClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
             NovaDestination.appointments -> NovaAppointmentScreen(services.appointmentClient(identity), state.writable,
                 onBack = { navigate(NovaDestination.home) })
@@ -187,9 +243,12 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                     sources = { entry -> services.fileSources(identity, entry) }, openSource = recordOpener(services, identity, state.writable, state.userName),
                     startInAddMode = destination == NovaDestination.newDocument)
             }
-            NovaDestination.documentChecklist -> NovaFollowupScreen({ company, status, kind, query, offset -> services.followup(identity, company, status, query, offset, kind) },
-                services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable, state.userName),
-                onBack = { navigate(NovaDestination.home) })
+            NovaDestination.documentChecklist -> {
+                DisposableEffect(Unit) { onDispose { pendingFollowupStatus = null } }
+                NovaFollowupScreen({ company, status, kind, query, offset -> services.followup(identity, company, status, query, offset, kind) },
+                    services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable, state.userName),
+                    onBack = { navigate(NovaDestination.home) }, initialStatus = pendingFollowupStatus)
+            }
             NovaDestination.training, NovaDestination.newTraining -> key(destination) {
                 NovaTrainingScreen(services.trainingClient(identity, state.userName), state.writable, onBack = { navigate(NovaDestination.home) },
                     createOnOpen = destination == NovaDestination.newTraining)
@@ -531,21 +590,28 @@ private fun menuStats(state: NovaPilotUiState, equipment: NovaEquipmentBoard?): 
         NovaMenuStat("analyses", "Analiz", analyses, "photo.on.rectangle.angled", NovaDestination.analyses))
 }
 
-private fun nextAction(state: NovaPilotUiState, equipment: NovaEquipmentBoard?): NovaMenuNextAction? {
-    val companies = state.activeCompanies ?: return null
-    if (companies.isEmpty()) return NovaMenuNextAction("Firma ekle", "building.2.crop.circle",
-        if (state.isWorkspaceExpert) NovaDestination.companies else NovaDestination.newCompany, 0, 1)
-    if ((menuAnalysisCount(state) ?: 0) == 0) return NovaMenuNextAction("Fotoğraf analiz et", "camera",
-        NovaDestination.newAnalysis, 0, 8)
-    var completed = 1
-    if ((menuAnalysisCount(state) ?: 0) > 0) completed++
-    if ((equipment?.counts?.values?.sum() ?: 0) > 0) completed++
-    state.dashboard?.let {
-        if (it.trainingCompleted > 0) completed++
-        if (it.visitsTotal > 0) completed++
-    }
-    return NovaMenuNextAction("Risk analizi ekle", "shield.lefthalf.filled", NovaDestination.riskAssessments,
-        completed.coerceAtMost(8), 8)
+/** The menu's "Sıradaki işin": the first unfinished item or first step "Senin İçin" offers (iOS `menuNextAction`). */
+private fun forYouNextAction(feed: NovaForYouFeed?, open: (NovaForYouCard) -> Unit): NovaMenuNextAction? {
+    val steps = setOf("motivation.first_company", "motivation.first_personnel", "motivation.first_analysis")
+    val card = feed?.let { (it.cards + it.more).firstOrNull { card -> card.kind == "continue" || card.key in steps } } ?: return null
+    val copy = NovaForYouCopy.make(card) ?: return null
+    return NovaMenuNextAction(copy.title, copy.symbol, NovaDestination.home, 0, 0, onSelect = { open(card) })
+}
+
+/**
+ * Targets this session can open with every filter the card carries (iOS `forYouRoutes`). A card whose target is
+ * missing here is never sent by the server; the list and record targets follow once their screens take a card filter.
+ */
+internal fun forYouRoutes(navigation: NovaNavigationState, workspaceExpert: Boolean): List<String> = listOf(
+    "followup_record" to null, "followup" to NovaDestination.documentChecklist,
+    "analysis" to NovaDestination.analyses, "photo_analysis" to NovaDestination.newAnalysis, "statistics" to NovaDestination.statistics,
+    "risk_assessment" to NovaDestination.riskAssessments, "risk_wizard" to NovaDestination.riskAssessments,
+    "emergency_wizard" to NovaDestination.emergencyPlans, "training_create" to NovaDestination.newTraining,
+    "nonconformity_create" to NovaDestination.newFinding, "equipment" to NovaDestination.periodicChecks,
+    "personnel" to NovaDestination.companies, "work_permit_forms" to NovaDestination.workPermits,
+    "ppe_form" to NovaDestination.ppeHandovers, "company_create" to NovaDestination.newCompany,
+).mapNotNull { (route, destination) ->
+    route.takeIf { !(route == "company_create" && workspaceExpert) && (destination == null || navigation.canOpen(destination)) }
 }
 
 private fun dashboardData(state: NovaPilotUiState, equipment: NovaEquipmentBoard?): NovaDashboardData {
@@ -610,6 +676,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val learning: NovaEmployeeLearningService,
     private val analyses: NovaAnalysisService,
     val events: NovaRecordEvents,
+    val forYou: NovaForYouService,
 ) : androidx.lifecycle.ViewModel() {
     private fun companies(identity: IsgWorkspaceIdentity): suspend () -> List<NovaCompanyOption> =
         { runCatching { findings.companyOptions(identity) }.getOrDefault(emptyList()) }

@@ -194,7 +194,10 @@ struct NovaDocumentWizardScreen: View {
             "scope": ["company_id": company?.uuidString ?? "", "workplace_id": workplace?.uuidString ?? "",
                 "company_name": companies.first { $0.id == company }?.name ?? "", "workplace_name": workplaces.first { $0.id == workplace }?.name ?? ""]]
         for key in runtime.choices.keys { answers[key] = ["state": states[key] ?? "unknown", "ids": Array(selections[key] ?? []).sorted()] }
-        do { preview = try runtime.generate(answers: answers, domain: domain); step = questions.count; message = nil }
+        do {
+            preview = try runtime.generate(answers: answers, domain: domain); step = questions.count; message = nil
+            if domain == "emergency" { NovaForYouOutbox.recordUse("emergency_wizard") }
+        }
         catch { message = error.localizedDescription }
     }
     @ViewBuilder private func result(_ preview: NovaWizardPreview) -> some View {

@@ -90,7 +90,10 @@ fun NovaDocumentWizardScreen(domain: String, companiesSource: suspend () -> List
     fun generate(rt: NovaDocumentWizardRuntime) {
         coroutines.launch {
             busy = true
-            try { preview = rt.generate(answers(rt), domain); step = visibleQuestions(rt).size; message = null }
+            try {
+                preview = rt.generate(answers(rt), domain); step = visibleQuestions(rt).size; message = null
+                if (domain == "emergency") NovaForYouService.recordUse("emergency_wizard")
+            }
             catch (e: CancellationException) { throw e } catch (e: Exception) { message = e.message ?: "Taslak oluşturulamadı." }
             finally { busy = false }
         }

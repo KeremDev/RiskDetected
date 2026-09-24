@@ -11,6 +11,7 @@ struct NovaPilotRiskGate: View {
     var headingOverride: String?
     var showBackButton = true
     var startInAddMode = false
+    var startWithWizard = false
     let onBack: () -> Void
 
     private var service: NovaRiskAssessmentService { .live() }
@@ -20,7 +21,7 @@ struct NovaPilotRiskGate: View {
         NovaRiskScreen(client: client, onBack: onBack, canWrite: canWrite,
             initialCompany: initialCompany, initialRecordID: initialRecordID,
             headingOverride: headingOverride, showBackButton: showBackButton,
-            startInAddMode: startInAddMode)
+            startInAddMode: startInAddMode, startWithWizard: startWithWizard)
     }
 
     private var client: NovaRiskClient {

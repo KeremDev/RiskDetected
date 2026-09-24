@@ -52,11 +52,14 @@ struct NovaNonconformityFilter: Equatable {
     var state: NovaNonconformityState?
     var kind: NovaNonconformityRecordKind?
     var query = ""
-    /// Records whose due date has passed and which are not closed or cancelled.
+    /// Records whose due date has passed and which are still being worked on.
     var overdueOnly = false
+    /// What a "Senin İçin" card counted: overdue, draft or recorded
+    /// nonconformities, in its days, and in an organization only the member's.
+    var preset: NovaListPreset?
 
     var isEmpty: Bool {
-        companyID == nil && state == nil && kind == nil && !overdueOnly
+        companyID == nil && state == nil && kind == nil && !overdueOnly && preset == nil
             && query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
@@ -70,14 +73,17 @@ struct NovaNonconformityEntry: Equatable, Identifiable {
     let workplaceName: String?
     var id: UUID { row.id }
 
+    /// A draft is not being worked on yet, so it is never overdue; the
+    /// deadline board and the home page count the same way.
     func isOverdue(today: String) -> Bool {
-        guard let due = row.due_on, !["closed", "cancelled"].contains(row.state) else { return false }
+        guard let due = row.due_on, !["draft", "closed", "cancelled"].contains(row.state) else { return false }
         // ISO day strings compare correctly as text, so no calendar maths is
         // needed and no time zone can shift the answer.
         return due < today
     }
 
     func matches(_ filter: NovaNonconformityFilter, today: String) -> Bool {
+        if let preset = filter.preset, !matches(preset, today: today) { return false }
         if let company = filter.companyID, company != companyID { return false }
         if let state = filter.state, state.rawValue != row.state { return false }
         if let kind = filter.kind, kind != row.kind { return false }
@@ -87,5 +93,19 @@ struct NovaNonconformityEntry: Equatable, Identifiable {
         let folded = NovaSectorMatch.normalize(needle)
         return [row.title, companyName, workplaceName ?? ""]
             .contains { NovaSectorMatch.normalize($0).contains(folded) }
+    }
+
+    /// The records a home card counted, by the same rules the server used.
+    func matches(_ preset: NovaListPreset, today: String) -> Bool {
+        guard row.kind == .nonconformity else { return false }
+        if let mine = preset.mine, row.created_by_user_id != mine { return false }
+        switch preset.status {
+        case "overdue": return isOverdue(today: today)
+        case "draft": return row.state == NovaNonconformityState.draft.rawValue
+        case "recorded":
+            guard !["draft", "cancelled"].contains(row.state) else { return false }
+            return preset.includes(NovaListPreset.moment(row.created_at))
+        default: return true
+        }
     }
 }

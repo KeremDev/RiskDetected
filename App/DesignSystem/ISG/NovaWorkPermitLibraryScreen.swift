@@ -78,6 +78,9 @@ struct NovaWorkPermitLibraryScreen: View {
     }
 
     var body: some View {
+        content.onAppear { NovaForYouOutbox.recordUse("work_permit_forms") }
+    }
+    @ViewBuilder private var content: some View {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {

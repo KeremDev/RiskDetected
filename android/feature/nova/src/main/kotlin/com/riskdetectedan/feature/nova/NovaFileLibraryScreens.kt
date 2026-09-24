@@ -359,6 +359,7 @@ fun NovaFollowupScreen(load: suspend (company: String?, status: String?, kind: S
                        /** Opened from a home card: the list starts on the status the card counted. */
                        initialStatus: String? = null) {
     val coroutines = rememberCoroutineScope()
+    LaunchedEffect(Unit) { NovaForYouService.recordUse("followup") }
     var company by remember { mutableStateOf(initialCompany) }
     var companies by remember { mutableStateOf<List<NovaCompanyOption>>(emptyList()) }
     var page by remember { mutableStateOf<NovaFollowupPage?>(null) }

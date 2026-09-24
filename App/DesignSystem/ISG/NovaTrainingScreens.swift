@@ -8,6 +8,9 @@ struct NovaTrainingHub: View {
     let select: (UUID?) -> Void
     let onBack: () -> Void
     var createOnOpen = false
+    /// Opens on the trainings a home card counted, until the filter is removed.
+    var initialPreset: NovaListPreset? = nil
+    var onPresetCleared: () -> Void = {}
     @State private var createRequest = 0
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -26,7 +29,8 @@ struct NovaTrainingHub: View {
             }
             .padding(.horizontal, 18).padding(.top, 12)
             NovaTrainingRegister(identity: identity, personnel: personnel, canWrite: canWrite,
-                initialCompany: nil, createOnOpen: createOnOpen, createRequest: createRequest)
+                initialCompany: nil, createOnOpen: createOnOpen, createRequest: createRequest,
+                initialPreset: initialPreset, onPresetCleared: onPresetCleared)
         }
         .novaEdgeBackGesture(action: onBack)
     }
@@ -51,6 +55,8 @@ struct NovaTrainingRegister: View {
     let initialCompany: UUID?
     var createOnOpen = false
     var createRequest = 0
+    var initialPreset: NovaListPreset? = nil
+    var onPresetCleared: () -> Void = {}
     @State private var companies: [NovaPilotCompanySummary] = []
     @State private var sessions: [NovaTrainingSession] = []
     @State private var catalog: [NovaTrainingCatalog] = []
@@ -71,6 +77,10 @@ struct NovaTrainingRegister: View {
     @State private var editor: Editor?
     @State private var certificatePage: CertificatePage?
     @State private var certificatePageAfterEditor: CertificatePage?
+    /// A home card's filter: completed sessions held on its days, and in an
+    /// organization only the member's own. The totals follow it.
+    @State private var preset: NovaListPreset?
+    @State private var presetApplied = false
     @Environment(\.dynamicTypeSize) private var typeSize
     private struct Editor: Identifiable { let id = UUID(); let session: NovaTrainingSession? }
     private struct CertificatePage: Identifiable {
@@ -82,15 +92,20 @@ struct NovaTrainingRegister: View {
     private func editable(_ session: NovaTrainingSession) -> Bool {
         canWrite && session.companies.allSatisfy { writableCompanies.contains($0.company_id) }
     }
+    private func matchesPreset(_ session: NovaTrainingSession) -> Bool {
+        guard let preset else { return true }
+        return preset.includes(day: session.held_on) && session.companies.contains { $0.state == "completed" }
+            && (preset.mine == nil || session.created_by_user_id == preset.mine)
+    }
     private var visible: [NovaTrainingSession] {
-        sessions.filter { (company == nil || $0.companies.contains { $0.company_id == company }) &&
+        sessions.filter { matchesPreset($0) && (company == nil || $0.companies.contains { $0.company_id == company }) &&
             (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) || $0.trainer.localizedCaseInsensitiveContains(query)) &&
             (dateFilter.isEmpty || $0.held_on.hasPrefix(dateFilter)) &&
             (cycleFilter.isEmpty || $0.education?.scopes.contains { $0.cycle == cycleFilter } == true) }
         .sorted { $0.held_on > $1.held_on }
     }
     private var completedScopes: [NovaTrainingSession.Company] {
-        sessions.flatMap(\.companies).filter { row in
+        sessions.filter(matchesPreset).flatMap(\.companies).filter { row in
             row.state == "completed" && (company == nil || row.company_id == company)
         }
     }
@@ -110,6 +125,9 @@ struct NovaTrainingRegister: View {
             VStack(alignment: .leading, spacing: 12) {
                 NovaListHint(text: RDLocalization.string("localizable.nova.training.screens.gerceklesen.egitimi.ve.katilimcilarini.kaydedin..d89372f5", table: .localizable, fallback: "Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz."))
                 if let createMessage { NovaHelpHint(text: createMessage) }
+                if let preset {
+                    NovaListPresetChip(preset: preset) { self.preset = nil; onPresetCleared() }
+                }
                 trainingStats
                 NovaAnalysisSearchField(text: $query,
                     placeholder: RDLocalization.string("localizable.nova.training.screens.egitim.veya.egitmen.ara.e5972c31", table: .localizable, fallback: "Eğitim veya eğitmen ara…"),
@@ -167,7 +185,10 @@ struct NovaTrainingRegister: View {
                     }.buttonStyle(NovaRowPressStyle())
                 }
             }.padding(18).novaPopupContentSize()
-        }.task(id: revision) { await load() }
+        }.task(id: revision) {
+            if !presetApplied { presetApplied = true; preset = initialPreset }
+            await load()
+        }
             .task(id: company) { await loadEmployeeTotal() }
             .onAppear { if !initializedFilter { company = initialCompany; initializedFilter = true } }
             .onChange(of: createRequest) { _ in

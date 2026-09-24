@@ -4,6 +4,12 @@ import SwiftUI
 /// there is no hub in between.
 enum NovaFindingsSurface: Equatable { case board, analyses, newAnalysis, addFinding }
 
+/// One company record another page asked this surface to open.
+struct NovaRecordTarget: Equatable {
+    let id: UUID
+    let companyID: UUID
+}
+
 /// The analysis and nonconformity surfaces. The analysis engine, the report
 /// renderer and the nonconformity boundary are the ones already shipping; this
 /// carries them and owns nothing of its own.
@@ -22,6 +28,12 @@ struct NovaPilotFindingsGate: View {
     let onHome: () -> Void
     var initialAnalysisID: UUID? = nil
     var onInitialAnalysisOpened: (() -> Void)? = nil
+    /// A nonconformity to open over the board as soon as it appears.
+    var initialRecord: NovaRecordTarget? = nil
+    var onInitialRecordOpened: (() -> Void)? = nil
+    /// A home card's filter for the list this surface opens on.
+    var initialPreset: NovaListPreset? = nil
+    var onPresetCleared: (() -> Void)? = nil
     @EnvironmentObject private var app: AppState
     @Environment(\.colorScheme) private var scheme
 
@@ -97,14 +109,40 @@ struct NovaPilotFindingsGate: View {
         .onAppear {
             if surface == .newAnalysis { route = .photo }
             openInitialAnalysisIfNeeded()
+            openInitialRecordIfNeeded()
         }
         .onChange(of: initialAnalysisID) { _ in openInitialAnalysisIfNeeded() }
+        .onChange(of: initialRecord) { _ in openInitialRecordIfNeeded() }
     }
 
     private func openInitialAnalysisIfNeeded() {
         guard surface == .analyses, let initialAnalysisID else { return }
         openAnalysis = .init(id: initialAnalysisID)
         onInitialAnalysisOpened?()
+    }
+
+    private func openInitialRecordIfNeeded() {
+        guard surface == .board, let target = initialRecord else { return }
+        onInitialRecordOpened?()
+        Task { await open(target) }
+    }
+
+    /// Reads the record the same way the board's own rows open, with the
+    /// company and workplace names the sheet shows.
+    private func open(_ target: NovaRecordTarget) async {
+        let scope = analysisFilingScope(target.companyID)
+        do {
+            let row = try await analysisFilingService.detail(scope, id: target.id)
+            let places = row.workplace_id == nil ? [] : ((try? await analysisFilingService.workplaces(scope)) ?? [])
+            if companies.isEmpty { await loadCompanies() }
+            record = .init(row: row, companyID: target.companyID,
+                companyName: companies.first { $0.id == target.companyID }?.name ?? "",
+                workplaceName: row.workplace_id.flatMap { id in places.first { $0.id == id }?.name })
+        } catch {
+            guard !Task.isCancelled else { return }
+            notice = RDLocalization.string("localizable.nova.foryou.open.failed", table: .localizable,
+                fallback: "Kayıt açılamadı. Yeniden deneyin.")
+        }
     }
 
     @ViewBuilder private var root: some View {
@@ -132,7 +170,8 @@ struct NovaPilotFindingsGate: View {
                 // present, so the row looked as if it did not respond to taps.
                 open: { entry in record = entry },
                 create: { onNavigate(.newFinding) }),
-            companies: companies, today: today, onBack: onHome)
+            companies: companies, today: today, onBack: onHome,
+            initialPreset: initialPreset, onPresetCleared: { onPresetCleared?() })
             .id(boardRevision)
     }
 
@@ -305,7 +344,8 @@ struct NovaPilotFindingsGate: View {
             thumbnail: { await NovaAnalysisWorkspace.thumbnail(analysisID: $0) },
             onOpen: { openAnalysis = .init(id: $0) }, onBack: { onNavigate(.findings) },
             onNewPhotoAnalysis: { onNavigate(.newAnalysis) },
-            onReports: { route = .reports })
+            onReports: { route = .reports },
+            initialPreset: initialPreset, onPresetCleared: { onPresetCleared?() })
     }
 
     /// The archive of reports produced from photo analyses.

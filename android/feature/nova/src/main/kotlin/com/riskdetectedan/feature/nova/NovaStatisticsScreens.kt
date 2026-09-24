@@ -57,6 +57,7 @@ fun NovaStatisticsScreen(client: NovaStatisticsClient, onBack: () -> Unit, onNav
                          openTracked: NovaTrackedModuleOpener, openFollowup: @Composable (company: String?, onBack: () -> Unit) -> Unit) {
     var company by remember { mutableStateOf<String?>(null) }
     var months by remember { mutableIntStateOf(6) }
+    LaunchedEffect(Unit) { NovaForYouService.recordUse("statistics") }
     var snapshot by remember { mutableStateOf<NovaStatisticsSnapshot?>(null) }
     var options by remember { mutableStateOf<List<NovaStatisticsSnapshot.Company>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }

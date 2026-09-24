@@ -43,6 +43,7 @@ private fun permitSearchKey(value: String): String = Normalizer.normalize(value.
 @Composable
 fun NovaWorkPermitLibraryScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    LaunchedEffect(Unit) { com.riskdetectedan.core.data.nova.NovaForYouService.recordUse("work_permit_forms") }
     val catalog = remember(context) { runCatching {
         context.assets.open("work_permits/catalog.json").bufferedReader(Charsets.UTF_8).use { workPermitCatalog(it.readText()) }
     }.getOrDefault(emptyList()) }

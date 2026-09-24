@@ -12,6 +12,9 @@ struct NovaPPEExampleScreen: View {
     }
 
     var body: some View {
+        content.onAppear { NovaForYouOutbox.recordUse("ppe_form") }
+    }
+    @ViewBuilder private var content: some View {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {

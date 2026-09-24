@@ -142,9 +142,12 @@ struct NovaRiskScreen: View {
     var showBackButton = true
     /// Opened from the company page's own empty-state "Ekle" action.
     var startInAddMode = false
+    /// Opened from a home suggestion: the wizard first, the list behind it.
+    var startWithWizard = false
 
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showingWizard = false
+    @State private var wizardClosed = false
     @State private var board: NovaRiskBoard?
     @State private var catalogue: NovaRiskCatalogue?
     @State private var companies: [NovaAnalysisCompanyOption] = []
@@ -175,11 +178,11 @@ struct NovaRiskScreen: View {
         // second sheet — the create flow itself, alone, is the entire cover,
         // so it blurs the real company page behind it instead of an empty
         // intermediate screen. See NovaPopup's own doc comment.
-        if showingWizard {
+        if showingWizard || (startWithWizard && !wizardClosed) {
             NovaRiskWizardScreen(companiesSource: client.companies,
                 workplacesSource: { company in try await client.catalogue(company).workplaces.map { .init(id: $0.id, name: $0.name) } },
                 files: client.fileClient, initialCompany: query.company ?? initialCompany,
-                onBack: { showingWizard = false })
+                onBack: { showingWizard = false; wizardClosed = true })
         } else if startInAddMode {
             addFlow
         } else {

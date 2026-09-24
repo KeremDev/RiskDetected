@@ -83,13 +83,14 @@ import CryptoKit
         struct Row: Decodable {
             let id: UUID; let title: String; let created_at: String; let company_name: String
             let finding_count: Int; let highest_band_fk: String?; let highest_band_m5: String?
+            let created_by_user_id: UUID?
         }
         struct Page: Decodable { let rows: [Row]; let has_more: Bool }
         let page: Page = try await call("list", ["limit": .number(Int64(limit)), "offset": .number(Int64(offset))])
         return (page.rows.map { .init(id: $0.id, title: $0.title, createdOn: NovaAnalysisWorkspace.day($0.created_at),
             companyName: $0.company_name, findingCount: $0.finding_count,
             highestBand: method == .fineKinney ? $0.highest_band_fk : $0.highest_band_m5,
-            isReviewed: true, createdAt: NovaAnalysisWorkspace.date($0.created_at)) }, page.has_more)
+            isReviewed: true, createdAt: NovaAnalysisWorkspace.date($0.created_at), createdBy: $0.created_by_user_id) }, page.has_more)
     }
     func reports(limit: Int, offset: Int = 0) async throws -> (rows: [NovaAnalysisReportEntry], hasMore: Bool) {
         struct Row: Decodable {

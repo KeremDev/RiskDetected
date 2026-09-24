@@ -181,6 +181,8 @@ struct NovaAnalysisSummary: Equatable, Identifiable {
     /// The day part of the stamp, kept so a week can be counted without
     /// parsing the display string back.
     var createdAt: Date?
+    /// Who made it, in an organization; personal analyses are all the account's.
+    var createdBy: UUID?
     var isUnassigned: Bool { companyName == nil }
 
     func matches(_ query: String) -> Bool {

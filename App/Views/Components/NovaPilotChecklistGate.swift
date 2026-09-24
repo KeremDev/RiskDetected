@@ -8,13 +8,14 @@ struct NovaPilotChecklistGate: View {
     let canWrite: Bool
     var initialCompany: UUID?
     var headingOverride: String?
+    var initialRunID: UUID? = nil
     let onBack: () -> Void
 
     private var service: NovaChecklistService { .live() }
 
     var body: some View {
         NovaChecklistScreen(client: client, onBack: onBack, canWrite: canWrite,
-            initialCompany: initialCompany, headingOverride: headingOverride)
+            initialCompany: initialCompany, headingOverride: headingOverride, initialRunID: initialRunID)
     }
 
     /// The run detail and write replies leave the company name out. Without it

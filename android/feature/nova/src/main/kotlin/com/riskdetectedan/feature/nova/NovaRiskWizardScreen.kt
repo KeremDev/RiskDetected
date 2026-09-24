@@ -119,6 +119,7 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
             try {
                 view = rt.act(action)
                 if (step == "result") result = rt.result()
+                if (result != null) NovaForYouService.recordUse("risk_wizard")
                 after?.invoke()
             } catch (e: CancellationException) { throw e } catch (e: Exception) { message = e.message ?: "İşlem tamamlanamadı." }
         }
@@ -133,6 +134,7 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
                 if (target == "areas") view = rt.act(mapOf("type" to "enter", "step" to "areas"))
                 if (target == "sector") sectorHits = rt.sectors("")
                 if (target == "result") result = rt.result()
+                if (result != null) NovaForYouService.recordUse("risk_wizard")
             } catch (e: CancellationException) { throw e } catch (e: Exception) { message = e.message }
             step = target
         }

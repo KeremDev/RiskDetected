@@ -114,6 +114,9 @@ struct NovaAnalysisListScreen: View {
     let onBack: () -> Void
     var onNewPhotoAnalysis: (() -> Void)?
     var onReports: (() -> Void)?
+    /// Opens on the analyses a home card counted, until the filter is removed.
+    var initialPreset: NovaListPreset? = nil
+    var onPresetCleared: () -> Void = {}
     @Environment(\.colorScheme) private var scheme
     @State private var rows: [NovaAnalysisSummary]?
     @State private var totals: NovaAnalysisListStats?
@@ -127,6 +130,8 @@ struct NovaAnalysisListScreen: View {
     @State private var sort: Sort = .newest
     @State private var company: String?
     @State private var reload = UUID()
+    @State private var preset: NovaListPreset?
+    @State private var presetApplied = false
 
     private enum Filter: String, CaseIterable, Identifiable {
         case all, critical, unassigned, unreviewed
@@ -156,11 +161,15 @@ struct NovaAnalysisListScreen: View {
 
     private var all: [NovaAnalysisSummary] { rows ?? [] }
     private var companyNames: [String] { Array(Set(all.compactMap(\.companyName))).sorted() }
-    private var activeFilterCount: Int { (filter == .all ? 0 : 1) + (company == nil ? 0 : 1) }
+    private var activeFilterCount: Int { (filter == .all ? 0 : 1) + (company == nil ? 0 : 1) + (preset == nil ? 0 : 1) }
 
     private var visible: [NovaAnalysisSummary] {
         let filtered = all.filter { row in
             guard row.matches(query) else { return false }
+            if let preset {
+                guard preset.includes(row.createdAt) else { return false }
+                if let mine = preset.mine, row.createdBy != mine { return false }
+            }
             if let company, row.companyName != company { return false }
             switch filter {
             case .all: return true
@@ -208,7 +217,10 @@ struct NovaAnalysisListScreen: View {
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
         }
-        .task(id: reload) { await refresh() }
+        .task(id: reload) {
+            if !presetApplied { presetApplied = true; preset = initialPreset }
+            await refresh()
+        }
         .task(id: reload) { await refreshStats() }
     }
 
@@ -364,6 +376,9 @@ struct NovaAnalysisListScreen: View {
     }
 
     @ViewBuilder private var activeFilters: some View {
+        if let preset {
+            NovaListPresetChip(preset: preset) { self.preset = nil; onPresetCleared() }
+        }
         if filter != .all || company != nil {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 7) {
@@ -425,7 +440,7 @@ struct NovaAnalysisListScreen: View {
             // Only offered on an unfiltered, unsearched view of the account's
             // own order: filtering client-side over one page would silently
             // hide rows a further page might actually answer.
-            if hasMore && query.isEmpty && company == nil && filter == .all {
+            if hasMore && query.isEmpty && company == nil && filter == .all && preset == nil {
                 Button {
                     Task { await loadMore() }
                 } label: {
@@ -541,6 +556,13 @@ struct NovaAnalysisListScreen: View {
         do {
             let page = try await load(0)
             rows = page.rows; hasMore = page.hasMore
+            // The list is newest first: read on until the rows are older than
+            // the card's first day, so every analysis it counted is here.
+            var pages = 1
+            while let preset, hasMore, pages < 30, !preset.isBefore(all.last?.createdAt) {
+                let next = try await load(all.count)
+                rows = all + next.rows; hasMore = next.hasMore; pages += 1
+            }
         }
         catch is CancellationError { }
         catch {

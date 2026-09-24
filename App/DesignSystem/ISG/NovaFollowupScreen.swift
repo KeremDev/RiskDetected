@@ -13,17 +13,19 @@ struct NovaFollowupPage: Decodable {
         var equipment_type: String? = nil
         var equipment_type_label: String? = nil
         var id: String { kind + record_id.uuidString }
-        var typeTitle: String {
-            switch kind {
-            case "training": return RDLocalization.string("localizable.nova.followup.screen.egitim.e2f9f769", table: .localizable, fallback: "Eğitim")
-            case "equipment": return RDLocalization.string("localizable.nova.followup.screen.periyodik.kontrol.b45bd52d", table: .localizable, fallback: "Periyodik kontrol")
-            case "risk_assessment": return RDLocalization.string("localizable.nova.followup.screen.risk.analizi.79082240", table: .localizable, fallback: "Risk analizi")
-            case "emergency_plan": return RDLocalization.string("localizable.nova.followup.screen.acil.durum.plani.6be8ff28", table: .localizable, fallback: "Acil durum planı")
-            case "appointment": return "Atama"
-            case "document": return RDLocalization.string("localizable.nova.followup.screen.onceki.evrak.kaydi.698b873e", table: .localizable, fallback: "Önceki evrak kaydı")
-            case "file": return "Dosya"
-            default: return NovaProcessKind.get(kind).title
-            }
+        var typeTitle: String { NovaFollowupPage.typeTitle(kind: kind) }
+    }
+    /// The record type as Evrak Takibi names it; the home cards use the same words.
+    static func typeTitle(kind: String) -> String {
+        switch kind {
+        case "training": return RDLocalization.string("localizable.nova.followup.screen.egitim.e2f9f769", table: .localizable, fallback: "Eğitim")
+        case "equipment": return RDLocalization.string("localizable.nova.followup.screen.periyodik.kontrol.b45bd52d", table: .localizable, fallback: "Periyodik kontrol")
+        case "risk_assessment": return RDLocalization.string("localizable.nova.followup.screen.risk.analizi.79082240", table: .localizable, fallback: "Risk analizi")
+        case "emergency_plan": return RDLocalization.string("localizable.nova.followup.screen.acil.durum.plani.6be8ff28", table: .localizable, fallback: "Acil durum planı")
+        case "appointment": return "Atama"
+        case "document": return RDLocalization.string("localizable.nova.followup.screen.onceki.evrak.kaydi.698b873e", table: .localizable, fallback: "Önceki evrak kaydı")
+        case "file": return "Dosya"
+        default: return NovaProcessKind.get(kind).title
         }
     }
     static func statusTitle(_ status: String) -> String { ["current":"Güncel","soon":"Yaklaşıyor","expired":"Süresi doldu","undated":"Süre takibi yok"][status] ?? status }
@@ -65,6 +67,15 @@ struct NovaFollowupScreen: View {
     let canWrite: Bool
     let onBack: () -> Void
     var legacy: ((NovaFollowupPage.Row, @escaping () -> Void) -> AnyView)?
+    /// Opened from a home card: the list starts on the status the card counted,
+    /// so the card and the list show the same records.
+    init(identity: NovaSessionIdentity, initialCompany: UUID? = nil, initialStatus: String? = nil, canWrite: Bool,
+         onBack: @escaping () -> Void, legacy: ((NovaFollowupPage.Row, @escaping () -> Void) -> AnyView)? = nil) {
+        self.identity = identity; self.initialCompany = initialCompany; self.canWrite = canWrite
+        self.onBack = onBack; self.legacy = legacy
+        _company = State(initialValue: initialCompany)
+        _status = State(initialValue: ["current", "soon", "expired", "undated"].contains(initialStatus ?? "") ? initialStatus ?? "" : "")
+    }
     @State private var company: UUID?
     @State private var companies: [NovaAnalysisCompanyOption] = []
     @State private var page: NovaFollowupPage?
@@ -120,6 +131,7 @@ struct NovaFollowupScreen: View {
                 }.padding(16)
             }
         }.task { company = initialCompany; companies = (try? await NovaAnalysisWorkspace.companyOptions(identity: identity)) ?? [] }
+        .onAppear { NovaForYouOutbox.recordUse("followup") }
         .task(id: requestKey) { await load() }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("isgada.records.changed"))) { _ in revision += 1 }
         .novaPopup(item: $selected) { row in destination(row) }
