@@ -816,7 +816,10 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // 2026-09-25: reviewed against b5d911e1: 98 new units (Localizable 96,
     // Analysis 2) for the risk/emergency document wizard, the PPE sample form,
     // follow-up v2 and the report download error; none removed or changed.
-    "ccb7ee501175da7e6a48c31d20e3abba7fb25cc8c8f3af3ebfe542d64a87d20f",
+    // 2026-09-25: the risk wizard's score note drops "Yeni maddeler uzman
+    // incelemesi bekleyen taslaklardır." (no expert-approval step, owner
+    // decision); that one unit changed, none added or removed.
+    "ac9e677fb91f0882720222c033db9844e6e84c50a638d016e2d6640fae66fb44",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

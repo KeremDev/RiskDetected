@@ -466,7 +466,7 @@ struct NovaRiskWizardScreen: View {
                     }
                     resultRow(row, showFK: showFK && (result.method != "both" || scoreView == "fk"), showM5: showM5 && (result.method != "both" || scoreView == "m5"))
                 }
-                NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.wizard.screen.skorlar.katalog.onerisidir.degerlendirme.ekibi.s.45d25ddb", table: .localizable, fallback: "Skorlar katalog önerisidir; değerlendirme ekibi sahada doğrulamalı ve gerektiğinde düzenlemelidir. Yeni maddeler uzman incelemesi bekleyen taslaklardır."))
+                NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.wizard.screen.skorlar.katalog.onerisidir.degerlendirme.ekibi.s.45d25ddb", table: .localizable, fallback: "Skorlar katalog önerisidir; değerlendirme ekibi sahada doğrulamalı ve gerektiğinde düzenlemelidir."))
             }
         } else { ProgressView().frame(maxWidth: .infinity) }
     }

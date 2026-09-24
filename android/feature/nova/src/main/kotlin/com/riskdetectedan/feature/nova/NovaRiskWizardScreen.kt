@@ -508,7 +508,7 @@ private fun LazyListScope.resultPage(r: RiskWizardResult, v: RiskWizardView, dar
         if (i == 0 || rows[i - 1].section != row.section) item(key = "h" + row.id) { NovaText(row.section, Modifier.padding(top = 10.dp), style = NovaTypeToken.cardTitle) }
         item(key = row.id) { ResultRow(row, dark, showFK, showM5, row.id in expanded, { onToggle(row.id) }, act) }
     }
-    item { NovaHelpHint("Skorlar katalog önerisidir; değerlendirme ekibi sahada doğrulamalı ve gerektiğinde düzenlemelidir. Yeni maddeler uzman incelemesi bekleyen taslaklardır.") }
+    item { NovaHelpHint("Skorlar katalog önerisidir; değerlendirme ekibi sahada doğrulamalı ve gerektiğinde düzenlemelidir.") }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
