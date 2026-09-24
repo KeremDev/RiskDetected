@@ -382,7 +382,7 @@ private fun EmergencyPlanSheet(initial: NovaEmergencyPlanDraft, catalogue: NovaE
     fun advance() {
         failure = null
         val valid = when (step) {
-            EmergencyStep.scope -> draft.workplaceId != null
+            EmergencyStep.scope -> workplaces.isEmpty() || draft.workplaceId != null
             EmergencyStep.dates -> {
                 val prepared = NovaDay.parse(draft.preparedOn); val until = NovaDay.parse(draft.validUntil)
                 prepared != null && until != null && until.isAfter(prepared)
@@ -406,14 +406,13 @@ private fun EmergencyPlanSheet(initial: NovaEmergencyPlanDraft, catalogue: NovaE
             AnimatedContent(step, transitionSpec = { fadeIn(NovaMotion.easeInOut(0.2)) togetherWith fadeOut(NovaMotion.easeInOut(0.2)) }, label = "emergencyStep") { current ->
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     when (current) {
-                        EmergencyStep.scope -> NovaCard(Modifier.fillMaxWidth(), padding = 12) {
+                        EmergencyStep.scope -> if (workplaces.isNotEmpty()) NovaCard(Modifier.fillMaxWidth(), padding = 12) {
                             FieldIcon("building.2") {
                                 when {
                                     draft.isRenewal || workplaces.size == 1 -> {
                                         NovaText("İşyeri", style = NovaTypeToken.label)
                                         NovaText(workplaceTitle, style = NovaTypeToken.cardTitle)
                                     }
-                                    workplaces.isEmpty() -> NovaText("Bu firmada kayıt açılacak bir işyeri yok.", style = NovaTypeToken.metaQuiet)
                                     else -> {
                                         NovaChooserButton("İşyeri", workplaceTitle, "nova.emergency.form.workplace", open = choosingWorkplace) {
                                             choosingWorkplace = !choosingWorkplace

@@ -244,7 +244,7 @@ enum NovaAnalysisWorkspace {
             let names = Dictionary(uniqueKeysWithValues: places.rows.map { ($0.id, $0.name) })
             result.append(contentsOf: list.rows.map { row in
                 .init(row: row, companyID: company.id, companyName: company.name,
-                      workplaceName: names[row.workplace_id])
+                      workplaceName: row.workplace_id.flatMap { names[$0] })
             })
         }
         // Newest first, and stable when two records share a day.

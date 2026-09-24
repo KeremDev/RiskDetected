@@ -37,7 +37,7 @@ internal object PreviewRiskClient : NovaRiskClient {
         return NovaRiskBoard(shown, rows.groupingBy { it.state.wire }.eachCount(), emptyList(), shown.size, false, 0, 60)
     }
     override suspend fun detail(id: String) = rows.first { it.id == id }
-    override suspend fun open(company: String, workplace: String) = rows.firstOrNull { it.workplaceId == workplace }
+    override suspend fun open(company: String, workplace: String?) = rows.firstOrNull { it.workplaceId == workplace }
     override suspend fun draft(company: String, draft: NovaRiskVersionDraft): NovaRiskRow? = throw NovaRiskException(NovaRiskFailure.moduleUnavailable)
     override suspend fun finalize(company: String, draft: NovaRiskFinalizeDraft): NovaRiskRow? = throw NovaRiskException(NovaRiskFailure.moduleUnavailable)
     override suspend fun cancelDraft(company: String, row: NovaRiskRow, version: NovaRiskVersion, reason: String): NovaRiskRow? =

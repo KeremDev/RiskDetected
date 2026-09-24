@@ -588,7 +588,7 @@ private fun NovaAnalysisFilingScreen(data: NovaAnalysisDetailData, item: NovaAna
                 val places = workplaces
                 when {
                     places == null -> NovaLoadingView("İşyerleri yükleniyor…")
-                    places.isEmpty() -> NovaCard(Modifier.fillMaxWidth(), padding = 14) { NovaText("Bu firmada kayıt açılacak bir işyeri yok.", style = NovaTypeToken.metaQuiet) }
+                    places.isEmpty() -> Unit
                     places.size > 1 -> NovaCard(Modifier.fillMaxWidth(), padding = 14) {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             NovaText("İşyeri", style = NovaTypeToken.label, color = NovaColorToken.textTertiary.color())
@@ -624,10 +624,10 @@ private fun NovaAnalysisFilingScreen(data: NovaAnalysisDetailData, item: NovaAna
                 NovaButton("Listeye dön", onClose, Modifier.testTag("analysis.file.done"), variant = NovaButtonVariant.Surface, symbol = "list.bullet")
             }
             else NovaButton(if (running) "Kaydediliyor…" else "Uygunsuzluk oluştur", {
-                val target = workplace ?: return@NovaButton
+                if (workplaces?.isNotEmpty() == true && workplace == null) return@NovaButton
                 running = true
                 coroutines.launch {
-                    val result = client.file(NovaAnalysisFileRequest(company, item, section, target,
+                    val result = client.file(NovaAnalysisFileRequest(company, item, section, workplace,
                         if (section.isScored) NovaNonconformityRecordKind.nonconformity else kind, if (section.isScored) item.band(method) else null,
                         severity, if (section.isScored) method else null))
                     outcome = result
@@ -638,7 +638,7 @@ private fun NovaAnalysisFilingScreen(data: NovaAnalysisDetailData, item: NovaAna
                         onClose()
                     }
                 }
-            }, Modifier.testTag("analysis.file.run"), symbol = "checkmark", enabled = !running && workplace != null && ready)
+            }, Modifier.testTag("analysis.file.run"), symbol = "checkmark", enabled = !running && (workplaces?.isEmpty() == true || workplace != null) && ready)
         }
     }
 }

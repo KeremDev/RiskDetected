@@ -211,7 +211,7 @@ import Foundation
     /// credential: the payload has no field for one and the server refuses any.
     func record(_ identity: NovaSessionIdentity, company: UUID,
                 draft: NovaKatipDraft) async throws -> NovaKatipContract? {
-        guard let workplace = draft.workplaceID, NovaDayField.date(draft.startsOn) != nil,
+        guard NovaDayField.date(draft.startsOn) != nil,
               !draft.counterparty.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               !draft.expertContact.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               !draft.scope.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -223,7 +223,7 @@ import Foundation
         else { throw NovaKatipFailure.validation }
         if !end.isEmpty && end <= draft.startsOn { throw NovaKatipFailure.endsBeforeStart }
         var payload: [String: PersonnelRPCValue] = [
-            "workplace_id": .id(workplace),
+            "workplace_id": draft.workplaceID.map(PersonnelRPCValue.id) ?? .null,
             "counterparty": .string(draft.counterparty.trimmingCharacters(in: .whitespacesAndNewlines)),
             "expert_contact": .string(draft.expertContact.trimmingCharacters(in: .whitespacesAndNewlines)),
             "scope": .string(draft.scope.trimmingCharacters(in: .whitespacesAndNewlines)),

@@ -34,7 +34,7 @@ interface NovaRiskClient {
     suspend fun catalogue(company: String?): NovaRiskCatalogue
     suspend fun board(query: NovaRiskQuery): NovaRiskBoard
     suspend fun detail(id: String): NovaRiskRow
-    suspend fun open(company: String, workplace: String): NovaRiskRow?
+    suspend fun open(company: String, workplace: String?): NovaRiskRow?
     suspend fun draft(company: String, draft: NovaRiskVersionDraft): NovaRiskRow?
     suspend fun finalize(company: String, draft: NovaRiskFinalizeDraft): NovaRiskRow?
     suspend fun cancelDraft(company: String, row: NovaRiskRow, version: NovaRiskVersion, reason: String): NovaRiskRow?
@@ -45,7 +45,7 @@ class NovaServiceRiskClient(private val service: NovaRiskService, private val id
     override suspend fun catalogue(company: String?) = service.catalogue(identity, company)
     override suspend fun board(query: NovaRiskQuery) = service.board(identity, query)
     override suspend fun detail(id: String) = service.detail(identity, id)
-    override suspend fun open(company: String, workplace: String) = service.open(identity, company, workplace)
+    override suspend fun open(company: String, workplace: String?) = service.open(identity, company, workplace)
     override suspend fun draft(company: String, draft: NovaRiskVersionDraft) = service.draft(identity, company, draft)
     override suspend fun finalize(company: String, draft: NovaRiskFinalizeDraft) = service.finalize(identity, company, draft)
     override suspend fun cancelDraft(company: String, row: NovaRiskRow, version: NovaRiskVersion, reason: String) =
@@ -485,7 +485,7 @@ private fun RiskQuickCreate(client: NovaRiskClient, company: String, catalogue: 
     val suggested = workplaces.firstOrNull { it.id == workplaceId }?.suggestedPeriodYears
     val hasOpenDraft = row?.hasOpenDraft ?: false
     fun primeSuggested() { if (periodYears.isEmpty()) periodYears = (suggested ?: 1).toString() }
-    val detailsReady = workplaceId != null && row != null && kindChosen &&
+    val detailsReady = (workplaces.isEmpty() || workplaceId != null) && row != null && kindChosen &&
         !(kind == NovaRiskKind.full && (periodYears.toIntOrNull() ?: 0) <= 0) &&
         !(kind.needsScope && scope.isEmpty()) && !(kind.needsReason && reason.isBlank())
     val validUntil = run {
@@ -496,10 +496,10 @@ private fun RiskQuickCreate(client: NovaRiskClient, company: String, catalogue: 
     }
     val validity = validUntil ?: "Geçerlilik bilgisi daha sonra kesinleştirilecek"
     LaunchedEffect(workplaceId) {
-        val place = workplaceId ?: return@LaunchedEffect
+        if (workplaces.isNotEmpty() && workplaceId == null) return@LaunchedEffect
         opening = true; openError = null
         try {
-            val opened = client.open(company, place)
+            val opened = client.open(company, workplaceId)
             row = opened
             val draft = opened?.versions?.firstOrNull { it.isDraft }
             if (draft != null) { kind = draft.kind; assessmentOn = draft.assessmentOn; scope = draft.scope; reason = draft.reason.orEmpty(); kindChosen = true }
@@ -539,7 +539,6 @@ private fun RiskQuickCreate(client: NovaRiskClient, company: String, catalogue: 
             openError?.let { NovaTaskErrorSummary(it) }
             saveError?.let { NovaTaskErrorSummary(it) }
             when {
-                workplaces.isEmpty() -> NovaEmptyState("İşyeri bulunamadı", "Önce firma bilgilerinden işyeri ekleyin.")
                 workplaces.size > 1 && workplaceId == null -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     NovaText("İşyeri seçin", style = NovaTypeToken.cardTitle)
                     workplaces.forEach { place ->
@@ -593,7 +592,7 @@ private fun RiskQuickCreate(client: NovaRiskClient, company: String, catalogue: 
                 }
             }
         }
-        if (workplaces.isNotEmpty() && !opening && row != null) NovaTaskStickyActions(
+        if (!opening && row != null) NovaTaskStickyActions(
             if (step == RiskStep.review) "Kaydet" else "Devam", onBack = {
                 saveError = null
                 if (step.ordinal > 0) step = RiskStep.entries[step.ordinal - 1]
@@ -624,4 +623,3 @@ internal fun ReviewRow(label: String, value: String) {
         NovaText(value, style = NovaTypeToken.bodyStrong)
     }
 }
-

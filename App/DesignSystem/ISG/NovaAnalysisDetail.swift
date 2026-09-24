@@ -267,7 +267,7 @@ struct NovaAnalysisFileRequest: Equatable {
     var companyID: UUID? = nil
     let item: NovaAnalysisItem
     let section: NovaAnalysisSectionKind
-    let workplaceID: UUID
+    let workplaceID: UUID?
     let recordKind: NovaNonconformityRecordKind
     /// The band under the method the expert is reading the analysis with. Nil
     /// for every unscored section, and the server maps it only when no

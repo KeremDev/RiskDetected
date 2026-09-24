@@ -261,7 +261,7 @@ class NovaRiskService @Inject constructor(private val transport: NovaExpertTrans
     }
 
     /** Opening a workplace's record twice is the same record; no durable receipt is needed. */
-    suspend fun open(identity: IsgWorkspaceIdentity, company: String, workplace: String): NovaRiskRow? = guarded {
+    suspend fun open(identity: IsgWorkspaceIdentity, company: String, workplace: String?): NovaRiskRow? = guarded {
         check(identity)
         val data = transport.execute("isg_risk_versions_mutate_v1", buildJsonObject {
             put("p_company", company); put("p_action", "open_assessment"); put("p_operation", UUID.randomUUID().toString())

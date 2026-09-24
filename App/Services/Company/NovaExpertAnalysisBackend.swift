@@ -191,7 +191,7 @@ import CryptoKit
         else if request.section.isScored || value.expert_items.contains(where: { $0.id == request.item.id && $0.kind == "unscored_finding" }) { kind = "finding" }
         else { kind = "expert_item" }
         let result: Receipt = try await call("file", ["analysis_id": .id(analysis), "item_id": .id(request.item.id),
-            "workplace_id": .id(request.workplaceID), "mutation_id": .id(UUID()), "item_kind": .string(kind),
+            "workplace_id": request.workplaceID.map(PersonnelRPCValue.id) ?? .null, "mutation_id": .id(UUID()), "item_kind": .string(kind),
             "record_kind": .string(request.recordKind.rawValue),
             "severity": (request.severity?.rawValue ?? request.band).map(PersonnelRPCValue.string) ?? .null])
         let scope = NovaPersonnelScope(ownerID: ticket.access.identity.userID, sessionID: ticket.access.identity.sessionID,

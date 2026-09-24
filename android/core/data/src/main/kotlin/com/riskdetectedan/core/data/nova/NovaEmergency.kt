@@ -216,10 +216,9 @@ class NovaEmergencyService @Inject constructor(private val transport: NovaExpert
 
     /** Publishing is the only write; correcting a plan means publishing the next version. */
     suspend fun publish(identity: IsgWorkspaceIdentity, company: String, draft: NovaEmergencyPlanDraft): NovaEmergencyPlan? {
-        val workplace = draft.workplaceId
-        if (workplace == null || draft.team.isEmpty()) throw NovaEmergencyException(NovaEmergencyFailure.validation)
+        if (draft.team.isEmpty()) throw NovaEmergencyException(NovaEmergencyFailure.validation)
         val payload = buildJsonObject {
-            put("workplace_id", workplace); put("scope", draft.scope.trim()); put("prepared_on", draft.preparedOn)
+            put("workplace_id", draft.workplaceId?.let(::JsonPrimitive) ?: JsonNull); put("scope", draft.scope.trim()); put("prepared_on", draft.preparedOn)
             // Only the three keys the server's snapshot check accepts.
             putJsonArray("team") {
                 draft.team.forEach { member ->

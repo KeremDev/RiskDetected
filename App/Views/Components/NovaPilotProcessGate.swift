@@ -322,10 +322,10 @@ struct NovaProcessEditor: View {
         case 0:
             NovaText(text: "Kapsam", style: .sectionTitle)
             NovaHelpHint(text: RDLocalization.string("localizable.nova.pilot.process.gate.firma.secimi.korunur.isyeri.ve.ilgili.kapsam.son.41c7fc9e", table: .localizable, fallback: "Firma seçimi korunur; işyeri ve ilgili kapsam sonraki adımlara otomatik taşınır."))
-            ForEach(visibleFields.filter { scopeTypes.contains($0.type) }) { field in
+            ForEach(visibleFields.filter { scopeTypes.contains($0.type) && !($0.type == "workplaces" && catalogue.workplaces.isEmpty) }) { field in
                 fieldRow(field) { control(field, catalogue) }
             }
-            if visibleFields.allSatisfy({ !scopeTypes.contains($0.type) }) {
+            if visibleFields.allSatisfy({ !scopeTypes.contains($0.type) || ($0.type == "workplaces" && catalogue.workplaces.isEmpty) }) {
                 NovaFormValueRow(label: RDLocalization.string("localizable.nova.pilot.process.gate.firma.kapsami.487d914d", table: .localizable, fallback: "Firma kapsamı"), symbol: "building.2") {
                     NovaText(text: RDLocalization.string("localizable.nova.pilot.process.gate.secili.firma.3e5ddba9", table: .localizable, fallback: "Seçili firma"), style: .bodyStrong)
                 }
@@ -369,7 +369,7 @@ struct NovaProcessEditor: View {
     private func processAdvance() {
         failure = nil
         if processStep == 0 {
-            let scopeFields = visibleFields.filter { ["workplaces", "employee", "organizations"].contains($0.type) && $0.required }
+            let scopeFields = visibleFields.filter { ["workplaces", "employee", "organizations"].contains($0.type) && $0.required && !($0.type == "workplaces" && (catalogue?.workplaces.isEmpty ?? true)) }
             guard scopeFields.allSatisfy({ !(values[$0.id]?.text.isEmpty ?? true) }) else {
                 failure = RDLocalization.string("localizable.nova.pilot.process.gate.kapsam.secimini.tamamlayin.280a6d84", table: .localizable, fallback: "Kapsam seçimini tamamlayın.")
                 return
@@ -417,9 +417,13 @@ struct NovaProcessEditor: View {
     @ViewBuilder private func siteVisitStep(_ catalogue: NovaProcessPage) -> some View {
         switch visitStep {
         case 0:
-            NovaText(text: RDLocalization.string("localizable.nova.pilot.process.gate.isyeri.3797b165", table: .localizable, fallback: "İşyeri"), style: .sectionTitle)
-            NovaHelpHint(text: RDLocalization.string("localizable.nova.pilot.process.gate.ziyaretin.yapildigi.isyerini.secin.bu.secim.sonr.d1ad82de", table: .localizable, fallback: "Ziyaretin yapıldığı işyerini seçin. Bu seçim sonraki adımlara otomatik taşınır."))
-            if let field = spec.fields.first(where: { $0.id == "workplace_id" }) {
+            NovaText(text: catalogue.workplaces.isEmpty ? "Firma kapsamı" : "İşyeri", style: .sectionTitle)
+            if catalogue.workplaces.isEmpty {
+                NovaHelpHint(text: "Ziyaret seçili firma kapsamında kaydedilecek.")
+            } else {
+                NovaHelpHint(text: RDLocalization.string("localizable.nova.pilot.process.gate.ziyaretin.yapildigi.isyerini.secin.bu.secim.sonr.d1ad82de", table: .localizable, fallback: "Ziyaretin yapıldığı işyerini seçin. Bu seçim sonraki adımlara otomatik taşınır."))
+            }
+            if !catalogue.workplaces.isEmpty, let field = spec.fields.first(where: { $0.id == "workplace_id" }) {
                 fieldRow(field) { control(field, catalogue) }
             }
         case 1:
@@ -451,9 +455,9 @@ struct NovaProcessEditor: View {
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 9) {
                     NovaText(text: RDLocalization.string("localizable.nova.pilot.process.gate.ziyaret.ozeti.c9845cf8", table: .localizable, fallback: "Ziyaret özeti"), style: .bodyStrong)
-                    visitReviewRow(RDLocalization.string("localizable.nova.pilot.process.gate.isyeri.7316118a", table: .localizable, fallback: "İşyeri"), catalogue.workplaces.first(where: {
+                    visitReviewRow(catalogue.workplaces.isEmpty ? "Firma" : "İşyeri", catalogue.workplaces.first(where: {
                         $0.id.uuidString.lowercased() == values["workplace_id"]?.text.lowercased()
-                    })?.name ?? "—")
+                    })?.name ?? (catalogue.workplaces.isEmpty ? "Firma geneli" : "—"))
                     visitReviewRow("Tarih", values["visited_on"]?.text ?? "—")
                     visitReviewRow(RDLocalization.string("localizable.nova.pilot.process.gate.sure.e9f43d80", table: .localizable, fallback: "Süre"), (values["duration_minutes"]?.text).flatMap { $0.isEmpty ? nil : "\($0) dk" } ?? "Belirtilmedi")
                     visitReviewRow(RDLocalization.string("localizable.nova.pilot.process.gate.gorusulen.kisi.eaf53bcc", table: .localizable, fallback: "Görüşülen kişi"), values["responsible_contact"]?.text.isEmpty == false
@@ -494,7 +498,7 @@ struct NovaProcessEditor: View {
 
     private var visitStepIsValid: Bool {
         switch visitStep {
-        case 0: return !(values["workplace_id"]?.text.isEmpty ?? true)
+        case 0: return (catalogue?.workplaces.isEmpty ?? true) || !(values["workplace_id"]?.text.isEmpty ?? true)
         case 1:
             guard !(values["visited_on"]?.text.isEmpty ?? true) else { return false }
             let duration = values["duration_minutes"]?.text ?? ""
@@ -608,7 +612,7 @@ struct NovaProcessEditor: View {
         if kind == "site_visit", let duration = values["duration_minutes"]?.text, !duration.isEmpty {
             guard let minutes = Int(duration), (1...1440).contains(minutes) else { return false }
         }
-        return spec.fields.filter(\.required).allSatisfy { field in
+        return spec.fields.filter { $0.required && !($0.type == "workplaces" && (catalogue?.workplaces.isEmpty ?? true)) }.allSatisfy { field in
             if case .array(let list) = values[field.id] { return !list.isEmpty }
             return !(values[field.id]?.text.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty ?? true)
         }
@@ -782,9 +786,10 @@ struct NovaProcessEditor: View {
         case "workplaces":
             // No workplace to open a record under, or exactly one: nothing to
             // ask. A picker only appears when there is a real choice.
-            if cat.workplaces.count <= 1 {
-                NovaText(text: cat.workplaces.first?.name
-                    ?? RDLocalization.string("localizable.nova.pilot.process.gate.bu.firmada.kayit.acilacak.bir.isyeri.yok.71414654", table: .localizable, fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .cardTitle)
+            if cat.workplaces.count == 1 {
+                NovaText(text: cat.workplaces[0].name, style: .cardTitle)
+            } else if cat.workplaces.isEmpty {
+                EmptyView()
             } else {
                 Picker(field.title,selection:text(field.id)) {
                     Text(RDLocalization.string("localizable.nova.pilot.process.gate.secin.3fbe11b8", table: .localizable, fallback: "Seçin")).tag("")

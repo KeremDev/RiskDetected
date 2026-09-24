@@ -72,7 +72,7 @@ object NovaDirectoryFormRules {
         }
         return rows.filter { row ->
             !row.archived && (field !in setOf("parent_id", "department_id") ||
-                (row.id !in blocked && row.text("workplace_id")?.lowercase() == workplace?.lowercase()))
+                (row.id !in blocked && row.text("workplace_id").orEmpty().lowercase() == workplace.orEmpty().lowercase()))
         }
     }
     fun selecting(field: String, value: String, fields: Map<String, String>): Map<String, String> =

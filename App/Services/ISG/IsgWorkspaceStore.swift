@@ -179,11 +179,6 @@ import Combine
         companies.append(company)
         companies.sort { $0.id.uuidString.lowercased() < $1.id.uuidString.lowercased() }
         selectedCompanyID = company.id
-        // Every module needs an operational scope, but a newly-created firm
-        // should not force the user through a separate workplace setup. The
-        // initializer is idempotent and creates only the hidden/default MERKEZ
-        // scope when none exists.
-        try? await api.initializePersonnel(selection: selection, companyID: company.id)
         // The mutation is already committed at this point. A transient summary
         // failure must not turn a successful create into a false failure.
         try await refreshDashboardAfterMutation(selection)
@@ -348,13 +343,6 @@ import Combine
         let value = try await api.equipmentCatalog(selection: selection, companyID: companyID)
         try requireCurrent(selection)
         return value
-    }
-
-    func initializePersonnel(companyID: UUID? = nil) async throws {
-        let selection = try expectedSelection(operate: true)
-        guard let companyID = companyID ?? selectedCompanyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
-        try await api.initializePersonnel(selection: selection, companyID: companyID)
-        try requireCurrent(selection)
     }
 
     func directory(_ kind: IsgWorkspaceDirectoryKind, companyID: UUID? = nil,
@@ -541,7 +529,7 @@ import Combine
         return job
     }
 
-    func fileAnalysisItem(mutationID: UUID, companyID: UUID, workplaceID: UUID,
+    func fileAnalysisItem(mutationID: UUID, companyID: UUID, workplaceID: UUID?,
                           sourceScope: String, analysisID: UUID, itemKind: String, itemID: UUID,
                           severity: String?, openedOn: String, dueOn: String?) async throws
         -> (result: IsgWorkspaceFilingResult, successMessage: String) {

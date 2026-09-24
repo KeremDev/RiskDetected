@@ -115,11 +115,7 @@ struct IsgWorkspaceAnalysisScreen: View {
             assign: { _ in throw IsgWorkspaceAPIFailure.invalidRequest },
             workplaces: { requestedCompany in
                 guard requestedCompany == companyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
-                var rows = try await store.directory(.workplace, companyID: companyID)
-                if rows.isEmpty {
-                    try await store.initializePersonnel(companyID: companyID)
-                    rows = try await store.directory(.workplace, companyID: companyID)
-                }
+                let rows = try await store.directory(.workplace, companyID: companyID)
                 return rows.map {
                     .init(id: $0.id, name: $0.name, needs_review: false)
                 }
@@ -186,7 +182,7 @@ struct IsgWorkspaceAnalysisScreen: View {
             var attempt = mutationAttempt
             let openedOn = day(Date())
             let mutationID = attempt.id(namespace: "analysis.file", components: [
-                companyID.uuidString, request.workplaceID.uuidString, analysisID.uuidString,
+                companyID.uuidString, request.workplaceID?.uuidString ?? "firma", analysisID.uuidString,
                 itemKind, request.item.id.uuidString, request.severity?.rawValue ?? "", openedOn
             ])
             mutationAttempt = attempt

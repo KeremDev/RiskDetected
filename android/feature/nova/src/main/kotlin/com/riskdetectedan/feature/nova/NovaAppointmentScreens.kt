@@ -267,7 +267,7 @@ private fun AppointmentSheet(initial: NovaAppointmentDraft, catalogue: NovaAppoi
         if (step == 3) "Atamayı kaydet" else "Devam", if (step == 3) "checkmark" else "arrow.right", saving, goBack, {
             failure = null
             when {
-                step == 0 && (draft.employeeId == null || draft.workplaceId == null) -> failure = "Personel ve işyeri seçimini tamamlayın."
+                step == 0 && (draft.employeeId == null || (workplaces.isNotEmpty() && draft.workplaceId == null)) -> failure = "Personel ve varsa işyeri seçimini tamamlayın."
                 step < 3 -> step++
                 else -> coroutines.launch { saving = true; val result = onSave(draft); saving = false; if (result != null) failure = result else saved = true }
             }
@@ -291,8 +291,8 @@ private fun AppointmentSheet(initial: NovaAppointmentDraft, catalogue: NovaAppoi
                         }
                     }
                 }
-                FieldCard("building.2") {
-                    if (workplaces.size <= 1) NovaText(if (workplaces.size == 1) placeTitle else "Bu firmada kayıt açılacak bir işyeri yok.", style = NovaTypeToken.cardTitle)
+                if (workplaces.isNotEmpty()) FieldCard("building.2") {
+                    if (workplaces.size == 1) NovaText(placeTitle, style = NovaTypeToken.cardTitle)
                     else {
                         NovaChooserButton("İşyeri", placeTitle, "nova.appointment.form.workplace", open = chooser == "place") {
                             chooser = if (chooser == "place") null else "place"

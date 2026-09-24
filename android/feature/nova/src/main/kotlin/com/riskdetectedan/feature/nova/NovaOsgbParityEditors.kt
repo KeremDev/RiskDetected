@@ -377,7 +377,7 @@ fun NovaOsgbManualNonconformityEditor(scope: NovaOsgbScope, onDone: () -> Unit) 
     }
     fun complete(step: String) = when (step) {
         "attachment" -> attachment != null
-        "workplace" -> workplaceId != null && dueOn >= openedOn
+        "workplace" -> (workplaces.isEmpty() || workplaceId != null) && dueOn >= openedOn
         "hazard" -> title.isNotBlank() && hazard.isNotBlank() && control.isNotBlank()
         "scoring" -> score.isComplete
         "legislation" -> legislation.isNotBlank()
@@ -387,13 +387,12 @@ fun NovaOsgbManualNonconformityEditor(scope: NovaOsgbScope, onDone: () -> Unit) 
         "scoring" to "Risk skoru · isteğe bağlı", "legislation" to "Mevzuat · isteğe bağlı", "responsible" to "Sorumlu · isteğe bağlı")
     val symbols = mapOf("attachment" to "camera", "workplace" to "building.2", "hazard" to "exclamationmark.triangle", "scoring" to "number.square",
         "legislation" to "books.vertical", "responsible" to "person.crop.circle")
-    val canSave = workplaceId != null && title.isNotBlank() && hazard.isNotBlank() && control.isNotBlank() && dueOn >= openedOn &&
+    val canSave = (workplaces.isEmpty() || workplaceId != null) && title.isNotBlank() && hazard.isNotBlank() && control.isNotBlank() && dueOn >= openedOn &&
         (score.isEmpty || score.isComplete)
     fun save() {
-        val place = workplaceId ?: return
         if (!canSave || saving) return
         val create = buildJsonObject {
-            put("action", "create"); put("workplace_id", place); put("source_kind", "manual"); put("source_ref", JsonNull)
+            put("action", "create"); put("workplace_id", workplaceId?.let(::JsonPrimitive) ?: JsonNull); put("source_kind", "manual"); put("source_ref", JsonNull)
             put("title", title.trim()); put("severity", severity.name); put("opened_on", openedOn); put("due_on", dueOn)
         }
         saving = true; error = null
@@ -443,9 +442,8 @@ fun NovaOsgbManualNonconformityEditor(scope: NovaOsgbScope, onDone: () -> Unit) 
                 identifier = "workspace.nonconformity.step.$step") {
                 when (step) {
                     "attachment" -> OsgbAttachmentField("Fotoğraf veya kanıt ekle (isteğe bağlı)", attachment, { attachment = it })
-                    "workplace" -> if (workplaces.isEmpty()) NovaEmptyState("İşyeri bulunamadı", "Uygunsuzluk eklemek için önce firmaya bir işyeri ekleyin.")
-                    else {
-                        OsgbPicker("İşyeri", workplaces.map { it.first }, workplaceId, "osgb.finding.workplace", workplaces.toMap()) { workplaceId = it }
+                    "workplace" -> {
+                        if (workplaces.isNotEmpty()) OsgbPicker("İşyeri", workplaces.map { it.first }, workplaceId, "osgb.finding.workplace", workplaces.toMap()) { workplaceId = it }
                         NovaDayField("Kayıt tarihi", openedOn, { openedOn = it }, "osgb.finding.opened")
                         NovaDayField("Termin", dueOn, { dueOn = it }, "osgb.finding.due")
                     }
@@ -505,7 +503,7 @@ fun NovaOsgbRiskCreateEditor(scope: NovaOsgbScope, onDone: () -> Unit) {
     var saved by remember { mutableStateOf(false) }
     val attempt = remember { IsgWorkspaceMutationAttempt() }
     val workflow = remember { OsgbWorkflowIds() }
-    val assessment = workplaceId?.let { id -> assessments.firstOrNull { it.fact("workplace_id")?.lowercase() == id } }
+    val assessment = assessments.firstOrNull { it.fact("workplace_id")?.lowercase() == workplaceId }
     val needsReason = assessment != null && kind in setOf("partial", "metadata")
     val needsScope = kind == "partial"
     LaunchedEffect(Unit) {
@@ -526,14 +524,13 @@ fun NovaOsgbRiskCreateEditor(scope: NovaOsgbScope, onDone: () -> Unit) {
             "Risk değerlendirmelerine dön", onDone)
         return
     }
-    val detailsComplete = workplaceId != null && date <= osgbToday() && (!needsScope || summary.isNotBlank()) && (!needsReason || reason.trim().length >= 10)
+    val detailsComplete = (workplaces.isEmpty() || workplaceId != null) && date <= osgbToday() && (!needsScope || summary.isNotBlank()) && (!needsReason || reason.trim().length >= 10)
     fun save() {
-        val place = workplaceId ?: return
         if (!detailsComplete || saving) return
         val current = assessment?.fact("current_version")?.toIntOrNull() ?: 0
         val base = assessment?.fact("base_assessment_on") ?: date
         val payload = buildJsonObject {
-            put("action", "draft"); put("workplace_id", place); put("expected_current", current); put("kind", kind)
+            put("action", "draft"); put("workplace_id", workplaceId?.let(::JsonPrimitive) ?: JsonNull); put("expected_current", current); put("kind", kind)
             put("assessment_on", if (kind == "full") date else base); put("revision_on", if (kind == "full") JsonNull else JsonPrimitive(date))
             put("scope", buildJsonObject { if (needsScope) put("summary", summary.trim()) })
             put("reason", if (needsReason) JsonPrimitive(reason.trim()) else JsonNull)
@@ -578,7 +575,7 @@ fun NovaOsgbRiskCreateEditor(scope: NovaOsgbScope, onDone: () -> Unit) {
         validation?.let { NovaTaskErrorSummary(it) }
         when (step) {
             0 -> {
-                OsgbPicker("İşyeri", workplaces.map { it.first }, workplaceId, "osgb.risk.workplace", workplaces.toMap()) {
+                if (workplaces.isNotEmpty()) OsgbPicker("İşyeri", workplaces.map { it.first }, workplaceId, "osgb.risk.workplace", workplaces.toMap()) {
                     workplaceId = it; kind = "full"; reason = ""; summary = ""
                 }
                 if (assessment == null) {
@@ -604,7 +601,7 @@ fun NovaOsgbRiskCreateEditor(scope: NovaOsgbScope, onDone: () -> Unit) {
                 NovaText("Kaydetmeden önce kontrol edin", style = NovaTypeToken.sectionTitle)
                 NovaCard(Modifier.fillMaxWidth(), padding = 14) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OsgbReview("İşyeri", workplaces.firstOrNull { it.first == workplaceId }?.second.orEmpty())
+                        OsgbReview(if (workplaces.isEmpty()) "Firma" else "İşyeri", workplaces.firstOrNull { it.first == workplaceId }?.second ?: scope.companyName)
                         OsgbReview("Sürüm", IsgWorkspaceDisplayText.value(kind))
                         OsgbReview(if (kind == "full") "Değerlendirme" else "Revizyon", date)
                         if (needsScope) OsgbReview("Kapsam", summary.trim())
@@ -654,7 +651,7 @@ fun NovaOsgbEquipmentCreateEditor(scope: NovaOsgbScope, onDone: () -> Unit) {
     }
     val typeLabel = if (typeCode == "other_equipment") customType.trim() else IsgWorkspaceDisplayText.value(typeCode)
     fun complete(step: String) = when (step) {
-        "type" -> typeCode.isNotEmpty() && typeLabel.isNotEmpty(); "identity" -> workplaceId != null
+        "type" -> typeCode.isNotEmpty() && typeLabel.isNotEmpty(); "identity" -> workplaces.isEmpty() || workplaceId != null
         "period" -> acquiredOn <= osgbToday(); else -> true
     }
     val titles = mapOf("type" to "Ekipman türü", "identity" to "İşyeri ve kimlik", "period" to "Tarih ve kontrol süresi", "attachment" to "Dosya ve kanıt")
@@ -662,10 +659,9 @@ fun NovaOsgbEquipmentCreateEditor(scope: NovaOsgbScope, onDone: () -> Unit) {
     val period = catalog.rules.firstOrNull { it.equipmentType == typeCode }?.periodMonths
         ?: catalog.suggestions.firstOrNull { it.code == typeCode }?.defaultPeriodMonths
     fun save() {
-        val place = workplaceId ?: return
         if (!steps.all(::complete) || saving) return
         val payload = buildJsonObject {
-            put("action", "register"); put("workplace_id", place); put("equipment_type", typeCode); put("equipment_type_label", typeLabel)
+            put("action", "register"); put("workplace_id", workplaceId?.let(::JsonPrimitive) ?: JsonNull); put("equipment_type", typeCode); put("equipment_type_label", typeLabel)
             put("serial_tag", serial.trim().ifEmpty { UUID.randomUUID().toString().take(8) }); put("acquired_on", acquiredOn)
             put("location_note", location.trim())
         }
@@ -707,7 +703,7 @@ fun NovaOsgbEquipmentCreateEditor(scope: NovaOsgbScope, onDone: () -> Unit) {
                         if (typeCode == "other_equipment") NovaTextField("Ekipman türü", customType, { customType = it }, identifier = "osgb.equipment.custom")
                     }
                     "identity" -> {
-                        OsgbPicker("İşyeri", workplaces.map { it.first }, workplaceId, "osgb.equipment.workplace", workplaces.toMap()) { workplaceId = it }
+                        if (workplaces.isNotEmpty()) OsgbPicker("İşyeri", workplaces.map { it.first }, workplaceId, "osgb.equipment.workplace", workplaces.toMap()) { workplaceId = it }
                         NovaTextField("Seri / kod (isteğe bağlı)", serial, { serial = it }, identifier = "osgb.equipment.serial")
                         NovaTextField("Konum (isteğe bağlı)", location, { location = it }, identifier = "osgb.equipment.location")
                     }
@@ -762,7 +758,7 @@ fun NovaOsgbEmergencyPlanCreateFlow(scope: NovaOsgbScope, onDone: () -> Unit) {
     var draftSaved by remember { mutableStateOf(false) }
     val workflow = remember { OsgbWorkflowIds() }
     fun automaticValidity(from: String) = runCatching { LocalDate.parse(from).plusYears(1).toString() }.getOrDefault(validUntil)
-    fun draftKey() = workplaceId?.let { "isg.workspace.emergency.draft.${it.lowercase()}" }
+    fun draftKey() = "isg.workspace.emergency.draft.${(workplaceId ?: scope.companyId).lowercase()}"
     LaunchedEffect(Unit) {
         try {
             coroutineScope {
@@ -796,7 +792,7 @@ fun NovaOsgbEmergencyPlanCreateFlow(scope: NovaOsgbScope, onDone: () -> Unit) {
         return
     }
     fun complete(index: Int): Boolean = when (index) {
-        0 -> workplaceId != null && planScope.isNotBlank()
+        0 -> (workplaces.isEmpty() || workplaceId != null) && planScope.isNotBlank()
         1 -> validUntil > preparedOn
         4 -> complete(0) && complete(1)
         else -> true
@@ -805,10 +801,9 @@ fun NovaOsgbEmergencyPlanCreateFlow(scope: NovaOsgbScope, onDone: () -> Unit) {
         if (id in selected) { selected = selected - id; roles = roles - id } else { selected = selected + id; roles = roles + (id to (roles[id] ?: "coordinator")) }
     }
     fun save() {
-        val place = workplaceId ?: return
         if (!complete(4) || saving) return
         val payload = buildJsonObject {
-            put("entity", "plan"); put("action", "publish"); put("workplace_id", place); put("scope", planScope.trim())
+            put("entity", "plan"); put("action", "publish"); put("workplace_id", workplaceId?.let(::JsonPrimitive) ?: JsonNull); put("scope", planScope.trim())
             put("prepared_on", preparedOn); put("valid_until", validUntil); put("review_note", note.trim())
             put("team", JsonArray(selected.sorted().map { id ->
                 buildJsonObject { put("employee_id", id); put("role", roles[id] ?: "coordinator"); put("contact", "") }
@@ -856,7 +851,7 @@ fun NovaOsgbEmergencyPlanCreateFlow(scope: NovaOsgbScope, onDone: () -> Unit) {
             0 -> {
                 NovaFormValueRow("Firma", "building.2") { NovaText(scope.companyName, style = NovaTypeToken.bodyStrong) }
                 if (workplaces.size == 1) NovaFormValueRow("İşyeri", "mappin.and.ellipse") { NovaText(workplaces[0].second, style = NovaTypeToken.bodyStrong) }
-                else OsgbPicker("İşyeri", workplaces.map { it.first }, workplaceId, "osgb.emergency.workplace", workplaces.toMap(),
+                else if (workplaces.size > 1) OsgbPicker("İşyeri", workplaces.map { it.first }, workplaceId, "osgb.emergency.workplace", workplaces.toMap(),
                     placeholder = "İşyeri seçin") { workplaceId = it }
                 NovaTextField("Plan kapsamı", planScope, { planScope = it }, identifier = "osgb.emergency.scope", multiline = true)
             }
@@ -919,7 +914,7 @@ fun NovaOsgbEmergencyPlanCreateFlow(scope: NovaOsgbScope, onDone: () -> Unit) {
                 NovaCard(Modifier.fillMaxWidth(), padding = 14) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OsgbReview("Firma", scope.companyName)
-                        OsgbReview("İşyeri", workplaces.firstOrNull { it.first == workplaceId }?.second.orEmpty())
+                        OsgbReview(if (workplaces.isEmpty()) "Firma" else "İşyeri", workplaces.firstOrNull { it.first == workplaceId }?.second ?: scope.companyName)
                         OsgbReview("Kapsam", planScope.trim()); OsgbReview("Hazırlama", preparedOn); OsgbReview("Geçerlilik", validUntil)
                         OsgbReview("Ekip", "${selected.size} kişi"); OsgbReview("Dosya", attachment?.filename ?: "Daha sonra eklenebilir")
                     }

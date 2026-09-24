@@ -337,7 +337,7 @@ private fun NovaOsgbActionEditor(context: IsgWorkspaceContext, repository: IsgWo
         OsgbActionKind.ppeReturn -> remainingPpe > 0 && number <= remainingPpe
         OsgbActionKind.checklistAnswer -> itemCode.isNotEmpty()
         OsgbActionKind.equipmentInspect -> row.version != null && controlComplete && contact.isNotBlank()
-        OsgbActionKind.equipmentEdit -> row.version != null && workplaceId != null && serialTag.isNotBlank() && date <= today
+        OsgbActionKind.equipmentEdit -> row.version != null && (workplaces.isEmpty() || workplaceId != null) && serialTag.isNotBlank() && date <= today
         OsgbActionKind.equipmentRule -> !row.fact("equipment_type").isNullOrEmpty() && number in 1..240 &&
             (option != "unapproved_fixture" || note.trim().length >= 10)
         else -> row.version != null
@@ -415,9 +415,8 @@ private fun NovaOsgbActionEditor(context: IsgWorkspaceContext, repository: IsgWo
                 put("katip_note", if (katipDeclared) optional(katipNote) else JsonNull)
             }
             OsgbActionKind.equipmentEdit -> {
-                val place = workplaceId ?: return null
                 merged {
-                put("action", "update"); put("workplace_id", place); put("serial_tag", serialTag.trim())
+                put("action", "update"); put("workplace_id", workplaceId?.let(::JsonPrimitive) ?: JsonNull); put("serial_tag", serialTag.trim())
                 put("acquired_on", date); put("location_note", optional(locationNote))
                 }
             }
@@ -568,7 +567,7 @@ private fun NovaOsgbActionEditor(context: IsgWorkspaceContext, repository: IsgWo
                 field("Not", note, "note") { note = it }
             }
             OsgbActionKind.equipmentEdit -> {
-                OsgbPicker("İşyeri", workplaces.entries.sortedBy { it.value }.map { it.key }, workplaceId, "osgb.action.workplace",
+                if (workplaces.isNotEmpty()) OsgbPicker("İşyeri", workplaces.entries.sortedBy { it.value }.map { it.key }, workplaceId, "osgb.action.workplace",
                     titles = workplaces, placeholder = "İşyeri seçin") { workplaceId = it }
                 field("Seri / kod", serialTag, "serial") { serialTag = it }
                 field("Konum (isteğe bağlı)", locationNote, "location") { locationNote = it }

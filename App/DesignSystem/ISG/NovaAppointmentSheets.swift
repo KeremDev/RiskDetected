@@ -244,10 +244,10 @@ struct NovaAppointmentSheet: View {
                     }
                 }
             }
-            fieldCard("building.2") {
+            if !(catalogue?.workplaces.isEmpty ?? true) { fieldCard("building.2") {
                 let count = catalogue?.workplaces.count ?? 0
                 if count <= 1 {
-                    NovaText(text: count == 1 ? placeTitle : "Bu firmada kayıt açılacak bir işyeri yok.", style: .cardTitle)
+                    NovaText(text: placeTitle, style: .cardTitle)
                 } else {
                     NovaFileChooserButton(label: RDLocalization.string("localizable.nova.appointment.sheets.isyeri.1c1ca3c4", table: .localizable, fallback: "İşyeri"), value: placeTitle, isOpen: openChooser == "place",
                         identifier: "nova.appointment.form.workplace") { openChooser = openChooser == "place" ? nil : "place" }
@@ -258,7 +258,7 @@ struct NovaAppointmentSheet: View {
                         }
                     }
                 }
-            }
+            } }
         }
     }
 
@@ -320,8 +320,8 @@ struct NovaAppointmentSheet: View {
     private func goBack() { failure = nil; if step > 0 { step -= 1 } else { onClose() } }
     private func advance() {
         failure = nil
-        if step == 0 && (draft.employeeID == nil || draft.workplaceID == nil) {
-            failure = "Personel ve işyeri seçimini tamamlayın."; return
+        if step == 0 && (draft.employeeID == nil || (!(catalogue?.workplaces.isEmpty ?? true) && draft.workplaceID == nil)) {
+            failure = "Personel ve varsa işyeri seçimini tamamlayın."; return
         }
         if step < 3 { step += 1; return }
         Task {

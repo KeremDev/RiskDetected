@@ -48,18 +48,9 @@ import Foundation
         return try JSONDecoder().decode(WorkplaceEnvelope.self, from: data).rows
     }
 
-    /// Legacy companies can predate the invariant that every company has one
-    /// default workplace. Filing must repair that server-side gap instead of
-    /// leaving the user on a disabled confirmation button.
+    /// A company with no workplaces files records at company scope.
     func filingWorkplaces(_ scope: NovaPersonnelScope) async throws -> [NovaNonconformityWorkplace] {
-        let existing = try await workplaces(scope)
-        guard existing.isEmpty else { return existing }
-        try check(scope)
-        _ = try await rpc("isg_analysis_filing_workplace_v1", ["p_company": .id(scope.companyID)])
-        try check(scope)
-        let repaired = try await workplaces(scope)
-        guard !repaired.isEmpty else { throw NovaNonconformityFailure.unavailable }
-        return repaired
+        try await workplaces(scope)
     }
 
     /// The operation and mutation identifiers travel with the request, so a retry

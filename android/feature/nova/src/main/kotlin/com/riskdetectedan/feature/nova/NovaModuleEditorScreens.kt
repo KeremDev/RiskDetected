@@ -111,7 +111,7 @@ private fun ModuleFields(module: String, data: NovaModuleEditorRecord, values: M
     fun options(items: List<NovaModuleEditorOption>) = items.map { it.id to it.name }
     when (module) {
         "emergency_plan" -> {
-            choose("İşyeri", "workplace_id", options(data.workplaces), allowsNone = true)
+            if (data.workplaces.isNotEmpty()) choose("İşyeri", "workplace_id", options(data.workplaces), allowsNone = true)
             field("Kapsam", "scope")
             field("Hazırlık tarihi (YYYY-AA-GG)", "prepared_on")
             field("Geçerlilik tarihi (isteğe bağlı)", "valid_until")
@@ -137,7 +137,7 @@ private fun ModuleFields(module: String, data: NovaModuleEditorRecord, values: M
         }
         else -> {
             choose("Personel", "employee_id", options(data.employees), allowsNone = true)
-            choose("İşyeri", "scope_workplace_id", options(data.workplaces), allowsNone = true)
+            if (data.workplaces.isNotEmpty()) choose("İşyeri", "scope_workplace_id", options(data.workplaces), allowsNone = true)
             choose("Görev", "kind", listOf("representative" to "Çalışan temsilcisi", "support_staff" to "Destek elemanı",
                 "team_member" to "Ekip üyesi", "first_aid" to "İlk yardımcı", "fire_team" to "Yangın ekibi"), allowsNone = false)
             field("Başlangıç tarihi (YYYY-AA-GG)", "starts_on")

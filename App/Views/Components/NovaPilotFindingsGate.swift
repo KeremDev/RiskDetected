@@ -419,13 +419,13 @@ struct NovaPilotFindingsGate: View {
 
     /// Returns nil when the record was opened, and the reason otherwise.
     private func saveManual(_ value: NovaManualDraft) async -> String? {
-        guard let company = value.companyID, let workplace = value.workplaceID else {
+        guard let company = value.companyID else {
             return NovaNonconformityWords.failure(.validation)
         }
         guard let target = try? await waitForScope(company) else {
             return NovaNonconformityWords.failure(.denied)
         }
-        var intent = NovaNonconformityIntent(origin: .detailed, workplaceID: workplace,
+        var intent = NovaNonconformityIntent(origin: .detailed, workplaceID: value.workplaceID,
             title: value.title.trimmingCharacters(in: .whitespacesAndNewlines))
         intent.severity = value.severity
         intent.recordKind = value.recordKind

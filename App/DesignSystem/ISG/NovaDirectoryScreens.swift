@@ -158,7 +158,7 @@ private struct NovaDirectoryEditor: View {
     @Environment(\.isNovaPopup) private var isNovaPopup
     private var definition: [DirectoryField] {
         let name = DirectoryField(id: "name", label: RDLocalization.string("localizable.nova.directory.screens.ad.unvan.409140cb", table: .localizable, fallback: "Ad / unvan")), code = DirectoryField(id: "code", label: "Kod")
-        let workplace = DirectoryField(id: "workplace_id", label: RDLocalization.string("localizable.nova.directory.screens.isyeri.dad72a5a", table: .localizable, fallback: "İşyeri"), choices: .workplaces)
+        let workplace = DirectoryField(id: "workplace_id", label: RDLocalization.string("localizable.nova.directory.screens.isyeri.dad72a5a", table: .localizable, fallback: "İşyeri"), choices: .workplaces, nullable: options["workplace_id"]?.isEmpty ?? false)
         let org = DirectoryField(id: "organization_id", label: RDLocalization.string("localizable.nova.directory.screens.dis.firma.193c52c0", table: .localizable, fallback: "Dış firma"), choices: .contractors)
         let start = DirectoryField(id: "starts_on", label: RDLocalization.string("localizable.nova.directory.screens.gecerlilik.baslangici.yyyy.aa.gg.d31f4d4c", table: .localizable, fallback: "Geçerlilik başlangıcı · YYYY-AA-GG"))
         switch kind {
@@ -181,7 +181,7 @@ private struct NovaDirectoryEditor: View {
                 }
                 if [.contexts, .assignments].contains(kind) { NovaCard(padding: 16) { NovaText(text: RDLocalization.string("localizable.nova.directory.screens.onceki.donemi.secerseniz.bu.kayit.baslangic.tari.aa072143", table: .localizable, fallback: "Önceki dönemi seçerseniz bu kayıt başlangıç tarihinde bölünür; eski bilgiler korunur. Bitiş günü döneme dahil değildir."), style: .metaQuiet) } }
                 if kind == .engagements && original != nil { NovaText(text: RDLocalization.string("localizable.nova.directory.screens.firma.isyeri.ve.baslangic.degismez.bitisi.ve.aci.5e2c5767", table: .localizable, fallback: "Firma, işyeri ve başlangıç değişmez. Bitişi ve açıklamayı düzenleyebilirsiniz."), style: .metaQuiet) }
-                ForEach(definition) { field in
+                ForEach(definition.filter { $0.id != "workplace_id" || !(options["workplace_id"]?.isEmpty ?? false) }) { field in
                     NovaCard(padding: 16) {
                         VStack(alignment: .leading, spacing: 10) {
                             HStack { NovaIcon(symbol: field.choices?.symbol ?? "pencil", size: 20); NovaText(text: field.label, style: .cardTitle) }

@@ -404,14 +404,8 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
             })
     }
 
-    /** The company's workplaces, creating its default one first when it has none (iOS `initializePersonnel`). */
+    /** Return real workplaces only; a company with none remains company scoped. */
     suspend fun ensuredWorkplaces(context: IsgWorkspaceContext, companyId: String): List<Pair<String, String>> {
-        val existing = directory(context, companyId, "workplaces")
-        if (existing.isNotEmpty() || !context.canOperate) return existing
-        inScope(context, companyId) {
-            gateway.initializePersonnel(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
-                context.canOperate, companyId)
-        }
         return directory(context, companyId, "workplaces")
     }
 

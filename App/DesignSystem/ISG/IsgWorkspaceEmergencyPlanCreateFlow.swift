@@ -110,7 +110,7 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
                 NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.8ddd8799", table: .localizable, fallback: "İşyeri"), symbol: "mappin.and.ellipse") {
                     NovaText(text: workplaces[0].name, style: .bodyStrong)
                 }
-            } else {
+            } else if workplaces.count > 1 {
                 VStack(alignment: .leading, spacing: 6) {
                     NovaText(text: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.d1df23d9", table: .localizable, fallback: "İşyeri"), style: .metaQuiet)
                     Picker(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.49ac6bb7", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
@@ -205,7 +205,7 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 12) {
                     reviewRow("Firma", companyName)
-                    reviewRow("İşyeri", workplaces.first(where: { $0.id == workplaceID })?.name ?? "Belirtilmedi")
+                    if !workplaces.isEmpty { reviewRow("İşyeri", workplaces.first(where: { $0.id == workplaceID })?.name ?? "Belirtilmedi") }
                     reviewRow("Kapsam", clean(scope))
                     reviewRow("Hazırlama", Self.day(preparedOn))
                     reviewRow("Geçerlilik", Self.day(validUntil))
@@ -272,7 +272,7 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
 
     private func isComplete(_ step: Step) -> Bool {
         switch step {
-        case .scope: return workplaceID != nil && !clean(scope).isEmpty
+        case .scope: return (workplaces.isEmpty || workplaceID != nil) && !clean(scope).isEmpty
         case .dates: return validUntil > preparedOn
         case .team: return true
         case .file: return true
@@ -335,7 +335,9 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
     }
 
     private var draftStorageKey: String? {
-        workplaceID.map { "isg.workspace.emergency.draft.\($0.uuidString.lowercased())" }
+        store.selectedCompanyID.map { company in
+            "isg.workspace.emergency.draft.\(company.uuidString.lowercased()).\(workplaceID?.uuidString.lowercased() ?? "company")"
+        }
     }
 
     /// Drafts are local working material until the workspace API exposes a
@@ -382,7 +384,7 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
     }
 
     private func save() {
-        guard isComplete(.review), let workplaceID else { return }
+        guard isComplete(.review) else { return }
         let team: [IsgWorkspaceRPCValue] = selectedEmployees.sorted { $0.uuidString < $1.uuidString }.map { id in
             .object(["employee_id": .id(id), "role": .string(roles[id] ?? "coordinator"), "contact": .string("")])
         }

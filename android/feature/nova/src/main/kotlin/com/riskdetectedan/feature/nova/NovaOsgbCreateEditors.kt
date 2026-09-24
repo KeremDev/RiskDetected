@@ -123,7 +123,7 @@ fun NovaOsgbDomainCreateEditor(scope: NovaOsgbScope, domain: IsgWorkspaceDomain,
     var step by remember { mutableIntStateOf(0) }
     var saved by remember { mutableStateOf(false) }
     val workflow = remember { OsgbWorkflowIds() }
-    val scopeNeedsInput = (needsWorkplace && workplaces.size != 1) || needsEmployee || domain == IsgWorkspaceDomain.DRILL
+    val scopeNeedsInput = (needsWorkplace && workplaces.size > 1) || needsEmployee || domain == IsgWorkspaceDomain.DRILL
     val minimumStep = if (scopeNeedsInput) 0 else 1
     val total = if (domain == IsgWorkspaceDomain.VISIT) 5 else 4
     LaunchedEffect(Unit) {
@@ -145,7 +145,7 @@ fun NovaOsgbDomainCreateEditor(scope: NovaOsgbScope, domain: IsgWorkspaceDomain,
             }
             option = when (domain) { IsgWorkspaceDomain.APPOINTMENT -> "representative"; IsgWorkspaceDomain.PPE -> "piece"
                 IsgWorkspaceDomain.BOARD -> "mandatory"; else -> "" }
-            val needsInput = (needsWorkplace && workplaces.size != 1) || needsEmployee || domain == IsgWorkspaceDomain.DRILL
+            val needsInput = (needsWorkplace && workplaces.size > 1) || needsEmployee || domain == IsgWorkspaceDomain.DRILL
             if (!needsInput) step = 1
         } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { error = "Bağlantınızı kontrol edip yeniden deneyin." }
         loading = false
@@ -158,7 +158,7 @@ fun NovaOsgbDomainCreateEditor(scope: NovaOsgbScope, domain: IsgWorkspaceDomain,
     }
     val template = templates.firstOrNull { it.id == templateId }
     val canSave = when {
-        needsWorkplace && workplaceId == null -> false
+        needsWorkplace && workplaces.isNotEmpty() && workplaceId == null -> false
         needsEmployee && employeeId == null -> false
         domain == IsgWorkspaceDomain.DRILL && planId == null -> false
         else -> when (domain) {
@@ -172,7 +172,7 @@ fun NovaOsgbDomainCreateEditor(scope: NovaOsgbScope, domain: IsgWorkspaceDomain,
         }
     }
     val stepValid = when {
-        step == 0 -> !(needsWorkplace && workplaceId == null) && !(needsEmployee && employeeId == null) &&
+        step == 0 -> !(needsWorkplace && workplaces.isNotEmpty() && workplaceId == null) && !(needsEmployee && employeeId == null) &&
             !(domain == IsgWorkspaceDomain.DRILL && planId == null)
         domain == IsgWorkspaceDomain.VISIT && step == 2 -> primary.isNotBlank()
         step == total - 1 -> canSave
@@ -325,8 +325,7 @@ fun NovaOsgbDomainCreateEditor(scope: NovaOsgbScope, domain: IsgWorkspaceDomain,
             step == 0 -> {
                 NovaText("Kapsam", style = NovaTypeToken.sectionTitle)
                 NovaHelpHint("Firma bilgisi korunur; işyeri ve ilgili kayıt seçimi sonraki adımlara otomatik taşınır.")
-                if (needsWorkplace) when {
-                    workplaces.isEmpty() -> NovaTaskErrorSummary("Firma için işyeri kaydı hazırlanamadı. Yeniden deneyin veya firma ayrıntılarından işyeri ekleyin.")
+                if (needsWorkplace && workplaces.isNotEmpty()) when {
                     workplaces.size == 1 -> NovaFormValueRow("İşyeri", "building") { NovaText(workplaces[0].second, style = NovaTypeToken.bodyStrong) }
                     else -> OsgbPicker("İşyeri", workplaces.map { it.first }, workplaceId, "osgb.create.workplace", workplaces.toMap(),
                         placeholder = "İşyeri seçin") { workplaceId = it }

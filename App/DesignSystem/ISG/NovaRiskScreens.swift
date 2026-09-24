@@ -11,7 +11,7 @@ struct NovaRiskClient {
     let board: (NovaRiskQuery) async throws -> NovaRiskBoard
     let companies: () async throws -> [NovaAnalysisCompanyOption]
     let detail: (UUID) async throws -> NovaRiskRow
-    let open: (UUID, UUID) async throws -> NovaRiskRow?
+    let open: (UUID, UUID?) async throws -> NovaRiskRow?
     let draft: (UUID, NovaRiskVersionDraft) async throws -> NovaRiskRow?
     let finalize: (UUID, NovaRiskFinalizeDraft) async throws -> NovaRiskRow?
     var cancelDraft: (UUID, NovaRiskRow, NovaRiskVersion, String) async throws -> NovaRiskRow? = { _,_,_,_ in throw NovaRiskFailure.unavailable }
@@ -449,7 +449,7 @@ private struct NovaRiskQuickCreateSheet: View {
     private var hasOpenDraft: Bool { row?.hasOpenDraft ?? false }
     private var stepNumber: Int { (Step.allCases.firstIndex(of: currentStep) ?? 0) + 1 }
     private var detailsReady: Bool {
-        guard workplaceID != nil, row != nil, kindChosen else { return false }
+        guard (workplaces.isEmpty || workplaceID != nil), row != nil, kindChosen else { return false }
         if kind == .full, !(Int(periodYears).map { $0 > 0 } ?? false) { return false }
         if kind.needsScope && scope.isEmpty { return false }
         if kind.needsReason && reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
@@ -489,9 +489,7 @@ private struct NovaRiskQuickCreateSheet: View {
                                 total: Step.allCases.count, stepTitle: stepTitle(currentStep), onClose: { confirmingExit = true })
                             if let openError { NovaTaskErrorSummary(message: openError) }
                             if let saveError { NovaTaskErrorSummary(message: saveError) }
-                            if workplaces.isEmpty {
-                                NovaEmptyState(title: RDLocalization.string("localizable.nova.risk.screens.isyeri.bulunamadi.40699456", table: .localizable, fallback: "İşyeri bulunamadı"), message: RDLocalization.string("localizable.nova.risk.screens.once.firma.bilgilerinden.isyeri.ekleyin.5424d52f", table: .localizable, fallback: "Önce firma bilgilerinden işyeri ekleyin."))
-                            } else if opening || row == nil {
+                            if opening || row == nil {
                                 NovaLoadingView(message: RDLocalization.string("localizable.nova.risk.screens.isyeri.ve.risk.surumu.hazirlaniyor.10b0fcd8", table: .localizable, fallback: "İşyeri ve risk sürümü hazırlanıyor…"))
                             } else {
                                 stepContent(currentStep)
@@ -499,7 +497,7 @@ private struct NovaRiskQuickCreateSheet: View {
                         }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 28)
                     }.scrollDismissesKeyboard(.interactively)
                     .safeAreaInset(edge: .bottom) {
-                        if !workplaces.isEmpty && !opening && row != nil {
+                        if !opening && row != nil {
                             NovaTaskStickyActions(primaryTitle: currentStep == .review ? "Kaydet" : "Devam",
                                 primarySymbol: currentStep == .review ? "checkmark" : "arrow.right",
                                 isWorking: saving, canGoBack: currentStep != .details,
@@ -511,6 +509,7 @@ private struct NovaRiskQuickCreateSheet: View {
         }
         .task {
             if workplaces.count == 1 { workplaceID = workplaces[0].id }
+            if workplaces.isEmpty { Task { await open() } }
         }
         .onChange(of: workplaceID) { _ in Task { await open() } }
         .confirmationDialog(RDLocalization.string("localizable.nova.risk.screens.risk.degerlendirmesi.akisindan.cikilsin.mi.55a3824f", table: .localizable, fallback: "Risk değerlendirmesi akışından çıkılsın mı?"), isPresented: $confirmingExit,
@@ -740,7 +739,7 @@ private struct NovaRiskQuickCreateSheet: View {
     }
 
     private func open() async {
-        guard let workplaceID else { return }
+        guard workplaces.isEmpty || workplaceID != nil else { return }
         opening = true; openError = nil
         defer { opening = false }
         do {

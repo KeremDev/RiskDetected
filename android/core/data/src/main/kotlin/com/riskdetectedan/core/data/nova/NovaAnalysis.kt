@@ -143,7 +143,7 @@ data class NovaAnalysisFindingEdit(val analysisId: String, val findingId: String
                                    val body: String? = null, val measure: String? = null, val references: String? = null,
                                    val score: NovaRiskScoreInput = NovaRiskScoreInput())
 
-data class NovaAnalysisFileRequest(val companyId: String?, val item: NovaAnalysisItem, val section: NovaAnalysisSectionKind, val workplaceId: String,
+data class NovaAnalysisFileRequest(val companyId: String?, val item: NovaAnalysisItem, val section: NovaAnalysisSectionKind, val workplaceId: String?,
                                    val recordKind: NovaNonconformityRecordKind, val band: String?, val severity: NovaNonconformitySeverity?,
                                    val sourceMethod: NovaRiskMethod? = null)
 
@@ -597,7 +597,7 @@ class NovaAnalysisService @Inject constructor(
                     else -> "expert_item"
                 }
                 val receipt = call("file", buildJsonObject {
-                    put("analysis_id", analysisId); put("item_id", request.item.id); put("workplace_id", request.workplaceId)
+                    put("analysis_id", analysisId); put("item_id", request.item.id); put("workplace_id", request.workplaceId?.let(::JsonPrimitive) ?: JsonNull)
                     put("mutation_id", UUID.randomUUID().toString()); put("item_kind", kind); put("record_kind", request.recordKind.name)
                     put("severity", (request.severity?.name ?: request.band)?.let(::JsonPrimitive) ?: JsonNull)
                 }, ticket)

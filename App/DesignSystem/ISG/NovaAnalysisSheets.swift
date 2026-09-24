@@ -662,12 +662,7 @@ struct NovaAnalysisFileSheet: View {
     }
 
     @ViewBuilder private var workplacePicker: some View {
-        if workplaces.isEmpty {
-            NovaCard(padding: 14) {
-                NovaText(text: RDLocalization.string("localizable.nova.bridge.no.workplace", table: .localizable,
-                    fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .metaQuiet)
-            }
-        } else if workplaces.count == 1 {
+        if workplaces.count <= 1 {
             // One workplace is not a choice; it is already selected.
             EmptyView()
         } else {
@@ -745,7 +740,7 @@ struct NovaAnalysisFileSheet: View {
             NovaButton(label: items.count == 1
                 ? RDLocalization.string("localizable.nova.analysis.finding.file", table: .localizable, fallback: "Uygunsuzluk oluştur")
                 : RDLocalization.string("localizable.nova.analysis.file.run", table: .localizable, fallback: "Seçilenleri aç"),
-                symbol: "checkmark", isEnabled: !running && workplace != nil && !items.isEmpty && ready.count == items.count,
+                symbol: "checkmark", isEnabled: !running && (workplaces.isEmpty || workplace != nil) && !items.isEmpty && ready.count == items.count,
                 isLoading: running) {
                 Task { await run() }
             }.accessibilityIdentifier("analysis.file.run")
@@ -753,12 +748,12 @@ struct NovaAnalysisFileSheet: View {
     }
 
     private func run() async {
-        guard !running, let target = workplace, !items.isEmpty, ready.count == items.count else { return }
+        guard !running, (workplaces.isEmpty || workplace != nil), !items.isEmpty, ready.count == items.count else { return }
         running = true
         var failed = false
         var succeeded = false
         for item in ready {
-            let outcome = await file(.init(companyID: targetCompany, item: item, section: section, workplaceID: target,
+            let outcome = await file(.init(companyID: targetCompany, item: item, section: section, workplaceID: workplace,
                 recordKind: section.isScored ? .nonconformity : kind,
                 band: section.isScored ? item.band(method) : nil,
                 severity: severity[item.id], sourceMethod: section.isScored ? method : nil))

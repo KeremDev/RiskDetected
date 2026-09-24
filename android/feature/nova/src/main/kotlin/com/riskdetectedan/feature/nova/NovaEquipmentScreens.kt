@@ -874,11 +874,7 @@ private fun EquipmentAddSheet(company: String?, catalogue: NovaEquipmentCatalogu
                     color = NovaColorToken.statusWarningInk.color())
             }
         }
-        // Only a real choice among several workplaces is shown.
-        if (catalogue.workplaces.size <= 1) Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            NovaText("Kapsam", style = NovaTypeToken.label, color = NovaColorToken.textTertiary.color())
-            NovaText(catalogue.workplaces.firstOrNull()?.name ?: "Bu firmada kayıt açılacak bir işyeri yok.", style = NovaTypeToken.cardTitle)
-        } else {
+        if (catalogue.workplaces.isNotEmpty()) {
             NovaChooserButton("Kapsam", catalogue.workplaces.firstOrNull { it.id == draft.workplaceId }?.name ?: "İşyeri seçin", "equipment.add.workplace",
                 symbol = "building.2", open = choosing == "workplace") { choosing = if (choosing == "workplace") null else "workplace" }
             if (choosing == "workplace") NovaChooserPanel(catalogue.workplaces.map { NovaChooserOption(it.id, it.name, symbol = "building.2") },
@@ -911,9 +907,9 @@ private fun EquipmentEditSheet(item: NovaEquipmentItem, workplaces: List<NovaEqu
     Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
         NovaPopupHeading("Ekipman kaydını düzenle", symbol = "square.and.pencil")
         NovaText(NovaEquipmentWords.type(item.equipmentType), style = NovaTypeToken.metaQuiet)
-        NovaChooserButton("Kapsam", workplaces.firstOrNull { it.id == draft.workplaceId }?.name ?: "—", "equipment.edit.workplace",
+        if (workplaces.isNotEmpty()) NovaChooserButton("Kapsam", workplaces.firstOrNull { it.id == draft.workplaceId }?.name ?: "Firma geneli", "equipment.edit.workplace",
             symbol = "building.2", open = choosing) { choosing = !choosing }
-        if (choosing) NovaChooserPanel(workplaces.map { NovaChooserOption(it.id, it.name, symbol = "building.2") }, draft.workplaceId,
+        if (choosing && workplaces.isNotEmpty()) NovaChooserPanel(workplaces.map { NovaChooserOption(it.id, it.name, symbol = "building.2") }, draft.workplaceId,
             "equipment.edit.workplace") { draft = draft.copy(workplaceId = it); choosing = false }
         NovaTextField("Seri / kod", draft.serialTag, { draft = draft.copy(serialTag = it) }, identifier = "equipment.edit.serial")
         NovaTextField("Yeri (isteğe bağlı)", draft.locationNote, { draft = draft.copy(locationNote = it) }, identifier = "equipment.edit.location")

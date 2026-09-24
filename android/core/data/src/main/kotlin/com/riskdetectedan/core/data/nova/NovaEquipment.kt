@@ -108,7 +108,7 @@ data class NovaEquipmentQuery(val query: String = "", val state: String? = null,
 
 data class NovaEquipmentDraft(val equipmentType: String? = null, val serialTag: String = "", val workplaceId: String? = null,
                               val acquiredOn: String = "", val locationNote: String = "") {
-    val isReady: Boolean get() = equipmentType != null && workplaceId != null && serialTag.isNotBlank()
+    val isReady: Boolean get() = equipmentType != null && serialTag.isNotBlank()
 }
 
 data class NovaEquipmentRuleDraft(val equipmentType: String? = null, val periodMonths: String = "",
@@ -314,10 +314,10 @@ class NovaEquipmentService @Inject constructor(private val transport: NovaExpert
     private fun JsonElement.row() = decode(MutationEnvelope.serializer()).row?.let(::item) ?: throw NovaEquipmentException(NovaEquipmentFailure.unavailable)
 
     suspend fun register(identity: IsgWorkspaceIdentity, company: String, draft: NovaEquipmentDraft): NovaEquipmentItem {
-        val type = draft.equipmentType; val workplace = draft.workplaceId
-        if (!draft.isReady || type == null || workplace == null) throw NovaEquipmentException(NovaEquipmentFailure.validation)
+        val type = draft.equipmentType
+        if (!draft.isReady || type == null) throw NovaEquipmentException(NovaEquipmentFailure.validation)
         return mutate(identity, company, "register_equipment", buildJsonObject {
-            put("workplace_id", workplace); put("equipment_type", type); put("serial_tag", draft.serialTag.trim())
+            put("workplace_id", draft.workplaceId); put("equipment_type", type); put("serial_tag", draft.serialTag.trim())
             put("acquired_on", trimmed(draft.acquiredOn)); put("location_note", trimmed(draft.locationNote))
         }).row()
     }

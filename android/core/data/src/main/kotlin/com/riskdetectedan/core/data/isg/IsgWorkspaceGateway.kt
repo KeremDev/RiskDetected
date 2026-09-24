@@ -402,15 +402,6 @@ class IsgWorkspaceGateway(
         return result
     }
 
-    /** Creates the invisible default workplace of a company that has none yet. */
-    suspend fun initializePersonnel(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean, companyId: String) {
-        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
-        val result = invoke("isg_workspace_personnel_initialize_v1", buildJsonObject { put("p_workspace", workspaceId); put("p_company", companyId) })
-        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
-        requireEnvelope(result, workspaceId, companyId)
-        if (result.text("workplace_id") == null) fail()
-    }
-
     /** Creates, edits or archives a workplace or department (`isg_workspace_directory_mutate_v1`). */
     suspend fun mutateDirectory(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean, mutationId: String,
                                 companyId: String, entity: String, action: String, entryId: String?, expectedVersion: Long,

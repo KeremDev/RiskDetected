@@ -104,7 +104,7 @@ data class NovaNonconformityDetail(
 @Serializable
 data class NovaNonconformityRow(
     val id: String,
-    @SerialName("workplace_id") val workplaceId: String,
+    @SerialName("workplace_id") val workplaceId: String?,
     val title: String,
     val severity: String,
     val state: String,
@@ -220,7 +220,7 @@ data class NovaManualDraft(
 ) {
     fun isComplete(step: NovaManualStep): Boolean = when (step) {
         NovaManualStep.photo -> photoCount > 0
-        NovaManualStep.company -> companyId != null && workplaceId != null
+        NovaManualStep.company -> companyId != null
         NovaManualStep.hazard -> title.isNotBlank() && hazardDescription.isNotBlank() && controlMeasure.isNotBlank()
         NovaManualStep.scoring -> score.isComplete
         NovaManualStep.legislation -> legislation.isNotBlank()
@@ -236,7 +236,7 @@ data class NovaManualDraft(
 
 /** What an open request carries (iOS `NovaNonconformityIntent`). */
 data class NovaNonconformityIntent(
-    val origin: Origin, val workplaceId: String, val title: String,
+    val origin: Origin, val workplaceId: String?, val title: String,
     val severity: NovaNonconformitySeverity? = null, val riskBand: String? = null, val findingId: String? = null,
     val sourceMethod: NovaRiskMethod? = null, val expertItemId: String? = null,
     val recordKind: NovaNonconformityRecordKind = NovaNonconformityRecordKind.nonconformity,
@@ -312,15 +312,9 @@ class NovaNonconformityService @Inject constructor(private val transport: NovaEx
         check(scope); return rows
     }
 
-    /** Legacy companies can lack their default workplace; filing repairs it server side. */
+    /** A company with no workplaces files records at company scope. */
     suspend fun filingWorkplaces(scope: NovaCompanyScope): List<NovaNonconformityWorkplace> {
-        val existing = workplaces(scope)
-        if (existing.isNotEmpty()) return existing
-        check(scope)
-        call("isg_analysis_filing_workplace_v1", buildJsonObject { put("p_company", scope.companyId) })
-        val repaired = workplaces(scope)
-        if (repaired.isEmpty()) throw NovaNonconformityException(NovaNonconformityFailure.unavailable)
-        return repaired
+        return workplaces(scope)
     }
 
     private fun mutation(scope: NovaCompanyScope, action: String, payload: JsonObject, operation: String, mutation: String) =

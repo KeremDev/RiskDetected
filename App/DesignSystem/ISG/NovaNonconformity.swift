@@ -13,7 +13,7 @@ enum NovaNonconformityState: String, Codable, Equatable {
 
 struct NovaNonconformityRow: Equatable, Identifiable, Codable {
     let id: UUID
-    let workplace_id: UUID
+    let workplace_id: UUID?
     let title: String
     let severity: String
     let state: String
@@ -107,7 +107,7 @@ struct NovaNonconformityIntent: Equatable, Codable {
     /// band on purpose: the server has no key to receive one.
     enum Origin: String, Codable, Equatable { case manual, finding, expertItem, detailed }
     let origin: Origin
-    let workplaceID: UUID
+    let workplaceID: UUID?
     let title: String
     var severity: NovaNonconformitySeverity?
     var riskBand: String?
@@ -255,9 +255,7 @@ struct NovaManualDraft: Equatable {
     /// asset ids. Empty until then, even when photoCount > 0.
     var evidenceAssetIDs: [UUID] = []
     var companyID: UUID?
-    /// The record always lands on a real workplace, because that is what the
-    /// server stores. Picking only a company fills this with that company's
-    /// first workplace, and the screen names the one it used.
+    /// A company without workplaces is a valid scope for a record.
     var workplaceID: UUID?
     var title = ""
     var hazardDescription = ""
@@ -277,7 +275,7 @@ struct NovaManualDraft: Equatable {
     func isComplete(_ step: NovaManualStep) -> Bool {
         switch step {
         case .photo: return photoCount > 0
-        case .company: return companyID != nil && workplaceID != nil
+        case .company: return companyID != nil
         case .hazard: return filled(title) && filled(hazardDescription) && filled(controlMeasure)
         case .scoring: return score.isComplete
         case .legislation: return filled(legislation)

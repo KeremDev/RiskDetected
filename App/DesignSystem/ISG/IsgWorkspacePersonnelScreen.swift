@@ -296,7 +296,7 @@ private struct IsgWorkspaceDirectoryEditor: View {
                                  symbol: route.kind == .workplace ? "building.2" : "square.grid.2x2")
                 field(label: RDLocalization.string("localizable.nova.workspace.personnel.code", table: .localizable, fallback: "Kod"), text: $code)
                 field(label: RDLocalization.string("localizable.nova.workspace.personnel.name", table: .localizable, fallback: "Ad"), text: $name)
-                if route.kind == .department {
+                if route.kind == .department && !workplaces.isEmpty {
                     Picker(IsgPersonnelSection.workplace.title, selection: $workplaceID) {
                         ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
                     }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
@@ -305,7 +305,7 @@ private struct IsgWorkspaceDirectoryEditor: View {
                 NovaCompactActionButton(title: saveTitle, symbol: "checkmark", prominent: true,
                     enabled: !working && !code.trimmingCharacters(in: .whitespaces).isEmpty &&
                         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
-                        (route.kind == .workplace || workplaceID != nil)) { save() }
+                        (route.kind == .workplace || workplaces.isEmpty || workplaceID != nil)) { save() }
                 if route.entry != nil {
                     NovaCompactActionButton(title: RDLocalization.string("localizable.nova.workspace.personnel.archive",
                         table: .localizable, fallback: "Arşivle"), symbol: "archivebox", enabled: !working) { archive() }
@@ -534,7 +534,7 @@ private struct IsgWorkspacePersonnelAdvancedEditor: View {
             field(RDLocalization.string("localizable.isg.workspace.personnel.screen.telefon.veya.e.posta.80c4de49", table: .localizable, fallback: "Telefon veya e-posta"), text: $contactValue)
         case .engagement where route.entry == nil:
             picker("Dış firma", selection: $contractorID, values: contractors)
-            picker("İşyeri", selection: $workplaceID, values: workplaces)
+            if !workplaces.isEmpty { picker("İşyeri", selection: $workplaceID, values: workplaces) }
             field(RDLocalization.string("localizable.isg.workspace.personnel.screen.isin.kapsami.da152f1f", table: .localizable, fallback: "İşin kapsamı"), text: $details)
             DatePicker("Başlangıç", selection: $startsOn, displayedComponents: .date)
                 .padding(12).novaControlBackground(cornerRadius: 14)
@@ -558,7 +558,7 @@ private struct IsgWorkspacePersonnelAdvancedEditor: View {
         switch route.section {
         case .jobRole: return !code.trimmingCharacters(in: .whitespaces).isEmpty && !name.trimmingCharacters(in: .whitespaces).isEmpty
         case .contractor: return !name.trimmingCharacters(in: .whitespaces).isEmpty
-        case .engagement: return contractorID != nil && workplaceID != nil && !details.trimmingCharacters(in: .whitespaces).isEmpty
+        case .engagement: return contractorID != nil && (workplaces.isEmpty || workplaceID != nil) && !details.trimmingCharacters(in: .whitespaces).isEmpty
         case .assignment: return employeeID != nil && (departmentID != nil || jobRoleID != nil || engagementID != nil)
         default: return false
         }

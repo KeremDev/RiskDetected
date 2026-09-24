@@ -244,7 +244,7 @@ struct NovaEquipmentDraft: Equatable {
     var locationNote = ""
 
     var isReady: Bool {
-        equipmentType != nil && workplaceID != nil &&
+        equipmentType != nil &&
             !serialTag.trimmingCharacters(in: .whitespaces).isEmpty
     }
 }
