@@ -76,7 +76,12 @@ struct ShellHarnessRoot: View {
                 } else if args.contains("--design"), destination == .companies {
                     NovaCompaniesScreen(companies: [NovaCompanyItem(id: "fixture-company", name: "Koza Altın A.Ş", detail: "Kaymaz Mah. · Maden · Çok tehlikeli")],
                         onSelect: { _ in navigate(.memory) }, onBack: { navigate(.home) }, onRetry: {})
-                } else { HarnessDestination(destination: destination) }
+                } else {
+                    // Pages own their back control (the shell has none); pushed pages get one, tab roots do not.
+                    HarnessDestination(destination: destination,
+                        onBack: (navigation.paths[navigation.selected] ?? []).last == destination
+                            ? { sessionHost.apply(.back, from: renderedEpoch) } : nil)
+                }
             }
             .frame(maxWidth: args.contains("--compact") ? 320 : .infinity)
             .environment(\.dynamicTypeSize, args.contains("--ax3") ? .accessibility3 : .large)
@@ -149,12 +154,14 @@ struct ShellHarnessRoot: View {
 
 private struct HarnessDestination: View {
     let destination: NovaDestination
+    var onBack: (() -> Void)?
     @State private var count = 0
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
+                    if let onBack { NovaBackButton(action: onBack).accessibilityIdentifier("nova.back") }
                     NovaIcon(symbol: destination.symbol, size: 22)
                         .foregroundStyle(NovaColorToken.accent.color(in: scheme))
                     NovaText(text: destination.title, style: .screenTitle)

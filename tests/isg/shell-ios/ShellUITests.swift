@@ -25,14 +25,56 @@ import UIKit
             let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: button)
             XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 3), .completed, "\(id): \(app.debugDescription)")
         }
-        button.tap()
+        guard id.hasPrefix("nova.") else { clearOfTabBar(button); return button.tap() }
+        // iOS 26 XCUI resolves the element hit point off the shell chrome while a page is pushed
+        // (the tap lands nowhere); the centre of the on-screen part is what a finger touches.
+        let visible = button.frame.intersection(app.windows.firstMatch.frame)
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: visible.midX, dy: visible.midY)).tap()
+    }
+    /// The floating tab bar overlaps page content and XCUI still calls the covered control hittable,
+    /// so a centre tap would land on a tab. Scroll the page until the control clears the bar.
+    private func clearOfTabBar(_ element: XCUIElement) {
+        let bar = app.buttons["nova.tab.home"]
+        guard bar.exists, bar.isHittable else { return }
+        let top = bar.frame.minY - 12
+        // The QA toolbar sits below the shell, not under the bar.
+        guard element.frame.midY <= bar.frame.maxY else { return }
+        for _ in 0..<5 where element.frame.midY > top { app.swipeUp() }
+        XCTAssertLessThanOrEqual(element.frame.midY, top, "\(element.identifier) stays under the tab bar and cannot be reached")
+    }
+    /// Taps landing while a push or popup is still animating are dropped by UIKit, so the
+    /// shell controls below confirm the state they asked for and retry once the view settles.
+    private func state(contains text: String) -> Bool {
+        let predicate = NSPredicate(format: "label CONTAINS %@", text)
+        return XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: app.staticTexts["qa.state"])],
+                              timeout: 2) == .completed
+    }
+    private func tab(_ tab: String) {
+        for _ in 0..<3 { tap("nova.tab.\(tab)"); if state(contains: "· \(tab) ·") { return } }
+        XCTFail("nova.tab.\(tab) did not select: \(app.staticTexts["qa.state"].label)")
+    }
+    private func openPanel(_ id: String) {
+        for _ in 0..<3 { tap(id); if app.buttons["nova.panel.close"].waitForExistence(timeout: 2) { return } }
+        XCTFail("\(id) did not open a panel")
     }
     private func home() {
-        tap("nova.tab.home")
+        tab("home")
         if app.buttons["nova.back"].exists { tap("nova.tab.home") }
         visible("home")
     }
+    /// Drawer rows inside a collapsed group (İşlemler) are only on screen once the group is open.
+    private static let drawerGroups = [
+        "analysis-audit": ["newAnalysis", "analyses", "newFinding", "findings"],
+        "company": ["newCompany", "companies", "contractors"],
+        "forms": ["ppeHandovers", "workPermits", "documentChecklist", "documents"],
+        "safety": ["riskAssessments", "emergencyPlans", "appointments", "boardMeetings", "annualWorkPlans", "drills",
+                   "periodicChecks", "katipContracts", "checklists"]
+    ]
     private func choose(_ route: String) {
+        if let group = Self.drawerGroups.first(where: { $0.value.contains(route) })?.key,
+           app.buttons["nova.drawer.group.\(group)"].exists, !app.buttons["nova.destination.\(route)"].exists {
+            tap("nova.drawer.group.\(group)")
+        }
         let node = app.buttons["nova.destination.\(route)"]
         for _ in 0..<12 {
             if node.exists && node.isHittable { break }
@@ -150,8 +192,8 @@ import UIKit
     }
     func testReadOnlyPersonnelCanReadHistoryButCannotWrite() {
         launch(["--personnel", "--personnel-readonly"])
-        XCTAssertTrue(app.buttons["personnel.add"].waitForExistence(timeout: 4))
-        XCTAssertFalse(app.buttons["personnel.add"].isEnabled)
+        XCTAssertTrue(app.buttons["personnel.row.22222222-2222-4222-8222-222222222222"].waitForExistence(timeout: 4))
+        XCTAssertFalse(app.buttons["personnel.add"].exists, "Read-only personnel offers no add action")
         tap("personnel.row.22222222-2222-4222-8222-222222222222")
         XCTAssertFalse(app.buttons["personnel.edit"].exists)
         tap("personnel.assignments")
@@ -166,7 +208,9 @@ import UIKit
         launch(["--personnel"])
         personnelAdd()
         XCTAssertTrue(app.staticTexts["Ada Kaya"].waitForExistence(timeout: 4))
-        XCTAssertTrue(app.staticTexts["Departman seçilmedi"].exists)
+        // No department or job title: the detail shows only the company line, no placement suffix.
+        XCTAssertTrue(app.staticTexts["Sentetik firma"].exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '· '")).firstMatch.exists)
         XCTAssertEqual(app.datePickers.count, 0)
         screenshot("personnel-name-only-detail")
         tap("personnel.edit")
@@ -183,10 +227,11 @@ import UIKit
         launch(["--personnel", "--personnel-retry"])
         personnelAdd("Bakım")
         XCTAssertTrue(app.buttons["personnel.retry"].waitForExistence(timeout: 4))
-        XCTAssertFalse(app.buttons["personnel.editor.back"].isEnabled)
+        // The editor is a popup now; its close control must stay locked on an unverified save.
+        XCTAssertFalse(app.buttons["nova.popup.close"].isEnabled, "An unverified save cannot be closed")
         tap("personnel.retry")
         XCTAssertTrue(app.staticTexts["Ada Kaya"].waitForExistence(timeout: 4))
-        XCTAssertTrue(app.staticTexts["Bakım"].exists)
+        XCTAssertTrue(app.staticTexts["· Bakım"].exists, "The inline department is saved and shown on the detail")
         tap("personnel.back")
         XCTAssertTrue(app.staticTexts["Ada Kaya"].waitForExistence(timeout: 4))
         XCTAssertEqual(app.staticTexts.matching(identifier: "Ada Kaya").count, 1)
@@ -274,8 +319,8 @@ import UIKit
         screenshot("reference-notifications-dismissed")
         XCTAssertFalse(app.buttons["nova.panel.close"].exists, app.debugDescription)
         tap("nova.menu"); screenshot("reference-drawer"); tap("nova.panel.close")
-        tap("nova.add"); screenshot("reference-add")
-        let first = app.buttons["nova.destination.newFinding"].frame
+        openPanel("nova.add"); screenshot("reference-add")
+        let first = app.buttons["nova.destination.newCompany"].frame
         let last = app.buttons["nova.panel.close"].frame
         XCTAssertGreaterThan(first.minY, 140, "Popup must be vertically centered, not a tall sheet")
         XCTAssertLessThan(last.maxY - first.minY, 430, "Popup must wrap the four actions")
@@ -302,43 +347,47 @@ import UIKit
     func testTabHistoryReselectionAndQuickAdd() {
         launch()
         visible("home")
-        tap("nova.notifications"); tap("nova.notices.center"); visible("notifications")
-        tap("nova.tab.companies"); visible("companies")
-        tap("nova.add")
-        XCTAssertTrue(app.buttons["nova.panel.close"].waitForExistence(timeout: 4))
+        openPanel("nova.notifications"); tap("nova.notices.center"); visible("notifications")
+        tab("companies"); visible("companies")
+        openPanel("nova.add")
         XCTAssertTrue(app.staticTexts["qa.state"].label.contains("companies · companies"))
         // XCUI can retain structural nodes even with accessibilityHidden; existence is not a VoiceOver audit.
         XCTAssertFalse(app.buttons["nova.tab.home"].isHittable, "Modal background must not accept interaction")
         tap("nova.panel.close"); visible("companies")
-        tap("nova.tab.home"); visible("notifications")
+        tab("home"); visible("notifications")
         tap("nova.tab.home"); visible("home")
-        tap("nova.add"); choose("newFinding")
+        openPanel("nova.add"); choose("newFinding")
         tap("nova.back"); visible("findings")
         screenshot("hosted-tab-history")
     }
 
     private func everyMenuEntry(dark: Bool) {
         launch(dark ? ["--dark"] : [])
-        let drawer = ["home", "newFinding", "findings", "companies", "memory", "documentChecklist", "documents", "visits", "statistics", "training", "reports", "reportArchive", "notifications"]
+        // The expert drawer: Genel, the four İşlemler groups, Takip and Operasyon. Firma ekle is a
+        // callback (none in this harness) and Not defteri needs the notebook capability, so both stay out.
+        let drawer = ["home", "newAnalysis", "analyses", "newFinding", "findings", "companies", "contractors",
+                      "ppeHandovers", "workPermits", "documentChecklist", "documents", "riskAssessments", "emergencyPlans",
+                      "appointments", "boardMeetings", "annualWorkPlans", "drills", "periodicChecks", "katipContracts",
+                      "checklists", "training", "visits", "statistics", "reports", "activity"]
         for route in drawer {
-            home(); tap("nova.menu")
+            home(); openPanel("nova.menu")
             if route == "home" { screenshot(dark ? "hosted-drawer-dark" : "hosted-drawer-light") }
             choose(route)
             if !dark { assertLightPageSurface(route) }
         }
-        for route in ["newFinding", "newDocument", "newVisit", "newTraining"] {
-            home(); tap("nova.add")
+        for route in ["newAnalysis", "newFinding", "newDocument"] {
+            home(); openPanel("nova.add")
             if route == "newFinding" { screenshot(dark ? "hosted-add-dark" : "hosted-add-light") }
             choose(route)
             if !dark {
                 assertLightPageSurface(route)
-                if route == "newVisit" { screenshot("canvas-newVisit") }
+                if route == "newDocument" { screenshot("canvas-newDocument") }
             }
         }
         if !dark {
-            tap("nova.tab.findings"); tap("nova.tab.findings")
+            tab("findings"); tap("nova.tab.findings")
             assertLightPageSurface("findings"); screenshot("canvas-findings")
-            tap("nova.tab.profile"); assertLightPageSurface("profile")
+            tab("profile"); assertLightPageSurface("profile")
         }
         screenshot(dark ? "hosted-dark" : "hosted-light")
     }
@@ -351,8 +400,8 @@ import UIKit
         XCTAssertFalse(app.buttons["nova.tab.findings"].isEnabled)
         XCTAssertFalse(app.buttons["nova.tab.companies"].isEnabled)
         XCTAssertFalse(app.buttons["nova.notifications"].isEnabled)
-        tap("nova.add")
-        for route in ["newFinding", "newDocument", "newVisit", "newTraining"] {
+        openPanel("nova.add")
+        for route in ["newCompany", "newAnalysis", "newFinding", "newDocument"] {
             XCTAssertFalse(app.buttons["nova.destination.\(route)"].isEnabled)
         }
         tap("nova.panel.close"); visible("home")
@@ -398,17 +447,18 @@ import UIKit
         launch(["--compact", "--ax3", "--dark"])
         visible("home")
         screenshot("hosted-compact-ax3-home")
-        tap("nova.menu")
+        openPanel("nova.menu")
         XCTAssertTrue(app.buttons["nova.panel.close"].isHittable)
-        choose("notifications")
+        choose("statistics")
         XCTAssertTrue(app.buttons["nova.back"].isHittable)
         tap("nova.back"); visible("home")
-        let profile = app.buttons["nova.tab.profile"]
-        for _ in 0..<8 {
-            if profile.exists && profile.isHittable { break }
-            app.scrollViews.matching(identifier: "nova.tabs.scroll").firstMatch.swipeLeft()
-        }
-        tap("nova.tab.profile"); visible("profile")
+        // Bildirim Merkezi is reached from the bell, not the drawer; at AX3 its link sits below the fold.
+        openPanel("nova.notifications")
+        let center = app.buttons["nova.notices.center"]
+        for _ in 0..<6 where !center.isHittable { app.scrollViews["nova.panel.scroll"].swipeUp() }
+        tap("nova.notices.center"); visible("notifications")
+        tap("nova.back"); visible("home")
+        tab("profile"); visible("profile")
         screenshot("hosted-compact-ax3-profile")
     }
 

@@ -440,6 +440,8 @@ private struct NovaEmployeeEditor: View {
         .scrollDismissesKeyboard(.interactively)
 
         .interactiveDismissDisabled(state.phase == .submitting || state.phase == .uncertain)
+        // In the create popup the X must lock too: closing on an unverified save invites a duplicate.
+        .preference(key: NovaPopupBusyKey.self, value: state.phase == .submitting || state.phase == .uncertain)
         .onAppear {
             if let original, state.name.isEmpty {
                 state.name = original.name

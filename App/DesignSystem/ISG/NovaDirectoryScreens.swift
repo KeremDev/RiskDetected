@@ -104,7 +104,7 @@ struct NovaDirectoryDestination: View {
                                     : "Arama ifadesini değiştirerek veya arşiv filtresini kontrol ederek kayda yeniden ulaşabilirsiniz.")
                         }
                         if let next { NovaButton(label: RDLocalization.string("localizable.nova.directory.screens.daha.fazla.f2dbe624", table: .localizable, fallback: "Daha fazla"), symbol: "chevron.down", variant: .surface, isEnabled: !loading) { page = next } }
-                    }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 18)
+                    }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, isNovaPopup ? 18 : 18 + novaTabBarInset)
                         .novaPopupContentSize()
                 }
                 .task(id: Key(scope: scope, kind: kind, parent: parent, page: page, archived: archived, refresh: refresh)) {
@@ -212,7 +212,7 @@ private struct NovaDirectoryEditor: View {
                 if optionsFailed { NovaButton(label: RDLocalization.string("localizable.nova.directory.screens.secenekleri.tekrar.yukle.df9dc016", table: .localizable, fallback: "Seçenekleri tekrar yükle"), symbol: "arrow.clockwise", variant: .surface, isEnabled: !optionsLoading && pending == nil) { optionsRefresh = UUID() }.accessibilityIdentifier("directory.options.retry") }
                 if let message { NovaText(text: message).accessibilityIdentifier("directory.error") }
                 NovaButton(label: pending == nil ? RDLocalization.string("localizable.nova.directory.save", table: .localizable, fallback: "Kaydet") : RDLocalization.string("localizable.nova.directory.recheck.same.operation", table: .localizable, fallback: "Aynı işlemi tekrar kontrol et"), symbol: pending == nil ? "checkmark" : "arrow.clockwise", isEnabled: pending != nil || (!optionsLoading && !optionsFailed && loadingMore == nil), isLoading: submitting) { begin() }.accessibilityIdentifier("directory.save")
-            }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 18)
+            }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, isNovaPopup ? 18 : 18 + novaTabBarInset)
                 .novaPopupContentSize()
         }
         .scrollDismissesKeyboard(.interactively)
