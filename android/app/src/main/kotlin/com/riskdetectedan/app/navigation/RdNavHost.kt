@@ -30,6 +30,8 @@ import com.riskdetectedan.feature.profile.OsgbWorkspaceScreen
 import com.riskdetectedan.feature.profile.ProfileScreen
 import com.riskdetectedan.feature.nova.NovaPilotEntry
 import com.riskdetectedan.feature.nova.LocalNovaOpenCompanies
+import com.riskdetectedan.feature.nova.LocalNovaPilotNavigate
+import com.riskdetectedan.core.designsystem.isg.NovaDestination
 import com.riskdetectedan.feature.nova.NovaPilotSlots
 import com.riskdetectedan.app.BuildConfig
 import com.riskdetectedan.feature.profile.NotificationSettingsScreen
@@ -128,8 +130,13 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
             NovaPilotEntry(NovaPilotSlots(
                 profile = { _ ->
                     val openNovaCompanies = LocalNovaOpenCompanies.current
+                    val pilotNavigate = LocalNovaPilotNavigate.current
                     ProfileScreen(
                         onBack = null,
+                        pilot = true,
+                        onAnalyses = { pilotNavigate?.invoke(NovaDestination.analyses) },
+                        onReports = { pilotNavigate?.invoke(NovaDestination.reports) },
+                        onActivity = pilotNavigate?.let { navigate -> { navigate(NovaDestination.activity) } },
                         onManageCompanies = openNovaCompanies ?: { navController.navigate(Companies) },
                         onOsgbWorkspace = { navController.navigate(OsgbWorkspace) },
                         onSupport = { navController.navigate(Support) },

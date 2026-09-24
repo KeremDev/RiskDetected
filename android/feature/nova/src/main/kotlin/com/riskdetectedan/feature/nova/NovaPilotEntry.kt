@@ -42,6 +42,10 @@ class NovaSessionViewModel @Inject constructor(personnel: PersonnelRepository) :
 /** Set while the profile slot is shown by a personal NOVA root: opens that root's own company list. */
 val LocalNovaOpenCompanies = staticCompositionLocalOf<(() -> Unit)?> { null }
 
+/** The pilot root's own navigation, for the profile's "Geçmiş analizler", "Raporlarım" and "Aktivitem"
+ * rows (iOS `ProfileView.pilotNavigate`). Null outside a pilot root. */
+val LocalNovaPilotNavigate = staticCompositionLocalOf<((NovaDestination) -> Unit)?> { null }
+
 /** What the app shell lends the NOVA root: the regular profile page and anything that needs app routes. */
 class NovaPilotSlots(
     val profile: @Composable (onBack: () -> Unit) -> Unit,

@@ -7,6 +7,8 @@ import androidx.compose.ui.res.stringResource
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import com.riskdetectedan.core.designsystem.isg.NovaColorToken
+import com.riskdetectedan.core.designsystem.isg.color
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -154,6 +156,9 @@ fun ProfileScreen(
     onDataManagement: () -> Unit = {},
     onDeleteAccount: () -> Unit = {},
     onPaywall: () -> Unit = {},
+    /** İSGADA pilot: the grouped profile iOS shows inside NovaPilotRoot, on the standard canvas. */
+    pilot: Boolean = false,
+    onActivity: (() -> Unit)? = null,
     viewModel: ProfileViewModel = hiltViewModel(),
     osgbWorkspaceViewModel: OsgbWorkspaceViewModel = hiltViewModel(),
     referralViewModel: ReferralRewardsViewModel = hiltViewModel(),
@@ -180,8 +185,10 @@ fun ProfileScreen(
     }
     var showSignOutConfirmation by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
-        if (NotebookUIRelease.enabled && state is ProfileUiState.Loaded) {
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+    Column(modifier = Modifier.fillMaxSize().background(
+        if (pilot) NovaColorToken.canvas.color() else colors.paper)) {
+        if (!pilot && NotebookUIRelease.enabled && state is ProfileUiState.Loaded) {
             TextButton(onClick = { showNotebook = true }) { Text("Kişisel Notlar · Ücretsiz") }
         }
         if (onBack != null) {
@@ -224,7 +231,34 @@ fun ProfileScreen(
                     }
                 }
 
-                ProfileLoadedSurface(
+                if (pilot) NovaPilotProfileSurface(
+                    profile = current.profile,
+                    isSavingAvatar = viewModel.isSavingAvatar.collectAsState().value,
+                    avatarErrorMessage = viewModel.avatarError.collectAsState().value?.message,
+                    restoreInProgress = restoreState is ProfileRestoreState.Restoring,
+                    onAvatarBytes = viewModel::updateAvatar,
+                    onEdit = { isEditing = true },
+                    onNotificationSettings = onNotificationSettings,
+                    onManageCompanies = onManageCompanies,
+                    onShowLegal = { showLegal = true },
+                    // iOS openPilotSubscription: a paid plan manages the store subscription, a free one sees the offer.
+                    onSubscription = {
+                        if (current.profile.isPaid) uriHandler.openUri("https://play.google.com/store/account/subscriptions")
+                        else onPaywall()
+                    },
+                    onAppearanceSettings = onAppearanceSettings,
+                    onDataManagement = onDataManagement,
+                    onSupport = onSupport,
+                    onShowBadges = { showBadges = true },
+                    onActivity = onActivity,
+                    onNotebook = if (NotebookUIRelease.enabled) ({ showNotebook = true }) else null,
+                    onReferrals = { showReferrals = true },
+                    onRestorePurchases = viewModel::restorePurchases,
+                    onAnalyses = onAnalyses,
+                    onReports = onReports,
+                    onDeleteAccount = onDeleteAccount,
+                    onSignOut = { showSignOutConfirmation = true },
+                ) else ProfileLoadedSurface(
                     profile = current.profile,
                     stats = stats,
                     progress = progress,
@@ -730,7 +764,7 @@ private fun ProfileHero(
     }
 }
 
-private suspend fun prepareAvatarJpeg(context: android.content.Context, uri: Uri): ByteArray =
+internal suspend fun prepareAvatarJpeg(context: android.content.Context, uri: Uri): ByteArray =
     withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }

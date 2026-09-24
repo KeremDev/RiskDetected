@@ -346,7 +346,9 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
             }, selected?.name) { navigate(NovaDestination.home) }
             NovaDestination.profile -> Column(Modifier.fillMaxSize()) {
                 NovaPageHeading("Profil", modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) { navigate(NovaDestination.home) }
-                Box(Modifier.weight(1f)) { slots.profile { navigate(NovaDestination.home) } }
+                CompositionLocalProvider(LocalNovaPilotNavigate provides navigate) {
+                    Box(Modifier.weight(1f)) { slots.profile { navigate(NovaDestination.home) } }
+                }
             }
         }
     }
