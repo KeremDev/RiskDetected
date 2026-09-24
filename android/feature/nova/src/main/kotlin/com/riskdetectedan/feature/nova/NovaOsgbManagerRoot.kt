@@ -29,6 +29,7 @@ import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.isg.*
+import com.riskdetectedan.core.data.nova.NovaFollowupPage
 import com.riskdetectedan.core.data.nova.NovaRecordEvents
 import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.designsystem.isg.*
@@ -181,6 +182,9 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
     val board = workspace.dashboard
     val navigate: (NovaDestination) -> Unit = viewModel::navigate
     var showingSearch by rememberSaveable { mutableStateOf(false) }
+    // A home deadline opens its record in place of the dashboard (iOS NovaHomeDeadlineBoard popup).
+    var homeRecord by remember(identity) { mutableStateOf<NovaFollowupPage.Row?>(null) }
+    val homeRecordChanges = remember(identity) { services.changes(identity) }
     var dashboardDomain by remember { mutableStateOf<IsgWorkspaceDomain?>(null) }
     var companyPage by remember { mutableStateOf<String?>(null) }
     var companyDomain by remember { mutableStateOf<IsgWorkspaceDomain?>(null) }
@@ -267,8 +271,13 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
             NovaDestination.home -> when {
                 showingSearch -> search { showingSearch = false }
                 dashboardDomain != null -> domain(dashboardDomain!!, onBack = { dashboardDomain = null })
+                homeRecord != null -> recordOpener(services, identity, context.canOperate, state.userName)(homeRecord!!) { homeRecord = null }
                 else -> NovaDashboardScreen(managerDashboardData(state.userName, context, selected, board), onNavigate = navigate,
-                    onPhoto = { navigate(NovaDestination.newAnalysis) }) {
+                    onPhoto = { navigate(NovaDestination.newAnalysis) },
+                    tracking = {
+                        NovaHomeDeadlineBoard({ status, offset -> services.followup(identity, null, status, "", offset) },
+                            homeRecordChanges, scopeKey = context.workspaceId, onOpen = { row -> homeRecord = row })
+                    }) {
                     ManagerHomeFooter(workspace, selected, canManage, context.canManageMembers, store, onSearch = { showingSearch = true },
                         onEdit = { editor = ManagerEditor(it) }, onMembers = { showingMembers = true },
                         onDomain = { dashboardDomain = it }, onAnalyses = { navigate(NovaDestination.analyses) })

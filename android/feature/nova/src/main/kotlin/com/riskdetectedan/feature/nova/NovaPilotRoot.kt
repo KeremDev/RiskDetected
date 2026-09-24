@@ -73,6 +73,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
     // A notice opens its own record over the shell (iOS `openNotice`); training rows are matched to their session first.
     val coroutines = rememberCoroutineScope()
     var noticeRecord by remember(identity) { mutableStateOf<NovaFollowupPage.Row?>(null) }
+    val recordChanges = remember(identity) { services.changes(identity) }
     fun openNotice(key: String) {
         val entry = notices.rows.firstOrNull { it.key == key } ?: return
         val company = entry.companyId ?: return
@@ -135,7 +136,11 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                         }
                     }
                 },
-                onOpenAnalysis = { id -> pendingAnalysis = id; navigate(NovaDestination.analyses) })
+                onOpenAnalysis = { id -> pendingAnalysis = id; navigate(NovaDestination.analyses) },
+                tracking = {
+                    NovaHomeDeadlineBoard({ status, offset -> services.followup(identity, null, status, "", offset) },
+                        recordChanges, scopeKey = workspaceId, onOpen = { row -> noticeRecord = row })
+                })
             NovaDestination.notifications -> NovaNoticeCenterScreen(services.noticeClient(identity),
                 onOpen = { raw -> NovaDestination.entries.firstOrNull { it.name == raw }?.let(navigate) },
                 onBack = { navigate(NovaDestination.home) })
@@ -303,7 +308,7 @@ private fun AnalysesDestination(services: NovaRootServices, identity: IsgWorkspa
 }
 
 /** Opens the module record a followup row or a file link points at (iOS `NovaFollowupDestination`). */
-private fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdentity, canWrite: Boolean, userName: String): NovaRecordOpener = { row, onBack ->
+internal fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdentity, canWrite: Boolean, userName: String): NovaRecordOpener = { row, onBack ->
     when (row.kind) {
         "completed_drill", "personnel_certificate", "katip_contract", "approved_notebook", "site_visit", "board", "board_decision", "annual_work_item" ->
             NovaProcessEditor(services.processClient(identity), row.kind, row.companyId, null, row.recordId, canWrite, onBack)
