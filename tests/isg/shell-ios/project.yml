@@ -30,7 +30,19 @@ targets:
       - path: ../../../App/DesignSystem/ISG/NovaCompanyListState.swift
       - path: ../../../App/DesignSystem/ISG/NovaCompanyDestination.swift
       - path: ../../../App/DesignSystem/ISG/NovaExpertShell.swift
+      - path: ../../../App/DesignSystem/ISG/NovaMotion.swift
+      - path: ../../../App/DesignSystem/ISG/NovaPopup.swift
+      - path: ../../../App/DesignSystem/ISG/NovaStyleConsistency.swift
+      - path: ../../../App/DesignSystem/ISG/NovaListComponents.swift
+      - path: ../../../App/DesignSystem/ISG/NovaSuccessPresentation.swift
+      # Shared UI plumbing the shell reads: string lookup and keyboard insets, no network or storage.
+      - path: ../../../App/Services/RDLocalization.swift
+      - path: ../../../App/Localization/RDGlobalLocalizationBuildGate.swift
+      - path: ../../../App/Generated/SafetyProfiles.generated.swift
+      - path: ../../../App/Views/Components/KeyboardAdaptive.swift
       - path: ../../../App/Resources/NovaIcons.xcassets
+        buildPhase: resources
+      - path: ../../../App/Localization/Localizable.xcstrings
         buildPhase: resources
       - path: ../../../App/Resources/Fonts
         includes: ['PlusJakartaSans-*.ttf', 'OFL-PlusJakartaSans.txt']

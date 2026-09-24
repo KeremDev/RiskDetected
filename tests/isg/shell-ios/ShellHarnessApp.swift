@@ -19,8 +19,8 @@ struct ShellHarnessRoot: View {
     @State private var companyRequests = 0
     @StateObject private var personnel = PersonnelHarness()
     private static let fixtureNotices = [
-        NovaNotice(id: "overdue", title: "Termini geçen aksiyonlar", detail: "Geciken düzeltmeleri önceliklendirerek inceleyin.", count: 1, symbol: "risk", tone: .statusDangerInk),
-        NovaNotice(id: "active", title: "Aktif uygunsuzluklar", detail: "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", count: 1, symbol: "bell.fill", tone: .statusInfoInk)
+        NovaNotice(id: "overdue", title: "Termini geçen aksiyonlar", detail: "Geciken düzeltmeleri önceliklendirerek inceleyin.", badge: "1 gün gecikti", symbol: "risk", tone: .statusDangerInk),
+        NovaNotice(id: "active", title: "Aktif uygunsuzluklar", detail: "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", badge: "1 açık kayıt", symbol: "bell.fill", tone: .statusInfoInk)
     ]
 
     init() {
@@ -144,7 +144,7 @@ struct ShellHarnessRoot: View {
         NovaMetricItem(id: "companies", value: "1", label: "Firma", footer: "Atanmış firma", symbol: "building.2", tone: .statusInfoDot, destination: .companies),
         NovaMetricItem(id: "visits", value: "1", label: "Ziyaret Sayısı", footer: "1 bu ay", symbol: "mappin", tone: .statusWarningDot, destination: .visits),
         NovaMetricItem(id: "training", value: "0", label: "Eğitim Süresi Geçen", footer: "personel", symbol: "clock", tone: .statusDangerDot, destination: .training)
-    ], activity: "Yeni firma atandı · Koza Altın A.Ş · Ahmet Bel · Uzman atandı", trainingMessage: "Yaklaşan veya geçmiş eğitim uyarısı yok", recentFindings: [NovaRecentFinding(id: "fixture-finding", companyName: "Koza Altın…")])
+    ], activity: "Yeni firma atandı · Koza Altın A.Ş · Ahmet Bel · Uzman atandı", trainingMessage: "Yaklaşan veya geçmiş eğitim uyarısı yok", recentAnalyses: [NovaRecentAnalysis(id: "fixture-analysis", title: "İskele çalışması", companyName: "Koza Altın A.Ş", createdOn: "24.09.2026")])
 }
 
 private struct HarnessDestination: View {

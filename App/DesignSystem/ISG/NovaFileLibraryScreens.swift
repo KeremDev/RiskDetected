@@ -735,3 +735,38 @@ enum NovaFileScreenWords {
         return extensions.compactMap { UTType(filenameExtension: $0) }
     }
 }
+
+/// Single filters use exactly the same searchable panel as multi-filter rows.
+struct NovaFilterField: View {
+    let label: String
+    let options: [NovaFileChooserOption]
+    let selected: String?
+    let identifier: String
+    let onPick: (String?) -> Void
+    @State private var expanded = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(spacing: 8) {
+            NovaFileChooserButton(label: label,
+                value: options.first { $0.id == selected }?.title ?? "Tümü",
+                isOpen: expanded, identifier: identifier) { expanded.toggle() }
+            if expanded {
+                NovaFileChooserPanel(options: options, selected: selected,
+                    identifier: "\(identifier).options") { value in
+                    onPick(value)
+                    expanded = false
+                }
+                // The panel belongs to the button above it, so it grows from
+                // that edge rather than fading in place, and it leaves the same
+                // way it arrived. Without this the rows below it teleport.
+                .transition(reduceMotion
+                    ? .opacity
+                    : .scale(scale: 0.97, anchor: .top).combined(with: .opacity))
+            }
+        }
+        .animation(NovaMotion.gated(NovaMotion.easeOut(NovaMotion.Duration.dropdown),
+                                    reduceMotion: reduceMotion),
+                   value: expanded)
+    }
+}

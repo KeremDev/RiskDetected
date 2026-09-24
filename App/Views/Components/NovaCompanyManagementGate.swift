@@ -436,7 +436,7 @@ struct NovaCompanyWorkspace: View {
         .novaFullScreenCover(item: $personnelDetail) { route in
             NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
                 onBack: { personnelDetail = nil }, directory: directory, canWrite: canWritePersonnel, preview: false,
-                initialEmployee: route.id)
+                initialEmployee: route.id, extras: .live)
         }
         .novaFullScreenCover(isPresented: Binding(get: { processKind != nil }, set: { if !$0 { processKind = nil } }), onDismiss: {
             processAdding = false
@@ -451,7 +451,7 @@ struct NovaCompanyWorkspace: View {
         }
         .navigationDestination(isPresented: $personnelPage) {
             NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
-                onBack: { personnelPage = false }, directory: directory, canWrite: canWritePersonnel, preview: false)
+                onBack: { personnelPage = false }, directory: directory, canWrite: canWritePersonnel, preview: false, extras: .live)
         }
         .novaPopupCover(item: $sheet, onDismiss: { summaryRevision = UUID() }) { destination in
             NovaPopup {
@@ -480,7 +480,7 @@ struct NovaCompanyWorkspace: View {
                 case .personnel:
                     NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
                         onBack: { sheet = nil }, directory: directory, canWrite: canWritePersonnel, preview: true,
-                        onShowAll: { sheet = nil; personnelPage = true })
+                        onShowAll: { sheet = nil; personnelPage = true }, extras: .live)
                 case .directory(let kind):
                     NovaDirectoryDestination(scope: scope, kind: kind, client: directory,
                         onBack: { sheet = nil }, canWrite: canWrite)

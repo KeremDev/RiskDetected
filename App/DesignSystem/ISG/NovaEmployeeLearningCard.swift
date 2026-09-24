@@ -188,3 +188,16 @@ struct NovaEmployeeCertificatesScreen: View {
         } catch { self.error = NovaEducationService.message(error) }
     }
 }
+
+extension NovaEmployeeExtras {
+    /// The app's employee cards, read from the training and certificate backend.
+    static let live = NovaEmployeeExtras(
+        learning: { scope, employee in
+            AnyView(NovaEmployeeLearningCard(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID),
+                company: scope.companyID, employee: employee))
+        },
+        certificates: { scope, employee, canWrite, onBack in
+            AnyView(NovaEmployeeCertificatesScreen(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID),
+                company: scope.companyID, employee: employee, canWrite: canWrite, onBack: onBack))
+        })
+}

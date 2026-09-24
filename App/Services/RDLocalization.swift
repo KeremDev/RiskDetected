@@ -126,6 +126,8 @@ struct RDLocalization {
         )
         guard value != key else {
             #if DEBUG
+            // The marker's own key can be missing too (a bundle without the catalog); never recurse on it.
+            guard key != "localizable.rdlocalization.missing.1.b9a12a72" else { return fallback }
             return RDLocalization.format("localizable.rdlocalization.missing.1.b9a12a72", table: .localizable, fallback: "⟦EKSİK:%1$@⟧", arguments: [String(describing: key)])
             #else
             return fallback

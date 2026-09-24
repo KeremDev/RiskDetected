@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 /// New expert shell only. The owner supplies scoped state and real destination content.
 /// Not installed in the legacy MainTabView; no Auth, billing or service calls here.
@@ -1228,13 +1227,12 @@ struct NovaDashboardScreen: View {
     let onNavigate: (NovaDestination) -> Void
     let onPhoto: () -> Void
     var onAssistant: () -> Void = {}
-    var analysisThumbnail: (UUID) async -> UIImage? = { await NovaAnalysisWorkspace.thumbnail(analysisID: $0) }
+    /// Injected by the app so the shell stays free of the analysis service.
+    var analysisThumbnail: (UUID) async -> UIImage? = { _ in nil }
     var onOpenAnalysis: ((UUID) -> Void)? = nil
     var onFinding: ((String) -> Void)?
-    var trackingIdentity: NovaSessionIdentity?
-    var trackingCanWrite = false
-    var trackingScope: UUID?
-    var onPendingActionCount: (Int?) -> Void = { _ in }
+    /// Home deadline board, built by the app (it reads the workspace backend).
+    var deadlines: AnyView?
     /// Optional workspace-specific controls rendered inside the same scroll
     /// surface. This keeps OSGB company selection/actions on the shared home
     /// page instead of creating a second dashboard layout.
@@ -1307,9 +1305,8 @@ struct NovaDashboardScreen: View {
                         }.padding(.horizontal, 20).padding(.top, 12)
                     }
                 }
-                if let trackingIdentity {
-                    NovaHomeDeadlineBoard(identity: trackingIdentity, canWrite: trackingCanWrite,
-                        scopeID: trackingScope, onPendingActionCount: onPendingActionCount)
+                if let deadlines {
+                    deadlines
                         .padding(.horizontal, 20).padding(.top, 22)
                 }
                 if let footer {

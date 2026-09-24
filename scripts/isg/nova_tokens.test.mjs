@@ -107,14 +107,19 @@ test('native shell has no live service dependency and remains outside legacy roo
 test('hosted iOS shell target compiles only the real NOVA sources and synthetic harness', () => {
   const project = read('tests/isg/shell-ios/ISGShellHarness.xcodeproj/project.pbxproj').toString();
   const swiftFiles = [...project.matchAll(/path = ([A-Za-z]+\.swift);/g)].map(m => m[1]).sort();
-  assert.deepEqual(swiftFiles, ['NovaCompanyDestination.swift', 'NovaCompanyListState.swift', 'NovaComponents.swift', 'NovaDirectory.swift', 'NovaDirectoryScreens.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaPersonnel.swift', 'NovaPersonnelScreens.swift', 'NovaSessionHost.swift', 'NovaTokens.swift', 'PersonnelHarness.swift', 'ShellHarnessApp.swift', 'ShellUITests.swift']);
+  assert.deepEqual(swiftFiles, ['KeyboardAdaptive.swift', 'NovaCompanyDestination.swift', 'NovaCompanyListState.swift', 'NovaComponents.swift', 'NovaDirectory.swift', 'NovaDirectoryScreens.swift', 'NovaExpertShell.swift', 'NovaListComponents.swift', 'NovaMotion.swift', 'NovaNavigation.swift', 'NovaPersonnel.swift', 'NovaPersonnelScreens.swift', 'NovaPopup.swift', 'NovaSessionHost.swift', 'NovaStyleConsistency.swift', 'NovaSuccessPresentation.swift', 'NovaTokens.swift', 'PersonnelHarness.swift', 'RDGlobalLocalizationBuildGate.swift', 'RDLocalization.swift', 'ShellHarnessApp.swift', 'ShellUITests.swift']);
+  assert.match(project, /path = SafetyProfiles\.generated\.swift;/);
   assert.match(project, /path = \.\.\/\.\.\/\.\.\/App\/DesignSystem\/ISG;/);
   assert.match(project, /SUPPORTED_PLATFORMS = iphonesimulator;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = com\.riskdetected\.isgshellharness;/);
-  assert.doesNotMatch(project, /XCRemoteSwiftPackageReference|PBXShellScriptBuildPhase|App\/Services|RiskDetected\.xcodeproj|CODE_SIGN_ENTITLEMENTS/);
-  for (const file of ['NovaComponents.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaTokens.swift', 'NovaPersonnel.swift', 'NovaPersonnelScreens.swift', 'NovaDirectory.swift', 'NovaDirectoryScreens.swift']) {
+  assert.doesNotMatch(project, /XCRemoteSwiftPackageReference|PBXShellScriptBuildPhase|RiskDetected\.xcodeproj|CODE_SIGN_ENTITLEMENTS/);
+  // The only file taken from App/Services is the string lookup; it must stay free of network, keychain and SDKs.
+  const services = [...read('tests/isg/shell-ios/project.yml').toString().matchAll(/App\/Services\/(\S+)/g)].map(m => m[1]);
+  assert.deepEqual(services, ['RDLocalization.swift']);
+  assert.doesNotMatch(read('App/Services/RDLocalization.swift').toString(), /^import (?!Foundation$)|URLSession|Keychain|Supabase|Purchases/m);
+  for (const file of ['NovaComponents.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaTokens.swift', 'NovaPersonnel.swift', 'NovaPersonnelScreens.swift', 'NovaDirectory.swift', 'NovaDirectoryScreens.swift', 'NovaListComponents.swift', 'NovaStyleConsistency.swift', 'NovaSuccessPresentation.swift', 'NovaPopup.swift']) {
     const imports = [...read(`App/DesignSystem/ISG/${file}`).toString().matchAll(/^import (\w+)/gm)].map(m => m[1]);
-    assert.ok(imports.every(name => ['Foundation', 'SwiftUI'].includes(name)));
+    assert.ok(imports.every(name => ['Foundation', 'SwiftUI'].includes(name)), file);
   }
   const host = read('tests/isg/shell-ios/ShellHarnessApp.swift').toString();
   assert.match(host, /#if !targetEnvironment\(simulator\)/);

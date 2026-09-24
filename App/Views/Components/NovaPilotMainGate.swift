@@ -574,10 +574,10 @@ private struct IsgOSGBWorkspaceRoot: View {
                     pendingDashboardAnalysisID = id
                     navigate(.analyses)
                 },
-                trackingIdentity: context.map { _ in identity },
-                trackingCanWrite: context?.canOperate == true,
-                trackingScope: context?.workspaceID,
-                onPendingActionCount: { homePendingActionCount = $0 },
+                deadlines: context.map { context in
+                    AnyView(NovaHomeDeadlineBoard(identity: identity, canWrite: context.canOperate,
+                        scopeID: context.workspaceID, onPendingActionCount: { homePendingActionCount = $0 }))
+                },
                 footer: isExpert ? nil : AnyView(osgbHomeFooter),
                 showsPhotoCapture: true)
         }
@@ -2351,9 +2351,8 @@ struct NovaPilotRoot: View {
                             pendingDashboardAnalysisID = id
                             navigate(.analyses)
                         },
-                        trackingIdentity: ready ? identity : nil,
-                        trackingCanWrite: controller.canWrite,
-                        onPendingActionCount: { homePendingActionCount = $0 })
+                        deadlines: ready ? AnyView(NovaHomeDeadlineBoard(identity: identity, canWrite: controller.canWrite,
+                            scopeID: nil, onPendingActionCount: { homePendingActionCount = $0 })) : nil)
                 }
             case .statistics:
                 if ready {

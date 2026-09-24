@@ -32,6 +32,12 @@ struct NovaPersonnelCreateSheet: View {
 }
 
 /// Scope identity owns all list, search, form and pending-request state.
+/// Service-backed employee views. The app supplies them (`.live`); local harnesses leave them out.
+struct NovaEmployeeExtras {
+    let learning: (NovaPersonnelScope, UUID) -> AnyView
+    let certificates: (NovaPersonnelScope, UUID, Bool, @escaping () -> Void) -> AnyView
+}
+
 struct NovaPersonnelDestination: View {
     let scope: NovaPersonnelScope
     let companyName: String
@@ -45,7 +51,8 @@ struct NovaPersonnelDestination: View {
     /// Opened straight onto one employee — the row that sent us here already
     /// knew who, no need to make the expert find them again in the list.
     var initialEmployee: UUID? = nil
-    var body: some View { PersonnelContent(scope: scope, companyName: companyName, client: client, onBack: onBack, directory: directory, canWrite: canWrite, preview: preview, onShowAll: onShowAll, initialEmployee: initialEmployee).id(scope).id(canWrite).id(preview) }
+    var extras: NovaEmployeeExtras? = nil
+    var body: some View { PersonnelContent(scope: scope, companyName: companyName, client: client, onBack: onBack, directory: directory, canWrite: canWrite, preview: preview, onShowAll: onShowAll, initialEmployee: initialEmployee, extras: extras).id(scope).id(canWrite).id(preview) }
 }
 
 private struct PersonnelContent: View {
@@ -58,6 +65,7 @@ private struct PersonnelContent: View {
     let preview: Bool
     let onShowAll: (() -> Void)?
     var initialEmployee: UUID? = nil
+    let extras: NovaEmployeeExtras?
     @Environment(\.colorScheme) private var scheme
     @State private var rows: [NovaEmployeeRow] = []
     @State private var query = ""
@@ -75,10 +83,10 @@ private struct PersonnelContent: View {
     private enum Route: Equatable { case list, create, detail(UUID), edit(NovaEmployeeRow), archive(NovaEmployeeRow), advanced(UUID, NovaDirectoryKind) }
     private struct Key: Equatable { let query: String; let archived: Bool; let generation: UUID; let page: UUID? }
     init(scope: NovaPersonnelScope, companyName: String, client: NovaPersonnelClient, onBack: @escaping () -> Void,
-         directory: NovaDirectoryClient?, canWrite: Bool, preview: Bool, onShowAll: (() -> Void)?, initialEmployee: UUID? = nil) {
+         directory: NovaDirectoryClient?, canWrite: Bool, preview: Bool, onShowAll: (() -> Void)?, initialEmployee: UUID? = nil, extras: NovaEmployeeExtras? = nil) {
         self.scope = scope; self.companyName = companyName; self.client = client; self.onBack = onBack
         self.directory = directory; self.canWrite = canWrite; self.preview = preview; self.onShowAll = onShowAll
-        self.initialEmployee = initialEmployee
+        self.initialEmployee = initialEmployee; self.extras = extras
         _route = State(initialValue: initialEmployee.map { .detail($0) } ?? .list)
     }
     private var edgeBack: (() -> Void)? {
@@ -107,7 +115,7 @@ private struct PersonnelContent: View {
             case .detail(let id):
                 NovaEmployeeDetail(scope: scope, employeeID: id, client: client,
                     companyName: companyName, onBack: { route = .list }, onEdit: { route = .edit($0) }, onArchive: { route = .archive($0) }, canWrite: canWrite,
-                    onDirectory: directory == nil ? nil : { route = .advanced(id, $0) })
+                    onDirectory: directory == nil ? nil : { route = .advanced(id, $0) }, extras: extras)
             case .archive(let row):
                 NovaEmployeeEditor(scope: scope, companyName: companyName, client: client, original: row,
                     onBack: { route = .detail(row.id) }, onSaved: { _ in requestedPage = nil; generation = UUID(); route = .list },
@@ -266,6 +274,7 @@ private struct NovaEmployeeDetail: View {
     let onArchive: (NovaEmployeeRow) -> Void
     let canWrite: Bool
     let onDirectory: ((NovaDirectoryKind) -> Void)?
+    let extras: NovaEmployeeExtras?
     @State private var row: NovaEmployeeRow?
     @State private var error = false
     @State private var refresh = UUID()
@@ -295,10 +304,12 @@ private struct NovaEmployeeDetail: View {
 
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }.accessibilityIdentifier("personnel.detail")
-                    NovaEmployeeLearningCard(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID), company: scope.companyID, employee: employeeID)
+                    if let extras { extras.learning(scope, employeeID) }
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                        NovaCompactActionButton(title: RDLocalization.string("localizable.nova.personnel.screens.sertifika.ve.belgeler.1a49d308", table: .localizable, fallback: "Sertifika ve belgeler"), symbol: "doc.text") { certificates = true }
-                            .accessibilityIdentifier("personnel.certificates")
+                        if extras != nil {
+                            NovaCompactActionButton(title: RDLocalization.string("localizable.nova.personnel.screens.sertifika.ve.belgeler.1a49d308", table: .localizable, fallback: "Sertifika ve belgeler"), symbol: "doc.text") { certificates = true }
+                                .accessibilityIdentifier("personnel.certificates")
+                        }
                         if canWrite {
                             NovaCompactActionButton(title: row.isArchived ? "Etkinleştir" : "Düzenle",
                                 symbol: row.isArchived ? "arrow.uturn.backward" : "pencil", prominent: true) { onEdit(row) }
@@ -328,9 +339,9 @@ private struct NovaEmployeeDetail: View {
             } catch { if !Task.isCancelled { self.error = true } }
         }
         .novaPopup(isPresented: $certificates) {
-            NovaEmployeeCertificatesScreen(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID),
-                company: scope.companyID, employee: employeeID,
-                canWrite: canWrite && row?.isArchived == false, onBack: { certificates = false })
+            if let extras {
+                extras.certificates(scope, employeeID, canWrite && row?.isArchived == false) { certificates = false }
+            }
         }
     }
     private func employeeTag(_ symbol: String, _ title: String, tone: NovaColorToken) -> some View {
