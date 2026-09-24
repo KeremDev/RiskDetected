@@ -116,6 +116,7 @@ internal fun NovaDocumentTrackingScreen(client: NovaDocumentTrackingClient, comp
                             if (loading) NovaText("…", style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
                             else NovaIcon("chevron.down", 11.dp, tint = NovaColorToken.accentInk.color())
                             NovaText("Daha fazla göster", style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
+                        }
                     }
                 }
             }
