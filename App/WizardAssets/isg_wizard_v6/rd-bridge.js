@@ -5,10 +5,11 @@
  * varsayılan cevap, skor, dışa aktarma) burada ve rd-engine.js'dedir. Böylece iki platform aynı davranır.
  *
  *   RDBridge.init(dataJsonText)                  → {version, counts}
- *   RDBridge.start({company, workplace, date})   → view
+ *   RDBridge.start({name, date, mode})           → view   (mode: 'risk' varsayılan | 'emergency' acil durum planı)
  *   RDBridge.act({type, ...})                    → view
  *   RDBridge.view()  RDBridge.result()  RDBridge.sectors(q)  RDBridge.search(kind, q)
- *   RDBridge.file('xlsx'|'docx')                 → {name, base64}
+ *   RDBridge.file('xlsx'|'docx'|'cards')         → {name, base64}   (acil durum: 'docx' plan, 'cards' eylem kartları)
+ *   RDBridge.cards(q)                            → acil durum: plana elle eklenebilecek kartlar
  *   RDBridge.blocks()                            → PDF için metin blokları
  *
  * Tüm dönüşler düz JSON'dur (Map/Set yok).
@@ -17,8 +18,9 @@
   'use strict';
   const ENG = root.RDEngine;
   const REPORT = root.RDReport;
+  const EMR = root.RDEmergency;
   const X = root.RDXlsx;
-  let D = null, E = null, S = null;
+  let D = null, E = null, M = null, S = null;
 
   const HIER_KEY = {1: 'elimination', 2: 'substitution', 3: 'engineering', 4: 'administrative', 5: 'ppe'};
   const HIER_LABEL = {1: 'Ortadan kaldırma', 2: 'İkame', 3: 'Mühendislik', 4: 'İdari', 5: 'KKD'};
@@ -44,7 +46,8 @@
 
   function fresh(opts) {
     opts = opts || {};
-    return {firm: {name: opts.name || '', address: opts.address || '', employees: '10-49', date: opts.date || ''},
+    return {mode: opts.mode === 'emergency' ? 'emergency' : 'risk',
+      firm: {name: opts.name || '', address: opts.address || '', employees: '10-49', date: opts.date || ''},
       sectors: [], hc: null, fu: {}, areas: [], equipment: [], materials: [], tasks: [], seen: {}, cond: [], mgmtOff: [],
       method: 'both', preset: 'standard', cols: PRESETS.standard.slice(), removed: [], edits: {}};
   }
@@ -52,7 +55,61 @@
   function steps() {
     const s = ['firm', 'sector'];
     E.activeFollowups(S).forEach(f => s.push('fu:' + f.id));
+    if (S.mode === 'emergency') return s.concat(['areas', 'equipment', 'materials', 'tasks', 'cond', 'site', 'cards', 'team', 'fields', 'summary']);
     return s.concat(['areas', 'equipment', 'materials', 'tasks', 'cond', 'mgmt', 'method', 'cols', 'summary']);
+  }
+  const EMP_BAND = n => n < 10 ? '1-9' : n < 50 ? '10-49' : n < 250 ? '50-249' : '250+';
+
+  function cardItem(x) {
+    return {id: x.card.id, title: x.card.t, trigger: x.card.tr, mode: x.card.ml, core: x.core, suggested: x.suggested, selected: x.selected, reasons: x.why.slice(0, 3)};
+  }
+  // Acil durum sayfalarının metinleri katalogla birlikte gelir; iki platform aynı Türkçe metni gösterir.
+  const EM_TEXT = {
+    title: 'Acil Durum Planı Sihirbazı',
+    'step.site': 'Saha koşulları', 'step.cards': 'Senaryolar', 'step.team': 'Ekipler', 'step.fields': 'Saha bilgileri', 'step.summary': 'Özet', 'step.result': 'Plan',
+    'firm.title': 'Plan hangi işyeri için?', 'firm.help': 'Unvan ve adres plan kapağına yazılır. Çalışan sayısı ekip hesabında kullanılır; boş bırakılabilir.',
+    'firm.employees': 'Çalışan sayısı', 'firm.employeesPlaceholder': 'Örn. 65', 'firm.date': 'Hazırlama tarihi', 'step.fu': 'Takip sorusu',
+    'site.title': 'İşyerini dışarıdan etkileyebilecek durumlar var mı?',
+    'site.help': 'Yakındaki işyerlerinden ve çevreden gelebilecek etkiler de planda dikkate alınır. Yalnız gerçekten geçerli olanları seçin.',
+    'cards.title': 'Hangi acil durumlar planlanacak?',
+    'cards.help': 'Önerilenler seçimlerinizden geliyor, gerekçesi altında yazıyor. Temel senaryolar her planda yer alır; işyerinizde olmayan özel senaryoyu kapatabilirsiniz.',
+    'cards.core': 'Her planda', 'cards.manual': 'Elle eklendi', 'cards.search': 'Başka senaryo ara (ör. sel, kimyasal, asansör)', 'cards.add': 'Başka senaryo ekle',
+    'team.title': 'Ekipte kimler görev alacak?',
+    'team.help': 'Referans sayılar tehlike sınıfı ve çalışan sayısından hesaplanır. Ekibi şimdi girmeniz gerekmez; plan boş ekip tablosuyla da oluşturulur.',
+    'team.reference': 'Referans hesap', 'team.required': 'Referans', 'team.assigned': 'Atanan', 'team.shared': '1 (ortak)',
+    'team.members': 'Görevlendirilenler', 'team.empty': 'Henüz kimse eklenmedi.', 'team.fromCompany': 'Firmanın personelinden seç', 'team.manual': 'Elle ekle',
+    'team.name': 'Ad soyad', 'team.personTitle': 'Unvan', 'team.area': 'Sorumluluk alanı / vardiya', 'team.contact': 'İletişim', 'team.backup': 'Yedek',
+    'team.noEmployees': 'Çalışan sayısı girilmedi', 'team.remove': 'Kaldır',
+    'fields.title': 'Planda yer alacak saha bilgileri',
+    'fields.help': 'Hepsi isteğe bağlı. Bilmediğinizi boş bırakın; yer, numara veya kroki uydurulmaz, eksikler planın ekinde listelenir.',
+    'fields.general': 'Genel', 'fields.specific': 'Senaryolara özgü', 'fields.placeholder': 'Boş bırakılırsa planda “sahada tamamlanacak” yazar',
+    'fields.contacts': 'İrtibat numaraları', 'fields.addContact': 'Numara ekle', 'fields.contactLabel': 'Kurum / kişi', 'fields.contactNumber': 'Numara',
+    'summary.title': 'Plan hazır', 'summary.help': 'Planı oluşturduktan sonra Word ve PDF olarak indirebilir, eylem kartlarını ayrıca basabilir ve Acil Durum Planı kaydı olarak kaydedebilirsiniz.',
+    'summary.firm': 'İşyeri', 'summary.sector': 'Faaliyet', 'summary.valid': 'Geçerlilik', 'summary.cards': 'Senaryolar', 'summary.team': 'Ekip', 'summary.fields': 'Saha bilgileri',
+    'summary.gaps': 'Sahada tamamlanacak', 'summary.edit': 'Düzenle',
+    'next': 'Devam', 'next.skip': 'Atla', 'next.summary': 'Planı oluştur', 'back': 'Geri',
+    'result.plan': 'Plan (Word)', 'result.planHelp': 'Kapak, yönetmelikteki başlıklar, ekip tabloları, müdahale yöntemleri, eksik bilgiler, kroki alanı ve eylem kartları. Sayfalar numaralı.',
+    'result.download': 'Planı indir', 'result.pdf': 'PDF', 'result.cards': 'Eylem kartları', 'result.cardsHelp': 'Her senaryo ayrı sayfada; ilgili bölümlere asılmak için.',
+    'result.downloadCards': 'Kartları indir', 'result.save': 'Acil Durum Planı olarak kaydet',
+    'result.saveHelp': 'Plan dosyası, geçerlilik tarihi ve seçilen ekip firmanın Acil Durum Planı kaydı olarak eklenir; Dosyalarım ve firma detayında görünür.',
+    'result.needsCompany': 'Kaydetmek için ilk adımda bir firma seçin.', 'result.saved': 'Acil Durum Planı kaydı oluşturuldu.',
+    'result.scenarios': 'Senaryolar ve müdahale yöntemleri', 'result.before': 'Önce', 'result.worker': 'Çalışan', 'result.team': 'Görevli ekip',
+    'result.prohibited': 'Yapılmayacaklar', 'result.after': 'Olay sonrası', 'result.reentry': 'Yeniden giriş', 'result.siteLater': 'sahada tamamlanacak',
+    'file.title': 'Acil Durum Planı', 'file.note': 'Acil durum planı sihirbazı',
+    'result.note': 'Plan bir taslaktır: işveren onayı, hazırlayanların parafı ve imzası, saha doğrulaması ve tatbikatla sınanması gerekir. Ekip sayıları referanstır.',
+  };
+  function emergencyView() {
+    const e = M.em(S);
+    return {
+      texts: EM_TEXT,
+      employees: e.employees,
+      site: D.em.site.map(c => ({id: c.id, title: c.l, help: c.h || '', selected: e.site.includes(c.id)})),
+      cards: M.cards(S).map(cardItem),
+      teams: M.teams(S),
+      members: e.team.map((m, index) => Object.assign({index, backup: false}, m)),
+      fields: M.siteFields(S), contacts: e.contacts.map((c, index) => Object.assign({index}, c)),
+      gaps: M.gaps(S), validUntil: M.validUntil(S),
+    };
   }
 
   function pickItem(kind, x, why, selected) {
@@ -114,12 +171,14 @@
       columns: REPORT.COLUMNS.filter(c => !c.method || (c.method === 'fk' ? S.method !== 'm5' : S.method !== 'fk'))
         .map(c => ({id: c.id, title: c.label, required: !!c.required, residual: !!c.residual, selected: !!c.required || S.cols.includes(c.id)})),
       rowCount: rows.length, counts: counts(rows),
+      mode: S.mode, emergency: S.mode === 'emergency' && M ? emergencyView() : null,
     };
   }
 
   function levelView(lv, n) { return {score: n, label: lv[1], level: lv[2]}; }
 
   function result() {
+    if (S.mode === 'emergency') return M.planInput(S);
     const removed = new Set(S.removed);
     const all = E.rows(S);
     const active = all.filter(x => !removed.has(x.r.id));
@@ -191,6 +250,37 @@
       case 'reset': delete S.edits[a.id]; break;
       case 'remove': if (!S.removed.includes(a.id)) S.removed.push(a.id); break;
       case 'restore': S.removed = S.removed.filter(x => x !== a.id); break;
+      // Acil durum planı
+      case 'emp': {
+        const n = Math.floor(Number(a.value));
+        M.em(S).employees = Number.isFinite(n) && n > 0 ? n : null;
+        if (M.em(S).employees) S.firm.employees = EMP_BAND(M.em(S).employees);
+        break;
+      }
+      case 'site': toggle(M.em(S).site, a.id); break;
+      case 'card': {
+        const e = M.em(S), x = M.cards(S).find(c => c.card.id === a.id);
+        if (x && x.core) break;
+        if (x && x.suggested) toggle(e.off, a.id);
+        else if (M.CARD.has(a.id)) toggle(e.extra, a.id);
+        break;
+      }
+      case 'field': M.em(S).fields[a.key] = String(a.value == null ? '' : a.value); break;
+      case 'member': {
+        const team = M.em(S).team;
+        if (a.op === 'add') team.push({role: a.role || 'sondurme', name: a.name || '', title: a.title || '', area: a.area || '', contact: a.contact || '',
+          backup: !!a.backup, ref: a.ref || null});
+        else if (a.op === 'remove') team.splice(a.index, 1);
+        else if (team[a.index]) team[a.index][a.field] = a.field === 'backup' ? !!a.value : String(a.value == null ? '' : a.value);
+        break;
+      }
+      case 'contact': {
+        const list = M.em(S).contacts;
+        if (a.op === 'add') list.push({label: a.label || '', number: a.number || ''});
+        else if (a.op === 'remove') list.splice(a.index, 1);
+        else if (list[a.index]) list[a.index][a.field] = String(a.value == null ? '' : a.value);
+        break;
+      }
       default: break;
     }
     E.applyDefaults(S);
@@ -222,26 +312,41 @@
       .slice(0, 30).map(x => pickItem(kind, x, [], false));
   }
 
-  function fileName(ext) {
-    const safe = (S.firm.name || 'Risk_Analizi').replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_|_$/g, '').slice(0, 60) || 'Risk_Analizi';
-    return safe + '_Risk_Degerlendirmesi_' + (S.firm.date || '').replace(/\./g, '-') + '.' + ext;
+  function fileName(ext, kind) {
+    const fallback = S.mode === 'emergency' ? 'Isyeri' : 'Risk_Analizi';
+    const safe = (S.firm.name || fallback).replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_|_$/g, '').slice(0, 60) || fallback;
+    const title = S.mode !== 'emergency' ? '_Risk_Degerlendirmesi_' : kind === 'cards' ? '_Acil_Durum_Eylem_Kartlari_' : '_Acil_Durum_Plani_';
+    return safe + title + (S.firm.date || '').replace(/\./g, '-') + '.' + ext;
   }
   function file(format) {
+    if (S.mode === 'emergency') {
+      const plan = M.planInput(S);
+      const bytes = EMR.docx(plan, format === 'cards' ? {only: 'cards'} : {});
+      return {name: fileName('docx', format === 'cards' ? 'cards' : 'plan'), base64: b64(bytes), rows: plan.cards.length};
+    }
     const input = E.reportInput(S);
     const bytes = format === 'docx' ? REPORT.docx(input) : REPORT.build(input);
     return {name: fileName(format === 'docx' ? 'docx' : 'xlsx'), base64: b64(bytes), rows: input.rows.length};
   }
-  function blocks() { return REPORT.blocks(E.reportInput(S)); }
+  function blocks() { return S.mode === 'emergency' ? EMR.blocks(M.planInput(S)) : REPORT.blocks(E.reportInput(S)); }
+  function cards(q) {
+    q = norm(q);
+    const shown = new Set(M.cards(S).map(x => x.card.id));
+    return D.em.cards.filter(c => !shown.has(c.id) && (q.length < 2 || norm(c.t + ' ' + c.tr).includes(q)))
+      .map(c => ({id: c.id, title: c.t, trigger: c.tr, mode: c.ml, core: false, suggested: false, selected: false, reasons: []}));
+  }
 
   root.RDBridge = {
     init(text) {
       D = typeof text === 'string' ? JSON.parse(text) : text;
       E = ENG.create(D);
+      M = D.em && EMR ? EMR.create(D, E) : null;
       S = fresh();
-      return {version: D.v, risks: D.risks.length, sectors: D.sectors.length, equipment: D.equipment.length, materials: D.materials.length};
+      return {version: D.v, risks: D.risks.length, sectors: D.sectors.length, equipment: D.equipment.length, materials: D.materials.length,
+        emergencyCards: D.em ? D.em.cards.length : 0};
     },
     start(opts) { S = fresh(opts); return view(); },
-    act, view, result, sectors, search, file, blocks, fileName,
+    act, view, result, sectors, search, file, blocks, fileName, cards,
     state() { return JSON.parse(JSON.stringify(S)); },
     restore(state) { S = Object.assign(fresh(), state || {}); return view(); },
   };

@@ -31,6 +31,61 @@ struct NovaRiskWizardView: Decodable {
     let columns: [Column]
     let rowCount: Int
     let counts: [String: [String: Int]]
+    var mode: String?
+    var emergency: Emergency?
+
+    /// Acil durum planı modu: bütün metinler ve hesaplar köprüden gelir.
+    struct Emergency: Decodable {
+        struct Site: Decodable, Identifiable { let id: String; let title: String; let help: String; let selected: Bool }
+        struct Card: Decodable, Identifiable {
+            let id: String; let title: String; let trigger: String; let mode: String
+            let core: Bool; let suggested: Bool; let selected: Bool; let reasons: [String]
+        }
+        struct Role: Decodable, Identifiable { let id: String; let label: String; let duty: String; let required: Int?; let assigned: Int; let basis: String }
+        struct Combined: Decodable { let required: Int; let assigned: Int }
+        struct Teams: Decodable {
+            let hazardClassLabel: String; let employees: Int?; let validYears: Int?; let small: Bool
+            let roles: [Role]; let combined: Combined?; let note: String
+        }
+        struct Member: Decodable, Identifiable {
+            let index: Int; let role: String; let name: String; let title: String; let area: String; let contact: String; let backup: Bool
+            var ref: String?
+            var id: Int { index }
+        }
+        struct Field: Decodable, Identifiable { let key: String; let label: String; let value: String; let general: Bool; let card: String; var id: String { key } }
+        struct Contact: Decodable, Identifiable { let index: Int; let label: String; let number: String; var id: Int { index } }
+        let texts: [String: String]
+        let employees: Int?
+        let site: [Site]
+        let cards: [Card]
+        let teams: Teams
+        let members: [Member]
+        let fields: [Field]
+        let contacts: [Contact]
+        let gaps: [String]
+        let validUntil: String
+        func text(_ key: String) -> String { texts[key] ?? "" }
+    }
+}
+
+/// Acil durum planının belge girdisi (RDEmergency.planInput).
+struct NovaEmergencyWizardPlan: Decodable {
+    struct Firm: Decodable {
+        let name: String; let address: String; let date: String; let validUntil: String; let hazardClassId: String
+        let sector: String; let hazardClass: String; let employees: String
+    }
+    struct SiteField: Decodable { let key: String; let label: String; let value: String }
+    struct Card: Decodable, Identifiable {
+        let id: String; let title: String; let trigger: String; let mode: String; let core: Bool; let why: [String]
+        let before: [String]; let worker: [String]; let team: [String]; let prohibited: [String]; let after: [String]; let reentry: String
+        let siteFields: [SiteField]
+    }
+    struct Member: Decodable { let role: String; let roleId: String; let ref: String?; let name: String; let title: String; let area: String; let contact: String; let backup: Bool }
+    let firm: Firm
+    let cards: [Card]
+    let teams: NovaRiskWizardView.Emergency.Teams
+    let members: [Member]
+    let gaps: [String]
 }
 
 struct NovaRiskWizardSectorHit: Decodable, Identifiable {
@@ -69,7 +124,7 @@ struct NovaRiskWizardResult: Decodable {
         }
         guard let vm = JSContext() else { throw NovaWizardError.unavailable }
         context = vm
-        for name in ["rd-xlsx", "rd-report", "rd-engine", "rd-bridge"] {
+        for name in ["rd-xlsx", "rd-report", "rd-engine", "rd-emergency", "rd-bridge"] {
             guard let code = String(data: try asset(name, "js"), encoding: .utf8) else { throw NovaWizardError.unavailable }
             vm.evaluateScript(code)
             if vm.exception != nil { throw NovaWizardError.unavailable }
@@ -92,8 +147,12 @@ struct NovaRiskWizardResult: Decodable {
         return try JSONDecoder().decode(type, from: JSONSerialization.data(withJSONObject: object))
     }
 
-    func start(firmName: String, date: String) throws -> NovaRiskWizardView {
-        try call("start", [["name": firmName, "date": date]], as: NovaRiskWizardView.self)
+    func start(firmName: String, date: String, mode: String = "risk") throws -> NovaRiskWizardView {
+        try call("start", [["name": firmName, "date": date, "mode": mode]], as: NovaRiskWizardView.self)
+    }
+    func plan() throws -> NovaEmergencyWizardPlan { try call("result", as: NovaEmergencyWizardPlan.self) }
+    func cards(_ query: String) throws -> [NovaRiskWizardView.Emergency.Card] {
+        try call("cards", [query], as: [NovaRiskWizardView.Emergency.Card].self)
     }
     func act(_ action: [String: Any]) throws -> NovaRiskWizardView { try call("act", [action], as: NovaRiskWizardView.self) }
     func view() throws -> NovaRiskWizardView { try call("view", as: NovaRiskWizardView.self) }
@@ -103,7 +162,8 @@ struct NovaRiskWizardResult: Decodable {
         try call("search", [kind, query], as: [NovaRiskWizardView.Pick].self)
     }
 
-    /// Excel and Word are built by rd-report.js; PDF reuses the native CoreText paginator.
+    /// Excel and Word are built by rd-report.js (acil durum: rd-emergency.js, "cards" = eylem kartları);
+    /// PDF reuses the native CoreText paginator.
     func download(format: String) throws -> NovaWizardDownload {
         if format == "pdf" {
             let blocks = try call("blocks", as: [NovaWizardBlock].self)

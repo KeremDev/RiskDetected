@@ -46,7 +46,30 @@ internal data class RiskWizardView(
     val sectors: List<RiskWizardSector>, val followups: List<RiskWizardFollowup>, val picks: Map<String, RiskWizardPicks>,
     val conditions: List<RiskWizardItem>, val management: List<RiskWizardItem>, val method: String, val preset: String,
     val columns: List<RiskWizardColumn>, val rowCount: Int, val counts: Map<String, Map<String, Int>>,
+    val mode: String = "risk", val emergency: EmergencyWizardView? = null,
 )
+
+/** Acil durum planı modu: bütün metinler ve hesaplar köprüden gelir (iOS `NovaRiskWizardView.Emergency`). */
+internal data class EmergencyWizardView(
+    val texts: Map<String, String>, val employees: Int?, val site: List<EmergencySite>, val cards: List<EmergencyCard>, val teams: EmergencyTeams,
+    val members: List<EmergencyMember>, val fields: List<EmergencyField>, val contacts: List<EmergencyContact>, val gaps: List<String>, val validUntil: String,
+) { fun text(key: String) = texts[key].orEmpty() }
+internal data class EmergencySite(val id: String, val title: String, val help: String, val selected: Boolean)
+internal data class EmergencyCard(val id: String, val title: String, val trigger: String, val mode: String, val core: Boolean, val suggested: Boolean,
+                                  val selected: Boolean, val reasons: List<String>)
+internal data class EmergencyRole(val id: String, val label: String, val duty: String, val required: Int?, val assigned: Int, val basis: String)
+internal data class EmergencyTeams(val hazardClassLabel: String, val employees: Int?, val validYears: Int?, val small: Boolean, val roles: List<EmergencyRole>,
+                                   val combinedRequired: Int?, val note: String)
+internal data class EmergencyMember(val index: Int, val role: String, val name: String, val title: String, val area: String, val contact: String,
+                                    val backup: Boolean, val ref: String?)
+internal data class EmergencyField(val key: String, val label: String, val value: String, val general: Boolean, val card: String)
+internal data class EmergencyContact(val index: Int, val label: String, val number: String)
+internal data class EmergencyPlanCard(val id: String, val title: String, val trigger: String, val mode: String, val core: Boolean, val why: List<String>,
+                                      val before: List<String>, val worker: List<String>, val team: List<String>, val prohibited: List<String>,
+                                      val after: List<String>, val reentry: String, val siteFields: List<Pair<String, String>>)
+internal data class EmergencyPlanMember(val roleId: String, val name: String, val contact: String, val backup: Boolean)
+internal data class EmergencyPlan(val name: String, val date: String, val validUntil: String, val sector: String, val hazardClass: String,
+                                  val cards: List<EmergencyPlanCard>, val teams: EmergencyTeams, val members: List<EmergencyPlanMember>, val gaps: List<String>)
 internal data class RiskWizardSectorHit(val id: String, val title: String, val subtitle: String, val hazardClassLabel: String)
 internal data class RiskWizardScore(val p: Double?, val f: Double?, val l: Double?, val s: Double, val score: Double, val label: String, val level: String)
 internal data class RiskWizardControl(val hierarchy: String, val label: String, val text: String, val owner: String)
@@ -68,6 +91,32 @@ private fun JsonObject.counts(key: String) = wObject(key).mapValues { (_, v) -> 
 private fun JsonObject.pick() = RiskWizardPick(wString("id"), wString("title"), wString("subtitle"), strings("reasons"), strings("badges"), bool("selected"), wString("detail"))
 private fun JsonObject.score() = RiskWizardScore(double("p"), double("f"), double("l"), double("s") ?: 0.0, double("score") ?: 0.0, wString("label"), wString("level"))
 private fun JsonObject.item() = RiskWizardItem(wString("id"), wString("title"), wString("subtitle"), bool("selected"))
+private fun JsonObject.optInt(key: String) = (get(key) as? JsonPrimitive)?.intOrNull
+private fun JsonObject.teams() = EmergencyTeams(wString("hazardClassLabel"), optInt("employees"), optInt("validYears"), bool("small"),
+    objects("roles").map { EmergencyRole(it.wString("id"), it.wString("label"), it.wString("duty"), it.optInt("required"), it.int("assigned"), it.wString("basis")) },
+    (get("combined") as? JsonObject)?.optInt("required"), wString("note"))
+
+internal fun emergencyWizardView(o: JsonObject) = EmergencyWizardView(
+    texts = o.wObject("texts").mapValues { (_, v) -> (v as? JsonPrimitive)?.contentOrNull.orEmpty() }, employees = o.optInt("employees"),
+    site = o.objects("site").map { EmergencySite(it.wString("id"), it.wString("title"), it.wString("help"), it.bool("selected")) },
+    cards = o.objects("cards").map { EmergencyCard(it.wString("id"), it.wString("title"), it.wString("trigger"), it.wString("mode"), it.bool("core"),
+        it.bool("suggested"), it.bool("selected"), it.strings("reasons")) },
+    teams = o.wObject("teams").teams(),
+    members = o.objects("members").map { EmergencyMember(it.int("index"), it.wString("role"), it.wString("name"), it.wString("title"), it.wString("area"),
+        it.wString("contact"), it.bool("backup"), it.optString("ref")) },
+    fields = o.objects("fields").map { EmergencyField(it.wString("key"), it.wString("label"), it.wString("value"), it.bool("general"), it.wString("card")) },
+    contacts = o.objects("contacts").map { EmergencyContact(it.int("index"), it.wString("label"), it.wString("number")) },
+    gaps = o.strings("gaps"), validUntil = o.wString("validUntil"),
+)
+internal fun emergencyPlan(o: JsonObject) = o.wObject("firm").let { firm ->
+    EmergencyPlan(firm.wString("name"), firm.wString("date"), firm.wString("validUntil"), firm.wString("sector"), firm.wString("hazardClass"),
+        o.objects("cards").map { c -> EmergencyPlanCard(c.wString("id"), c.wString("title"), c.wString("trigger"), c.wString("mode"), c.bool("core"),
+            c.strings("why"), c.strings("before"), c.strings("worker"), c.strings("team"), c.strings("prohibited"), c.strings("after"), c.wString("reentry"),
+            c.objects("siteFields").map { it.wString("label") to it.wString("value") }) },
+        o.wObject("teams").teams(),
+        o.objects("members").map { EmergencyPlanMember(it.wString("roleId"), it.wString("name"), it.wString("contact"), it.bool("backup")) },
+        o.strings("gaps"))
+}
 
 internal fun riskWizardView(o: JsonObject) = RiskWizardView(
     steps = o.strings("steps"),
@@ -86,6 +135,7 @@ internal fun riskWizardView(o: JsonObject) = RiskWizardView(
     method = o.wString("method"), preset = o.wString("preset"),
     columns = o.objects("columns").map { RiskWizardColumn(it.wString("id"), it.wString("title"), it.bool("required"), it.bool("residual"), it.bool("selected")) },
     rowCount = o.int("rowCount"), counts = o.counts("counts"),
+    mode = o.optString("mode") ?: "risk", emergency = (o["emergency"] as? JsonObject)?.let { emergencyWizardView(it) },
 )
 internal fun riskWizardResult(o: JsonObject) = RiskWizardResult(o.counts("counts"), o.int("total"), o.int("removedCount"), o.wString("method"),
     o.objects("rows").map { r ->
@@ -107,7 +157,7 @@ internal class NovaRiskWizardRuntime(context: Context) {
     private var initialized = false
     private val initialization = Mutex()
     private val calls = Mutex()
-    private val scripts = listOf("rd-xlsx", "rd-report", "rd-engine", "rd-bridge").map { name ->
+    private val scripts = listOf("rd-xlsx", "rd-report", "rd-engine", "rd-emergency", "rd-bridge").map { name ->
         context.assets.open("isg_wizard_v6/$name.js").bufferedReader().use { it.readText() }
     }
     private val data = context.assets.open("isg_wizard_v6/rd-data.json").bufferedReader().use { it.readText() }
@@ -155,8 +205,13 @@ internal class NovaRiskWizardRuntime(context: Context) {
 
     private suspend fun call(expression: String): JsonElement = calls.withLock { ready(); evaluate(expression) }
 
-    suspend fun start(firmName: String, date: String): RiskWizardView =
-        riskWizardView(call("RDBridge.start(${JsonObject(mapOf("name" to JsonPrimitive(firmName), "date" to JsonPrimitive(date)))})").jsonObject)
+    suspend fun start(firmName: String, date: String, mode: String = "risk"): RiskWizardView =
+        riskWizardView(call("RDBridge.start(${JsonObject(mapOf("name" to JsonPrimitive(firmName), "date" to JsonPrimitive(date), "mode" to JsonPrimitive(mode)))})").jsonObject)
+    suspend fun plan(): EmergencyPlan = emergencyPlan(call("RDBridge.result()").jsonObject)
+    suspend fun cards(query: String): List<EmergencyCard> = call("RDBridge.cards(${JsonPrimitive(query)})").jsonArray.map {
+        val c = it.jsonObject
+        EmergencyCard(c.wString("id"), c.wString("title"), c.wString("trigger"), c.wString("mode"), false, false, false, emptyList())
+    }
     suspend fun act(action: Map<String, Any?>): RiskWizardView = riskWizardView(call("RDBridge.act(${encode(action)})").jsonObject)
     suspend fun result(): RiskWizardResult = riskWizardResult(call("RDBridge.result()").jsonObject)
     suspend fun sectors(query: String): List<RiskWizardSectorHit> = call("RDBridge.sectors(${JsonPrimitive(query)})").jsonArray.map {
@@ -165,12 +220,12 @@ internal class NovaRiskWizardRuntime(context: Context) {
     suspend fun search(kind: String, query: String): List<RiskWizardPick> =
         call("RDBridge.search(${JsonPrimitive(kind)}, ${JsonPrimitive(query)})").jsonArray.map { it.jsonObject.pick() }
 
-    /** Excel and Word come from rd-report.js; PDF is drawn natively from the same report blocks. */
+    /** Excel and Word come from rd-report.js (emergency: rd-emergency.js, "cards" = action cards); PDF is drawn natively from the same blocks. */
     suspend fun download(format: String): NovaWizardDownload {
         if (format == "pdf") {
             val blocks = call("RDBridge.blocks()").jsonArray.map { it.jsonObject.wString("type") to it.jsonObject.wString("text") }
             val name = (call("RDBridge.fileName('pdf')") as? JsonPrimitive)?.contentOrNull ?: "Risk_Degerlendirmesi.pdf"
-            return NovaWizardDownload(name, pdf(blocks))
+            return NovaWizardDownload(name, pdf(blocks, blocks.firstOrNull()?.second?.substringBefore(" — ").orEmpty()))
         }
         val file = call("RDBridge.file(${JsonPrimitive(format)})").jsonObject
         return NovaWizardDownload(file.wString("name"), Base64.decode(file.wString("base64"), Base64.DEFAULT))
@@ -187,7 +242,7 @@ internal class NovaRiskWizardRuntime(context: Context) {
         else -> JsonPrimitive(value.toString())
     }
 
-    private fun pdf(blocks: List<Pair<String, String>>): ByteArray {
+    private fun pdf(blocks: List<Pair<String, String>>, title: String): ByteArray {
         val document = PdfDocument()
         var number = 0
         var page: PdfDocument.Page? = null
@@ -196,7 +251,7 @@ internal class NovaRiskWizardRuntime(context: Context) {
         fun nextPage() {
             page?.let { current ->
                 val footer = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 8f; color = android.graphics.Color.DKGRAY }
-                current.canvas.drawText("Risk Değerlendirmesi · $number", 42f, 775f, footer); document.finishPage(current)
+                current.canvas.drawText("$title · $number", 42f, 775f, footer); document.finishPage(current)
             }
             number++; page = document.startPage(PdfDocument.PageInfo.Builder(612, 792, number).create()); y = 42f
         }
