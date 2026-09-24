@@ -44,7 +44,11 @@ struct NovaChecklistWizardList: Decodable {
         var id: Int { no }
     }
     struct Section: Decodable, Identifiable { let id: String; let title: String; let kindLabel: String; let why: [String]; let items: [Entry] }
-    struct SaveItem: Decodable { let text: String; let section: String; let ref: Ref?; let allowsNotApplicable: Bool }
+    struct SaveItem: Decodable {
+        let text: String; let section: String; let ref: Ref?; let allowsNotApplicable: Bool
+        /// The reference is to the extension catalogue, which an older server may not have.
+        var fallback: Bool?
+    }
     struct SavedList: Decodable { let title: String; let items: [SaveItem] }
     let title: String
     let firm: Firm
@@ -393,9 +397,10 @@ struct NovaChecklistWizardResultView: View {
     }
 }
 
-/// Publishes the finished list to Listelerim with the module's own template actions: server catalogue questions are
-/// copied with their method and help text, the rest are written as the expert's own questions, then the version is
-/// published. Returns the template codes in list order.
+/// Publishes the finished list to Listelerim with the module's own template actions: catalogue questions are copied
+/// with their method and help text, the expert's own questions are written, then the version is published. A server
+/// without the extension catalogue refuses those templates; their questions are then written as the expert's own.
+/// Returns the template codes in list order.
 enum NovaChecklistWizardSaver {
     static func fold(_ value: String) -> String {
         value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "tr_TR"))
@@ -414,6 +419,7 @@ enum NovaChecklistWizardSaver {
         let result = try runtime.checklistList()
         var taken = Set(try await client.templates(company).map { fold($0.title) })
         var codes: [String] = []
+        var extensionOnServer = true
         for entry in result.lists where !entry.items.isEmpty {
             let title = unique(entry.title, taken: taken)
             taken.insert(fold(title))
@@ -423,28 +429,49 @@ enum NovaChecklistWizardSaver {
             let code = template.templateCode
             var revision = draft.revision
             var position = draft.items.count
-            var pending: [NovaChecklistItemSelection] = []
-            // Every template action bumps the draft's edit revision by one.
-            func flush() async throws {
-                for start in stride(from: 0, to: pending.count, by: 100) {
-                    try await client.copyItems(company, code, draft.version, revision, Array(pending[start..<min(start + 100, pending.count)]))
-                    revision += 1
+            // One copy batch at a time: catalogue questions, or one extension template's questions.
+            var pending: [(selection: NovaChecklistItemSelection, item: NovaChecklistWizardList.SaveItem, position: Int)] = []
+            var pendingFallback = false
+            // Every successful template action bumps the draft's edit revision by one; a refused one changes nothing.
+            func write(_ item: NovaChecklistWizardList.SaveItem, at position: Int) async throws {
+                if let setSectionItem = client.setSectionItem {
+                    try await setSectionItem(company, code, draft.version, revision, "w\(position)", item.text, item.allowsNotApplicable, position, item.section)
+                } else {
+                    try await client.setItem(company, code, draft.version, revision, "w\(position)", item.text, item.allowsNotApplicable, position)
                 }
+                revision += 1
+            }
+            func flush() async throws {
+                let batch = pending
                 pending = []
+                guard !batch.isEmpty else { return }
+                if pendingFallback && !extensionOnServer {
+                    for entry in batch { try await write(entry.item, at: entry.position) }
+                    return
+                }
+                do {
+                    for start in stride(from: 0, to: batch.count, by: 100) {
+                        try await client.copyItems(company, code, draft.version, revision, batch[start..<min(start + 100, batch.count)].map(\.selection))
+                        revision += 1
+                    }
+                } catch let error as NovaChecklistFailure where error == .denied && pendingFallback {
+                    extensionOnServer = false
+                    for entry in batch { try await write(entry.item, at: entry.position) }
+                }
             }
             for item in entry.items {
                 position += 1
-                if let ref = item.ref {
-                    pending.append(.init(sourceTemplateCode: ref.template, sourceItemCode: ref.item, sectionTitle: item.section))
-                } else {
+                guard let ref = item.ref else {
                     try await flush()
-                    if let setSectionItem = client.setSectionItem {
-                        try await setSectionItem(company, code, draft.version, revision, "w\(position)", item.text, item.allowsNotApplicable, position, item.section)
-                    } else {
-                        try await client.setItem(company, code, draft.version, revision, "w\(position)", item.text, item.allowsNotApplicable, position)
-                    }
-                    revision += 1
+                    try await write(item, at: position)
+                    continue
                 }
+                let fallback = item.fallback ?? false
+                if let last = pending.last, pendingFallback != fallback || (fallback && last.selection.sourceTemplateCode != ref.template) {
+                    try await flush()
+                }
+                pendingFallback = fallback
+                pending.append((.init(sourceTemplateCode: ref.template, sourceItemCode: ref.item, sectionTitle: item.section), item, position))
             }
             try await flush()
             try await client.publishTemplate(company, code, draft.version, revision, result.approvalNote)

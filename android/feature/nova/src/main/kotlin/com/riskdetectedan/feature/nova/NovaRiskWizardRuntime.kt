@@ -66,7 +66,9 @@ internal data class ChecklistWizardView(
 internal data class ChecklistRef(val template: String, val item: String)
 internal data class ChecklistEntry(val no: Int, val text: String, val vm: String, val vmLabel: String, val ref: ChecklistRef?, val isNew: Boolean, val own: Boolean)
 internal data class ChecklistSection(val id: String, val title: String, val kindLabel: String, val why: List<String>, val items: List<ChecklistEntry>)
-internal data class ChecklistSaveItem(val text: String, val section: String, val ref: ChecklistRef?, val allowsNotApplicable: Boolean)
+/** `fallback`: the reference is to the extension catalogue, which an older server may not have. */
+internal data class ChecklistSaveItem(val text: String, val section: String, val ref: ChecklistRef?, val allowsNotApplicable: Boolean,
+                                      val fallback: Boolean = false)
 internal data class ChecklistSavedList(val title: String, val items: List<ChecklistSaveItem>)
 internal data class ChecklistWizardList(val title: String, val purposeLabel: String, val freqLabel: String, val sections: List<ChecklistSection>,
                                         val lists: List<ChecklistSavedList>, val total: Int, val fromCatalog: Int, val newCatalog: Int, val own: Int,
@@ -145,7 +147,7 @@ internal fun checklistWizardList(o: JsonObject) = ChecklistWizardList(o.wString(
         })
     },
     o.objects("lists").map { l ->
-        ChecklistSavedList(l.wString("title"), l.objects("items").map { ChecklistSaveItem(it.wString("text"), it.wString("section"), it.checklistRef(), it.bool("allowsNotApplicable")) })
+        ChecklistSavedList(l.wString("title"), l.objects("items").map { ChecklistSaveItem(it.wString("text"), it.wString("section"), it.checklistRef(), it.bool("allowsNotApplicable"), it.bool("fallback")) })
     },
     o.int("total"), o.int("fromCatalog"), o.int("newCatalog"), o.int("own"), o.wString("approvalNote"), o.wString("note"))
 

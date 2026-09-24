@@ -262,8 +262,9 @@ internal fun LazyListScope.checklistResultPage(list: ChecklistWizardList, c: Che
     item { NovaHelpHint(list.note) }
 }
 
-/** Publishes the finished list to Listelerim with the module's own template actions: server catalogue questions are copied with their method
- *  and help text, the rest are written as the expert's own questions, then the version is published (iOS `NovaChecklistWizardSaver`). */
+/** Publishes the finished list to Listelerim with the module's own template actions: catalogue questions are copied with their method and
+ *  help text, the expert's own questions are written, then the version is published. A server without the extension catalogue refuses those
+ *  templates; their questions are then written as the expert's own (iOS `NovaChecklistWizardSaver`). */
 internal object ChecklistWizardSaver {
     fun fold(value: String): String = Normalizer.normalize(value.lowercase(Locale.forLanguageTag("tr-TR")), Normalizer.Form.NFD)
         .replace(Regex("\\p{Mn}+"), "").replace('ı', 'i').trim()
@@ -278,6 +279,7 @@ internal object ChecklistWizardSaver {
         val result = runtime.checklistList()
         val taken = client.templates(company).map { fold(it.title) }.toMutableSet()
         val codes = mutableListOf<String>()
+        var extensionOnServer = true
         for (entry in result.lists.filter { it.items.isNotEmpty() }) {
             val title = unique(entry.title, taken)
             taken += fold(title)
@@ -287,21 +289,35 @@ internal object ChecklistWizardSaver {
             val code = template.templateCode
             var revision = draft.revision
             var position = draft.items.size
-            val pending = mutableListOf<NovaChecklistItemSelection>()
-            // Every template action bumps the draft's edit revision by one.
+            // One copy batch at a time: catalogue questions, or one extension template's questions.
+            val pending = mutableListOf<Triple<NovaChecklistItemSelection, ChecklistSaveItem, Int>>()
+            var pendingFallback = false
+            // Every successful template action bumps the draft's edit revision by one; a refused one changes nothing.
+            suspend fun write(item: ChecklistSaveItem, at: Int) {
+                client.setSectionItem(company, code, draft.version, revision, "w$at", item.text, item.allowsNotApplicable, at, item.section)
+                revision++
+            }
             suspend fun flush() {
-                pending.chunked(100).forEach { chunk -> client.copyItems(company, code, draft.version, revision, chunk); revision++ }
+                val batch = pending.toList()
                 pending.clear()
+                if (batch.isEmpty()) return
+                if (pendingFallback && !extensionOnServer) { batch.forEach { write(it.second, it.third) }; return }
+                try {
+                    batch.chunked(100).forEach { chunk -> client.copyItems(company, code, draft.version, revision, chunk.map { it.first }); revision++ }
+                } catch (error: NovaChecklistException) {
+                    if (error.failure != NovaChecklistFailure.denied || !pendingFallback) throw error
+                    extensionOnServer = false
+                    batch.forEach { write(it.second, it.third) }
+                }
             }
             for (item in entry.items) {
                 position++
                 val ref = item.ref
-                if (ref != null) pending += NovaChecklistItemSelection(ref.template, ref.item, sectionTitle = item.section)
-                else {
-                    flush()
-                    client.setSectionItem(company, code, draft.version, revision, "w$position", item.text, item.allowsNotApplicable, position, item.section)
-                    revision++
-                }
+                if (ref == null) { flush(); write(item, position); continue }
+                val last = pending.lastOrNull()
+                if (last != null && (pendingFallback != item.fallback || (item.fallback && last.first.sourceTemplateCode != ref.template))) flush()
+                pendingFallback = item.fallback
+                pending += Triple(NovaChecklistItemSelection(ref.template, ref.item, sectionTitle = item.section), item, position)
             }
             flush()
             client.publishTemplate(company, code, draft.version, revision, result.approvalNote)

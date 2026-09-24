@@ -137,7 +137,10 @@ test("the save plan copies server items by reference and writes the rest as own 
   assert.equal(list.title, "Deneme Lojistik A.Ş. — İSG saha kontrol listesi");
   const fork = list.items.filter((i) => i.section === "Forklift kullanım öncesi kontrolü");
   assert.deepEqual(fork[0].ref, {template: "catalog_dpo_02", item: "dpo_02_01"});
-  assert.ok(list.items.filter((i) => i.section === "Akü şarj alanı, UPS ve lityum batarya").every((i) => i.ref === null));
+  const battery = list.items.filter((i) => i.section === "Akü şarj alanı, UPS ve lityum batarya");
+  assert.deepEqual(battery[0].ref, {template: "catalog_ext_battery", item: "ext_battery_01"});
+  assert.ok(battery.every((i) => i.fallback), "extension questions may be written as own questions on an older server");
+  assert.ok(fork.every((i) => !i.fallback));
   assert.equal(r.fromCatalog + r.newCatalog + r.own, r.total);
   for (const i of list.items) assert.ok(i.text.length <= 500);
   v = B.act({type: "ckLayout", id: "perTopic"});
@@ -149,14 +152,22 @@ test("the save plan copies server items by reference and writes the rest as own 
 test("every catalogue reference points at a real product template item", () => {
   const byRuntime = new Map();
   seed.templates.forEach((t) => t.items.forEach((i) => byRuntime.set("catalog_" + t.template_code.toLowerCase().replace(/-/g, "_") + "/" +
-    i.item_code.toLowerCase().replace(/-/g, "_"), i.text_tr)));
-  let refs = 0;
-  CK.packs.forEach((p) => p.it.forEach(([, text, , db]) => {
-    if (!db) { assert.equal(p.nw, 1, p.id); return; }
-    refs++;
-    assert.equal(byRuntime.get(p.ref + "/" + db), text, p.id + " " + db);
+    i.item_code.toLowerCase().replace(/-/g, "_"), [i.text_tr, i.verification_method])));
+  // The extension catalogue's runtime templates, as the migration seeds them.
+  const migration = fs.readFileSync(path.join(root, "supabase/migrations/20260925002500_checklist_catalog_extension_v1.sql"), "utf8");
+  const tag = "$isg_checklist_extension$";
+  const extension = JSON.parse(migration.slice(migration.indexOf(tag) + tag.length, migration.lastIndexOf(tag)));
+  assert.equal(extension.extends, CK.base);
+  extension.templates.forEach((t) => t.items.forEach((i) => byRuntime.set(t.runtime_template_code + "/" + i.runtime_item_code,
+    [i.text_tr, i.verification_method])));
+  let base = 0, added = 0;
+  CK.packs.forEach((p) => p.it.forEach(([, text, vm, db]) => {
+    assert.ok(db, p.id + " item without a server reference");
+    assert.deepEqual(byRuntime.get(p.ref + "/" + db), [text, vm], p.id + " " + db);
+    if (p.nw) added++; else base++;
   }));
-  assert.equal(refs, 1170);
+  assert.equal(base, 1170);
+  assert.equal(added, 390);
 });
 
 test("every V6 sector gets at least one topic for a site audit", () => {

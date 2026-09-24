@@ -15,10 +15,12 @@ import java.util.zip.ZipInputStream
 /** Checklist mode of the V6 wizard in a real WebView (iOS `testChecklistModeSuggestsTopicsExportsAndPublishesToListelerim`). */
 @RunWith(AndroidJUnit4::class)
 class NovaChecklistWizardRuntimeTest {
-    /** Records the template actions the saver sends; everything else is out of scope. */
-    private class Recorder(private val existingTitle: String) : NovaChecklistClient {
+    /** Records the template actions the saver sends; everything else is out of scope. Without the extension catalogue
+     *  the server refuses extension templates the way a real one does (ACCESS_DENIED, nothing written). */
+    private class Recorder(private val existingTitle: String, private val extensionOnServer: Boolean) : NovaChecklistClient {
         val drafted = mutableListOf<String>()
         val copied = mutableListOf<NovaChecklistItemSelection>()
+        var refused = 0
         val written = mutableListOf<Triple<String, Int, String>>()
         val revisions = mutableListOf<Long>()
         var published: Pair<Long, String>? = null
@@ -31,7 +33,12 @@ class NovaChecklistWizardRuntimeTest {
         }
         override suspend fun draftTemplate(company: String?, title: String) { drafted += title }
         override suspend fun copyItems(company: String?, template: String, version: Int, revision: Long, items: List<NovaChecklistItemSelection>) {
-            assertEquals("c_new", template); revisions += revision; copied += items
+            assertEquals("c_new", template)
+            assertEquals("a refused copy leaves the revision where it was", revisions.size.toLong(), revision)
+            if (!extensionOnServer && items.any { it.sourceTemplateCode.startsWith("catalog_ext_") }) {
+                refused++; throw NovaChecklistException(NovaChecklistFailure.denied)
+            }
+            revisions += revision; copied += items
         }
         override suspend fun setItem(company: String?, template: String, version: Int, revision: Long, itemCode: String, prompt: String,
                                      allowsNotApplicable: Boolean, position: Int) = fail("the section-aware write is used")
@@ -97,15 +104,25 @@ class NovaChecklistWizardRuntimeTest {
                 val pdf = runtime.download("pdf")
                 assertEquals("%PDF", pdf.bytes.take(4).toByteArray().toString(Charsets.US_ASCII))
 
-                val client = Recorder(list.title)
-                assertEquals(listOf("c_new"), ChecklistWizardSaver.save(runtime, client, null))
-                assertEquals(listOf(list.title + " (2)"), client.drafted)
-                assertEquals(list.fromCatalog, client.copied.size)
-                assertEquals("catalog_dpo_01", client.copied.first().sourceTemplateCode)
-                assertEquals(list.newCatalog + list.own, client.written.size)
-                assertTrue(client.written.any { it.third == "Forklift kullanım öncesi kontrolü" })
-                assertEquals((0 until client.revisions.size).map { it.toLong() }, client.revisions)
-                assertEquals(client.revisions.size.toLong() to list.approvalNote, client.published)
+                for (extensionOnServer in listOf(true, false)) {
+                    val client = Recorder(list.title, extensionOnServer)
+                    assertEquals(listOf("c_new"), ChecklistWizardSaver.save(runtime, client, null))
+                    assertEquals(listOf(list.title + " (2)"), client.drafted)
+                    assertEquals("catalog_dpo_01", client.copied.first().sourceTemplateCode)
+                    if (extensionOnServer) {
+                        assertEquals(list.fromCatalog + list.newCatalog, client.copied.size)
+                        assertEquals(list.own, client.written.size)
+                        assertEquals(0, client.refused)
+                    } else {
+                        assertEquals(list.fromCatalog, client.copied.size)
+                        assertEquals(list.newCatalog + list.own, client.written.size)
+                        assertEquals("one refusal, then extension questions are written directly", 1, client.refused)
+                    }
+                    assertTrue(client.written.any { it.third == "Forklift kullanım öncesi kontrolü" })
+                    assertEquals(client.written.size, client.written.map { it.second }.toSet().size)
+                    assertEquals((0 until client.revisions.size).map { it.toLong() }, client.revisions)
+                    assertEquals(client.revisions.size.toLong() to list.approvalNote, client.published)
+                }
                 assertEquals("Liste (3)", ChecklistWizardSaver.unique("Liste", setOf("liste", "liste (2)")))
             } finally { runtime.close() }
         }

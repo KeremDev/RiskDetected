@@ -7,9 +7,10 @@
 //   content/isg/checklist_wizard/source/triggers.json   pack triggers against the V6 wizard answers
 //   App/WizardAssets/isg_wizard_v6/rd-data.json         V6 taxonomy the triggers point at
 //
-// Items that exist on the server carry their runtime template and item code, so a saved list can copy
-// them with their verification method and help text. Extension items carry none and are saved as the
-// expert's own questions.
+// Every item carries its runtime template and item code, so a saved list can copy it with its verification
+// method and help text. Extension packs (nw: 1) point at the extension catalogue
+// (supabase/migrations/20260925002500_checklist_catalog_extension_v1.sql); on a server without it the app
+// writes those questions as the expert's own.
 //
 //   node scripts/isg/checklist_wizard/build.mjs           write the catalogue
 //   node scripts/isg/checklist_wizard/build.mjs --check   fail if the written catalogue is stale
@@ -17,11 +18,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import {extAtomicCode, extRuntimeItem, extRuntimeTemplate} from "./codes.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const read = (p) => JSON.parse(fs.readFileSync(path.join(root, p), "utf8"));
 const OUT = "App/WizardAssets/isg_wizard_v6/rd-checklist.json";
-const VERSION = "isgada-kontrol-1.0.0";
+const VERSION = "isgada-kontrol-1.1.0";
 const KINDS = ["general", "sector", "hazard", "activity", "equipment"];
 
 const seed = read("docs/isg/checklists/ISG_ADASI_CHECKLIST_SEED.json");
@@ -72,9 +74,9 @@ ext.packs.forEach((p) => {
   const items = p.items.map(([vm, text], i) => {
     if (!["G", "K", "Y"].includes(vm)) fail(`${p.code}-${i + 1}: unknown method ${vm}`);
     if (!/\?$/.test(text) || text.length > 200) fail(`${p.code}-${i + 1}: an item is one question up to 200 characters`);
-    return ["ACX-" + p.code + "-" + String(i + 1).padStart(2, "0"), text, vm, ""];
+    return [extAtomicCode(p.code, i), text, vm, extRuntimeItem(p.code, i)];
   });
-  packs.push({id: p.code, t: p.title, k: p.kind, al: p.aliases, sr: p.sources, ref: "", it: items, nw: 1});
+  packs.push({id: p.code, t: p.title, k: p.kind, al: p.aliases, sr: p.sources, ref: extRuntimeTemplate(p.code), it: items, nw: 1});
 });
 
 const texts = new Map();

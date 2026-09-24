@@ -116,43 +116,66 @@ import PDFKit
         final class Calls {
             var drafted: [String] = []
             var copied: [NovaChecklistItemSelection] = []
+            var refused = 0
             var written: [(code: String, position: Int, section: String)] = []
             var revisions: [Int64] = []
             var published: (revision: Int64, note: String)?
         }
-        let calls = Calls()
-        let existing = NovaChecklistTemplate(templateCode: "c_old", title: list.title, isProduct: false, isArchived: false, versions: [])
-        let client = NovaChecklistClient(catalogue: { _ in throw NovaChecklistFailure.unavailable },
-            library: { _, _, _, _ in throw NovaChecklistFailure.unavailable }, templateDetail: { _ in throw NovaChecklistFailure.unavailable },
-            templates: { _ in
-                guard let title = calls.drafted.last else { return [existing] }
-                return [existing, NovaChecklistTemplate(templateCode: "c_new", title: title, isProduct: false, isArchived: false, versions: [
-                    NovaChecklistTemplateVersion(version: 1, revision: 0, status: "draft", publishedAt: nil, approvalNote: nil, items: [])])]
-            },
-            assignments: { _ in [] }, board: { _ in throw NovaChecklistFailure.unavailable }, companies: { [] },
-            detail: { _ in throw NovaChecklistFailure.unavailable }, startRun: { _, _, _, _, _, _, _ in nil }, answer: { _, _ in nil },
-            uploadEvidence: { _, _ in UUID() }, submit: { _, _, _ in nil }, cancel: { _, _, _ in nil }, revise: { _, _, _, _ in nil },
-            draftTemplate: { _, title in calls.drafted.append(title) },
-            setItem: { _, _, _, _, _, _, _, _ in XCTFail("the section-aware write is used when the client offers it") },
-            copyItems: { _, code, _, revision, items in XCTAssertEqual(code, "c_new"); calls.revisions.append(revision); calls.copied += items },
-            reorderItems: { _, _, _, _, _ in }, removeItem: { _, _, _, _, _ in },
-            publishTemplate: { _, _, _, revision, note in calls.published = (revision, note) },
-            copyTemplate: { _, _, _ in }, assignTemplate: { _, _, _ in }, deactivateAssignment: { _, _ in },
-            pendingAnswers: { (0, 0) }, syncPendingAnswers: { (0, 0) },
-            setSectionItem: { _, code, _, revision, item, _, _, position, section in
-                XCTAssertEqual(item, "w\(position)")
-                calls.revisions.append(revision); calls.written.append((code, position, section))
-            })
-        let codes = try await NovaChecklistWizardSaver.save(runtime: runtime, client: client, company: nil)
-        XCTAssertEqual(codes, ["c_new"])
-        XCTAssertEqual(calls.drafted, [list.title + " (2)"], "an existing title would reopen that list; the wizard makes a new one")
-        XCTAssertEqual(calls.copied.count, list.fromCatalog)
-        XCTAssertEqual(calls.copied.first?.sourceTemplateCode, "catalog_dpo_01")
-        XCTAssertEqual(calls.written.count, list.newCatalog + list.own)
-        XCTAssertTrue(calls.written.contains { $0.section == "Forklift kullanım öncesi kontrolü" })
-        XCTAssertEqual(calls.revisions, Array(0..<Int64(calls.revisions.count)), "each template action moves the draft one revision on")
-        XCTAssertEqual(calls.published?.revision, Int64(calls.revisions.count))
-        XCTAssertEqual(calls.published?.note, list.approvalNote)
+        // With the extension catalogue on the server every catalogue question is copied; without it the server refuses
+        // extension templates once and their questions are written as the expert's own.
+        for extensionOnServer in [true, false] {
+            let calls = Calls()
+            let existing = NovaChecklistTemplate(templateCode: "c_old", title: list.title, isProduct: false, isArchived: false, versions: [])
+            let client = NovaChecklistClient(catalogue: { _ in throw NovaChecklistFailure.unavailable },
+                library: { _, _, _, _ in throw NovaChecklistFailure.unavailable }, templateDetail: { _ in throw NovaChecklistFailure.unavailable },
+                templates: { _ in
+                    guard let title = calls.drafted.last else { return [existing] }
+                    return [existing, NovaChecklistTemplate(templateCode: "c_new", title: title, isProduct: false, isArchived: false, versions: [
+                        NovaChecklistTemplateVersion(version: 1, revision: 0, status: "draft", publishedAt: nil, approvalNote: nil, items: [])])]
+                },
+                assignments: { _ in [] }, board: { _ in throw NovaChecklistFailure.unavailable }, companies: { [] },
+                detail: { _ in throw NovaChecklistFailure.unavailable }, startRun: { _, _, _, _, _, _, _ in nil }, answer: { _, _ in nil },
+                uploadEvidence: { _, _ in UUID() }, submit: { _, _, _ in nil }, cancel: { _, _, _ in nil }, revise: { _, _, _, _ in nil },
+                draftTemplate: { _, title in calls.drafted.append(title) },
+                setItem: { _, _, _, _, _, _, _, _ in XCTFail("the section-aware write is used when the client offers it") },
+                copyItems: { _, code, _, revision, items in
+                    XCTAssertEqual(code, "c_new")
+                    XCTAssertEqual(revision, Int64(calls.revisions.count), "a refused copy leaves the revision where it was")
+                    if !extensionOnServer, items.contains(where: { $0.sourceTemplateCode.hasPrefix("catalog_ext_") }) {
+                        XCTAssertTrue(items.allSatisfy { $0.sourceTemplateCode == items[0].sourceTemplateCode }, "an extension batch holds one template")
+                        calls.refused += 1
+                        throw NovaChecklistFailure.denied
+                    }
+                    calls.revisions.append(revision); calls.copied += items
+                },
+                reorderItems: { _, _, _, _, _ in }, removeItem: { _, _, _, _, _ in },
+                publishTemplate: { _, _, _, revision, note in calls.published = (revision, note) },
+                copyTemplate: { _, _, _ in }, assignTemplate: { _, _, _ in }, deactivateAssignment: { _, _ in },
+                pendingAnswers: { (0, 0) }, syncPendingAnswers: { (0, 0) },
+                setSectionItem: { _, code, _, revision, item, _, _, position, section in
+                    XCTAssertEqual(item, "w\(position)")
+                    calls.revisions.append(revision); calls.written.append((code, position, section))
+                })
+            let codes = try await NovaChecklistWizardSaver.save(runtime: runtime, client: client, company: nil)
+            XCTAssertEqual(codes, ["c_new"])
+            XCTAssertEqual(calls.drafted, [list.title + " (2)"], "an existing title would reopen that list; the wizard makes a new one")
+            XCTAssertEqual(calls.copied.first?.sourceTemplateCode, "catalog_dpo_01")
+            if extensionOnServer {
+                XCTAssertEqual(calls.copied.count, list.fromCatalog + list.newCatalog)
+                XCTAssertTrue(calls.copied.contains { $0.sourceTemplateCode == "catalog_ext_battery" && $0.sectionTitle == "Akü şarj alanı, UPS ve lityum batarya" })
+                XCTAssertEqual(calls.written.count, list.own)
+                XCTAssertEqual(calls.refused, 0)
+            } else {
+                XCTAssertEqual(calls.copied.count, list.fromCatalog)
+                XCTAssertEqual(calls.written.count, list.newCatalog + list.own)
+                XCTAssertEqual(calls.refused, 1, "after one refusal the other extension questions are written directly")
+            }
+            XCTAssertTrue(calls.written.contains { $0.section == "Forklift kullanım öncesi kontrolü" })
+            XCTAssertEqual(Set(calls.written.map(\.position)).count, calls.written.count)
+            XCTAssertEqual(calls.revisions, Array(0..<Int64(calls.revisions.count)), "each accepted template action moves the draft one revision on")
+            XCTAssertEqual(calls.published?.revision, Int64(calls.revisions.count))
+            XCTAssertEqual(calls.published?.note, list.approvalNote)
+        }
         XCTAssertEqual(NovaChecklistWizardSaver.unique("Liste", taken: ["liste", "liste (2)"]), "Liste (3)")
     }
 }

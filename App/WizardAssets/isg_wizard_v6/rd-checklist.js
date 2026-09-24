@@ -72,7 +72,7 @@
     'next': 'Devam', 'next.skip': 'Atla', 'next.summary': 'Listeyi oluştur', 'back': 'Geri',
     'result.lists': 'Kaydedilecek listeler', 'result.download': 'Listeyi indir', 'result.word': 'Word', 'result.excel': 'Excel', 'result.pdf': 'PDF',
     'result.save': 'Listelerime kaydet', 'result.saving': 'Kaydediliyor…',
-    'result.saveHelp': 'Liste, Kontrol Listeleri › Listelerim bölümüne yayımlanmış olarak eklenir. Katalogdaki sorular doğrulama yöntemi ve açıklamasıyla kopyalanır; yeni katalog soruları ve sizin eklediğiniz sorular kendi sorunuz olarak kaydedilir.',
+    'result.saveHelp': 'Liste, Kontrol Listeleri › Listelerim bölümüne yayımlanmış olarak eklenir. Katalog soruları doğrulama yöntemi ve açıklamasıyla kopyalanır; sunucu kataloğunda henüz bulunmayan yeni sorular ve sizin eklediğiniz sorular kendi sorunuz olarak kaydedilir.',
     'result.saved': 'Liste Listelerim\'e kaydedildi.', 'result.savedMany': 'liste Listelerim\'e kaydedildi.', 'result.start': 'Kontrolü başlat',
     'result.startHelp': 'Kaydedilen listeyle sahada kontrol başlatın; işyeri ve tarihi sonraki ekranda seçersiniz.',
     'result.method': 'Yöntem', 'result.why': 'Neden listede', 'result.own': 'Sizin sorunuz', 'result.newItem': 'Yeni katalog sorusu',
@@ -158,8 +158,9 @@
     return list;
   }
 
+  // Extension packs (nw) point at the extension catalogue; a server without it gets them as the expert's own questions.
   function itemRows(p) {
-    return p.it.map(([code, text, vm, db], i) => ({key: p.id + ':' + i, code, text, vm, vmLabel: vmLabel(vm), isNew: !db,
+    return p.it.map(([code, text, vm, db], i) => ({key: p.id + ':' + i, code, text, vm, vmLabel: vmLabel(vm), isNew: !!p.nw,
       ref: db ? {template: p.ref, item: db} : null, selected: !C.itemsOff.includes(p.id + ':' + i)}));
   }
 
@@ -274,7 +275,7 @@
     const firm = {name: S.firm.name || '', address: S.firm.address || '', date: S.firm.date || '',
       sector: S.sectors.map(id => E.SEC.get(id).n).join(', '), nace: [...new Set(S.sectors.flatMap(id => E.SEC.get(id).nace))].join(', '),
       hazardClass: hc ? ENG.HC[hc] : ''};
-    const flat = s => s.items.map(i => ({text: i.text, section: s.title, ref: i.ref, allowsNotApplicable: true}));
+    const flat = s => s.items.map(i => ({text: i.text, section: s.title, ref: i.ref, fallback: !!i.ref && i.isNew, allowsNotApplicable: true}));
     const lists = C.layout === 'perTopic'
       ? secs.map(s => ({title: (title + ' · ' + s.title).slice(0, 190), sections: [s.id], items: flat(s)}))
       : (secs.length ? [{title: title.slice(0, 190), sections: secs.map(s => s.id), items: secs.flatMap(flat)}] : []);
@@ -282,7 +283,7 @@
     return {
       title, firm, purpose: C.purpose, purposeLabel: t('purpose.' + C.purpose), freq: C.freq, freqLabel: C.freq ? t('freq.' + C.freq) : '',
       layout: C.layout, catalog: CK.v, base: CK.base, sections: secs, lists,
-      total: items.length, fromCatalog: items.filter(i => i.ref).length, newCatalog: items.filter(i => i.isNew).length, own: items.filter(i => i.own).length,
+      total: items.length, fromCatalog: items.filter(i => i.ref && !i.isNew).length, newCatalog: items.filter(i => i.isNew).length, own: items.filter(i => i.own).length,
       approvalNote: t('save.published'), note: t('result.note'),
       methods: Object.entries(CK.vm).map(([k, v]) => ({id: k, label: v.l, help: v.h})),
     };
