@@ -31,6 +31,29 @@ struct NovaPilotReviewHarness: View {
         _selected = State(initialValue: CommandLine.arguments.contains("RD_UI_TEST_COMPANY_PROGRESS"))
     }
     private var identity: NovaSessionIdentity { .init(userID: Self.owner, sessionID: Self.session) }
+    /// The screen of 25.09.2026: an overdue record, two unfinished items,
+    /// progress, three unused features and a first step, in server order.
+    /// Each launch is a visit: the two unfinished items take turns.
+    private static let reviewContinueID = NovaForYouContinueRotation(namespace: "review")
+        .pick(["continue.company_create:review", "continue.checklist_open:review"])
+    private static var reviewForYou: NovaForYouFeed {
+        func card(_ id: String, _ kind: String, _ tone: String, _ route: String, dismissible: Bool = true,
+                  _ params: NovaForYouCard.Params = .init()) -> NovaForYouCard {
+            .init(id: id, key: String(id.prefix { $0 != ":" }), kind: kind, tone: tone, dismissible: dismissible,
+                params: params, target: .init(route: route))
+        }
+        return .init(schema_version: 1, role: "personal", segment: "growing", cards: [
+            card("critical.expired", "critical", "danger", "followup", dismissible: false, .init(count: 1, company_name: "Deneme Firması")),
+            card("continue.company_create:review", "continue", "brand", "company_create"),
+            card("continue.checklist_open:review", "continue", "brand", "checklist_run", .init(title: "Saha turu", company_name: "Deneme Firması")),
+        ], more: [
+            card("performance.analyses_30d", "performance", "success", "analyses", .init(count: 12)),
+            card("discover.risk_wizard", "discover", "feature", "risk_wizard"),
+            card("discover.followup", "discover", "feature", "followup"),
+            card("discover.statistics", "discover", "feature", "statistics"),
+            card("motivation.today_analysis", "motivation", "brand", "photo_analysis"),
+        ])
+    }
     private var scope: NovaPersonnelScope { .init(ownerID: Self.owner, sessionID: Self.session, companyID: Self.company, epoch: "review-only") }
     private var row: NovaEmployeeRow { .init(id: Self.employee, ownerID: Self.owner, companyID: Self.company, name: "Ada Kaya", departmentID: nil, departmentName: nil, version: 0, isArchived: false) }
     private var personnel: NovaPersonnelClient {
@@ -84,6 +107,12 @@ struct NovaPilotReviewHarness: View {
             NovaRiskWizardScreen.checklist(client: reviewChecklistClient, initialCompany: nil, onStart: { _ in }, onBack: {})
         } else if CommandLine.arguments.contains("RD_UI_TEST_REPORT_CENTER") {
             NovaReportCenter(identity: identity, onBack: {})
+        } else if CommandLine.arguments.contains("RD_UI_TEST_FORYOU") {
+            ScrollView {
+                NovaForYouSection(phase: .ready(Self.reviewForYou), kindTitle: NovaFollowupPage.typeTitle(kind:),
+                    onOpen: { _ in }, onDismiss: { _ in }, onRetry: {}, continueID: Self.reviewContinueID)
+                    .padding(20)
+            }
         } else if CommandLine.arguments.contains("RD_UI_TEST_COMPANY_WIZARD") {
             NovaPilotCompanyCreateView(identity: identity,
                 service: .init(rpc: { endpoint, _ in

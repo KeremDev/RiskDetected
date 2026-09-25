@@ -214,7 +214,8 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                         pending = { services.forYou.pending(services.forYou.namespace(identity)) },
                         record = { services.forYou.record(identity, it) }, changes = recordChanges,
                         refreshKey = listOf(workspaceId, state.overview, routes), onOpen = ::openForYou,
-                        onFeed = { forYouFeed = it }, cached = services.forYou.cached(identity))
+                        onFeed = { forYouFeed = it }, cached = services.forYou.cached(identity),
+                        rotation = remember(services.forYou.namespace(identity)) { services.forYou.rotation(identity) })
                 })
             NovaDestination.notifications -> NovaNoticeCenterScreen(services.noticeClient(identity),
                 onOpen = { raw -> NovaDestination.entries.firstOrNull { it.name == raw }?.let(navigate) },

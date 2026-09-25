@@ -260,6 +260,18 @@ struct NovaForYouCopy: Equatable {
             return copy(RDLocalization.string("localizable.nova.foryou.performance.first_analysis.title", table: .localizable, fallback: "İlk analizin hazır"),
                 RDLocalization.string("localizable.nova.foryou.performance.first_analysis.detail", table: .localizable, fallback: "Bulguları inceleyip rapor alabilirsin."),
                 RDLocalization.string("localizable.nova.foryou.action.analysis", table: .localizable, fallback: "Analizi gör"), "checkmark.seal")
+        case "performance.analyses_total":
+            return copy(RDLocalization.format("localizable.nova.foryou.performance.analyses_total.title", table: .localizable, fallback: "Şimdiye kadar %1$@ analiz yaptın", arguments: [count]),
+                RDLocalization.string("localizable.nova.foryou.performance.analyses_total.detail", table: .localizable, fallback: "Bütün analizlerin listede açılır."),
+                analysesAction, "chart.bar")
+        case "performance.trainings_total":
+            return copy(RDLocalization.format("localizable.nova.foryou.performance.trainings_total.title", table: .localizable, fallback: "Şimdiye kadar %1$@ eğitim kaydettin", arguments: [count]),
+                RDLocalization.string("localizable.nova.foryou.performance.trainings_total.detail", table: .localizable, fallback: "Bütün eğitim kayıtların listede açılır."),
+                trainingsAction, "person.3")
+        case "performance.nonconformities_total":
+            return copy(RDLocalization.format("localizable.nova.foryou.performance.nonconformities_total.title", table: .localizable, fallback: "Şimdiye kadar %1$@ uygunsuzluk kaydettin", arguments: [count]),
+                RDLocalization.string("localizable.nova.foryou.performance.nonconformities_7d.detail", table: .localizable, fallback: "Takibini tek yerden yapabilirsin."),
+                RDLocalization.string("localizable.nova.foryou.action.nonconformities", table: .localizable, fallback: "Uygunsuzlukları gör"), "list.bullet.clipboard")
         case "discover.photo_analysis":
             return copy(RDLocalization.string("localizable.nova.foryou.discover.photo_analysis.title", table: .localizable, fallback: "Fotoğraftan analizi keşfet"),
                 RDLocalization.string("localizable.nova.foryou.discover.photo_analysis.detail", table: .localizable, fallback: "Bir fotoğraf yükle, riskleri hızlıca tespit et."), tryIt, "camera")
@@ -339,6 +351,74 @@ struct NovaForYouCopy: Equatable {
     }
 }
 
+/// Where the ranked cards go on the home page (Android `NovaForYouLayout`).
+/// The large area rotates through the feature suggestions. Below it, two boxes:
+/// what needs attention (the most urgent, always) and one unfinished item (the
+/// visit's turn, see `NovaForYouContinueRotation`); progress runs as a strip
+/// under them. When a box is empty, progress takes it and the strip goes; a
+/// first-step card fills a box still empty. No two places show the same kind.
+/// With no suggestion left, the first steps rotate on top.
+struct NovaForYouLayout<Item> {
+    var featured: [Item] = []
+    /// One or two boxes side by side.
+    var boxes: [Item] = []
+    /// Progress, when both boxes are taken.
+    var strip: Item?
+    var count: Int { featured.count + boxes.count + (strip == nil ? 0 : 1) }
+
+    static func make(_ items: [Item], kind: (Item) -> String, id: (Item) -> String = { _ in "" }, continueID: String? = nil) -> Self {
+        func all(_ value: String) -> [Item] { items.filter { kind($0) == value } }
+        let discover = Array(all("discover").prefix(5))
+        let starts = all("motivation")
+        let unfinished = all("continue")
+        let work = unfinished.first { id($0) == continueID } ?? unfinished.first
+        let pair = [all("critical").first, work].compactMap { $0 }
+        let progress = all("performance").first
+        let progressBoxed = progress != nil && pair.count < 2
+        var boxes = pair
+        if boxes.count + (progressBoxed ? 1 : 0) < 2, !discover.isEmpty, let start = starts.first { boxes.append(start) }
+        if progressBoxed, let progress { boxes.append(progress) }
+        return .init(featured: discover.isEmpty ? Array(starts.prefix(5)) : discover, boxes: boxes,
+            strip: progressBoxed ? nil : progress)
+    }
+}
+
+/// Which unfinished item the home page shows (Android `NovaForYouRotation`).
+/// Each visit shows the one after the item shown last, kept on this device per
+/// user and workspace; within a visit it stays, unless it goes away.
+final class NovaForYouContinueRotation {
+    let namespace: String
+    private let defaults: UserDefaults
+    private(set) var current: String?
+    private var picked = false
+
+    init(namespace: String, defaults: UserDefaults = .standard) {
+        self.namespace = namespace
+        self.defaults = defaults
+    }
+
+    private var key: String { "nova.foryou.continue.\(namespace)" }
+
+    func newVisit() { picked = false }
+
+    /// The item for this visit among the unfinished ones, in server order.
+    func pick(_ ids: [String]) -> String? {
+        if picked, let current, ids.contains(current) { return current }
+        current = Self.next(after: picked ? current : defaults.string(forKey: key), in: ids)
+        if let current {
+            picked = true
+            defaults.set(current, forKey: key)
+        }
+        return current
+    }
+
+    /// The item after the one shown last; the first when that one is gone.
+    static func next(after last: String?, in ids: [String]) -> String? {
+        guard let last, let index = ids.firstIndex(of: last) else { return ids.first }
+        return ids[(index + 1) % ids.count]
+    }
+}
+
 struct NovaForYouSection: View {
     enum Phase: Equatable { case loading, failed, ready(NovaForYouFeed) }
     let phase: Phase
@@ -351,9 +431,16 @@ struct NovaForYouSection: View {
     let onRetry: () -> Void
     /// The cards actually on screen, reported once they are drawn.
     var onShown: ([NovaForYouCard]) -> Void = { _ in }
+    /// The unfinished item this visit shows (`NovaForYouContinueRotation`);
+    /// nil or gone means the first one.
+    var continueID: String? = nil
     @State private var showingAll = false
+    /// The featured card on screen; nil or gone means the first one.
+    @State private var featuredID: String?
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
 
     private struct Item: Identifiable {
         let card: NovaForYouCard
@@ -366,16 +453,11 @@ struct NovaForYouSection: View {
             return Item(card: card, copy: copy)
         }
     }
-    /// The server already ranked the cards. Should this build skip one, the
-    /// next card in order takes its place, keeping at most one suggestion.
-    private func section(_ feed: NovaForYouFeed) -> (shown: [Item], all: [Item]) {
+    /// The server already ranked the cards; the layout places them by kind.
+    /// Should this build skip one, the next card of that kind takes its place.
+    private func section(_ feed: NovaForYouFeed) -> (layout: NovaForYouLayout<Item>, all: [Item]) {
         let all = items(feed.cards + feed.more)
-        var shown: [Item] = []
-        for item in all where shown.count < 3 {
-            if item.card.kind == "discover", shown.contains(where: { $0.card.kind == "discover" }) { continue }
-            shown.append(item)
-        }
-        return (shown, all)
+        return (NovaForYouLayout.make(all, kind: \.card.kind, id: \.card.id, continueID: continueID), all)
     }
 
     var body: some View {
@@ -411,25 +493,71 @@ struct NovaForYouSection: View {
             }
         case .ready(let feed):
             let picked = section(feed)
-            let shown = picked.shown
+            let layout = picked.layout
             let all = picked.all
-            if !shown.isEmpty {
+            if layout.count > 0 {
                 VStack(alignment: .leading, spacing: 10) {
-                    header(showsAll: all.count > shown.count)
-                    mainCard(shown[0])
-                    let support = Array(shown.dropFirst().prefix(2))
+                    header(showsAll: all.count > layout.count)
+                    if !layout.featured.isEmpty { featuredArea(layout.featured) }
+                    let boxes = layout.boxes
+                    let unfinished = all.filter { $0.card.kind == "continue" }
                     if typeSize.isAccessibilitySize {
-                        ForEach(support) { supportCard($0) }
-                    } else if !support.isEmpty {
+                        ForEach(boxes) { supportCard($0, among: unfinished) }
+                    } else if !boxes.isEmpty {
                         HStack(alignment: .top, spacing: 10) {
-                            ForEach(support) { supportCard($0).frame(maxHeight: .infinity, alignment: .top) }
+                            ForEach(boxes) { supportCard($0, among: unfinished).frame(maxHeight: .infinity, alignment: .top) }
                         }.fixedSize(horizontal: false, vertical: true)
                     }
+                    if let strip = layout.strip { stripCard(strip) }
                 }
+                // A container of its own, so the cards keep their identifiers.
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("nova.home.foryou")
-                .task(id: shown.map(\.id)) { onShown(shown.map(\.card)) }
+                .task(id: (layout.boxes + [layout.strip].compactMap { $0 }).map(\.id)) {
+                    onShown((layout.boxes + [layout.strip].compactMap { $0 }).map(\.card))
+                }
                 .sheet(isPresented: $showingAll) { allList(all, truncated: feed.has_more == true) }
             }
+        }
+    }
+
+    /// The feature suggestions, one at a time: they move on by themselves
+    /// every few seconds and can be swiped. They stay put for VoiceOver and
+    /// Reduce Motion. Every card is laid out once, hidden, so the area is as
+    /// tall as the tallest and the page does not jump.
+    private func featuredArea(_ featured: [Item]) -> some View {
+        let current = featured.first { $0.id == featuredID } ?? featured[0]
+        let rotates = featured.count > 1 && !voiceOver && !reduceMotion
+        return VStack(spacing: 8) {
+            ZStack { ForEach(featured) { mainCard($0) } }
+                .hidden()
+                .accessibilityHidden(true)
+                .overlay {
+                    TabView(selection: Binding(get: { current.id }, set: { featuredID = $0 })) {
+                        ForEach(featured) { mainCard($0).padding(.horizontal, 8).tag($0.id) }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    // Room between cards while swiping, without narrowing them.
+                    .padding(.horizontal, -8)
+                }
+            if featured.count > 1 {
+                HStack(spacing: 6) {
+                    ForEach(featured) { item in
+                        Capsule()
+                            .fill(item.id == current.id ? colors(item).ink : NovaColorToken.borderMuted.color(in: scheme))
+                            .frame(width: item.id == current.id ? 18 : 6, height: 6)
+                    }
+                }
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: current.id)
+                .accessibilityHidden(true)
+            }
+        }
+        .task(id: current.id) { onShown([current.card]) }
+        .task(id: "\(current.id)|\(featured.map(\.id).joined(separator: ","))|\(rotates)") {
+            guard rotates else { return }
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            guard !Task.isCancelled, let index = featured.firstIndex(where: { $0.id == current.id }) else { return }
+            withAnimation(.easeInOut(duration: 0.45)) { featuredID = featured[(index + 1) % featured.count].id }
         }
     }
 
@@ -459,13 +587,13 @@ struct NovaForYouSection: View {
     }
 
     private func badge(_ item: Item, size: CGFloat) -> some View {
-        let colors = palette(item.card.tone)
+        let tint = colors(item)
         return HStack(spacing: 7) {
             NovaIcon(symbol: item.copy.symbol, size: size * 0.46)
-                .foregroundStyle(colors.ink)
+                .foregroundStyle(tint.ink)
                 .frame(width: size, height: size)
-                .background(colors.soft, in: Circle())
-            NovaText(text: RDLocalization.uppercased(item.copy.label), style: .badge, color: colors.ink).lineLimit(1)
+                .background(tint.soft, in: Circle())
+            NovaText(text: RDLocalization.uppercased(item.copy.label), style: .badge, color: tint.ink).lineLimit(1)
         }
     }
 
@@ -486,17 +614,121 @@ struct NovaForYouSection: View {
 
     private func actionRow(_ item: Item) -> some View {
         HStack(spacing: 5) {
-            NovaText(text: item.copy.action, style: .label, color: palette(item.card.tone).ink).lineLimit(1)
-            Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(palette(item.card.tone).ink)
+            NovaText(text: item.copy.action, style: .label, color: colors(item).ink).lineLimit(1)
+            Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(colors(item).ink)
+        }
+    }
+
+    /// The featured card's action, text and arrow on a soft tinted capsule so it reads as a button.
+    private func actionPill(_ item: Item) -> some View {
+        let ink = colors(item).ink
+        return actionRow(item)
+            .padding(.horizontal, 14).frame(minHeight: 34)
+            // A light base under the tint keeps the art's specks out of the label.
+            .background(ink.opacity(0.12), in: Capsule())
+            .background(NovaColorToken.surface.color(in: scheme).opacity(0.75), in: Capsule())
+            .overlay(Capsule().strokeBorder(ink.opacity(0.18), lineWidth: 1))
+    }
+
+    /// A Keşfet card's art, the colours along its top edge (at 0, 30, 50 and
+    /// 100 % of the width), which fill the card above the art, and the ink and
+    /// soft fill its label, button and dot take on it (nil: the tone's own).
+    private struct DiscoverArt {
+        let name: String
+        let edge: [UInt32]
+        var accent: (ink: UInt32, soft: UInt32)? = nil
+    }
+
+    /// Each feature's own art (Android `DISCOVER_ART`); the others use the
+    /// general Keşfet art.
+    private static let discoverArt: [String: DiscoverArt] = [
+        "discover.risk_wizard": .init(name: "NovaForYouDiscoverRiskWizard", edge: [0xFCF7E8, 0xFBFBF9, 0xFBEECA, 0xFCE8B0]),
+        "discover.photo_analysis": .init(name: "NovaForYouDiscoverPhotoAnalysis", edge: [0xF6FAF1, 0xF7FCFA, 0xC3F1DD, 0xD1EDC0],
+            accent: (0x1A6E4C, 0xD8F3E6)),
+        "discover.equipment": .init(name: "NovaForYouDiscoverEquipment", edge: [0xEEFAFC, 0xEFFAFD, 0xCFF1FC, 0xBCE6F9],
+            accent: (0x0B6E92, 0xD6F0FA)),
+        "discover.statistics": .init(name: "NovaForYouDiscoverStatistics", edge: [0xF4F5FA, 0xF8FAFB, 0xD5E0FB, 0xD5DDFA],
+            accent: (0x4B4BC0, 0xE2E4FB)),
+        "discover.training": .init(name: "NovaForYouDiscoverTraining", edge: [0xF7FCF2, 0xF7FDF4, 0xDFF2D5, 0xDBEED0],
+            accent: (0x2E7A38, 0xDDF1D6)),
+        "discover.nonconformity": .init(name: "NovaForYouDiscoverNonconformity", edge: [0xFBF1ED, 0xFDF7F4, 0xFCD5CC, 0xFBC9BF],
+            accent: (0xB02F24, 0xFCDCD5)),
+        "discover.emergency_wizard": .init(name: "NovaForYouDiscoverEmergencyWizard", edge: [0xFCF7EC, 0xFDF9F2, 0xFDE5BE, 0xFBDFB0],
+            accent: (0xA94A0C, 0xFDE6CC)),
+        "discover.checklist": .init(name: "NovaForYouDiscoverChecklist", edge: [0xFCF4E1, 0xFDFAF3, 0xFCEFCA, 0xFDE8BA]),
+    ]
+    /// How strongly the Keşfet art shows over the card surface (Android `DISCOVER_ART_ALPHA`).
+    private static let discoverArtOpacity = 0.8
+
+    private static let generalDiscoverArt = DiscoverArt(name: "NovaForYouDiscoverBackground",
+        edge: [0xFDFCF9, 0xFCFBF9, 0xFDF3DE, 0xFEECC9])
+
+    private func discoverArt(_ item: Item) -> DiscoverArt { Self.discoverArt[item.card.key] ?? Self.generalDiscoverArt }
+
+    private static func color(_ hex: UInt32) -> Color {
+        NovaRGBA(red: Int(hex >> 16 & 0xFF), green: Int(hex >> 8 & 0xFF), blue: Int(hex & 0xFF), alpha: 1).color
+    }
+
+    /// The card's ink and soft fill: its art's accent while the art shows,
+    /// otherwise the tone's.
+    private func colors(_ item: Item) -> (ink: Color, soft: Color) {
+        if item.card.kind == "discover", artwork(item) != nil, let accent = discoverArt(item).accent {
+            return (Self.color(accent.ink), Self.color(accent.soft))
+        }
+        return palette(item.card.tone)
+    }
+
+    /// The pastel artwork behind a kind's cards. Light appearance only: under
+    /// dark mode's light text it would wash the copy out.
+    private func artwork(_ item: Item) -> String? {
+        guard scheme == .light else { return nil }
+        switch item.card.kind {
+        case "discover": return typeSize.isAccessibilitySize ? nil : discoverArt(item).name
+        case "critical": return "NovaForYouCriticalBackground"
+        case "continue": return "NovaForYouContinueBackground"
+        default: return nil
+        }
+    }
+
+    /// Drawn behind the content, so it never changes a card's height. The
+    /// Keşfet art keeps its illustration whole at the bottom right, over its
+    /// own top-edge colours; the Dikkat and Devam et art fill the box from the
+    /// right, where their icon sits.
+    @ViewBuilder private func artworkLayer(_ item: Item) -> some View {
+        if let name = artwork(item) {
+            if item.card.kind == "discover" {
+                ZStack(alignment: .bottomTrailing) {
+                    LinearGradient(stops: zip(discoverArt(item).edge, [0, 0.3, 0.5, 1]).map { hex, location in
+                        .init(color: Self.color(hex), location: location)
+                    }, startPoint: .leading, endPoint: .trailing)
+                    Image(name).resizable().scaledToFit()
+                        .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.12)],
+                            startPoint: .top, endPoint: .bottom))
+                }
+                // Softened as one layer, so the copy stands out from the art.
+                .compositingGroup()
+                .opacity(Self.discoverArtOpacity)
+            } else {
+                Image(name).resizable().scaledToFill()
+                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .trailing)
+            }
         }
     }
 
     private func cardSurface<Content: View>(_ item: Item, radius: CGFloat, @ViewBuilder content: () -> Content) -> some View {
         let critical = item.card.kind == "critical"
+        let shape = RoundedRectangle(cornerRadius: radius)
         return content()
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: radius))
-            .overlay(RoundedRectangle(cornerRadius: radius)
+            .background {
+                ZStack {
+                    NovaColorToken.surface.color(in: scheme)
+                    artworkLayer(item)
+                }
+                .clipShape(shape)
+                .accessibilityHidden(true)
+            }
+            .overlay(shape
                 .strokeBorder(critical ? palette(item.card.tone).ink.opacity(0.35) : NovaColorToken.borderMuted.color(in: scheme), lineWidth: 1))
     }
 
@@ -508,28 +740,45 @@ struct NovaForYouSection: View {
                         badge(item, size: 34)
                         NovaText(text: item.copy.title, style: .dialogTitle).lineLimit(3)
                         NovaText(text: item.copy.detail, style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme)).lineLimit(3)
-                        actionRow(item).padding(.top, 2)
+                        actionPill(item).padding(.top, 2)
                     }
-                    .padding(16).padding(.trailing, item.card.dismissible ? 28 : 0)
+                    // The Keşfet art's illustration takes the right side.
+                    .padding(16).padding(.trailing, item.card.kind == "discover" && artwork(item) != nil ? 124
+                        : item.card.dismissible ? 28 : 0)
                 }
             }
             .buttonStyle(NovaRowPressStyle())
             .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("nova.home.foryou.main")
-            .accessibilityValue(item.card.key)
+            .accessibilityIdentifier("nova.home.foryou.featured.\(item.card.key)")
             if item.card.dismissible { dismissButton(item).padding(4) }
         }
     }
 
-    private func supportCard(_ item: Item) -> some View {
-        ZStack(alignment: .topTrailing) {
+    /// A compact box: the kind, the line in regular weight and a coloured
+    /// arrow. The unfinished item shows its place among all unfinished items
+    /// ("2/5"); the others take turns on later visits and are all in "Tümü".
+    private func supportCard(_ item: Item, among unfinished: [Item]) -> some View {
+        let place = unfinished.count > 1 ? unfinished.firstIndex { $0.id == item.id }.map { "\($0 + 1)/\(unfinished.count)" } : nil
+        return ZStack(alignment: .topTrailing) {
             Button { onOpen(item.card) } label: {
                 cardSurface(item, radius: 18) {
-                    VStack(alignment: .leading, spacing: 7) {
-                        badge(item, size: 26).padding(.trailing, item.card.dismissible ? 30 : 0)
-                        NovaText(text: item.copy.title, style: .bodyStrong).lineLimit(3)
+                    VStack(alignment: .leading, spacing: 6) {
+                        badge(item, size: 24).padding(.trailing, item.card.dismissible ? 30 : 0)
                         Spacer(minLength: 0)
-                        actionRow(item)
+                        HStack(alignment: .bottom, spacing: 6) {
+                            NovaText(text: item.copy.title, style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
+                                .lineLimit(3)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if let place {
+                                NovaText(text: place, style: .micro, color: NovaColorToken.textMuted.color(in: scheme))
+                                    .lineLimit(1)
+                                    .accessibilityHidden(true)
+                            }
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(palette(item.card.tone).ink)
+                                .accessibilityHidden(true)
+                        }
                     }
                     .padding(12)
                 }
@@ -538,6 +787,34 @@ struct NovaForYouSection: View {
             .accessibilityElement(children: .combine)
             .accessibilityHint(item.copy.detail)
             .accessibilityIdentifier("nova.home.foryou.card.\(item.card.key)")
+            if item.card.dismissible { dismissButton(item) }
+        }
+    }
+
+    /// Progress as a slim full-width strip under the two boxes.
+    private func stripCard(_ item: Item) -> some View {
+        let colors = palette(item.card.tone)
+        return ZStack(alignment: .trailing) {
+            Button { onOpen(item.card) } label: {
+                cardSurface(item, radius: 18) {
+                    HStack(spacing: 12) {
+                        NovaIcon(symbol: item.copy.symbol, size: 15)
+                            .foregroundStyle(colors.ink)
+                            .frame(width: 34, height: 34)
+                            .background(colors.soft, in: Circle())
+                        VStack(alignment: .leading, spacing: 4) {
+                            NovaText(text: item.copy.title, style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme)).lineLimit(2)
+                            actionRow(item)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(12).padding(.trailing, item.card.dismissible ? 32 : 0)
+                }
+            }
+            .buttonStyle(NovaRowPressStyle())
+            .accessibilityElement(children: .combine)
+            .accessibilityHint(item.copy.detail)
+            .accessibilityIdentifier("nova.home.foryou.strip.\(item.card.key)")
             if item.card.dismissible { dismissButton(item) }
         }
     }

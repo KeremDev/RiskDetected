@@ -2,7 +2,7 @@
 
 Güncelleme: **24.09.2026** (iki inceleme turunun düzeltmeleri işlendi)  
 Kaynak: `ISGADA_Senin_Icin_Akilli_Ana_Sayfa_Plani.md` (ürün planı)  
-Durum: Plan onaylandı. Sunucu staging'de iki migration ile çalışıyor: `20260924183727_isg_home_feed` ve kart sayılarını açılan listelerle birebir eşleyen `20260924195143_isg_home_feed_lists`. Yerel veritabanında 14 senaryo geçiyor; staging'de kart ve liste sayılarının eşitliği gerçek hesapla ölçüldü. iOS bağlantısı, hedef eşlemesi ve liste filtreleri tamam; derleme ve sözleşme testi yeşil. Android bağlantısı da tamam: kayıt ve liste hedefleri iOS'takiyle aynı kart filtresiyle açılıyor (derleme ve birim testleri yeşil). Telefonda uçtan uca kontrol henüz yapılmadı.
+Durum: Plan onaylandı. Sunucu staging'de iki migration ile çalışıyor: `20260924183727_isg_home_feed` ve kart sayılarını açılan listelerle birebir eşleyen `20260924195143_isg_home_feed_lists`. Üçüncü migration `20260925124500_isg_home_feed_progress` İlerleme kartını kapatılamaz yapar ve bütün kayıtları sayan kartları ekler (25.09.2026'da staging'e uygulandı; pilot hesapta kapatılmış İlerleme kartı yeniden geliyor, kapatılamaz olarak). Yerel veritabanında 15 senaryo geçiyor; staging'de kart ve liste sayılarının eşitliği gerçek hesapla ölçüldü. iOS bağlantısı, hedef eşlemesi ve liste filtreleri tamam; derleme ve sözleşme testi yeşil. Android bağlantısı da tamam: kayıt ve liste hedefleri iOS'takiyle aynı kart filtresiyle açılıyor (derleme ve birim testleri yeşil). Telefonda uçtan uca kontrol henüz yapılmadı.
 
 Bu belge ürün planının mevcut sisteme nasıl oturduğunu, hangi verinin nereden geldiğini ve hangi sırayla yapılacağını takip etmek içindir. Ürün planıyla çelişen veya bugünkü veriyle doğru çalışmayacak maddeler 6. bölümde gerekçesiyle düzeltildi.
 
@@ -18,6 +18,7 @@ Bu belge ürün planının mevcut sisteme nasıl oturduğunu, hangi verinin nere
 - [x] Haftalık sayılar **"son 7 gün"** olarak hesaplanır: bugün ve önceki 6 gün, İstanbul saatiyle. Zaman damgalı kayıtlar yalnız **şu ana kadar** sayılır; bugünün ilerleyen saatine damgalanmış kayıt sayılmaz.
 - [x] Karşılaştırma **yalnız artış varsa** gösterilir. Düşüş, sıfır veya boş sayaç hiçbir kartta görünmez.
 - [x] **Kritik kartlar kapatılamaz.** Kayıt düzeltildiğinde kendiliğinden kalkar. Yarım kalan iş tamamlandığında kartı da kalkar.
+- [x] **İlerleme kartı her zaman vardır (25.09.2026):** hesapta gösterilecek iş varsa bir İlerleme kartı bulunur ve kapatılamaz. Son 7 ve 30 günde bir şey yoksa bütün kayıtları sayan kart gelir ("Şimdiye kadar 153 analiz yaptın"). Sebep: pilot hesapta tek İlerleme kartı kapatılınca 7 gün boyunca hiçbiri görünmedi; son 30 günde 57 analiz olduğu hâlde 30 günlük kart, son 7 günde eğitim olduğu için üretilmemişti.
 - [x] Kart, oturumun **açabileceği ve yetkisi olduğu** bir hedefe götürmüyorsa hiç üretilmez: modül kapalıysa, kayıt oluşturan/tamamlayan kartta hesap **veya ilgili modül** yazmaya kapalıysa, ya da uygulama o hedefi açamıyorsa.
 - [x] **Kartta görülen sayı, kartın açtığı listede görülen sayıdır.** Hedef, sayılan kayıtların filtresini taşır: tarih aralığı, durum ve OSGB'de "yalnız benim kayıtlarım". Filtrelenmiş bir listesi olmayan sayı için kart üretilmez.
 - [x] Kart olayları (gösterildi, kapatıldı, açıldı, geri alındı) cihazda kuyruklanabilir; her olay kendi kimliğini ve gerçekleştiği anı taşır. Tekrar gelen olay etkisizdir, eski olay yeni kararı ezmez.
@@ -25,6 +26,7 @@ Bu belge ürün planının mevcut sisteme nasıl oturduğunu, hangi verinin nere
 - [x] Firması olmayan kullanıcı da gerçek kullanıcıdır. Grup kullanım geçmişinden belirlenir; firma eklemek ayrı bir öneridir.
 - [x] Sayılar kayıtların kendi tarihlerinden hesaplanır. Aktivite günlüğü (`business_activity_events`) kullanılmaz: staging'de 17.09.2026'dan önce yoktur, canlıda hiç yoktur.
 - [x] Kart metinleri "sen" diliyle, kısa, olumlu ve eyleme dönüktür.
+- [x] **Bölüm düzeni (25.09.2026):** büyük alan Keşfet kartlarını döndüren bir carousel'dir (5 saniyede bir kendiliğinden kayar, elle kaydırılır). Altında yan yana iki kutu vardır: Dikkat ve Devam et. İlerleme, bu iki kutunun altında ince bir şerittir. Ekrandaki alanlar hiçbir zaman aynı türden kart göstermez. Devam et kutusu ana sayfaya her girişte sıradaki yarım işi gösterir ("2/5"); Dikkat kutusu her zaman en acil kaydı gösterir. Sunucunun sırası değişmez; kartları alanlara uygulama türüne göre yerleştirir (3.7).
 
 ## 2. Ekranın yeni hali
 
@@ -32,9 +34,11 @@ Bu belge ürün planının mevcut sisteme nasıl oturduğunu, hangi verinin nere
 ÜST ALAN      Merhaba, Kerem
               2 işlem dikkat bekliyor            ← mevcut sayaç, katalog metnine alınır
 
-SENİN İÇİN                               Tümü    ← ilk üçün dışında kart varsa
-[ ANA KART ]
-[ DESTEK KARTI ]   [ DESTEK KARTI ]              ← büyük yazı boyutunda alt alta
+SENİN İÇİN                               Tümü    ← ekrandakilerin dışında kart varsa
+[ KEŞFET CAROUSEL'İ ]                            ← en çok 5 kart, 5 sn'de bir kayar, elle kaydırılır
+          ━━ ●  ●
+[ DİKKAT ]   [ DEVAM ET      2/5 ]              ← büyük yazı boyutunda alt alta
+[ İLERLEME ŞERİDİ ······················ ]
 
 YENİ KAYIT        (mevcut Hızlı İşlemler)
 SON ANALİZLER     (mevcut)
@@ -73,7 +77,7 @@ Uygulama ◀── {segment, signals, cards ≤3, more ≤30, more_total, has_mo
    └── sihirbaz, örnek form, istatistik, Evrak Takibi açıldı ─▶ isg_feature_usage_v1(özellik, an)
 ```
 
-### 3.1 Sunucu (`supabase/migrations/20260924183727_isg_home_feed.sql`, `20260924195143_isg_home_feed_lists.sql`)
+### 3.1 Sunucu (`supabase/migrations/20260924183727_isg_home_feed.sql`, `20260924195143_isg_home_feed_lists.sql`, `20260925124500_isg_home_feed_progress.sql`)
 
 İkinci migration yalnız fonksiyon gövdelerini değiştirir: her kartın saydığı kayıtlar, açtığı listenin gösterdiği kayıtlarla aynı olsun diye sayımlar listelerin kurallarına çekilir (3.3) ve uygunsuzluk listesi satırlarına `created_at` ile `created_by_user_id` eklenir. Yetkiler, izin listesi ve kart sözleşmesi değişmez.
 
@@ -82,7 +86,7 @@ Uygulama ◀── {segment, signals, cards ≤3, more ≤30, more_total, has_mo
 | `private_isg.home_card_states` | Kullanıcı + kapsam + kart başına durum: `dismissed_until`, `shown_on`, `acted_at` ve son uygulanan kararın anı/kimliği (`decided_at`, `decision_event`). Kapsam `personal`, çalışma alanı kimliği veya (keşif kartları için) `account`. 180 günden eski ve artık bir şey gizlemeyen satırlar silinir. |
 | `private_isg.feature_usage` | Kayıt bırakmayan özelliklerin ilk/son kullanımı: `risk_wizard`, `emergency_wizard`, `work_permit_forms`, `ppe_form`, `statistics`, `followup`. İçerik tutulmaz. Tekrar gönderim zararsızdır. |
 | `public.isg_home_feed_v1(p_local, p_client)` | Tek okuma: kapsam, yetki, sinyaller, aday kartlar, sıralama. Hiçbir şey yazmaz. |
-| `public.isg_home_card_action_v1(p_action, p_cards, p_event, p_occurred_at)` | `shown` (en çok 5 kart; yalnız keşif, ilerleme ve motivasyon kartları hatırlanır), `dismiss` (devam 3 gün, diğerleri 7 gün), `act` (keşif kartı 30 gün dinlenir), `restore`. Kritik kart kapatılamaz. Kurallar 3.2'de. |
+| `public.isg_home_card_action_v1(p_action, p_cards, p_event, p_occurred_at)` | `shown` (en çok 5 kart; yalnız keşif, ilerleme ve motivasyon kartları hatırlanır), `dismiss` (devam 3 gün, diğerleri 7 gün), `act` (keşif kartı 30 gün dinlenir), `restore`. Kritik ve İlerleme kartı kapatılamaz; İlerleme kartının eski kapatmaları yok sayılır (`20260925124500`). Kurallar 3.2'de. |
 | `public.isg_feature_usage_v1(p_feature, p_occurred_at)` | Özellik kullanımı: ilk ve son kullanım anı. Sayaç yoktur; tekrar gelen olay yalnız bu iki anı genişletebilir. |
 
 Güvenlik ve çalışma kuralları:
@@ -133,7 +137,7 @@ Eğitimin "son tarih" değeri artık oturumun düzenlendiği günü gösteriyor 
 {"contract": 1, "routes": ["followup_record", "followup", "nonconformity", "..."]}
 ```
 
-- `contract`: uygulamanın tanıdığı kart kümesinin sürümü. Bugünkü bütün kartlar sözleşme 1'dir. Sonradan eklenen kart `since` alanı taşır; eski sözleşmeli uygulamaya hiç gönderilmez.
+- `contract`: uygulamanın tanıdığı kart kümesinin sürümü. İlk kartların hepsi sözleşme 1'dir. Sonradan eklenen kart `since` alanı taşır; eski sözleşmeli uygulamaya hiç gönderilmez. Sözleşme 2 (25.09.2026): bütün kayıtları sayan üç İlerleme kartı (`performance.*_total`); iOS ve Android 2 gönderir.
 - `routes`: uygulamanın **bu oturumda** açabildiği hedefler (rol ve menüde görünür modüllere göre). Açılamayan hedefi olan kart sıralamadan önce çıkarılır; bölümde boşluk kalmaz, sıradaki kart yerine geçer. `routes` gönderilmezse sözleşmenin bütün hedefleri varsayılır.
 - Uygulama ayrıca tanımadığı bir anahtarı sessizce atlar (emniyet kemeri). Atlama olursa `cards` ve `more` sırası korunarak ilk üç uygun kart gösterilir; keşif kartı en fazla bir tane olur.
 
@@ -218,7 +222,7 @@ Termini geçmiş uygunsuzluk panoda yoktur; bu kart yeni ve gerçek bir sinyal e
 
 `{n}` panodaki "Yaklaşan" sayısıdır ve açılan liste tam olarak bu kayıtları gösterir. 7 gün yalnız kartın ne zaman öne çıkacağını belirler; sayıyı değiştirmez.
 
-**4. İlerleme (öncelik 30–32, yeşil, kapatılırsa 7 gün)**
+**4. İlerleme (öncelik 30–32, yeşil, kapatılamaz; 25.09.2026'ya kadar kapatılırsa 7 gün gizleniyordu)**
 
 | Anahtar | Koşul | Başlık | Açıklama | Eylem |
 |---|---|---|---|---|
@@ -228,6 +232,9 @@ Termini geçmiş uygunsuzluk panoda yoktur; bu kart yeni ve gerçek bir sinyal e
 | `performance.analyses_30d` (31) | 7 gün boş, 30 günde ≥ 2 analiz | Son 30 günde {n} analiz yaptın | Son 30 günün analizleri listede açılır. | Analizleri gör |
 | `performance.trained_people_30d` (31) | 7 gün boş, 30 günde ≥ 5 kişi | Son 30 günde {n} kişiye eğitim verdin | {s} eğitim oturumu | Eğitimleri gör |
 | `performance.first_analysis` | Tek analiz, son 7 günde | İlk analizin hazır | Bulguları inceleyip rapor alabilirsin. | Analizi gör (kaydın kendisi) |
+| `performance.analyses_total` (32, sözleşme 2) | Yukarıdakilerin hiçbiri yok, analiz ≥ 1 | Şimdiye kadar {n} analiz yaptın | Bütün analizlerin listede açılır. | Analizleri gör (tarih aralığı yok) |
+| `performance.trainings_total` (32, sözleşme 2) | Analiz yok, eğitim oturumu ≥ 1 | Şimdiye kadar {n} eğitim kaydettin | Bütün eğitim kayıtların listede açılır. | Eğitimleri gör (tarih aralığı yok) |
+| `performance.nonconformities_total` (32, sözleşme 2) | Analiz ve eğitim yok, kaydedilmiş uygunsuzluk ≥ 1 | Şimdiye kadar {n} uygunsuzluk kaydettin | Takibini tek yerden yapabilirsin. | Uygunsuzlukları gör (tarih aralığı yok) |
 
 Her ilerleme kartının hedefi, saydığı kayıtların listesidir: analizler/eğitimler/uygunsuzluklar, aynı tarih aralığıyla (`from`–`to`, İstanbul günleri, bugün dahil), tamamlanmış/kaydedilmiş durumla ve OSGB'de `mine`. Eğitim kartında listede görülen sayı oturum sayısıdır ve kartın açıklama satırında da oturum sayısı yazar. Bütün modüllerdeki kayıtları tek listede gösteren bir ekran olmadığı için "N kayıt oluşturdun" kartı yoktur; bu toplam yalnız grup belirlemede kullanılır.
 
@@ -286,6 +293,23 @@ Cihazda duran taslakları sunucu göremez. İstemci yalnız şu özeti gönderir
 4. **Bölüm (`cards`)**: ilk üç kart; aynı türden en fazla iki, keşiften en fazla bir.
 5. **Tümü (`more`)**: kalan bütün kritik, yarım iş ve ilerleme kartları + sıradaki üç keşif + sıradaki iki motivasyon kartı; en çok 30. Yarım işte her kaynak en fazla dört kart üretir (üç kayıt + "N tane daha" kartı), bu yüzden liste pratikte sınırlanmaz. `more_total` ve `has_more` yine döner; `has_more` doğruysa "Tümü" sayfasının sonunda "Diğer kayıtlar ilgili modül listelerinde" satırı gösterilir.
 6. Uygulama gösterdiği kartları `shown` ile bildirir (günde bir kez, kart başına). Sunucu okuma sırasında hiçbir şey yazmaz.
+
+**Ekrandaki yerleşim (25.09.2026).** Uygulama `cards` + `more` listesini sunucunun sırasıyla okur ve kartları türlerine göre üç alana koyar (iOS `NovaForYouLayout`, Android `NovaForYouLayout`; iki platformda aynı testler):
+
+| Alan | Kart | Yoksa |
+|---|---|---|
+| Carousel | Bütün Keşfet kartları, sırasıyla (en çok 5; sunucu en çok 4 gönderir) | Başlangıç kartları döner |
+| Kutu 1 | İlk Dikkat kartı (süresi geçmiş, termini geçmiş, yaklaşan): her zaman en acil olan | İlerleme kutuya çıkar |
+| Kutu 2 | Bu ziyaretin Devam et kartı (aşağıda) | İlerleme kutuya çıkar |
+| Şerit | İlk İlerleme kartı, iki kutu da doluysa | Şerit yok |
+
+- İki kutudan biri boşsa İlerleme o kutuya geçer ve şerit kalkar. Hâlâ boş kutu varsa bir Başlangıç kartı onu doldurur; carousel Başlangıç kartlarını döndürüyorsa kutulara Başlangıç kartı konmaz. Böylece hiçbir iki alan aynı türden olmaz. Kutu dolmazsa tek kutu gösterilir.
+- Dikkat, sunucu sırasında Devam et'in arkasında olsa da (yaklaşan: 15) ilk kutuya girer. Dikkat kartları sırayla dönmez; süresi geçen kayıt gizlenmesin diye her zaman ilk (en acil) Dikkat kartı gösterilir.
+- **Devam et sırası:** ana sayfaya her girişte Devam et kutusu, son gösterilen yarım işten sonrakini gösterir (sunucu sırasıyla, sonuncudan sonra başa döner). Giriş sayılanlar: ana sayfanın açılması (uygulama açılışı, sekmeden veya bir kartın açtığı ekrandan dönüş) ve uygulamanın arka plandan dönmesi. Aynı ziyarette yenilemeler kartı değiştirmez; gösterilen iş tamamlanır veya kapatılırsa sıradaki gelir. Son gösterilen kart kimliği cihazda kullanıcı + çalışma alanı başına tutulur (iOS `NovaForYouContinueRotation`, UserDefaults; Android `NovaForYouRotation`, SharedPreferences `nova.foryou.continue.v1`). Birden çok yarım iş varsa kutunun altında sırası görünür ("2/5"); sayaç ekran okuyucudan gizlidir, bütün işler "Tümü"dedir.
+- Carousel VoiceOver/TalkBack açıkken ve hareket azaltıldığında kendiliğinden kaymaz; kart sürüklenirken de beklemede kalır. Bütün kartlar görünmeden ölçülür, carousel en uzun kart kadar yüksektir; kart değişince sayfa zıplamaz.
+- `shown` carousel'de ekrana gelen kart için ayrı ayrı gönderilir; bir olayda 5'ten fazla kart varsa beşerli bölünür.
+- Sunucunun `cards` alanındaki ilk üç kart seçimi (aynı türden en çok iki) yerleşimi belirlemez; uygulama iki listeyi birlikte okur. Ekranda olmayan Dikkat ve Devam et kartları "Tümü"dedir.
+- Yan yana üç kutu denenmedi: 362 pt genişlikte kutu başına yaklaşık 90 pt metin alanı kalıyor; tür etiketi ve kapatma düğmesi sığmıyor, başlıklar 5 satıra çıkıyor.
 
 ### 3.8 İstemci entegrasyonu
 
@@ -352,7 +376,7 @@ Kaldırılanlar: kişisel ve uzman ana sayfasındaki Özet şeridi (`NovaMetricI
 
 ## 5. Test kapsamı (sunucu)
 
-`node scripts/home/run_database.mjs` (yerel PostgreSQL veya Docker; sahte tablolarla 14 senaryo; iki migration sırayla uygulanır). Sıralama, olay sırası ve modül yazma kuralı kasıtlı bozulduğunda testin düştüğü doğrulandı:
+`node scripts/home/run_database.mjs` (yerel PostgreSQL veya Docker; sahte tablolarla 15 senaryo; üç migration sırayla uygulanır). Sıralama, olay sırası ve modül yazma kuralı kasıtlı bozulduğunda testin düştüğü doğrulandı:
 
 1. Kişisel hesap: süresi geçen ana kartta, sonra taslak, sonra yaklaşan; yaklaşan kartın sayısı ve hedefi listeyle aynı; ilerleme kartlarının hedefi aynı tarih aralığı, durum ve "benim" filtresini taşıyor; listesi olmayan "kayıt" kartı yok.
 2. Bugünün ilerleyen saatine damgalı kayıt sayılmıyor; 7 günlük pencerenin sınırı saniyesiyle doğru.
@@ -368,6 +392,7 @@ Kaldırılanlar: kişisel ve uzman ana sayfasındaki Özet şeridi (`NovaMetricI
 12. Modül yalnız okumaya açıkken o modülde kayıt oluşturan/tamamlayan kart yok; kritik ve ilerleme kartları duruyor.
 13. Listeyle eşleşme: firmasız kendi kontrolü sayılır, başkasınınki ve kurum kontrolü sayılmaz; eğitim düzenlendiği güne göre sayılır, okunamayan firmalı oturum sayılmaz; uygunsuzluk listesi satırı oluşturulma anını ve oluşturanı taşır.
 14. Kapılar, yetkiler, izin listesinin tek sefer genişlemesi ve ikinci çalıştırmada değişmemesi.
+15. İlerleme her zaman var: kartı kapatılamaz, kapatma isteği reddedilir, eski kapatma kartı gizlemez; sessiz bir ayda sözleşme 2 bütün analizleri (analiz yoksa eğitimleri) sayan kartı alır, listesi tarih aralığı taşımaz; sözleşme 1 bu kartı hiç almaz. Migration olmadan senaryonun düştüğü doğrulandı.
 
 ## 6. Ürün planında düzeltilen noktalar
 

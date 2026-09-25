@@ -186,6 +186,49 @@ final class NovaPilotUITests: XCTestCase {
         #endif
     }
 
+    /// "Senin İçin": the unused features rotate in the large area on their own and by swipe; below it the
+    /// attention box, the unfinished-work box and the progress strip, never two of a kind. The unfinished items
+    /// take turns: every launch shows the next one (the screen of 25.09.2026).
+    func testForYouRotatesSuggestionsAboveAttentionAndProgress() throws {
+        #if NOVA_PILOT_BUILD
+        let app = XCUIApplication()
+        app.launchArguments = ["RD_UI_TEST_MAIN", "RD_UI_TEST_NOVA_REVIEW", "RD_UI_TEST_FORYOU", "RD_UI_TEST_LIGHT_MODE"]
+        app.launch(); defer { app.terminate() }
+        func featured(_ key: String) -> XCUIElement { app.buttons["nova.home.foryou.featured.discover.\(key)"] }
+        func onScreen(_ element: XCUIElement, within seconds: TimeInterval) -> Bool {
+            let shown = expectation(for: NSPredicate(format: "isHittable == true"), evaluatedWith: element)
+            return XCTWaiter.wait(for: [shown], timeout: seconds) == .completed
+        }
+        let unfinished = ["continue.company_create", "continue.checklist_open"]
+        func shownUnfinished() -> String? { unfinished.first { app.buttons["nova.home.foryou.card.\($0)"].exists } }
+
+        XCTAssertTrue(onScreen(featured("risk_wizard"), within: 20))
+        XCTAssertTrue(app.buttons["nova.home.foryou.card.critical.expired"].exists)
+        XCTAssertTrue(app.buttons["nova.home.foryou.strip.performance.analyses_30d"].exists)
+        let boxes = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "nova.home.foryou.card."))
+        XCTAssertEqual(boxes.count, 2)
+        let first = try XCTUnwrap(shownUnfinished(), "one unfinished item in its box")
+        let screen = XCTAttachment(screenshot: app.screenshot())
+        screen.name = "İSGADA-foryou-boxes-and-strip"
+        screen.lifetime = .keepAlways; add(screen)
+
+        XCTAssertTrue(onScreen(featured("followup"), within: 9), "moves on by itself")
+        // The slide animates for a moment; the first card leaves once it settles.
+        let left = expectation(for: NSPredicate(format: "isHittable == false"), evaluatedWith: featured("risk_wizard"))
+        XCTAssertEqual(XCTWaiter.wait(for: [left], timeout: 3), .completed, "the first card has moved off")
+        featured("followup").swipeLeft()
+        XCTAssertTrue(onScreen(featured("statistics"), within: 4), "moves on by swipe")
+        XCTAssertTrue(onScreen(featured("risk_wizard"), within: 9), "starts over after the last one")
+
+        app.terminate(); app.launch()
+        XCTAssertTrue(onScreen(featured("risk_wizard"), within: 20))
+        let second = try XCTUnwrap(shownUnfinished())
+        XCTAssertNotEqual(second, first, "the next visit shows the next unfinished item")
+        #else
+        throw XCTSkip("Requires private pilot build")
+        #endif
+    }
+
     func testCompanyDetailShowsCompactSectionsWithoutTrackingCard() throws {
         #if NOVA_PILOT_BUILD
         let app = XCUIApplication()

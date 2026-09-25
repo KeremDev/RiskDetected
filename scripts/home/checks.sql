@@ -490,4 +490,44 @@ DO $$ BEGIN
   ASSERT (SELECT count(*) FROM regexp_matches(pg_get_functiondef('private_isg.expert_rpc(uuid,text,jsonb)'::regprocedure),
     '''isg_home_feed_v1''|''isg_home_card_action_v1''|''isg_feature_usage_v1''', 'g')) = 3, 'allowlist extended once';
 END $$;
+-- 15. Progress is always there once there is work to show: it cannot be
+-- dismissed, an earlier dismissal no longer hides it, and a quiet month shows
+-- the whole record to contract-2 clients only.
+SET test.actor = '20000000-0000-0000-0000-000000000001';
+DO $$ DECLARE r jsonb; c jsonb; BEGIN
+  r := public.isg_home_feed_v1();
+  c := pg_temp.card(r, 'performance.analyses_7d');
+  ASSERT c IS NOT NULL AND NOT (c->>'dismissible')::boolean, coalesce(c::text, 'missing');
+  BEGIN PERFORM public.isg_home_card_action_v1('dismiss', ARRAY['performance.analyses_7d'], gen_random_uuid(), clock_timestamp()); RAISE EXCEPTION 'progress dismissed';
+  EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM <> 'VALIDATION_ERROR' THEN RAISE; END IF; END;
+  INSERT INTO private_isg.home_card_states(owner_id, scope_key, card_id, dismissed_until, decided_at, decision_event)
+  VALUES ('20000000-0000-0000-0000-000000000001', 'personal', 'performance.analyses_7d', now() + interval '6 days', now(), gen_random_uuid())
+  ON CONFLICT (owner_id, scope_key, card_id) DO UPDATE SET dismissed_until = excluded.dismissed_until;
+  ASSERT pg_temp.card(public.isg_home_feed_v1(), 'performance.analyses_7d') IS NOT NULL, 'a dismissal from before still hid progress';
+  DELETE FROM private_isg.home_card_states WHERE card_id = 'performance.analyses_7d';
+  ASSERT pg_temp.card(public.isg_home_feed_v1('[]', '{"contract": 2}'), 'performance.analyses_total') IS NULL, 'recent progress comes first';
+
+  BEGIN
+    UPDATE public.analyses SET created_at = created_at - interval '60 days' WHERE user_id = '20000000-0000-0000-0000-000000000001';
+    UPDATE private_isg.pilot_training_sessions SET held_on = held_on - 60 WHERE owner_id = '20000000-0000-0000-0000-000000000001';
+    UPDATE private_isg.nonconformities SET created_at = created_at - interval '60 days' WHERE company_id = '10000000-0000-0000-0000-000000000001';
+    r := public.isg_home_feed_v1();
+    ASSERT NOT EXISTS (SELECT 1 FROM (SELECT x FROM jsonb_array_elements(r->'cards') x UNION ALL SELECT x FROM jsonb_array_elements(r->'more') x) y
+      WHERE y.x->>'kind' = 'performance'), 'a contract-1 client gets no card it cannot word: ' || pg_temp.ids(r, 'more')::text;
+    r := public.isg_home_feed_v1('[]', '{"contract": 2}');
+    c := pg_temp.card(r, 'performance.analyses_total');
+    ASSERT c#>>'{params,count}' = (r#>>'{signals,analyses,total}') AND c#>>'{target,route}' = 'analyses'
+       AND c#>>'{target,status}' = 'completed' AND NOT c#>'{target}' ? 'from' AND NOT c#>'{target}' ? 'to'
+       AND c#>>'{target,mine}' = 'false' AND NOT (c->>'dismissible')::boolean AND NOT c ? 'since',
+       'the whole record, its list without a date range: ' || coalesce(c::text, 'missing');
+    UPDATE public.analyses SET status = 'failed' WHERE user_id = '20000000-0000-0000-0000-000000000001';
+    r := public.isg_home_feed_v1('[]', '{"contract": 2}');
+    c := pg_temp.card(r, 'performance.trainings_total');
+    ASSERT c#>>'{params,count}' = (r#>>'{signals,trainings,total}') AND c#>>'{target,route}' = 'trainings'
+       AND pg_temp.card(r, 'performance.analyses_total') IS NULL, 'trainings when there are no analyses: ' || coalesce(c::text, 'missing');
+    RAISE EXCEPTION 'UNDO_15';
+  EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM <> 'UNDO_15' THEN RAISE; END IF;
+  END;
+  ASSERT pg_temp.card(public.isg_home_feed_v1(), 'performance.analyses_7d') IS NOT NULL, 'the quiet month was undone';
+END $$;
 SELECT 'PASS home feed SQL assertions';

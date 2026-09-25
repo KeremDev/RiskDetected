@@ -68,6 +68,69 @@ data class NovaForYouCard(
 }
 
 /**
+ * Where the ranked cards go on the home page (iOS `NovaForYouLayout`). The large area rotates through the
+ * feature suggestions. Below it, two boxes: what needs attention (the most urgent, always) and one unfinished
+ * item (the visit's turn, see [NovaForYouRotation]); progress runs as a strip under them. When a box is empty,
+ * progress takes it and the strip goes; a first-step card fills a box still empty. No two places show the same
+ * kind. With no suggestion left, the first steps rotate on top.
+ */
+data class NovaForYouLayout<T>(
+    val featured: List<T> = emptyList(),
+    /** One or two boxes side by side. */
+    val boxes: List<T> = emptyList(),
+    /** Progress, when both boxes are taken. */
+    val strip: T? = null,
+) {
+    val size: Int get() = featured.size + boxes.size + (if (strip == null) 0 else 1)
+
+    companion object {
+        fun <T> of(items: List<T>, kind: (T) -> String, id: (T) -> String = { "" }, continueId: String? = null): NovaForYouLayout<T> {
+            fun all(value: String) = items.filter { kind(it) == value }
+            val discover = all("discover").take(5)
+            val starts = all("motivation")
+            val unfinished = all("continue")
+            val work = unfinished.firstOrNull { id(it) == continueId } ?: unfinished.firstOrNull()
+            val pair = listOfNotNull(all("critical").firstOrNull(), work)
+            val progress = all("performance").firstOrNull()
+            val progressBoxed = progress != null && pair.size < 2
+            val boxes = pair.toMutableList()
+            val start = starts.firstOrNull()
+            if (boxes.size + (if (progressBoxed) 1 else 0) < 2 && discover.isNotEmpty() && start != null) boxes += start
+            if (progressBoxed && progress != null) boxes += progress
+            return NovaForYouLayout(discover.ifEmpty { starts.take(5) }, boxes, if (progressBoxed) null else progress)
+        }
+    }
+}
+
+/**
+ * Which unfinished item the home page shows (iOS `NovaForYouContinueRotation`). Each visit shows the one after
+ * the item shown last, kept on this device per user and workspace; within a visit it stays, unless it goes away.
+ */
+class NovaForYouRotation(private val read: () -> String?, private val write: (String) -> Unit) {
+    var current: String? = null
+        private set
+    private var picked = false
+
+    fun newVisit() { picked = false }
+
+    /** The item for this visit among the unfinished ones, in server order. */
+    fun pick(ids: List<String>): String? {
+        current?.takeIf { picked && it in ids }?.let { return it }
+        current = next(if (picked) current else read(), ids)
+        current?.let { picked = true; write(it) }
+        return current
+    }
+
+    companion object {
+        /** The item after the one shown last; the first when that one is gone. */
+        fun next(after: String?, ids: List<String>): String? {
+            val index = after?.let(ids::indexOf) ?: -1
+            return if (index < 0) ids.firstOrNull() else ids[(index + 1) % ids.size]
+        }
+    }
+}
+
+/**
  * What a "Senin İçin" card asks the list it opens to show: exactly the records the card counted
  * (iOS `NovaListPreset`). The list shows the card's own words as a removable filter.
  */
@@ -139,8 +202,8 @@ class NovaForYouService @Inject constructor(
     private val companyCreate: NovaCompanyCreateService,
 ) {
     companion object {
-        /** The card set this build can word; a card added later never reaches it. */
-        const val CONTRACT = 1
+        /** The card set this build can word; a card added later never reaches it. 2: the progress cards for the whole record. */
+        const val CONTRACT = 2
         private var current: NovaForYouService? = null
 
         /**
@@ -153,6 +216,7 @@ class NovaForYouService @Inject constructor(
     init { current = this }
 
     private val outbox = context.getSharedPreferences("nova.foryou.outbox.v1", Context.MODE_PRIVATE)
+    private val turns = context.getSharedPreferences("nova.foryou.continue.v1", Context.MODE_PRIVATE)
     private val json = Json(novaJson) { encodeDefaults = true }
     private val lock = Mutex()
     private val flushing = mutableSetOf<String>()
@@ -165,6 +229,12 @@ class NovaForYouService @Inject constructor(
 
     /** The last answer for this user and workspace, drawn while the fresh one loads. */
     fun cached(identity: IsgWorkspaceIdentity): NovaForYouFeed? = answers[namespace(identity)]
+
+    /** The unfinished item's turn for one visit to the home page, per user and workspace. */
+    fun rotation(identity: IsgWorkspaceIdentity): NovaForYouRotation {
+        val namespace = namespace(identity)
+        return NovaForYouRotation({ turns.getString(namespace, null) }, { turns.edit().putString(namespace, it).apply() })
+    }
 
     /** Sends what is queued first, so the answer already reflects the latest decisions (iOS `NovaForYouModel.load`). */
     suspend fun load(identity: IsgWorkspaceIdentity, routes: List<String>, personal: Boolean): NovaForYouFeed {

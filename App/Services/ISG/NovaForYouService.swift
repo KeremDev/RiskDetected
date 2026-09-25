@@ -5,8 +5,9 @@ import Supabase
 /// an organization session reaches the same endpoints through isg_expert_rpc_v1.
 @MainActor struct NovaForYouService {
     /// The card set this build can word. A card added later carries a higher
-    /// "since" and the server never sends it to this build.
-    static let contract = 1
+    /// "since" and the server never sends it to this build. 2: the progress
+    /// cards for the whole record (`performance.*_total`).
+    static let contract = 2
     private let expertTicket = NovaExpertTransport.shared.capture()
     let identity: NovaSessionIdentity
 

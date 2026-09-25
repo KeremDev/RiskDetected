@@ -782,7 +782,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 6_535, "Turkish localized-unit count");
+  assert.equal(rows.length, 6_540, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
@@ -832,7 +832,11 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // localizable.nova.document.filter.all ("Tüm durumlar"). One unit changed:
     // localizable.nova.file.add.short "Dosya" -> "Dosya Ekle", the label the
     // restyled add button asks for. None removed.
-    "3fda6b01f9321764b3007eb7cd0c6139ce03d2df3ad8160919a2604c2a12f693",
+    // 2026-09-25: 5 new Localizable units for the "Senin İçin" progress card
+    // that covers the whole record: localizable.nova.foryou.performance.
+    // analyses_total.{title,detail}, trainings_total.{title,detail} and
+    // nonconformities_total.title. None removed or changed.
+    "ddf921fbf68c0bea7cbd246c5de21f9cfb58d4a900fd603d9f57fadc55dbbdf3",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

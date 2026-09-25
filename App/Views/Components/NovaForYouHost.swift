@@ -6,6 +6,10 @@ import SwiftUI
 @MainActor final class NovaForYouModel: ObservableObject {
     @Published private(set) var phase: NovaForYouSection.Phase = .loading
     @Published private(set) var feed: NovaForYouFeed?
+    /// The unfinished item this visit shows. A model lives for one visit to
+    /// the home page; returning from the background starts another.
+    @Published private(set) var continueID: String?
+    private var rotation: NovaForYouContinueRotation?
     /// The last answer per user and workspace, so returning to the home page
     /// draws at once while the fresh answer loads.
     private static var cache: [String: NovaForYouFeed] = [:]
@@ -47,7 +51,10 @@ import SwiftUI
             && !Self.reported.contains("\(service.namespace)|\(day)|\($0.id)") }
         guard !fresh.isEmpty else { return }
         fresh.forEach { Self.reported.insert("\(service.namespace)|\(day)|\($0.id)") }
-        NovaForYouOutbox.shared.add(.card("shown", Array(fresh.map(\.id).prefix(5))), namespace: service.namespace)
+        // The server takes at most five cards per event.
+        for start in stride(from: 0, to: fresh.count, by: 5) {
+            NovaForYouOutbox.shared.add(.card("shown", fresh[start..<min(start + 5, fresh.count)].map(\.id)), namespace: service.namespace)
+        }
         Task { await NovaForYouOutbox.shared.flush(service) }
     }
 
@@ -73,8 +80,21 @@ import SwiftUI
             }
         }
         let visible = value.removing(Set(hidden.filter(\.value).keys))
+        if rotation?.namespace != namespace { rotation = NovaForYouContinueRotation(namespace: namespace) }
+        continueID = rotation?.pick(Self.unfinished(visible))
         feed = visible
         phase = .ready(visible)
+    }
+
+    /// The app came back from the background: the next unfinished item takes its turn.
+    func newVisit() {
+        rotation?.newVisit()
+        if let feed { continueID = rotation?.pick(Self.unfinished(feed)) }
+    }
+
+    /// The unfinished items this build can word, in server order.
+    private static func unfinished(_ feed: NovaForYouFeed) -> [String] {
+        (feed.cards + feed.more).filter { $0.kind == "continue" && NovaForYouCopy.make($0, kindTitle: { kind in kind }) != nil }.map(\.id)
     }
 
     static func istanbulDay(_ date: Date) -> String { NovaListPreset.istanbulDay(date) }
@@ -93,6 +113,7 @@ struct NovaForYouHost: View {
     @StateObject private var model = NovaForYouModel()
     @Environment(\.scenePhase) private var scenePhase
     @State private var revision = 0
+    @State private var backgrounded = false
 
     var body: some View {
         NovaForYouSection(phase: model.phase, kindTitle: NovaFollowupPage.typeTitle(kind:),
@@ -102,13 +123,20 @@ struct NovaForYouHost: View {
             },
             onDismiss: { model.dismiss($0, identity: identity) },
             onRetry: { revision += 1 },
-            onShown: { model.shown($0, identity: identity) })
+            onShown: { model.shown($0, identity: identity) },
+            continueID: model.continueID)
         .task(id: "\(refreshKey):\(revision):\(routes.joined(separator: ","))") {
             await model.load(identity: identity, routes: routes, personal: personal)
         }
         .onChange(of: model.feed) { onFeed($0) }
         .onChange(of: scenePhase) { phase in
-            if phase == .active { revision += 1 }
+            if phase == .background { backgrounded = true }
+            guard phase == .active else { return }
+            if backgrounded {
+                backgrounded = false
+                model.newVisit()
+            }
+            revision += 1
         }
     }
 }
