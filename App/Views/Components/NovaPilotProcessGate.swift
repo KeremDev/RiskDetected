@@ -624,6 +624,11 @@ struct NovaProcessEditor: View {
             return values[key]?.text ?? ""
         },set:{values[key] = .string($0)})
     }
+    /// The same value for a chooser: empty reads as nothing chosen.
+    private func choice(_ key: String) -> Binding<String?> {
+        let value = text(key)
+        return Binding(get: { value.wrappedValue.isEmpty ? nil : value.wrappedValue }, set: { value.wrappedValue = $0 ?? "" })
+    }
     private var kindSymbol: String {
         switch kind {
         case "katip_contract": return "signature"
@@ -779,10 +784,9 @@ struct NovaProcessEditor: View {
                 }
             }
         case "choice":
-            Picker(field.title,selection:text(field.id)) {
-                Text(RDLocalization.string("localizable.nova.pilot.process.gate.secin.61f5a91b", table: .localizable, fallback: "Seçin")).tag("")
-                ForEach(field.choices.keys.sorted(),id:\.self) { Text(field.choices[$0] ?? $0).tag($0) }
-            }
+            NovaChoiceField(title: field.title, placeholder: field.title, symbol: "list.bullet",
+                options: field.choices.keys.sorted().map { NovaChoiceOption<String>(value: $0, title: field.choices[$0] ?? $0) },
+                selection: choice(field.id), identifier: "nova.process.field.\(field.id)", noneTitle: NovaChoiceText.none, boxed: true)
         case "workplaces":
             // No workplace to open a record under, or exactly one: nothing to
             // ask. A picker only appears when there is a real choice.
@@ -791,16 +795,16 @@ struct NovaProcessEditor: View {
             } else if cat.workplaces.isEmpty {
                 EmptyView()
             } else {
-                Picker(field.title,selection:text(field.id)) {
-                    Text(RDLocalization.string("localizable.nova.pilot.process.gate.secin.3fbe11b8", table: .localizable, fallback: "Seçin")).tag("")
-                    ForEach(cat.workplaces) { Text($0.name).tag($0.id.uuidString) }
-                }
+                NovaChoiceField(title: field.title, placeholder: field.title, symbol: "building.2",
+                    options: cat.workplaces.map { NovaChoiceOption<String>(value: $0.id.uuidString, title: $0.name) },
+                    selection: choice(field.id), identifier: "nova.process.field.\(field.id)", noneTitle: NovaChoiceText.none,
+                    searchable: true, boxed: true)
             }
         case "organizations":
-            Picker(field.title,selection:text(field.id)) {
-                Text(RDLocalization.string("localizable.nova.pilot.process.gate.secin.d7ebe960", table: .localizable, fallback: "Seçin")).tag("")
-                ForEach(cat.organizations) { Text($0.name).tag($0.id.uuidString) }
-            }
+            NovaChoiceField(title: field.title, placeholder: field.title, symbol: "building.2.crop.circle",
+                options: cat.organizations.map { NovaChoiceOption<String>(value: $0.id.uuidString, title: $0.name) },
+                selection: choice(field.id), identifier: "nova.process.field.\(field.id)", noneTitle: NovaChoiceText.none,
+                searchable: true, boxed: true)
         case "employees":
             ForEach(cat.employees) { person in
                 Toggle(person.name,isOn:Binding(get:{selectedPeople.contains(person.id.uuidString.lowercased())},set:{ checked in
@@ -955,9 +959,11 @@ private struct NovaProcessLinkPicker: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     NovaText(text: RDLocalization.string("localizable.nova.pilot.process.gate.ilgili.kaydi.sec.f489b9ca", table: .localizable, fallback: "İlgili kaydı seç"), style: .cardTitle)
-                    Picker(RDLocalization.string("localizable.nova.pilot.process.gate.kayit.turu.736f14d4", table: .localizable, fallback: "Kayıt türü"), selection: $kind) {
-                        ForEach(kinds, id: \.self) { Text(NovaProcessService.referenceTitle($0)).tag($0) }
-                    }
+                    let kindTitle = RDLocalization.string("localizable.nova.pilot.process.gate.kayit.turu.736f14d4", table: .localizable, fallback: "Kayıt türü")
+                    NovaChoiceField(title: kindTitle, placeholder: kindTitle, symbol: "link",
+                        options: kinds.map { NovaChoiceOption<String>(value: $0, title: NovaProcessService.referenceTitle($0)) },
+                        selection: Binding<String?>(get: { kind }, set: { if let value = $0 { kind = value } }),
+                        identifier: "nova.process.link.kind", boxed: true)
                     HStack {
                         TextField(RDLocalization.string("localizable.nova.pilot.process.gate.kayit.ara.aeb263ea", table: .localizable, fallback: "Kayıt ara"), text: $query).onSubmit { Task { await load() } }
                         Button("Ara") { Task { await load() } }.disabled(loading)

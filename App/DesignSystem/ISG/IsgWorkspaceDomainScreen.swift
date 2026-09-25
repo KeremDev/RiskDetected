@@ -1133,9 +1133,11 @@ private struct IsgWorkspaceDomainActionEditor: View {
                 .padding(12).novaControlBackground(cornerRadius: 14)
             textField("Doğrulama notu", text: $note)
         case .checklistAnswer:
-            Picker(RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.maddesi.9362b2f1", table: .localizable, fallback: "Kontrol maddesi"), selection: $checklistItemCode) {
-                ForEach(row.checklistItems) { item in Text(item.prompt).tag(item.code) }
-            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+            let itemTitle = RDLocalization.string("localizable.isg.workspace.domain.screen.kontrol.maddesi.9362b2f1", table: .localizable, fallback: "Kontrol maddesi")
+            NovaChoiceField(title: itemTitle, placeholder: itemTitle, symbol: "checklist",
+                options: row.checklistItems.map { NovaChoiceOption<String>(value: $0.code, title: $0.prompt) },
+                selection: Binding<String?>(get: { checklistItemCode.isEmpty ? nil : checklistItemCode }, set: { if let code = $0 { checklistItemCode = code } }),
+                identifier: "workspace.domain.action.checklist.item", boxed: true)
                 .onChange(of: checklistItemCode) { code in
                     let item = row.checklistItems.first { $0.code == code }
                     let current = item?.result ?? "conform"
@@ -1152,12 +1154,11 @@ private struct IsgWorkspaceDomainActionEditor: View {
                         .padding(12).novaControlBackground(cornerRadius: 14)
                 }
                 if createChecklistNonconformity && selectedChecklistItem?.nonconformityID == nil {
-                    Picker(RDLocalization.string("localizable.isg.workspace.domain.screen.onem.9e19318d", table: .localizable, fallback: "Önem"), selection: $checklistSeverity) {
-                        ForEach(["low", "medium", "high", "critical"], id: \.self) { value in
-                            Text(IsgWorkspaceDisplayText.value(value)).tag(value)
-                        }
-                    }
-                    .pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+                    let severityTitle = RDLocalization.string("localizable.isg.workspace.domain.screen.onem.9e19318d", table: .localizable, fallback: "Önem")
+                    NovaChoiceField(title: severityTitle, placeholder: severityTitle, symbol: "exclamationmark.triangle",
+                        options: ["low", "medium", "high", "critical"].map { NovaChoiceOption<String>(value: $0, title: IsgWorkspaceDisplayText.value($0)) },
+                        selection: Binding<String?>(get: { checklistSeverity }, set: { if let value = $0 { checklistSeverity = value } }),
+                        identifier: "workspace.domain.action.checklist.severity", boxed: true)
                     DatePicker("Düzeltme termini", selection: $secondDate,
                                in: checklistMinimumDate..., displayedComponents: .date)
                         .padding(12).novaControlBackground(cornerRadius: 14)
@@ -1187,12 +1188,14 @@ private struct IsgWorkspaceDomainActionEditor: View {
             picker("Durum", values: ["reusable", "worn", "damaged", "lost"])
             textField("Not", text: $note)
         case .equipmentEdit:
-            if !workplaces.isEmpty { Picker(RDLocalization.string("localizable.isg.workspace.domain.screen.isyeri.54980c69", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
-                Text(RDLocalization.string("localizable.isg.workspace.domain.screen.isyeri.secin.506239f3", table: .localizable, fallback: "İşyeri seçin")).tag(Optional<UUID>.none)
-                ForEach(workplaces.keys.sorted { (workplaces[$0] ?? "") < (workplaces[$1] ?? "") }, id: \.self) { id in
-                    Text(workplaces[id] ?? id.uuidString).tag(Optional(id))
-                }
-            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14) }
+            if !workplaces.isEmpty {
+                NovaChoiceField(title: RDLocalization.string("localizable.isg.workspace.domain.screen.isyeri.54980c69", table: .localizable, fallback: "İşyeri"),
+                    placeholder: RDLocalization.string("localizable.isg.workspace.domain.screen.isyeri.secin.506239f3", table: .localizable, fallback: "İşyeri seçin"),
+                    symbol: "building.2",
+                    options: workplaces.keys.sorted { (workplaces[$0] ?? "") < (workplaces[$1] ?? "") }
+                        .map { NovaChoiceOption<UUID>(value: $0, title: workplaces[$0] ?? $0.uuidString) },
+                    selection: $workplaceID, identifier: "workspace.domain.action.equipment.workplace", boxed: true)
+            }
             textField("Seri / kod", text: $serialTag)
             textField("Konum (isteğe bağlı)", text: $locationNote)
             compactDate("Edinme tarihi", selection: $date, limitToToday: true)
@@ -1202,11 +1205,13 @@ private struct IsgWorkspaceDomainActionEditor: View {
             }
             Stepper("Kontrol süresi: \(number) ay", value: $number, in: 1...240)
                 .padding(12).novaControlBackground(cornerRadius: 14)
-            Picker(RDLocalization.string("localizable.isg.workspace.domain.screen.sure.kaynagi.d2eecb73", table: .localizable, fallback: "Süre kaynağı"), selection: $option) {
-                Text(RDLocalization.string("localizable.isg.workspace.domain.screen.uretici.kilavuzu.204d1af5", table: .localizable, fallback: "Üretici kılavuzu")).tag("manufacturer")
-                Text(RDLocalization.string("localizable.isg.workspace.domain.screen.yayimlanmis.kural.standart.c722e72f", table: .localizable, fallback: "Yayımlanmış kural / standart")).tag("rule_version")
-                Text("Uzman tarafından belirlenen").tag("unapproved_fixture")
-            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+            let sourceTitle = RDLocalization.string("localizable.isg.workspace.domain.screen.sure.kaynagi.d2eecb73", table: .localizable, fallback: "Süre kaynağı")
+            NovaChoiceField(title: sourceTitle, placeholder: sourceTitle, symbol: "clock",
+                options: [NovaChoiceOption<String>(value: "manufacturer", title: RDLocalization.string("localizable.isg.workspace.domain.screen.uretici.kilavuzu.204d1af5", table: .localizable, fallback: "Üretici kılavuzu")),
+                          NovaChoiceOption<String>(value: "rule_version", title: RDLocalization.string("localizable.isg.workspace.domain.screen.yayimlanmis.kural.standart.c722e72f", table: .localizable, fallback: "Yayımlanmış kural / standart")),
+                          NovaChoiceOption<String>(value: "unapproved_fixture", title: "Uzman tarafından belirlenen")],
+                selection: Binding<String?>(get: { option }, set: { if let value = $0 { option = value } }),
+                identifier: "workspace.domain.action.equipment.source", boxed: true)
             if option == "unapproved_fixture" {
                 textField("İstisna ve dayanak notu · en az 10 karakter", text: $note)
             }
@@ -1333,11 +1338,10 @@ private struct IsgWorkspaceDomainActionEditor: View {
             .font(NovaFont.font(.body)).padding(14).novaControlBackground(cornerRadius: 14)
     }
     private func picker(_ title: String, values: [String]) -> some View {
-        Picker(title, selection: $option) {
-            ForEach(values, id: \.self) { value in
-                Text(IsgWorkspaceDisplayText.value(value)).tag(value)
-            }
-        }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+        NovaChoiceField(title: title, placeholder: title, symbol: "checkmark.seal",
+            options: values.map { NovaChoiceOption<String>(value: $0, title: IsgWorkspaceDisplayText.value($0)) },
+            selection: Binding<String?>(get: { values.contains(option) ? option : nil }, set: { if let value = $0 { option = value } }),
+            identifier: "workspace.domain.action.option", boxed: true)
     }
 
     private var canSubmit: Bool {

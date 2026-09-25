@@ -1,7 +1,7 @@
 # İSGADA — Seçim alanı standardı
 
 Güncelleme: **25.09.2026**
-Durum: Uygulandı (iOS ve Android). Liste filtreleri ve diğer oturumun o gün düzenlediği dört iOS dosyası sonraki adımda dönüştürülecek (4. bölüm).
+Durum: Uygulandı (iOS ve Android). Liste filtreleri bilerek dışarıda bırakıldı (3. bölüm).
 
 Bir kayıt ya da form alanı için tek bir değer seçtiren her yer aynı bileşeni kullanır: `NovaChoiceField`.
 - iOS: `App/DesignSystem/ISG/NovaChoiceField.swift`
@@ -45,15 +45,15 @@ Menü tarzı `Picker`, açılır panel (`NovaChooserButton` + `NovaChooserPanel`
   - Dizin ilişki alanlarının sayfalanan listesi ("Diğer kayıtlar").
   - Departman yazarak arama.
 
-## 4. Sonraki adım
+## 4. Sonradan dönüştürülen dosyalar
 
-25.09.2026'da başka bir oturum şu iOS dosyalarını düzenlediği için bu dosyalardaki seçimler dönüştürülmedi:
+25.09.2026'da başka bir oturum bu dört iOS dosyasını düzenlediği için ilk turda atlanmıştı; aynı gün, o oturumun değişikliklerine dokunmadan dönüştürüldü:
 
 | Dosya | Alanlar |
 |---|---|
 | `IsgWorkspaceDomainScreen.swift` | Kontrol maddesi, Önem, İşyeri, Süre kaynağı, Sonuç/Durum (`picker()` yardımcısı) |
-| `IsgWorkspacePersonnelScreen.swift` | İşyeri, Departman, İlişki, Dış firma / İşyeri / Personel, Departman / Görev / Dış firma sözleşmesi |
-| `NovaPilotProcessGate.swift` | Süreç alanlarının seçenekli alanları, işyeri / dış firma |
+| `IsgWorkspacePersonnelScreen.swift` | İşyeri, Departman ("Departman yok"), İlişki, Dış firma / İşyeri / Personel, Departman / Görev / Dış firma sözleşmesi ("Seçilmedi") |
+| `NovaPilotProcessGate.swift` | Süreç alanlarının seçenekli alanları, işyeri / dış firma ("Seçilmedi"), ilgili kayıt penceresindeki kayıt türü |
 | `NotebookDestination.swift` | Hatırlatma tekrarı |
 
-Android karşılıkları dönüştürüldü (`NovaOsgbPersonnelScreen`, `NovaOsgbActions`, `NovaProcessScreens`). O dosyalar serbest kalınca iOS'ta da aynı kurallarla dönüştürülecek.
+İlişki türü önceden ham kodlarla ("subcontractor") görünüyordu; artık dizindeki adlarla ("Alt işveren", "Yüklenici", "Tedarikçi", "Diğer") görünür.

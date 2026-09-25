@@ -489,13 +489,11 @@ private struct NotebookContent: View {
                             .font(.system(size: 18, weight: .semibold)).accessibilityIdentifier("notebook.reminder.title")
                     }.padding(16)
                     Divider().padding(.leading, 74)
-                    HStack {
-                        Label("Tekrar", systemImage: "repeat")
-                        Spacer()
-                        Picker("Tekrar", selection: Binding(get: { reminderEditor?.recurrence ?? .once }, set: { reminderEditor?.recurrence = $0 })) {
-                            ForEach(NotebookReminderRecurrence.allCases) { recurrence in Text(notebookRecurrenceLabel(recurrence)).tag(recurrence) }
-                        }.pickerStyle(.menu).labelsHidden()
-                    }.padding(16)
+                    NovaChoiceField(title: "Tekrar", placeholder: "Tekrar", symbol: "repeat",
+                        options: NotebookReminderRecurrence.allCases.map { NovaChoiceOption<NotebookReminderRecurrence>(value: $0, title: notebookRecurrenceLabel($0)) },
+                        selection: Binding<NotebookReminderRecurrence?>(get: { reminderEditor?.recurrence ?? .once }, set: { if let value = $0 { reminderEditor?.recurrence = value } }),
+                        identifier: "notebook.reminder.recurrence")
+                        .padding(.horizontal, 16).padding(.vertical, 8)
                     Divider().padding(.leading, 16)
                     DatePicker(RDLocalization.string("localizable.notebook.destination.tarih.ve.saat.336c28ac", table: .localizable, fallback: "Tarih ve saat"), selection: Binding(get: { reminderEditor?.dueAt ?? Date() }, set: { reminderEditor?.dueAt = $0 }),
                                in: Date()..., displayedComponents: [.date, .hourAndMinute]).padding(16)

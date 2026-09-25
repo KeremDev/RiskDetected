@@ -296,9 +296,9 @@ private struct IsgWorkspaceDirectoryEditor: View {
                 field(label: RDLocalization.string("localizable.nova.workspace.personnel.code", table: .localizable, fallback: "Kod"), text: $code)
                 field(label: RDLocalization.string("localizable.nova.workspace.personnel.name", table: .localizable, fallback: "Ad"), text: $name)
                 if route.kind == .department && !workplaces.isEmpty {
-                    Picker(IsgPersonnelSection.workplace.title, selection: $workplaceID) {
-                        ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-                    }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+                    NovaChoiceField(title: IsgPersonnelSection.workplace.title, placeholder: IsgPersonnelSection.workplace.title, symbol: "building.2",
+                        options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                        selection: $workplaceID, identifier: "workspace.personnel.department.workplace", boxed: true)
                 }
                 if let error { NovaHelpHint(text: error) }
                 NovaCompactActionButton(title: saveTitle, symbol: "checkmark", prominent: true,
@@ -372,10 +372,11 @@ private struct IsgWorkspaceEmployeeEditor: View {
                 TextField(RDLocalization.string("localizable.nova.workspace.personnel.code", table: .localizable, fallback: "Kod"), text: $code).padding(14).novaControlBackground(cornerRadius: 14)
                 TextField(RDLocalization.string("localizable.nova.workspace.personnel.fullname", table: .localizable, fallback: "Ad soyad"), text: $name).padding(14).novaControlBackground(cornerRadius: 14)
                 if !departments.isEmpty {
-                    Picker(IsgPersonnelSection.department.title, selection: $departmentID) {
-                        Text(RDLocalization.string("localizable.nova.workspace.personnel.department.none", table: .localizable, fallback: "Departman yok")).tag(UUID?.none)
-                        ForEach(departments) { Text($0.name).tag(Optional($0.id)) }
-                    }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+                    NovaChoiceField(title: IsgPersonnelSection.department.title, placeholder: IsgPersonnelSection.department.title, symbol: "square.grid.2x2",
+                        options: departments.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                        selection: $departmentID, identifier: "workspace.personnel.employee.department",
+                        noneTitle: RDLocalization.string("localizable.nova.workspace.personnel.department.none", table: .localizable, fallback: "Departman yok"),
+                        boxed: true)
                 }
                 DatePicker(RDLocalization.string("localizable.nova.workspace.personnel.hired", table: .localizable, fallback: "İşe giriş tarihi"), selection: $hiredOn, displayedComponents: .date).padding(12).novaControlBackground(cornerRadius: 14)
                 Toggle(RDLocalization.string("localizable.nova.workspace.personnel.has.end", table: .localizable, fallback: "Bitiş tarihi var"), isOn: $hasEnd).padding(12).novaControlBackground(cornerRadius: 14)
@@ -532,16 +533,17 @@ private struct IsgWorkspacePersonnelAdvancedEditor: View {
             field(RDLocalization.string("localizable.isg.workspace.personnel.screen.vergi.kayit.no.be6090f5", table: .localizable, fallback: "Vergi / kayıt no"), text: $taxIdentifier); field(RDLocalization.string("localizable.isg.workspace.personnel.screen.iletisim.kisisi.174025ee", table: .localizable, fallback: "İletişim kişisi"), text: $contactName)
             field(RDLocalization.string("localizable.isg.workspace.personnel.screen.telefon.veya.e.posta.80c4de49", table: .localizable, fallback: "Telefon veya e-posta"), text: $contactValue)
         case .engagement where route.entry == nil:
-            picker("Dış firma", selection: $contractorID, values: contractors)
-            if !workplaces.isEmpty { picker("İşyeri", selection: $workplaceID, values: workplaces) }
+            picker("Dış firma", selection: $contractorID, values: contractors, symbol: "building.2.crop.circle", id: "contractor")
+            if !workplaces.isEmpty { picker("İşyeri", selection: $workplaceID, values: workplaces, symbol: "building.2", id: "workplace") }
             field(RDLocalization.string("localizable.isg.workspace.personnel.screen.isin.kapsami.da152f1f", table: .localizable, fallback: "İşin kapsamı"), text: $details)
             DatePicker("Başlangıç", selection: $startsOn, displayedComponents: .date)
                 .padding(12).novaControlBackground(cornerRadius: 14)
         case .assignment where route.entry == nil:
-            picker("Personel", selection: $employeeID, values: employees)
-            picker("Departman", selection: $departmentID, values: departments, optional: true)
-            picker("Görev", selection: $jobRoleID, values: jobRoles, optional: true)
-            picker("Dış firma sözleşmesi", selection: $engagementID, values: engagements.filter { $0.status == "active" }, optional: true)
+            picker("Personel", selection: $employeeID, values: employees, symbol: "person", id: "employee")
+            picker("Departman", selection: $departmentID, values: departments, optional: true, symbol: "square.grid.2x2", id: "department")
+            picker("Görev", selection: $jobRoleID, values: jobRoles, optional: true, symbol: "briefcase", id: "jobrole")
+            picker("Dış firma sözleşmesi", selection: $engagementID, values: engagements.filter { $0.status == "active" }, optional: true,
+                   symbol: "doc.text", id: "engagement")
             DatePicker("Başlangıç", selection: $startsOn, displayedComponents: .date)
                 .padding(12).novaControlBackground(cornerRadius: 14)
         default:
@@ -565,16 +567,29 @@ private struct IsgWorkspacePersonnelAdvancedEditor: View {
     private func field(_ title: String, text: Binding<String>) -> some View {
         TextField(title, text: text, axis: .vertical).padding(14).novaControlBackground(cornerRadius: 14)
     }
+    /// The relation codes, in the words the directory uses (the raw codes used to show).
     private func picker(_ title: String, selection: Binding<String>, values: [String]) -> some View {
-        Picker(title, selection: selection) { ForEach(values, id: \.self) { Text($0).tag($0) } }
-            .pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+        NovaChoiceField(title: title, placeholder: title, symbol: "link",
+            options: values.map { NovaChoiceOption<String>(value: $0, title: relationTitle($0)) },
+            selection: Binding<String?>(get: { selection.wrappedValue }, set: { if let value = $0 { selection.wrappedValue = value } }),
+            identifier: "workspace.personnel.relation", boxed: true)
     }
-    private func picker<T: Identifiable>(_ title: String, selection: Binding<UUID?>, values: [T],
-                                         optional: Bool = false) -> some View where T.ID == UUID {
-        Picker(title, selection: selection) {
-            if optional { Text(RDLocalization.string("localizable.isg.workspace.personnel.screen.secilmedi.57149c4c", table: .localizable, fallback: "Seçilmedi")).tag(UUID?.none) }
-            ForEach(values) { value in Text(displayName(value)).tag(Optional(value.id)) }
-        }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+    private func relationTitle(_ code: String) -> String {
+        switch code {
+        case "subcontractor": return RDLocalization.string("localizable.nova.directory.screens.alt.isveren.963bc955", table: .localizable, fallback: "Alt işveren")
+        case "contractor": return RDLocalization.string("localizable.nova.directory.screens.yuklenici.3d11aad1", table: .localizable, fallback: "Yüklenici")
+        case "supplier": return RDLocalization.string("localizable.nova.directory.screens.tedarikci.dfce7f7e", table: .localizable, fallback: "Tedarikçi")
+        case "other": return RDLocalization.string("localizable.nova.directory.screens.diger.fbcfe757", table: .localizable, fallback: "Diğer")
+        default: return IsgWorkspaceDisplayText.value(code)
+        }
+    }
+    private func picker<T: Identifiable>(_ title: String, selection: Binding<UUID?>, values: [T], optional: Bool = false,
+                                         symbol: String, id: String) -> some View where T.ID == UUID {
+        NovaChoiceField(title: title, placeholder: title, symbol: symbol,
+            options: values.map { NovaChoiceOption<UUID>(value: $0.id, title: displayName($0)) },
+            selection: selection, identifier: "workspace.personnel.\(id)",
+            noneTitle: optional ? RDLocalization.string("localizable.isg.workspace.personnel.screen.secilmedi.57149c4c", table: .localizable, fallback: "Seçilmedi") : nil,
+            searchable: true, boxed: true)
     }
     private func displayName<T>(_ value: T) -> String {
         if let value = value as? IsgWorkspaceDirectoryEntry { return value.name }
