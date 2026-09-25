@@ -110,16 +110,22 @@ struct NovaDocumentWizardScreen: View {
 
     @ViewBuilder private func question(_ q: NovaWizardQuestion, runtime: NovaDocumentWizardRuntime) -> some View {
         if q.field == "scope" {
-            Picker("Firma", selection: $company) {
-                Text(RDLocalization.string("localizable.nova.document.wizard.screen.firma.secmeden.devam.et.36ce6fb4", table: .localizable, fallback: "Firma seçmeden devam et")).tag(nil as UUID?)
-                ForEach(companies) { Text($0.name).tag(Optional($0.id)) }
-            }.pickerStyle(.menu).accessibilityIdentifier("wizard.company")
+            NovaChoiceField(title: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
+                placeholder: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
+                symbol: "building.2",
+                options: companies.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                selection: $company, identifier: "wizard.company",
+                noneTitle: RDLocalization.string("localizable.nova.document.wizard.screen.firma.secmeden.devam.et.36ce6fb4", table: .localizable, fallback: "Firma seçmeden devam et"),
+                searchable: true)
                 .onChange(of: company) { _ in workplace = nil; workplaces = []; changed() }
             if !workplaces.isEmpty {
-                Picker(RDLocalization.string("localizable.nova.document.wizard.screen.isyeri.198609fd", table: .localizable, fallback: "İşyeri"), selection: $workplace) {
-                    Text(RDLocalization.string("localizable.nova.document.wizard.screen.isyeri.secmeden.devam.et.7f870416", table: .localizable, fallback: "İşyeri seçmeden devam et")).tag(nil as UUID?)
-                    ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-                }.pickerStyle(.menu).accessibilityIdentifier("wizard.workplace")
+                NovaChoiceField(title: RDLocalization.string("localizable.nova.document.wizard.screen.isyeri.198609fd", table: .localizable, fallback: "İşyeri"),
+                    placeholder: RDLocalization.string("localizable.nova.document.wizard.screen.isyeri.198609fd", table: .localizable, fallback: "İşyeri"),
+                    symbol: "building.2",
+                    options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                    selection: $workplace, identifier: "wizard.workplace",
+                    noneTitle: RDLocalization.string("localizable.nova.document.wizard.screen.isyeri.secmeden.devam.et.7f870416", table: .localizable, fallback: "İşyeri seçmeden devam et"),
+                    searchable: true)
                     .onChange(of: workplace) { _ in changed() }
             }
             if let scopeMessage { NovaText(text: scopeMessage, style: .metaQuiet) }

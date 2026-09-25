@@ -1870,7 +1870,8 @@ private struct IsgWorkspaceCompanyEditor: View {
         self.company = company; self.store = store; self.onClose = onClose
         self.onSave = onSave; self.onArchive = onArchive
         _name = State(initialValue: company?.name ?? "")
-        _hazard = State(initialValue: company?.hazardClass ?? "medium")
+        // A new company starts with no class chosen; an edited one keeps its own.
+        _hazard = State(initialValue: company?.hazardClass ?? "")
         _sector = State(initialValue: company?.sector ?? "")
         _email = State(initialValue: company?.email ?? "")
         _employeeCount = State(initialValue: company?.declaredEmployeeCount.map(String.init) ?? "")
@@ -2004,7 +2005,7 @@ private struct IsgWorkspaceCompanyEditor: View {
                 VStack(alignment: .leading, spacing: 7) {
                     NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.firma.ozeti.ea85367e", table: .localizable, fallback: "Firma özeti"), style: .bodyStrong)
                     NovaText(text: name, style: .cardTitle)
-                    NovaText(text: "\(hazardTitle) · \(sector)", style: .metaQuiet)
+                    NovaText(text: [hazard.isEmpty ? nil : hazardTitle, sector].compactMap { $0 }.joined(separator: " · "), style: .metaQuiet)
                     if !address.isEmpty { NovaText(text: address, style: .metaQuiet) }
                     if company == nil { NovaText(text: RDLocalization.format("localizable.nova.pilot.main.gate.1.uzman.secildi.3e5e5c4a", table: .localizable, fallback: "%1$@ uzman seçildi", arguments: [String(describing: selectedExpertIDs.count)]), style: .metaQuiet) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
@@ -2026,15 +2027,15 @@ private struct IsgWorkspaceCompanyEditor: View {
     private func goBack() { error = nil; if step > 0 { step -= 1 } else { onClose() } }
     private func advance() {
         error = nil
-        if step == 0 && (name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || sector.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
-            error = RDLocalization.string("localizable.nova.pilot.main.gate.firma.adi.ve.sektor.zorunludur.def00a19", table: .localizable, fallback: "Firma adı ve sektör zorunludur."); return
+        if step == 0 && (name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hazard.isEmpty || sector.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+            error = RDLocalization.string("localizable.nova.pilot.main.gate.firma.adi.tehlike.sinifi.ve.sektor.zorunludur", table: .localizable, fallback: "Firma adı, tehlike sınıfı ve sektör zorunludur."); return
         }
         if step == 1 && !canSave { error = RDLocalization.string("localizable.nova.pilot.main.gate.calisan.sayisi.ve.sorumlu.personel.bilgilerini.k.43a3c753", table: .localizable, fallback: "Çalışan sayısı ve sorumlu personel bilgilerini kontrol edin."); return }
         if step < totalSteps - 1 { step += 1 } else { save() }
     }
 
     private var canSave: Bool {
-        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !hazard.isEmpty,
               !sector.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               employeeCount.isEmpty || Int(employeeCount) != nil else { return false }
         return !addResponsible || [responsibleName, responsiblePhone, responsibleEmail]
@@ -2053,23 +2054,13 @@ private struct IsgWorkspaceCompanyEditor: View {
     }
 
     private var hazardMenu: some View {
-        Menu {
-            Button(RDLocalization.string("localizable.nova.pilot.main.gate.az.tehlikeli.45c980ac", table: .localizable, fallback: "Az Tehlikeli")) { hazard = "low" }
-            Button("Tehlikeli") { hazard = "medium" }
-            Button(RDLocalization.string("localizable.nova.pilot.main.gate.cok.tehlikeli.02387e1f", table: .localizable, fallback: "Çok Tehlikeli")) { hazard = "high" }
-        } label: {
-            HStack(spacing: 8) {
-                NovaIcon(symbol: "exclamationmark.triangle", size: 16)
-                VStack(alignment: .leading, spacing: 2) {
-                    NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.tehlike.sinifi.7e862337", table: .localizable, fallback: "Tehlike sınıfı"), style: .metaQuiet)
-                    NovaText(text: hazardTitle, style: .body)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .semibold))
-            }.padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-                .novaControlBackground(cornerRadius: 14)
-        }.buttonStyle(NovaRowPressStyle()).frame(maxWidth: .infinity)
-            .accessibilityLabel(RDLocalization.format("localizable.nova.pilot.main.gate.tehlike.sinifi.1.3dca03c6", table: .localizable, fallback: "Tehlike sınıfı, %1$@", arguments: [String(describing: hazardTitle)]))
+        NovaChoiceField(title: RDLocalization.string("localizable.nova.pilot.main.gate.tehlike.sinifi.7e862337", table: .localizable, fallback: "Tehlike sınıfı"),
+            placeholder: NovaHazardChoice.placeholder, symbol: "exclamationmark.triangle", message: NovaHazardChoice.message,
+            options: NovaHazardChoice.options.map {
+                NovaChoiceOption<String>(value: $0.value.rawValue, title: $0.title, detail: $0.detail, tone: $0.tone, level: $0.level)
+            },
+            selection: Binding(get: { hazard.isEmpty ? nil : hazard }, set: { if let new = $0 { hazard = new; error = nil } }),
+            identifier: "nova.workspace.company.editor.hazard")
     }
 
     private var hazardTitle: String {

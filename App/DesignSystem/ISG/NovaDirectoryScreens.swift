@@ -184,7 +184,10 @@ private struct NovaDirectoryEditor: View {
                 ForEach(definition.filter { $0.id != "workplace_id" || !(options["workplace_id"]?.isEmpty ?? false) }) { field in
                     NovaCard(padding: 16) {
                         VStack(alignment: .leading, spacing: 10) {
-                            HStack { NovaIcon(symbol: field.choices?.symbol ?? "pencil", size: 20); NovaText(text: field.label, style: .cardTitle) }
+                            // A fixed choice names itself in its chooser row.
+                            if !["relationship", "hazard_class"].contains(field.id) {
+                                HStack { NovaIcon(symbol: field.choices?.symbol ?? "pencil", size: 20); NovaText(text: field.label, style: .cardTitle) }
+                            }
                             if field.choices != nil || field.id == "previous_id" {
                                 Button { expanded = expanded == field.id ? nil : field.id } label: {
                                     HStack { NovaText(text: options[field.id]?.first(where: { $0.id.uuidString.lowercased() == fields[field.id] })?.title ?? (fields[field.id, default: ""].isEmpty ? "Seçilmedi" : "Seçildi")); Spacer(); NovaIcon(symbol: "chevron.down", size: 16) }
@@ -200,9 +203,18 @@ private struct NovaDirectoryEditor: View {
                                     if optionCursor[field.id] != nil { Button(RDLocalization.string("localizable.nova.directory.screens.diger.kayitlar.65cf0945", table: .localizable, fallback: "Diğer kayıtlar")) { loadingMore = field.id }.disabled(loadingMore != nil || optionsLoading) }
                                 }
                             } else if field.id == "relationship" {
-                                Picker(field.label, selection: binding(field.id)) { Text(RDLocalization.string("localizable.nova.directory.screens.alt.isveren.963bc955", table: .localizable, fallback: "Alt işveren")).tag("subcontractor"); Text(RDLocalization.string("localizable.nova.directory.screens.yuklenici.3d11aad1", table: .localizable, fallback: "Yüklenici")).tag("contractor"); Text(RDLocalization.string("localizable.nova.directory.screens.tedarikci.dfce7f7e", table: .localizable, fallback: "Tedarikçi")).tag("supplier"); Text(RDLocalization.string("localizable.nova.directory.screens.diger.fbcfe757", table: .localizable, fallback: "Diğer")).tag("other") }.pickerStyle(.segmented)
+                                NovaChoiceField(title: field.label, placeholder: field.label, symbol: "link",
+                                    options: [NovaChoiceOption(value: "subcontractor", title: RDLocalization.string("localizable.nova.directory.screens.alt.isveren.963bc955", table: .localizable, fallback: "Alt işveren")),
+                                              NovaChoiceOption(value: "contractor", title: RDLocalization.string("localizable.nova.directory.screens.yuklenici.3d11aad1", table: .localizable, fallback: "Yüklenici")),
+                                              NovaChoiceOption(value: "supplier", title: RDLocalization.string("localizable.nova.directory.screens.tedarikci.dfce7f7e", table: .localizable, fallback: "Tedarikçi")),
+                                              NovaChoiceOption(value: "other", title: RDLocalization.string("localizable.nova.directory.screens.diger.fbcfe757", table: .localizable, fallback: "Diğer"))],
+                                    selection: optionalBinding(field.id), identifier: "directory.field.\(field.id)")
                             } else if field.id == "hazard_class" {
-                                Picker(field.label, selection: binding(field.id)) { Text(RDLocalization.string("localizable.nova.directory.screens.secin.5519ecdd", table: .localizable, fallback: "Seçin")).tag(""); Text("Az").tag("low"); Text("Tehlikeli").tag("medium"); Text(RDLocalization.string("localizable.nova.directory.screens.cok.5c09224d", table: .localizable, fallback: "Çok")).tag("high") }.pickerStyle(.segmented)
+                                // The class may be left open, as the old "Seçin" segment allowed.
+                                NovaChoiceField(title: field.label, placeholder: NovaHazardChoice.placeholder, symbol: "exclamationmark.triangle",
+                                    message: NovaHazardChoice.message,
+                                    options: NovaHazardChoice.options.map { NovaChoiceOption(value: $0.value.rawValue, title: $0.title, detail: $0.detail, tone: $0.tone, level: $0.level) },
+                                    selection: optionalBinding(field.id), identifier: "directory.field.\(field.id)", noneTitle: NovaChoiceText.none)
                             } else { TextField(field.label, text: binding(field.id)).font(NovaFont.font(.body)).textInputAutocapitalization(["starts_on", "ends_before", "timezone", "code"].contains(field.id) ? .never : .sentences).autocorrectionDisabled().focused($focusedField, equals: field.id).submitLabel(.done).onSubmit { focusedField = nil }.accessibilityIdentifier("directory.field.\(field.id)") }
                         }.disabled(pending != nil || (kind == .engagements && original != nil && ["organization_id", "workplace_id", "starts_on"].contains(field.id)))
                     }
@@ -253,6 +265,10 @@ private struct NovaDirectoryEditor: View {
         }
     }
     private func binding(_ key: String) -> Binding<String> { .init(get: { fields[key, default: ""] }, set: { fields[key] = $0 }) }
+    /// The same field for a chooser: empty reads as nothing chosen.
+    private func optionalBinding(_ key: String) -> Binding<String?> {
+        .init(get: { fields[key, default: ""].isEmpty ? nil : fields[key] }, set: { fields[key] = $0 ?? "" })
+    }
     private func visibleOptions(_ field: DirectoryField) -> [NovaDirectoryRow] {
         NovaDirectoryFormRules.allowedOptions(options[field.id, default: []], field: field.id, workplace: fields["workplace_id"], originalID: original?.id)
     }

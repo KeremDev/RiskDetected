@@ -16,7 +16,8 @@ struct NovaPilotCompanyCreateView: View {
     @State private var address = ""
     @State private var city = ""
     @State private var phone = ""
-    @State private var hazard: CompanyHazardClass = .medium
+    /// Nothing is chosen until the user picks a class.
+    @State private var hazard: CompanyHazardClass?
     @State private var sector = ""
     @State private var employeeCount = ""
     @State private var naceCode = ""
@@ -44,7 +45,7 @@ struct NovaPilotCompanyCreateView: View {
             get: { !workplaces.isEmpty },
             set: { enabled in
                 if enabled {
-                    if workplaces.isEmpty { workplaces = [.init()] }
+                    if workplaces.isEmpty { workplaces = [.init(hazardClass: hazard ?? .medium)] }
                 } else {
                     workplaces.removeAll()
                 }
@@ -68,7 +69,7 @@ struct NovaPilotCompanyCreateView: View {
     private var canAdvance: Bool {
         switch step {
         case 0: return !name.trimmed.isEmpty
-        case 1: return !sector.trimmed.isEmpty && Int(employeeCount.trimmed) != nil
+        case 1: return hazard != nil && !sector.trimmed.isEmpty && Int(employeeCount.trimmed) != nil
         case 2:
             let workplaceOK = workplaces.allSatisfy { !$0.name.trimmed.isEmpty }
             let departmentOK = departments.allSatisfy { !$0.trimmed.isEmpty }
@@ -82,7 +83,7 @@ struct NovaPilotCompanyCreateView: View {
 
     private func makeIntent() throws -> NovaPilotCompanyIntent {
         let contact = firstContact
-        return try .makeContactProfile(ownerID: identity.userID, name: name, hazard: hazard.rawValue,
+        return try .makeContactProfile(ownerID: identity.userID, name: name, hazard: hazard?.rawValue ?? "",
             sector: sector, email: email, employeeCount: employeeCount,
             responsibleName: addResponsible ? (contact?.name ?? "") : "",
             responsiblePhone: addResponsible ? (contact?.phone ?? "") : "",
@@ -145,7 +146,7 @@ struct NovaPilotCompanyCreateView: View {
                 // The pilot RPC creates the secure base row. Persist the richer
                 // wizard profile immediately afterwards with the same owner.
                 var draft = CompanyDraft()
-                draft.id = companyID; draft.name = name.trimmed; draft.hazardClass = hazard
+                draft.id = companyID; draft.name = name.trimmed; draft.hazardClass = hazard ?? .medium
                 draft.address = address.trimmed; draft.city = city.trimmed; draft.phone = phone.trimmed
                 draft.naceCode = naceCode.trimmed; draft.workplaceRegistryNo = workplaceRegistryNo.trimmed
                 draft.departments = departments.map(\.trimmed).filter { !$0.isEmpty }
@@ -168,7 +169,7 @@ struct NovaPilotCompanyCreateView: View {
         do {
             pending = try service.pending(identity: identity)
             if let pending {
-                name = pending.name; hazard = CompanyHazardClass(rawValue: pending.hazard) ?? .medium
+                name = pending.name; hazard = CompanyHazardClass(rawValue: pending.hazard)
                 sector = pending.sector ?? ""; employeeCount = pending.employeeCount.map(String.init) ?? ""
                 email = pending.email ?? ""
                 if let person = pending.responsibleName {
@@ -211,7 +212,11 @@ struct NovaPilotCompanyCreateView: View {
     private var businessStep: some View {
         NovaCard(padding: 16) {
             VStack(alignment: .leading, spacing: 10) {
-                hazardPicker(title: RDLocalization.string("localizable.nova.pilot.company.create.view.tehlike.sinifi.947b4a96", table: .localizable, fallback: "Tehlike sınıfı *"), selection: $hazard)
+                NovaChoiceField(title: RDLocalization.string("localizable.nova.pilot.company.create.view.tehlike.sinifi.947b4a96", table: .localizable, fallback: "Tehlike sınıfı *"),
+                    placeholder: NovaHazardChoice.placeholder, symbol: "exclamationmark.triangle", message: NovaHazardChoice.message,
+                    options: NovaHazardChoice.options, selection: $hazard, identifier: "nova.pilot.company.hazard")
+                    // The step's error was about the missing class; a pick answers it.
+                    .onChange(of: hazard) { _ in error = nil }
                 Divider(); field(RDLocalization.string("localizable.nova.pilot.company.create.view.sektor.61c5178e", table: .localizable, fallback: "Sektör *"), symbol: "square.grid.2x2", text: $sector, id: "sector")
                 Divider(); field(RDLocalization.string("localizable.nova.pilot.company.create.view.calisan.sayisi.6b061e7f", table: .localizable, fallback: "Çalışan sayısı *"), symbol: "person.2", text: $employeeCount, id: "employeeCount", keyboard: .numberPad)
                 Divider(); field(RDLocalization.string("localizable.nova.pilot.company.create.view.nace.kodu.ea82912c", table: .localizable, fallback: "NACE kodu"), symbol: "number", text: $naceCode, id: "nace")
@@ -241,13 +246,18 @@ struct NovaPilotCompanyCreateView: View {
                                     }
                                 }
                                 field(RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.adi.f37b0266", table: .localizable, fallback: "İşyeri adı *"), symbol: "building.2", text: $workplaces[index].name, id: "workplace-\(index)-name")
-                                hazardPicker(title: RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.tehlike.sinifi.5515503a", table: .localizable, fallback: "İşyeri tehlike sınıfı *"), selection: $workplaces[index].hazardClass)
+                                NovaChoiceField(title: RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.tehlike.sinifi.5515503a", table: .localizable, fallback: "İşyeri tehlike sınıfı *"),
+                                    placeholder: NovaHazardChoice.placeholder, symbol: "exclamationmark.triangle", message: NovaHazardChoice.message,
+                                    options: NovaHazardChoice.options,
+                                    selection: Binding(get: { workplaces[index].hazardClass }, set: { if let value = $0 { workplaces[index].hazardClass = value } }),
+                                    identifier: "nova.pilot.company.workplace-\(index).hazard")
                                 field(RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.adresi.9516bba5", table: .localizable, fallback: "İşyeri adresi"), symbol: "mappin.and.ellipse", text: $workplaces[index].address, id: "workplace-\(index)-address")
                                 field(RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.sehri.8120f703", table: .localizable, fallback: "İşyeri şehri"), symbol: "map", text: $workplaces[index].city, id: "workplace-\(index)-city")
                             }
                             if index < workplaces.count - 1 { Divider() }
                         }
-                        Button { workplaces.append(.init()) } label: {
+                        // A new workplace starts from the company's class.
+                        Button { workplaces.append(.init(hazardClass: hazard ?? .medium)) } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "plus")
                                 Text(RDLocalization.string("localizable.nova.pilot.company.create.view.baska.isyeri.ekle.eda3cf83", table: .localizable, fallback: "Başka işyeri ekle")).font(NovaFont.font(.bodyStrong))
@@ -311,10 +321,11 @@ struct NovaPilotCompanyCreateView: View {
                                 field(RDLocalization.string("localizable.nova.pilot.company.create.view.ad.soyad.02a69355", table: .localizable, fallback: "Ad soyad *"), symbol: "person", text: $contact.name, id: "contact-\(contact.id)-name")
                                 field(RDLocalization.string("localizable.nova.pilot.company.create.view.telefon.c38a18b2", table: .localizable, fallback: "Telefon *"), symbol: "phone", text: $contact.phone, id: "contact-\(contact.id)-phone", keyboard: .phonePad)
                                 field(RDLocalization.string("localizable.nova.pilot.company.create.view.mail.adresi.9f7bd458", table: .localizable, fallback: "Mail adresi"), symbol: "envelope", text: $contact.email, id: "contact-\(contact.id)-email", keyboard: .emailAddress)
-                                Picker(RDLocalization.string("localizable.nova.pilot.company.create.view.gorevi.e22dc2fb", table: .localizable, fallback: "Görevi *"), selection: $contact.role) {
-                                    Text(RDLocalization.string("localizable.nova.pilot.company.create.view.gorev.secin.8e8d2068", table: .localizable, fallback: "Görev seçin")).tag("")
-                                    ForEach(roles, id: \.self) { Text($0).tag($0) }
-                                }.pickerStyle(.menu).frame(maxWidth: .infinity, alignment: .leading)
+                                NovaChoiceField(title: RDLocalization.string("localizable.nova.pilot.company.create.view.gorevi.e22dc2fb", table: .localizable, fallback: "Görevi *"),
+                                    placeholder: RDLocalization.string("localizable.nova.pilot.company.create.view.gorev.secin.8e8d2068", table: .localizable, fallback: "Görev seçin"),
+                                    symbol: "briefcase", options: roles.map { NovaChoiceOption(value: $0, title: $0) },
+                                    selection: Binding(get: { contact.role.isEmpty ? nil : contact.role }, set: { contact.role = $0 ?? "" }),
+                                    identifier: "nova.pilot.company.contact-\(contact.id)-role")
                             }.padding(.vertical, 4)
                             if contact.id != contacts.last?.id { Divider() }
                         }
@@ -344,7 +355,7 @@ struct NovaPilotCompanyCreateView: View {
                     }
                     summaryRow("Firma", name, "building.2")
                     summaryRow("İletişim", [address, city, phone].filter { !$0.trimmed.isEmpty }.joined(separator: " · "), "mappin.and.ellipse")
-                    summaryRow("İşletme", [hazard.title, sector, employeeCount.isEmpty ? nil : "\(employeeCount) çalışan"].compactMap { $0 }.joined(separator: " · "), "shield")
+                    summaryRow("İşletme", [hazard?.title, sector, employeeCount.isEmpty ? nil : "\(employeeCount) çalışan"].compactMap { $0 }.joined(separator: " · "), "shield")
                     if !naceCode.trimmed.isEmpty || !workplaceRegistryNo.trimmed.isEmpty {
                         summaryRow("NACE / sicil", [naceCode, workplaceRegistryNo].filter { !$0.trimmed.isEmpty }.joined(separator: " · "), "doc.text")
                     }
@@ -381,14 +392,6 @@ struct NovaPilotCompanyCreateView: View {
         // same server row before the edited profile is persisted.
         error = nil
         step = 0
-    }
-
-    private func hazardPicker(title: String, selection: Binding<CompanyHazardClass>) -> some View {
-        HStack(spacing: 10) {
-            NovaIcon(symbol: "exclamationmark.triangle", size: 17)
-            Picker(title, selection: selection) { ForEach(CompanyHazardClass.allCases) { Text($0.title).tag($0) } }
-                .font(NovaFont.font(.body)).tint(NovaColorToken.text.color(in: scheme))
-        }.frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
     }
 
     private func field(_ title: String, symbol: String, text: Binding<String>, id: String,

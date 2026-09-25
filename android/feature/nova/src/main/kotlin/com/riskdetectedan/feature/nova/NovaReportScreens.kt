@@ -264,8 +264,8 @@ private fun NovaReportCreateFlow(client: NovaReportClient, archive: NovaGenerate
             }
             1 -> {
                 NovaText("Firma ve dönem", style = NovaTypeToken.sectionTitle)
-                NovaFilterField("Firma", listOf(NovaChooserOption(null, "Tüm firmalar")) + companies.map { NovaChooserOption(it.id, it.name) }, company,
-                    "report.create.company") { company = it }
+                NovaChoiceField("Firma", "Firma seçin", "building.2", companies.map { NovaChoiceOption(it.id, it.name) }, company, { company = it },
+                    "report.create.company", noneTitle = "Tüm firmalar", searchable = true, boxed = true)
                 val periods = listOf("30", "90", "365", "all")
                 NovaSegmentedControl(listOf("Son 30 gün", "Son 90 gün", "Son 1 yıl", "Tüm zamanlar"), periods.indexOf(period)) { period = periods[it] }
             }

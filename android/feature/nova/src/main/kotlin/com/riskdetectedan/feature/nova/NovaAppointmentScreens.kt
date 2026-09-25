@@ -261,8 +261,6 @@ private fun AppointmentSheet(initial: NovaAppointmentDraft, catalogue: NovaAppoi
     var draft by remember { mutableStateOf(if (initial.workplaceId == null && workplaces.size == 1) initial.copy(workplaceId = workplaces[0].id) else initial) }
     var failure by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
-    var chooser by remember { mutableStateOf<String?>(null) }
-    var personSearch by remember { mutableStateOf("") }
     var step by remember { mutableIntStateOf(0) }
     var saved by remember { mutableStateOf(false) }
     val personTitle = catalogue?.employees?.firstOrNull { it.id == draft.employeeId }?.fullName ?: "Personel seçin"
@@ -285,29 +283,14 @@ private fun AppointmentSheet(initial: NovaAppointmentDraft, catalogue: NovaAppoi
             0 -> {
                 NovaHelpHint("Personel ve işyeri seçimi sonraki adımlara otomatik taşınır.")
                 FieldCard("person.2") {
-                    NovaChooserButton("Personel", personTitle, "nova.appointment.form.person", open = chooser == "person") {
-                        chooser = if (chooser == "person") null else "person"
-                    }
-                    if (chooser == "person") {
-                        NovaSearchCapsule(personSearch, "Personel ara", "nova.appointment.form.person.search") { personSearch = it }
-                        // Large registers never render in full: wait for a search term, then filter locally.
-                        val needle = personSearch.trim()
-                        val matches = if (needle.isEmpty()) emptyList() else catalogue?.employees.orEmpty().filter { it.fullName.contains(needle, ignoreCase = true) }
-                        if (matches.isEmpty()) NovaText(if (needle.isEmpty()) "Personel adını yazarak arayın." else "Aramanızla eşleşen personel bulunamadı.",
-                            Modifier.padding(vertical = 8.dp), NovaTypeToken.metaQuiet)
-                        else NovaChooserPanel(matches.map { NovaChooserOption(it.id, it.fullName) }, draft.employeeId, "nova.appointment.form.person.panel") {
-                            draft = draft.copy(employeeId = it); chooser = null; personSearch = ""
-                        }
-                    }
+                    NovaChoiceField("Personel", "Personel seçin", "person", catalogue?.employees.orEmpty().map { NovaChoiceOption(it.id, it.fullName) },
+                        draft.employeeId, { draft = draft.copy(employeeId = it) }, "nova.appointment.form.person", searchable = true, boxed = true)
                 }
                 if (workplaces.isNotEmpty()) FieldCard("building.2") {
                     if (workplaces.size == 1) NovaText(placeTitle, style = NovaTypeToken.cardTitle)
                     else {
-                        NovaChooserButton("İşyeri", placeTitle, "nova.appointment.form.workplace", open = chooser == "place") {
-                            chooser = if (chooser == "place") null else "place"
-                        }
-                        if (chooser == "place") NovaChooserPanel(workplaces.map { NovaChooserOption(it.id, it.name) }, draft.workplaceId,
-                            "nova.appointment.form.workplace.panel") { draft = draft.copy(workplaceId = it); chooser = null }
+                        NovaChoiceField("İşyeri", "İşyeri seçin", "building.2", workplaces.map { NovaChoiceOption(it.id, it.name) }, draft.workplaceId,
+                            { draft = draft.copy(workplaceId = it) }, "nova.appointment.form.workplace", searchable = true, boxed = true)
                     }
                 }
             }

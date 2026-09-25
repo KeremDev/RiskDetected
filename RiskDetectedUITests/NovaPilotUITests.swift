@@ -229,6 +229,51 @@ final class NovaPilotUITests: XCTestCase {
         #endif
     }
 
+    /// The hazard class starts unchosen and is picked from a sheet of described classes; the wizard does not move
+    /// on without one.
+    func testCompanyHazardClassIsChosenFromASheet() throws {
+        #if NOVA_PILOT_BUILD
+        let app = XCUIApplication()
+        app.launchArguments = ["RD_UI_TEST_MAIN", "RD_UI_TEST_NOVA_REVIEW", "RD_UI_TEST_COMPANY_WIZARD", "RD_UI_TEST_LIGHT_MODE"]
+        app.launch(); defer { app.terminate() }
+        // The sticky bar's identifier also lands on "Geri"; the label picks "Devam".
+        let next = app.buttons.matching(identifier: "nova.pilot.company.next").matching(NSPredicate(format: "label == %@", "Devam")).firstMatch
+        func shot(_ name: String) {
+            let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = name
+            attachment.lifetime = .keepAlways; add(attachment)
+        }
+        let name = app.textFields["nova.pilot.company.name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 20)); name.tap(); name.typeText("Ornek Maden")
+        next.tap()
+
+        let hazard = app.buttons["nova.pilot.company.hazard"]
+        XCTAssertTrue(hazard.waitForExistence(timeout: 8))
+        XCTAssertEqual(hazard.value as? String, "Tehlike sınıfı seçin", "nothing is chosen for the user")
+        let sector = app.textFields["nova.pilot.company.sector"]; sector.tap(); sector.typeText("Maden")
+        let count = app.textFields["nova.pilot.company.employeeCount"]; count.tap(); count.typeText("235")
+        next.tap()
+        XCTAssertTrue(app.staticTexts["Tehlike sınıfı, sektör ve çalışan sayısı zorunludur."].waitForExistence(timeout: 4),
+            "no step forward without a hazard class")
+        shot("İSGADA-hazard-field-empty")
+
+        hazard.tap()
+        let high = app.buttons["nova.pilot.company.hazard.option.2"]
+        XCTAssertTrue(high.waitForExistence(timeout: 6))
+        XCTAssertTrue(app.buttons["nova.pilot.company.hazard.option.0"].exists && app.buttons["nova.pilot.company.hazard.option.1"].exists)
+        shot("İSGADA-hazard-sheet")
+        high.tap()
+        let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: high)
+        wait(for: [closed], timeout: 4)
+        XCTAssertEqual(hazard.value as? String, "Çok Tehlikeli")
+        XCTAssertFalse(app.staticTexts["Tehlike sınıfı, sektör ve çalışan sayısı zorunludur."].exists, "the pick clears the step's error")
+        shot("İSGADA-hazard-field-chosen")
+        next.tap()
+        XCTAssertTrue(app.staticTexts["3 / 5"].waitForExistence(timeout: 6), "moves on once a class is chosen")
+        #else
+        throw XCTSkip("Requires private pilot build")
+        #endif
+    }
+
     func testCompanyDetailShowsCompactSectionsWithoutTrackingCard() throws {
         #if NOVA_PILOT_BUILD
         let app = XCUIApplication()

@@ -132,14 +132,7 @@ struct NovaPPEHandoverSheet: View {
     let onClose: () -> Void
     @State private var failure: String?
     @State private var saving = false
-    @State private var choosingPerson = false
     @Environment(\.colorScheme) private var scheme
-
-    private var personTitle: String {
-        catalogue?.employees.first { $0.id == draft.employeeID }?.fullName
-            ?? RDLocalization.string("localizable.nova.ppe.form.pickperson", table: .localizable,
-                fallback: "Personel seçin")
-    }
 
     var body: some View {
         NovaPopup {
@@ -147,21 +140,16 @@ struct NovaPPEHandoverSheet: View {
                 VStack(alignment: .leading, spacing: 12) {
                     NovaText(text: RDLocalization.string("localizable.nova.ppe.form.title",
                         table: .localizable, fallback: "Zimmet ver"), style: .screenTitle)
-                    NovaFileChooserButton(
-                        label: RDLocalization.string("localizable.nova.ppe.form.person",
+                    NovaChoiceField(
+                        title: RDLocalization.string("localizable.nova.ppe.form.person",
                             table: .localizable, fallback: "Personel"),
-                        value: personTitle, isOpen: choosingPerson,
-                        identifier: "nova.ppe.form.person") { choosingPerson.toggle() }
-                    if choosingPerson {
-                        NovaFileChooserPanel(
-                            options: (catalogue?.employees ?? []).map {
-                                .init(id: $0.id.uuidString, title: $0.fullName) },
-                            selected: draft.employeeID?.uuidString,
-                            identifier: "nova.ppe.form.person.panel") { value in
-                            draft.employeeID = value.flatMap(UUID.init(uuidString:))
-                            choosingPerson = false
-                        }
-                    }
+                        placeholder: RDLocalization.string("localizable.nova.ppe.form.pickperson", table: .localizable,
+                            fallback: "Personel seçin"),
+                        symbol: "person",
+                        options: (catalogue?.employees ?? []).map {
+                            NovaChoiceOption<UUID>(value: $0.id, title: $0.fullName) },
+                        selection: $draft.employeeID,
+                        identifier: "nova.ppe.form.person", searchable: true, boxed: true)
                     if catalogue?.employees.isEmpty ?? true {
                         NovaHelpHint(text: RDLocalization.string("localizable.nova.ppe.form.nopeople",
                             table: .localizable, fallback: "Bu firmada aktif personel kaydı yok."))

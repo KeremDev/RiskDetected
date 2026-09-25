@@ -95,23 +95,17 @@ private fun MutableMap<String, JsonElement>.setText(key: String, text: String) {
 @Composable
 private fun ModuleFields(module: String, data: NovaModuleEditorRecord, values: MutableMap<String, JsonElement>, company: String,
                          files: NovaFileClient, enabled: Boolean) {
-    var chooser by remember { mutableStateOf<String?>(null) }
     @Composable fun field(title: String, key: String, multiline: Boolean = false) =
         NovaTextField(title, values.text(key), { values.setText(key, it) }, identifier = "nova.module.$key", multiline = multiline, enabled = enabled)
-    @Composable fun choose(title: String, key: String, items: List<Pair<String, String>>, allowsNone: Boolean) {
-        val current = values.text(key)
-        NovaChooserButton(title, items.firstOrNull { it.first == current }?.second ?: "Seçin", "nova.module.$key", open = chooser == key) {
-            if (enabled) chooser = if (chooser == key) null else key
-        }
-        if (chooser == key) NovaChooserPanel((if (allowsNone) listOf(NovaChooserOption(null, "Seçin")) else emptyList()) +
-            items.map { NovaChooserOption(it.first, it.second) }, current.ifEmpty { null }, "nova.module.$key.options") {
-            values.setText(key, it.orEmpty()); chooser = null
-        }
+    @Composable fun choose(title: String, symbol: String, key: String, items: List<Pair<String, String>>, allowsNone: Boolean, searchable: Boolean = false) {
+        NovaChoiceField(title, "$title seçin", symbol, items.map { NovaChoiceOption(it.first, it.second) }, values.text(key).ifEmpty { null },
+            { values.setText(key, it.orEmpty()) }, "nova.module.$key", enabled = enabled, noneTitle = if (allowsNone) "Seçilmedi" else null,
+            searchable = searchable || items.size > 8, boxed = true)
     }
     fun options(items: List<NovaModuleEditorOption>) = items.map { it.id to it.name }
     when (module) {
         "emergency_plan" -> {
-            if (data.workplaces.isNotEmpty()) choose("İşyeri", "workplace_id", options(data.workplaces), allowsNone = true)
+            if (data.workplaces.isNotEmpty()) choose("İşyeri", "building.2", "workplace_id", options(data.workplaces), allowsNone = true, searchable = true)
             field("Kapsam", "scope")
             field("Hazırlık tarihi (YYYY-AA-GG)", "prepared_on")
             field("Geçerlilik tarihi (isteğe bağlı)", "valid_until")
@@ -119,7 +113,7 @@ private fun ModuleFields(module: String, data: NovaModuleEditorRecord, values: M
             TeamFields(values, enabled)
         }
         "drill" -> {
-            choose("Acil durum planı", "plan_id", options(data.plans), allowsNone = true)
+            choose("Acil durum planı", "shield", "plan_id", options(data.plans), allowsNone = true)
             field("Planlanan tarih (YYYY-AA-GG)", "planned_on")
             if (values.text("state") == "performed") {
                 field("Gerçekleşme tarihi (YYYY-AA-GG)", "performed_on")
@@ -136,13 +130,13 @@ private fun ModuleFields(module: String, data: NovaModuleEditorRecord, values: M
             field("İyileştirmeler", "improvement", multiline = true)
         }
         else -> {
-            choose("Personel", "employee_id", options(data.employees), allowsNone = true)
-            if (data.workplaces.isNotEmpty()) choose("İşyeri", "scope_workplace_id", options(data.workplaces), allowsNone = true)
-            choose("Görev", "kind", listOf("representative" to "Çalışan temsilcisi", "support_staff" to "Destek elemanı",
+            choose("Personel", "person", "employee_id", options(data.employees), allowsNone = true, searchable = true)
+            if (data.workplaces.isNotEmpty()) choose("İşyeri", "building.2", "scope_workplace_id", options(data.workplaces), allowsNone = true, searchable = true)
+            choose("Görev", "person.badge.shield.checkmark", "kind", listOf("representative" to "Çalışan temsilcisi", "support_staff" to "Destek elemanı",
                 "team_member" to "Ekip üyesi", "first_aid" to "İlk yardımcı", "fire_team" to "Yangın ekibi"), allowsNone = false)
             field("Başlangıç tarihi (YYYY-AA-GG)", "starts_on")
             field("Bitiş tarihi (isteğe bağlı)", "ends_before")
-            choose("Dayanak", "basis", listOf("elected" to "Seçim", "appointed" to "Atama"), allowsNone = false)
+            choose("Dayanak", "checkmark.seal", "basis", listOf("elected" to "Seçim", "appointed" to "Atama"), allowsNone = false)
             field("Dayanak açıklaması", "basis_note", multiline = true)
             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 NovaText("Atama yazısı", style = NovaTypeToken.label)
@@ -162,7 +156,6 @@ private fun TeamFields(values: MutableMap<String, JsonElement>, enabled: Boolean
     fun edit(index: Int, key: String, value: String) = store(members.mapIndexed { i, member ->
         if (i == index) JsonObject(member + (key to JsonPrimitive(value))) else member
     })
-    var chooser by remember { mutableStateOf<Int?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         NovaText("Ekip", style = NovaTypeToken.cardTitle)
         members.forEachIndexed { index, member ->
@@ -170,10 +163,10 @@ private fun TeamFields(values: MutableMap<String, JsonElement>, enabled: Boolean
             NovaCard(Modifier.fillMaxWidth(), padding = 12) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     NovaTextField("Ad soyad", text("full_name"), { edit(index, "full_name", it) }, identifier = "nova.module.team.$index.name", enabled = enabled)
-                    NovaChooserButton("Görev", teamRoles.firstOrNull { it.first == text("role") }?.second ?: "Diğer", "nova.module.team.$index.role",
-                        open = chooser == index) { if (enabled) chooser = if (chooser == index) null else index }
-                    if (chooser == index) NovaChooserPanel(teamRoles.map { NovaChooserOption(it.first, it.second) }, text("role"),
-                        "nova.module.team.$index.role.options") { role -> edit(index, "role", role ?: "other"); chooser = null }
+                    // A role the list does not know reads as "Diğer", as before.
+                    NovaChoiceField("Görev", "Görev seçin", "person.badge.shield.checkmark", teamRoles.map { NovaChoiceOption(it.first, it.second) },
+                        text("role").takeIf { role -> teamRoles.any { it.first == role } } ?: "other", { role -> edit(index, "role", role ?: "other") },
+                        "nova.module.team.$index.role", enabled = enabled, boxed = true)
                     NovaTextField("İletişim", text("contact"), { edit(index, "contact", it) }, identifier = "nova.module.team.$index.contact", enabled = enabled)
                     NovaButton("Ekipten kaldır", { store(members.filterIndexed { i, _ -> i != index }) }, variant = NovaButtonVariant.Danger,
                         enabled = enabled, symbol = "trash", compact = true)

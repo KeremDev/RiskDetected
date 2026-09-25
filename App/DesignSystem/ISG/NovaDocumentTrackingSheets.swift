@@ -522,25 +522,13 @@ struct NovaDocumentObligationForm: View {
     }
 
     private var scopePicker: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            NovaText(text: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
-                style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            Menu {
-                Button(RDLocalization.string("localizable.nova.document.scope.company", table: .localizable, fallback: "Tüm firma")) { draft.workplaceID = nil }
-                ForEach(places) { place in Button(place.name) { draft.workplaceID = place.id } }
-            } label: {
-                HStack(spacing: 7) {
-                    NovaText(text: places.first { $0.id == draft.workplaceID }?.name
-                        ?? RDLocalization.string("localizable.nova.document.scope.company", table: .localizable, fallback: "Tüm firma"),
-                        style: .meta)
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.down").font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                }
-                .padding(.horizontal, 11).frame(minHeight: 44)
-                .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
-            }.accessibilityIdentifier("document.obligation.scope")
-        }
+        NovaChoiceField(title: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
+            placeholder: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
+            symbol: "building.2",
+            options: places.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+            selection: $draft.workplaceID, identifier: "document.obligation.scope",
+            noneTitle: RDLocalization.string("localizable.nova.document.scope.company", table: .localizable, fallback: "Tüm firma"),
+            searchable: true, boxed: true)
     }
 
     /// A legal basis is only accepted with the reference the expert relies on,

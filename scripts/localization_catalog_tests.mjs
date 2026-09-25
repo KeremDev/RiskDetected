@@ -782,7 +782,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 6_540, "Turkish localized-unit count");
+  assert.equal(rows.length, 6_549, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
@@ -836,7 +836,15 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // that covers the whole record: localizable.nova.foryou.performance.
     // analyses_total.{title,detail}, trainings_total.{title,detail} and
     // nonconformities_total.title. None removed or changed.
-    "ddf921fbf68c0bea7cbd246c5de21f9cfb58d4a900fd603d9f57fadc55dbbdf3",
+    // 2026-09-25: 5 new Localizable units for the hazard class choice sheet
+    // (NovaChoiceField): localizable.nova.hazard.choice.{placeholder,message,
+    // low,medium,high}. None removed or changed.
+    // 2026-09-25: 4 new Localizable units for the choice sheet used by every
+    // form selection field: localizable.nova.choice.{none,search,empty} and
+    // the OSGB company editor's localizable.nova.pilot.main.gate.firma.adi.
+    // tehlike.sinifi.ve.sektor.zorunludur (hazard class is now required).
+    // None removed or changed.
+    "462a70220f5218ab268c295a7e068aa4dfb149f76622be455701996c14e8a465",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

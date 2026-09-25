@@ -19,7 +19,6 @@ struct NovaEquipmentItemSheet: View {
     @State private var confirmingArchive = false
     @State private var draft = NovaEquipmentInspectionDraft()
     @State private var reports: [NovaFileEntry] = []
-    @State private var choosingReport = false
     @State private var addingReport = false
     @State private var fileCategories: [NovaFileCategory] = []
     @State private var fileAccepts: [NovaFileAcceptance] = []
@@ -451,43 +450,41 @@ struct NovaEquipmentItemSheet: View {
     /// that really exists rather than carrying a second copy of one. A new
     /// one uploads right here — no redirect to Dosyalarım and back.
     @ViewBuilder private var reportPicker: some View {
-        NovaFileChooserButton(
-            label: RDLocalization.string("localizable.nova.equipment.field.report", table: .localizable, fallback: "Arşivdeki rapor"),
-            value: draft.evidenceTitle
-                ?? RDLocalization.string("localizable.nova.equipment.report.none", table: .localizable, fallback: "Seçilmedi"),
-            symbol: "doc", isOpen: choosingReport, isAnswered: draft.evidenceAssetID != nil,
-            identifier: "equipment.inspection.report") { choosingReport.toggle(); addingReport = false }
-        if choosingReport {
-            if !reports.isEmpty {
-                NovaFileChooserPanel(
-                    options: [.init(id: nil, title: RDLocalization.string("localizable.nova.equipment.report.none", table: .localizable, fallback: "Seçilmedi"), symbol: "xmark")]
-                        + reports.map { .init(id: $0.id.uuidString, title: $0.title, symbol: "doc") },
-                    selected: draft.evidenceAssetID?.uuidString, identifier: "equipment.inspection.report") { picked in
-                        let entry = reports.first { $0.id.uuidString == picked }
-                        draft.evidenceAssetID = entry?.id
-                        draft.evidenceTitle = entry?.title
-                        choosingReport = false
-                    }
-            }
-            if addingReport {
-                NovaFileAddInline(companies: [], preselected: row.companyID,
-                        categories: {
-                            let scoped = fileCategories.filter { $0.code == "inspection_report" }
-                            return scoped.isEmpty ? fileCategories : scoped
-                        }(),
-                        accepts: fileAccepts, assurance: fileAssurance, client: client.fileClient) { entry in
-                            if let entry {
-                                draft.evidenceAssetID = entry.assetID
-                                draft.evidenceTitle = entry.title
-                                reports.append(entry)
-                            }
-                            addingReport = false; choosingReport = false
+        NovaChoiceField(
+            title: RDLocalization.string("localizable.nova.equipment.field.report", table: .localizable, fallback: "Arşivdeki rapor"),
+            placeholder: RDLocalization.string("localizable.nova.equipment.field.report", table: .localizable, fallback: "Arşivdeki rapor"),
+            symbol: "doc",
+            options: reports.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.title) },
+            // A file uploaded below is recorded by its asset, a picked one by
+            // its entry; the row names the file either way.
+            selection: Binding<UUID?>(get: {
+                draft.evidenceAssetID.flatMap { id in reports.first { $0.id == id || $0.assetID == id }?.id }
+            }, set: { picked in
+                let entry = reports.first { $0.id == picked }
+                draft.evidenceAssetID = entry?.id
+                draft.evidenceTitle = entry?.title
+            }),
+            identifier: "equipment.inspection.report",
+            noneTitle: RDLocalization.string("localizable.nova.equipment.report.none", table: .localizable, fallback: "Seçilmedi"),
+            boxed: true)
+        if addingReport {
+            NovaFileAddInline(companies: [], preselected: row.companyID,
+                    categories: {
+                        let scoped = fileCategories.filter { $0.code == "inspection_report" }
+                        return scoped.isEmpty ? fileCategories : scoped
+                    }(),
+                    accepts: fileAccepts, assurance: fileAssurance, client: client.fileClient) { entry in
+                        if let entry {
+                            draft.evidenceAssetID = entry.assetID
+                            draft.evidenceTitle = entry.title
+                            reports.append(entry)
                         }
-            } else {
-                NovaButton(label: RDLocalization.string("localizable.nova.equipment.report.add", table: .localizable,
-                    fallback: "Yeni dosya ekle"), symbol: "plus", variant: .surface) { addingReport = true }
-                    .accessibilityIdentifier("equipment.inspection.report.add")
-            }
+                        addingReport = false
+                    }
+        } else {
+            NovaButton(label: RDLocalization.string("localizable.nova.equipment.report.add", table: .localizable,
+                fallback: "Yeni dosya ekle"), symbol: "plus", variant: .surface) { addingReport = true }
+                .accessibilityIdentifier("equipment.inspection.report.add")
         }
     }
 
@@ -881,7 +878,6 @@ private struct NovaEquipmentInspectionTask: View {
     @State private var draft = NovaEquipmentInspectionDraft()
     @State private var step: Step = .control
     @State private var reports: [NovaFileEntry] = []
-    @State private var choosingReport = false
     @State private var busy = false
     @State private var didSave = false
     @State private var error: String?
@@ -998,21 +994,18 @@ private struct NovaEquipmentInspectionTask: View {
     private var reportStep: some View {
         VStack(alignment: .leading, spacing: 12) {
             NovaText(text: RDLocalization.string("localizable.nova.equipment.check.sheets.rapor.baglamak.istege.baglidir.arsivde.hazir.ola.2e5938d6", table: .localizable, fallback: "Rapor bağlamak isteğe bağlıdır. Arşivde hazır olan bir dosyayı seçebilirsiniz."), style: .body)
-            NovaFileChooserButton(label: RDLocalization.string("localizable.nova.equipment.check.sheets.arsivdeki.rapor.7acc6558", table: .localizable, fallback: "Arşivdeki rapor"),
-                value: draft.evidenceTitle ?? "Rapor seçilmedi", symbol: "doc",
-                isOpen: choosingReport, isAnswered: draft.evidenceAssetID != nil,
-                identifier: "equipment.task.report") { choosingReport.toggle() }
-            if choosingReport {
-                if reports.isEmpty {
-                    NovaText(text: RDLocalization.string("localizable.nova.equipment.check.sheets.bu.firmaya.ait.hazir.rapor.bulunamadi.cac7e6eb", table: .localizable, fallback: "Bu firmaya ait hazır rapor bulunamadı."), style: .metaQuiet)
-                } else {
-                    NovaFileChooserPanel(options: [.init(id: nil, title: RDLocalization.string("localizable.nova.equipment.check.sheets.rapor.secilmedi.6bffc9af", table: .localizable, fallback: "Rapor seçilmedi"), symbol: "xmark")] + reports.map { .init(id: $0.id.uuidString, title: $0.title, symbol: "doc") },
-                        selected: draft.evidenceAssetID?.uuidString, identifier: "equipment.task.report.panel") { id in
-                            let file = reports.first { $0.id.uuidString == id }
-                            draft.evidenceAssetID = file?.id; draft.evidenceTitle = file?.title; choosingReport = false
-                        }
-                }
-            }
+            NovaChoiceField(title: RDLocalization.string("localizable.nova.equipment.check.sheets.arsivdeki.rapor.7acc6558", table: .localizable, fallback: "Arşivdeki rapor"),
+                placeholder: RDLocalization.string("localizable.nova.equipment.check.sheets.arsivdeki.rapor.7acc6558", table: .localizable, fallback: "Arşivdeki rapor"),
+                symbol: "doc",
+                message: reports.isEmpty ? RDLocalization.string("localizable.nova.equipment.check.sheets.bu.firmaya.ait.hazir.rapor.bulunamadi.cac7e6eb", table: .localizable, fallback: "Bu firmaya ait hazır rapor bulunamadı.") : nil,
+                options: reports.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.title) },
+                selection: Binding<UUID?>(get: { draft.evidenceAssetID }, set: { id in
+                    let file = reports.first { $0.id == id }
+                    draft.evidenceAssetID = file?.id; draft.evidenceTitle = file?.title
+                }),
+                identifier: "equipment.task.report",
+                noneTitle: RDLocalization.string("localizable.nova.equipment.check.sheets.rapor.secilmedi.6bffc9af", table: .localizable, fallback: "Rapor seçilmedi"),
+                boxed: true)
             NovaCard(padding: 13, tint: NovaColorToken.surfaceMuted.color(in: scheme)) {
                 VStack(alignment: .leading, spacing: 5) {
                     NovaText(text: RDLocalization.string("localizable.nova.equipment.check.sheets.kayda.hazir.462783f2", table: .localizable, fallback: "Kayda hazır"), style: .bodyStrong)
@@ -1078,7 +1071,6 @@ struct NovaEquipmentAddSheet: View {
     @Environment(\.colorScheme) private var scheme
     @State private var company: UUID?
     @State private var draft = NovaEquipmentDraft()
-    @State private var choosing: String?
     @State private var busy = false
     @State private var error: String?
 
@@ -1115,23 +1107,15 @@ struct NovaEquipmentAddSheet: View {
     }
 
     @ViewBuilder private var typePicker: some View {
-        NovaFileChooserButton(
-            label: RDLocalization.string("localizable.nova.equipment.field.type", table: .localizable, fallback: "Ekipman türü"),
-            value: draft.equipmentType.map(NovaEquipmentWords.type)
-                ?? RDLocalization.string("localizable.nova.equipment.type.choose", table: .localizable, fallback: "Tür seçin"),
-            symbol: "shippingbox", isOpen: choosing == "type", isAnswered: draft.equipmentType != nil,
-            identifier: "equipment.add.type") { choosing = choosing == "type" ? nil : "type" }
-        if choosing == "type" {
-            NovaFileChooserPanel(
-                options: suggestions.map { entry in
-                    .init(id: entry.code, title: NovaEquipmentWords.type(entry.code),
-                          count: entry.defaultPeriodMonths, symbol: "shippingbox")
-                },
-                selected: draft.equipmentType, identifier: "equipment.add.type") { picked in
-                    draft.equipmentType = picked
-                    choosing = nil
-                }
-        }
+        NovaChoiceField(
+            title: RDLocalization.string("localizable.nova.equipment.field.type", table: .localizable, fallback: "Ekipman türü"),
+            placeholder: RDLocalization.string("localizable.nova.equipment.type.choose", table: .localizable, fallback: "Tür seçin"),
+            symbol: "shippingbox",
+            options: suggestions.map { entry in
+                NovaChoiceOption<String>(value: entry.code, title: NovaEquipmentWords.type(entry.code),
+                    detail: entry.defaultPeriodMonths.map { String(format: RDLocalization.string("localizable.nova.equipment.months", table: .localizable, fallback: "%d ay"), $0) })
+            },
+            selection: $draft.equipmentType, identifier: "equipment.add.type", boxed: true)
     }
 
     /// A chosen name never arrives with a period. Either this company already
@@ -1160,20 +1144,12 @@ struct NovaEquipmentAddSheet: View {
     // show the selected one and let the user change it.
     @ViewBuilder private var workplacePicker: some View {
         if !workplaces.isEmpty {
-            NovaFileChooserButton(
-                label: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
-                value: workplaces.first { $0.id == draft.workplaceID }?.name
-                    ?? RDLocalization.string("localizable.nova.equipment.workplace.choose", table: .localizable, fallback: "İşyeri seçin"),
-                symbol: "building.2", isOpen: choosing == "workplace", isAnswered: draft.workplaceID != nil,
-                identifier: "equipment.add.workplace") { choosing = choosing == "workplace" ? nil : "workplace" }
-            if choosing == "workplace" {
-                NovaFileChooserPanel(
-                    options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
-                    selected: draft.workplaceID?.uuidString, identifier: "equipment.add.workplace") { picked in
-                        draft.workplaceID = picked.flatMap(UUID.init(uuidString:))
-                        choosing = nil
-                    }
-            }
+            NovaChoiceField(
+                title: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
+                placeholder: RDLocalization.string("localizable.nova.equipment.workplace.choose", table: .localizable, fallback: "İşyeri seçin"),
+                symbol: "building.2",
+                options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                selection: $draft.workplaceID, identifier: "equipment.add.workplace", searchable: true, boxed: true)
         }
     }
 
@@ -1204,7 +1180,6 @@ struct NovaEquipmentEditSheet: View {
     let save: (NovaEquipmentDraft) async throws -> Void
     @Environment(\.colorScheme) private var scheme
     @State private var draft: NovaEquipmentDraft
-    @State private var choosing = false
     @State private var busy = false
     @State private var error: String?
 
@@ -1229,18 +1204,15 @@ struct NovaEquipmentEditSheet: View {
                 // edited: a different type is a different item.
                 NovaText(text: NovaEquipmentWords.type(item.equipmentType), style: .metaQuiet)
                 if !workplaces.isEmpty {
-                    NovaFileChooserButton(
-                        label: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
-                        value: workplaces.first { $0.id == draft.workplaceID }?.name ?? "Firma geneli",
-                        symbol: "building.2", isOpen: choosing, identifier: "equipment.edit.workplace") { choosing.toggle() }
-                }
-                if choosing && !workplaces.isEmpty {
-                    NovaFileChooserPanel(
-                        options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
-                        selected: draft.workplaceID?.uuidString, identifier: "equipment.edit.workplace") { picked in
-                            draft.workplaceID = picked.flatMap(UUID.init(uuidString:))
-                            choosing = false
-                        }
+                    // A company-wide item shows as such; the list offers only
+                    // workplaces, as before.
+                    NovaChoiceField(
+                        title: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
+                        placeholder: RDLocalization.string("localizable.nova.pilot.process.gate.firma.geneli.11c1eada", table: .localizable, fallback: "Firma geneli"),
+                        symbol: "building.2",
+                        options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                        selection: $draft.workplaceID, identifier: "equipment.edit.workplace", searchable: true, boxed: true,
+                        heading: RDLocalization.string("localizable.nova.equipment.workplace.choose", table: .localizable, fallback: "İşyeri seçin"))
                 }
                 field(RDLocalization.string("localizable.nova.equipment.field.serial", table: .localizable, fallback: "Seri / kod"),
                       $draft.serialTag, id: "serial")
@@ -1286,7 +1258,6 @@ struct NovaEquipmentPeriodSheet: View {
     @Environment(\.colorScheme) private var scheme
     @State private var draft = NovaEquipmentRuleDraft()
     @State private var saved: [NovaEquipmentRule] = []
-    @State private var choosing: String?
     @State private var busy = false
     @State private var error: String?
 
@@ -1328,36 +1299,30 @@ struct NovaEquipmentPeriodSheet: View {
     }
 
     @ViewBuilder private var typePicker: some View {
-        NovaFileChooserButton(
-            label: RDLocalization.string("localizable.nova.equipment.field.type", table: .localizable, fallback: "Ekipman türü"),
-            value: draft.equipmentType.map(NovaEquipmentWords.type)
-                ?? RDLocalization.string("localizable.nova.equipment.type.choose", table: .localizable, fallback: "Tür seçin"),
-            symbol: "shippingbox", isOpen: choosing == "type", isAnswered: draft.equipmentType != nil,
-            identifier: "equipment.period.type") { choosing = choosing == "type" ? nil : "type" }
-        if choosing == "type" {
-            NovaFileChooserPanel(
-                options: suggestions.map { entry in
-                    .init(id: entry.code, title: NovaEquipmentWords.type(entry.code),
-                          count: current.first { $0.equipmentType == entry.code }?.periodMonths
-                              ?? entry.defaultPeriodMonths,
-                          symbol: "shippingbox")
-                },
-                selected: draft.equipmentType, identifier: "equipment.period.type") { picked in
-                    draft.equipmentType = picked
-                    // Pre-fill from what is already on file, or from the
-                    // product's own starting period when nothing is.
-                    if let picked {
-                        if let existing = current.first(where: { $0.equipmentType == picked }) {
-                            draft.periodMonths = String(existing.periodMonths)
-                            draft.source = existing.source.needsReview ? .manufacturer : existing.source
-                            draft.exceptionNote = existing.exceptionNote ?? ""
-                        } else if let months = suggestions.first(where: { $0.code == picked })?.defaultPeriodMonths {
-                            draft.periodMonths = String(months)
-                        }
+        NovaChoiceField(
+            title: RDLocalization.string("localizable.nova.equipment.field.type", table: .localizable, fallback: "Ekipman türü"),
+            placeholder: RDLocalization.string("localizable.nova.equipment.type.choose", table: .localizable, fallback: "Tür seçin"),
+            symbol: "shippingbox",
+            options: suggestions.map { entry in
+                NovaChoiceOption<String>(value: entry.code, title: NovaEquipmentWords.type(entry.code),
+                    detail: (current.first { $0.equipmentType == entry.code }?.periodMonths ?? entry.defaultPeriodMonths)
+                        .map { String(format: RDLocalization.string("localizable.nova.equipment.months", table: .localizable, fallback: "%d ay"), $0) })
+            },
+            selection: Binding<String?>(get: { draft.equipmentType }, set: { picked in
+                draft.equipmentType = picked
+                // Pre-fill from what is already on file, or from the
+                // product's own starting period when nothing is.
+                if let picked {
+                    if let existing = current.first(where: { $0.equipmentType == picked }) {
+                        draft.periodMonths = String(existing.periodMonths)
+                        draft.source = existing.source.needsReview ? .manufacturer : existing.source
+                        draft.exceptionNote = existing.exceptionNote ?? ""
+                    } else if let months = suggestions.first(where: { $0.code == picked })?.defaultPeriodMonths {
+                        draft.periodMonths = String(months)
                     }
-                    choosing = nil
                 }
-        }
+            }),
+            identifier: "equipment.period.type", boxed: true)
     }
 
     private var sourcePicker: some View {

@@ -242,7 +242,6 @@ struct NovaKatipContractSheet: View {
     let onClose: () -> Void
     @State private var failure: String?
     @State private var saving = false
-    @State private var openChooser = false
     @State private var step: Step = .scope
     @State private var didSave = false
     @State private var confirmingExit = false
@@ -312,14 +311,11 @@ struct NovaKatipContractSheet: View {
                     }
                 }
             } else if workplaces.count > 1 {
-                NovaFileChooserButton(label: RDLocalization.string("localizable.nova.katip.sheets.isyeri.75ca2ad2", table: .localizable, fallback: "İşyeri"), value: placeTitle, isOpen: openChooser,
-                    identifier: "nova.katip.form.workplace") { openChooser.toggle() }
-                if openChooser {
-                    NovaFileChooserPanel(options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name) },
-                        selected: draft.workplaceID?.uuidString, identifier: "nova.katip.form.workplace.panel") { value in
-                            draft.workplaceID = value.flatMap(UUID.init(uuidString:)); openChooser = false
-                        }
-                }
+                NovaChoiceField(title: RDLocalization.string("localizable.nova.katip.sheets.isyeri.75ca2ad2", table: .localizable, fallback: "İşyeri"),
+                    placeholder: RDLocalization.string("localizable.nova.katip.form.pickplace", table: .localizable, fallback: "İşyeri seçin"),
+                    symbol: "building.2",
+                    options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                    selection: $draft.workplaceID, identifier: "nova.katip.form.workplace", searchable: true, boxed: true)
             }
             field(RDLocalization.string("localizable.nova.katip.sheets.karsi.taraf.osgb.veya.isveren.b656892a", table: .localizable, fallback: "Karşı taraf (OSGB veya işveren)"), $draft.counterparty, "nova.katip.form.counterparty")
             field(RDLocalization.string("localizable.nova.katip.sheets.uzman.hekim.c9e457ef", table: .localizable, fallback: "Uzman / hekim"), $draft.expertContact, "nova.katip.form.expert")

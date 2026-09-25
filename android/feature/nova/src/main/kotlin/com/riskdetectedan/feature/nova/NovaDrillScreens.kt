@@ -279,7 +279,6 @@ private fun DrillPlanSheet(initial: NovaDrillPlanDraft, catalogue: NovaDrillCata
     var draft by remember { mutableStateOf(initial) }
     var failure by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
-    var choosing by remember { mutableStateOf(false) }
     var step by remember { mutableIntStateOf(0) }
     var saved by remember { mutableStateOf(false) }
     val plans = catalogue?.plans.orEmpty()
@@ -303,10 +302,8 @@ private fun DrillPlanSheet(initial: NovaDrillPlanDraft, catalogue: NovaDrillCata
                 NovaHelpHint("Prova edilecek planı seçin. Plan sürümü arka planda sabitlenir ve sonraki adımlara taşınır.")
                 if (plans.isEmpty()) NovaHelpHint(NovaDrillWords.noPlan)
                 else {
-                    NovaChooserButton("Prova edilecek plan", chosen?.let { "${it.scope} · ${it.workplaceName}" } ?: "Plan seçin", "nova.drill.form.plan",
-                        open = choosing) { choosing = !choosing }
-                    if (choosing) NovaChooserPanel(plans.map { NovaChooserOption(it.planId, "${it.scope} · ${it.workplaceName}") }, draft.planId,
-                        "nova.drill.form.plan.panel") { draft = draft.copy(planId = it); choosing = false }
+                    NovaChoiceField("Prova edilecek plan", "Plan seçin", "shield", plans.map { NovaChoiceOption(it.planId, "${it.scope} · ${it.workplaceName}") },
+                        draft.planId, { draft = draft.copy(planId = it) }, "nova.drill.form.plan", boxed = true)
                     chosen?.let { NovaWhyDisclosure { NovaText("Planın yürürlükteki ${it.version}. sürümü prova edilecek.", style = NovaTypeToken.metaQuiet) } }
                 }
             }

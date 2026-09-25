@@ -111,13 +111,10 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
                     NovaText(text: workplaces[0].name, style: .bodyStrong)
                 }
             } else if workplaces.count > 1 {
-                VStack(alignment: .leading, spacing: 6) {
-                    NovaText(text: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.d1df23d9", table: .localizable, fallback: "İşyeri"), style: .metaQuiet)
-                    Picker(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.49ac6bb7", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
-                        Text(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.secin.835bc845", table: .localizable, fallback: "İşyeri seçin")).tag(Optional<UUID>.none)
-                        ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-                    }.pickerStyle(.menu)
-                }.padding(12).novaControlBackground(cornerRadius: 14)
+                NovaChoiceField(title: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.d1df23d9", table: .localizable, fallback: "İşyeri"),
+                    placeholder: RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.isyeri.secin.835bc845", table: .localizable, fallback: "İşyeri seçin"),
+                    symbol: "mappin.and.ellipse", options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                    selection: $workplaceID, identifier: "nova.workspace.emergency.plan.workplace", boxed: true)
             }
             labeledField("Plan kapsamı", text: $scope)
         }
@@ -178,11 +175,15 @@ struct IsgWorkspaceEmergencyPlanCreateFlow: View {
                         }.frame(minHeight: 44).contentShape(Rectangle())
                     }.buttonStyle(NovaRowPressStyle())
                     if selectedEmployees.contains(employee.id) {
-                        Picker(RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.ekip.gorevi.67882540", table: .localizable, fallback: "Ekip görevi"), selection: roleBinding(employee.id)) {
-                            ForEach(["coordinator", "fire", "first_aid", "evacuation", "other"], id: \.self) {
-                                Text(IsgWorkspaceDisplayText.value($0)).tag($0)
-                            }
-                        }.pickerStyle(.menu).padding(.leading, 30)
+                        let roleTitle = RDLocalization.string("localizable.isg.workspace.emergency.plan.create.flow.ekip.gorevi.67882540", table: .localizable, fallback: "Ekip görevi")
+                        let role = roleBinding(employee.id)
+                        NovaChoiceField(title: roleTitle, placeholder: roleTitle, symbol: "person.badge.key",
+                            options: ["coordinator", "fire", "first_aid", "evacuation", "other"].map {
+                                NovaChoiceOption<String>(value: $0, title: IsgWorkspaceDisplayText.value($0))
+                            },
+                            selection: Binding(get: { role.wrappedValue }, set: { if let new = $0 { role.wrappedValue = new } }),
+                            identifier: "nova.workspace.emergency.plan.team.role.\(employee.id.uuidString.lowercased())")
+                            .padding(.leading, 30)
                     }
                 }.padding(.horizontal, 12).novaControlBackground(cornerRadius: 14)
             }

@@ -208,7 +208,6 @@ struct NovaRiskVersionSheet: View {
     let onClose: () -> Void
     @State private var failure: String?
     @State private var saving = false
-    @State private var choosingKind = false
     @State private var scopeEntry = ""
     @Environment(\.colorScheme) private var scheme
 
@@ -218,21 +217,16 @@ struct NovaRiskVersionSheet: View {
                 VStack(alignment: .leading, spacing: 12) {
                     NovaPopupHeading(text: draft.versionToEdit != nil ? "Taslağı düzenle" : RDLocalization.string("localizable.nova.risk.version.title",
                         table: .localizable, fallback: "Yeni sürüm"), symbol: "checkmark.shield")
-                    NovaFileChooserButton(
-                        label: RDLocalization.string("localizable.nova.risk.version.kind",
+                    NovaChoiceField(
+                        title: RDLocalization.string("localizable.nova.risk.version.kind",
                             table: .localizable, fallback: "Sürüm türü"),
-                        value: draft.kind.title, isOpen: choosingKind,
-                        identifier: "nova.risk.version.kind") { choosingKind.toggle() }
+                        placeholder: RDLocalization.string("localizable.nova.risk.version.kind",
+                            table: .localizable, fallback: "Sürüm türü"),
+                        symbol: "shield",
+                        options: NovaRiskKind.allCases.filter { $0 != .rescan }.map { NovaChoiceOption<NovaRiskKind>(value: $0, title: $0.title) },
+                        selection: Binding(get: { draft.kind }, set: { if let kind = $0 { draft.kind = kind } }),
+                        identifier: "nova.risk.version.kind", boxed: true)
                         .disabled(draft.versionToEdit != nil)
-                    if choosingKind {
-                        NovaFileChooserPanel(
-                            options: NovaRiskKind.allCases.filter { $0 != .rescan }.map { .init(id: $0.rawValue, title: $0.title) },
-                            selected: draft.kind.rawValue,
-                            identifier: "nova.risk.version.kind.panel") { value in
-                            if let value, let kind = NovaRiskKind(rawValue: value) { draft.kind = kind }
-                            choosingKind = false
-                        }
-                    }
                     NovaHelpHint(text: draft.kind.explain)
 
                     // Only a renewal carries a date of its own; the others keep
@@ -320,7 +314,6 @@ struct NovaRiskFinalizeSheet: View {
     let onClose: () -> Void
     @State private var failure: String?
     @State private var saving = false
-    @State private var choosingRule = false
     @Environment(\.colorScheme) private var scheme
 
     private var expertOption: String {
@@ -339,22 +332,17 @@ struct NovaRiskFinalizeSheet: View {
 
                     if draft.kind == .full {
                     if let catalogue, !catalogue.rules.isEmpty {
-                        NovaFileChooserButton(
-                            label: RDLocalization.string("localizable.nova.risk.finalize.source",
+                        // The expert's own period is the empty rule code.
+                        NovaChoiceField(
+                            title: RDLocalization.string("localizable.nova.risk.finalize.source",
                                 table: .localizable, fallback: "Süre kaynağı"),
-                            value: draft.ruleCode.isEmpty ? expertOption : draft.ruleCode,
-                            isOpen: choosingRule,
-                            identifier: "nova.risk.finalize.rule") { choosingRule.toggle() }
-                        if choosingRule {
-                            NovaFileChooserPanel(
-                                options: [.init(id: nil, title: expertOption)]
-                                    + catalogue.rules.map { .init(id: $0.ruleCode, title: $0.ruleCode) },
-                                selected: draft.ruleCode.isEmpty ? nil : draft.ruleCode,
-                                identifier: "nova.risk.finalize.rule.panel") { value in
-                                draft.ruleCode = value ?? ""
-                                choosingRule = false
-                            }
-                        }
+                            placeholder: RDLocalization.string("localizable.nova.risk.finalize.source",
+                                table: .localizable, fallback: "Süre kaynağı"),
+                            symbol: "clock",
+                            options: catalogue.rules.map { NovaChoiceOption<String>(value: $0.ruleCode, title: $0.ruleCode) },
+                            selection: Binding<String?>(get: { draft.ruleCode.isEmpty ? nil : draft.ruleCode },
+                                               set: { draft.ruleCode = $0 ?? "" }),
+                            identifier: "nova.risk.finalize.rule", noneTitle: expertOption, boxed: true)
                     } else if let years = draft.suggestedYears {
                         NovaHelpHint(text: String(format: RDLocalization.string("localizable.nova.risk.finalize.hazard.hint",
                             table: .localizable,

@@ -71,13 +71,34 @@ internal fun OsgbAttachmentField(title: String, attachment: OsgbAttachment?, onC
     }
 }
 
-/** A menu picker over fixed raw values, titled through the workspace display text unless [titles] says otherwise. */
+/**
+ * A chooser over fixed raw values (iOS `NovaChoiceField`), titled through the workspace display text unless [titles]
+ * says otherwise. Nothing reads as chosen until a value is picked: the field shows [placeholder] (or its label) and
+ * opens a bottom sheet of the values, with search for long lists.
+ */
 @Composable
 internal fun OsgbPicker(label: String, values: List<String>, selected: String?, identifier: String, titles: Map<String, String> = emptyMap(),
                         placeholder: String? = null, onPick: (String) -> Unit) {
-    val options = (if (placeholder != null) listOf(NovaChooserOption(null, placeholder)) else emptyList()) +
-        values.map { NovaChooserOption(it, titles[it] ?: IsgWorkspaceDisplayText.value(it)) }
-    NovaFilterField(label, options, selected, identifier) { value -> value?.let(onPick) }
+    NovaChoiceField(label, placeholder ?: label, osgbPickerSymbol(identifier),
+        values.map { NovaChoiceOption(it, titles[it] ?: IsgWorkspaceDisplayText.value(it)) },
+        selected?.takeIf { it in values }, { value -> value?.let(onPick) }, identifier, boxed = true)
+}
+
+/** The field icon, read from what the picker's identifier names. */
+private fun osgbPickerSymbol(identifier: String): String = when {
+    "workplace" in identifier -> "building.2"
+    "employee" in identifier -> "person"
+    "department" in identifier -> "square.grid.2x2"
+    "plan" in identifier -> "flame"
+    "template" in identifier || ".item" in identifier -> "checklist"
+    "category" in identifier -> "folder"
+    "severity" in identifier -> "exclamationmark.triangle"
+    "role" in identifier || "team" in identifier -> "person.2"
+    "training" in identifier -> "graduationcap"
+    "equipment" in identifier -> "wrench.and.screwdriver"
+    "source" in identifier -> "clock"
+    "relation" in identifier -> "link"
+    else -> "list.bullet"
 }
 
 /** A labelled integer stepper (iOS `Stepper`). */

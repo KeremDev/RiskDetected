@@ -253,7 +253,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
             riskForm
         case .nonconformity:
             textField(primaryLabel, text: $primary)
-                optionPicker(label: optionLabel, values: ["low", "medium", "high", "critical"])
+                optionPicker(label: optionLabel, values: ["low", "medium", "high", "critical"], symbol: "exclamationmark.triangle")
                 datePicker(firstDateLabel, selection: $firstDate)
                 datePicker(secondDateLabel, selection: $secondDate)
         case .checklist:
@@ -262,13 +262,12 @@ struct IsgWorkspaceDomainCreateEditor: View {
                                message: label("localizable.nova.workspace.checklist.template.empty.detail",
                                               "Kontrol listesi oluşturmak için önce onaylı bir şablon yayımlanmalıdır."))
             } else {
-                Picker(label("localizable.nova.workspace.form.template", "Kontrol listesi şablonu"),
-                       selection: $checklistTemplateID) {
-                    ForEach(checklistTemplates) { template in
-                        Text(RDLocalization.format("localizable.isg.workspace.domain.create.editor.1.2.madde.01934c3d", table: .localizable, fallback: "%1$@ · %2$@ madde", arguments: [String(describing: template.title), String(describing: template.itemCount)]))
-                            .tag(Optional(template.id))
-                    }
-                }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+                let templateTitle = label("localizable.nova.workspace.form.template", "Kontrol listesi şablonu")
+                NovaChoiceField(title: templateTitle, placeholder: templateTitle, symbol: "checklist",
+                    options: checklistTemplates.map { template in
+                        NovaChoiceOption<String>(value: template.id, title: RDLocalization.format("localizable.isg.workspace.domain.create.editor.1.2.madde.01934c3d", table: .localizable, fallback: "%1$@ · %2$@ madde", arguments: [String(describing: template.title), String(describing: template.itemCount)]))
+                    },
+                    selection: $checklistTemplateID, identifier: "nova.workspace.domain.create.template", boxed: true)
             }
             datePicker(firstDateLabel, selection: $firstDate)
         case .emergencyPlan:
@@ -337,18 +336,19 @@ struct IsgWorkspaceDomainCreateEditor: View {
                 NovaText(text: workplaces[0].name, style: .bodyStrong)
             }
         } else {
-            Picker(RDLocalization.string("localizable.nova.workspace.personnel.workplace", table: .localizable,
-                fallback: "İşyeri"), selection: $workplaceID) {
-                Text(RDLocalization.string("localizable.isg.workspace.domain.create.editor.isyeri.secin.7920f805", table: .localizable, fallback: "İşyeri seçin")).tag(Optional<UUID>.none)
-                ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+            NovaChoiceField(title: RDLocalization.string("localizable.nova.workspace.personnel.workplace", table: .localizable,
+                fallback: "İşyeri"),
+                placeholder: RDLocalization.string("localizable.isg.workspace.domain.create.editor.isyeri.secin.7920f805", table: .localizable, fallback: "İşyeri seçin"),
+                symbol: "building", options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                selection: $workplaceID, identifier: "nova.workspace.domain.create.workplace", boxed: true)
         }
     }
     private var employeePicker: some View {
-        Picker(RDLocalization.string("localizable.nova.workspace.personnel.employee", table: .localizable,
-            fallback: "Personel"), selection: $employeeID) {
-            ForEach(employees) { Text($0.name).tag(Optional($0.id)) }
-        }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+        let employeeTitle = RDLocalization.string("localizable.nova.workspace.personnel.employee", table: .localizable,
+            fallback: "Personel")
+        return NovaChoiceField(title: employeeTitle, placeholder: employeeTitle, symbol: "person",
+            options: employees.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+            selection: $employeeID, identifier: "nova.workspace.domain.create.employee", boxed: true)
     }
 
     private var trainingForm: some View {
@@ -466,7 +466,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
                 VStack(alignment: .leading, spacing: 10) {
                     NovaText(text: RDLocalization.string("localizable.isg.workspace.domain.create.editor.gorev.cbf6cd0f", table: .localizable, fallback: "Görev"), style: .bodyStrong)
                     optionPicker(label: RDLocalization.string("localizable.isg.workspace.domain.create.editor.gorev.turu.bdf7be9a", table: .localizable, fallback: "Görev türü"),
-                                 values: ["representative", "support_staff", "team_member", "first_aid", "fire_team"])
+                                 values: ["representative", "support_staff", "team_member", "first_aid", "fire_team"], symbol: "person.badge.key")
                     HStack(alignment: .top, spacing: 8) {
                         compactDate("Başlangıç", selection: $firstDate)
                         if hasEndDate { compactDate("Bitiş", selection: $secondDate) }
@@ -554,11 +554,15 @@ struct IsgWorkspaceDomainCreateEditor: View {
                             }.frame(minHeight: 42).contentShape(Rectangle())
                         }.buttonStyle(NovaRowPressStyle())
                         if showsRoles && selectedEmployeeIDs.contains(employee.id) {
-                            Picker(RDLocalization.string("localizable.isg.workspace.domain.create.editor.ekip.gorevi.867a99bd", table: .localizable, fallback: "Ekip görevi"), selection: emergencyRoleBinding(employee.id)) {
-                                ForEach(["coordinator", "fire", "first_aid", "evacuation", "other"], id: \.self) {
-                                    Text(IsgWorkspaceDisplayText.value($0)).tag($0)
-                                }
-                            }.pickerStyle(.menu).padding(.leading, 30)
+                            let roleTitle = RDLocalization.string("localizable.isg.workspace.domain.create.editor.ekip.gorevi.867a99bd", table: .localizable, fallback: "Ekip görevi")
+                            let role = emergencyRoleBinding(employee.id)
+                            NovaChoiceField(title: roleTitle, placeholder: roleTitle, symbol: "person.badge.key",
+                                options: ["coordinator", "fire", "first_aid", "evacuation", "other"].map {
+                                    NovaChoiceOption<String>(value: $0, title: IsgWorkspaceDisplayText.value($0))
+                                },
+                                selection: Binding(get: { role.wrappedValue }, set: { if let new = $0 { role.wrappedValue = new } }),
+                                identifier: "nova.workspace.domain.create.team.role.\(employee.id.uuidString.lowercased())")
+                                .padding(.leading, 30)
                         }
                     }
                 }
@@ -588,10 +592,11 @@ struct IsgWorkspaceDomainCreateEditor: View {
             $0.code.localizedCaseInsensitiveContains(needle) }
     }
     private var planPicker: some View {
-        Picker(RDLocalization.string("localizable.nova.workspace.domain.plan", table: .localizable,
-            fallback: "Acil durum planı"), selection: $planID) {
-            ForEach(plans) { Text($0.title).tag(Optional($0.id)) }
-        }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+        let planTitle = RDLocalization.string("localizable.nova.workspace.domain.plan", table: .localizable,
+            fallback: "Acil durum planı")
+        return NovaChoiceField(title: planTitle, placeholder: planTitle, symbol: "doc.text",
+            options: plans.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.title) },
+            selection: $planID, identifier: "nova.workspace.domain.create.plan", boxed: true)
     }
     private func textField(_ label: String, text: Binding<String>) -> some View {
         TextField(label, text: text, axis: .vertical).lineLimit(1...4).font(NovaFont.font(.body))
@@ -614,10 +619,11 @@ struct IsgWorkspaceDomainCreateEditor: View {
         Stepper("\(label): \(number)", value: $number, in: 1...100_000)
             .padding(12).novaControlBackground(cornerRadius: 14)
     }
-    private func optionPicker(label: String, values: [String]) -> some View {
-        Picker(label, selection: $option) {
-            ForEach(values, id: \.self) { Text(optionTitle($0)).tag($0) }
-        }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+    private func optionPicker(label: String, values: [String], symbol: String = "list.bullet") -> some View {
+        NovaChoiceField(title: label, placeholder: label, symbol: symbol,
+            options: values.map { NovaChoiceOption<String>(value: $0, title: optionTitle($0)) },
+            selection: Binding(get: { option.isEmpty ? nil : option }, set: { option = $0 ?? "" }),
+            identifier: "nova.workspace.domain.create.option", boxed: true)
     }
 
     private var needsWorkplace: Bool {

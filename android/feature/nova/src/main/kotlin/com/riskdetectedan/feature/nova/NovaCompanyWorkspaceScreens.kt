@@ -459,10 +459,9 @@ private fun CompanyEditor(company: Company?, fallbackId: String, fallbackName: S
         NovaCard(Modifier.fillMaxWidth(), padding = 14) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 NovaTextField("Firma adı", draft.name, { draft = draft.copy(name = it) }, identifier = "company.editor.name")
-                NovaText("Tehlike sınıfı", style = NovaTypeToken.label, color = NovaColorToken.textTertiary.color())
-                NovaSegmentedControl(CompanyHazardClass.entries.map { companyHazardTitle(it.id) }, CompanyHazardClass.entries.indexOf(draft.hazardClass)) {
-                    draft = draft.copy(hazardClass = CompanyHazardClass.entries[it])
-                }
+                NovaChoiceField("Tehlike sınıfı", NovaHazardChoice.placeholder, "exclamationmark.triangle", NovaHazardChoice.options,
+                    draft.hazardClass.id, { id -> CompanyHazardClass.entries.firstOrNull { it.id == id }?.let { draft = draft.copy(hazardClass = it) } },
+                    "company.editor.hazard", message = NovaHazardChoice.message, boxed = true)
                 NovaTextField("Adres", draft.address, { draft = draft.copy(address = it) }, identifier = "company.editor.address")
                 NovaTextField("İlgili kişi", draft.contactPerson, { draft = draft.copy(contactPerson = it) }, identifier = "company.editor.contact")
                 NovaTextField("Departman / ekip", draft.department, { draft = draft.copy(department = it) }, identifier = "company.editor.department")

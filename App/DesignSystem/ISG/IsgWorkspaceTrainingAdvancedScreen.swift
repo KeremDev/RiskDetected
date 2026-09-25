@@ -223,8 +223,8 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
         switch route.kind {
         case .curriculumCreate:
             field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.adi.8b54a1ce", table: .localizable, fallback: "Müfredat adı"), text: $title); stringPicker("Döngü", selection: $option,
-                values: ["initial", "periodic_repeat", "onboarding", "task_specific", "other"])
-            stringPicker("Tehlike sınıfı", selection: $hazard, values: ["low", "medium", "high"])
+                values: ["initial", "periodic_repeat", "onboarding", "task_specific", "other"], symbol: "arrow.triangle.2.circlepath")
+            hazardPicker("Tehlike sınıfı", selection: $hazard)
             field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.hedef.grup.cf6bc8a1", table: .localizable, fallback: "Hedef grup"), text: $secondary); Toggle(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.sinav.gerekli.8cdcfd3a", table: .localizable, fallback: "Sınav gerekli"), isOn: $assessmentRequired)
                 .padding(12).novaControlBackground(cornerRadius: 14)
             if assessmentRequired { Stepper("Geçme puanı: \(score)", value: $score, in: 0...100) }
@@ -271,7 +271,7 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
                 .padding(12).novaControlBackground(cornerRadius: 14); field("Not", text: $notes)
         case .certificateCreate:
             employeePicker; trainingPicker(plannedOnly: false, optional: true)
-            stringPicker("Belge türü", selection: $option, values: ["internal_training", "external_training", "qualification"])
+            stringPicker("Belge türü", selection: $option, values: ["internal_training", "external_training", "qualification"], symbol: "doc.text")
             field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.belge.no.452741f8", table: .localizable, fallback: "Belge no"), text: $title); field(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.duzenleyen.67da62d1", table: .localizable, fallback: "Düzenleyen"), text: $secondary)
             filePicker
             DatePicker("Düzenlenme", selection: $firstDate, displayedComponents: .date)
@@ -334,21 +334,35 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
     private func field(_ label: String, text: Binding<String>) -> some View {
         TextField(label, text: text, axis: .vertical).padding(14).novaControlBackground(cornerRadius: 14)
     }
-    private func stringPicker(_ label: String, selection: Binding<String>, values: [String]) -> some View {
-        Picker(label, selection: selection) {
-            ForEach(values, id: \.self) { Text(IsgWorkspaceDisplayText.value($0)).tag($0) }
-        }
-            .pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+    private func stringPicker(_ label: String, selection: Binding<String>, values: [String], symbol: String = "list.bullet") -> some View {
+        NovaChoiceField(title: label, placeholder: label, symbol: symbol,
+            options: values.map { NovaChoiceOption<String>(value: $0, title: IsgWorkspaceDisplayText.value($0)) },
+            selection: Binding(get: { selection.wrappedValue.isEmpty ? nil : selection.wrappedValue },
+                               set: { if let new = $0 { selection.wrappedValue = new } }),
+            identifier: "nova.workspace.training.advanced.option", boxed: true)
+    }
+    /// The curriculum's hazard class as described choices; the stored value stays "low"/"medium"/"high".
+    private func hazardPicker(_ label: String, selection: Binding<String>) -> some View {
+        NovaChoiceField(title: label, placeholder: NovaHazardChoice.placeholder, symbol: "exclamationmark.triangle",
+            message: NovaHazardChoice.message,
+            options: NovaHazardChoice.options.map {
+                NovaChoiceOption<String>(value: $0.value.rawValue, title: $0.title, detail: $0.detail, tone: $0.tone, level: $0.level)
+            },
+            selection: Binding(get: { selection.wrappedValue.isEmpty ? nil : selection.wrappedValue },
+                               set: { if let new = $0 { selection.wrappedValue = new } }),
+            identifier: "nova.workspace.training.advanced.hazard", boxed: true)
     }
     private var workplacePicker: some View {
-        Picker(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.isyeri.71690301", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) { ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) } }
-            .pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+        let workplaceTitle = RDLocalization.string("localizable.isg.workspace.training.advanced.screen.isyeri.71690301", table: .localizable, fallback: "İşyeri")
+        return NovaChoiceField(title: workplaceTitle, placeholder: workplaceTitle, symbol: "building.2",
+            options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+            selection: $workplaceID, identifier: "nova.workspace.training.advanced.workplace", boxed: true)
     }
     private var employeePicker: some View {
-        Picker("Personel", selection: $employeeID) {
-            ForEach(selectableEmployees) { Text($0.name).tag(Optional($0.id)) }
-        }
-            .pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+        let employeeTitle = RDLocalization.string("localizable.nova.workspace.personnel.employee", table: .localizable, fallback: "Personel")
+        return NovaChoiceField(title: employeeTitle, placeholder: employeeTitle, symbol: "person",
+            options: selectableEmployees.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+            selection: $employeeID, identifier: "nova.workspace.training.advanced.employee", boxed: true)
     }
     private var selectableEmployees: [IsgWorkspaceEmployeeEntry] {
         guard case .attemptCreate = route.kind else { return employees }
@@ -356,24 +370,29 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
         return employees.filter { enrolled.contains($0.id) }
     }
     private var curriculumPicker: some View {
-        Picker(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.f0b8ea0a", table: .localizable, fallback: "Müfredat"), selection: $curriculumID) {
-            Text(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.yok.533272b3", table: .localizable, fallback: "Müfredat yok")).tag(UUID?.none)
-            ForEach(publishedCurricula) { Text($0.title).tag(Optional($0.id)) }
-        }
-            .pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+        let curriculumTitle = RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.f0b8ea0a", table: .localizable, fallback: "Müfredat")
+        return NovaChoiceField(title: curriculumTitle, placeholder: curriculumTitle, symbol: "books.vertical",
+            options: publishedCurricula.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.title) },
+            selection: $curriculumID, identifier: "nova.workspace.training.advanced.curriculum",
+            noneTitle: RDLocalization.string("localizable.isg.workspace.training.advanced.screen.mufredat.yok.533272b3", table: .localizable, fallback: "Müfredat yok"),
+            boxed: true)
     }
     private var filePicker: some View {
-        Picker(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.belge.dosyasi.b4f6d871", table: .localizable, fallback: "Belge dosyası"), selection: $fileID) {
-            Text(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.dosya.baglama.34455d56", table: .localizable, fallback: "Dosya bağlama")).tag(UUID?.none)
-            ForEach(files) { Text($0.title).tag(Optional($0.id)) }
-        }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+        let fileTitle = RDLocalization.string("localizable.isg.workspace.training.advanced.screen.belge.dosyasi.b4f6d871", table: .localizable, fallback: "Belge dosyası")
+        return NovaChoiceField(title: fileTitle, placeholder: fileTitle, symbol: "doc.text",
+            options: files.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.title) },
+            selection: $fileID, identifier: "nova.workspace.training.advanced.file",
+            noneTitle: RDLocalization.string("localizable.isg.workspace.training.advanced.screen.dosya.baglama.34455d56", table: .localizable, fallback: "Dosya bağlama"),
+            boxed: true)
     }
     private func trainingPicker(plannedOnly: Bool, optional: Bool = false) -> some View {
         let values = plannedOnly ? plannedTrainings : completedTrainings
-        return Picker(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitim.a6877931", table: .localizable, fallback: "Eğitim"), selection: $trainingID) {
-            if optional { Text(RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitime.bagli.degil.a39132e7", table: .localizable, fallback: "Eğitime bağlı değil")).tag(UUID?.none) }
-            ForEach(values) { Text($0.title).tag(Optional($0.id)) }
-        }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+        let trainingTitle = RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitim.a6877931", table: .localizable, fallback: "Eğitim")
+        return NovaChoiceField(title: trainingTitle, placeholder: trainingTitle, symbol: "graduationcap",
+            options: values.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.title) },
+            selection: $trainingID, identifier: "nova.workspace.training.advanced.training",
+            noneTitle: optional ? RDLocalization.string("localizable.isg.workspace.training.advanced.screen.egitime.bagli.degil.a39132e7", table: .localizable, fallback: "Eğitime bağlı değil") : nil,
+            boxed: true)
             .onChange(of: trainingID) { _ in
                 if case .attemptCreate = route.kind { employeeID = selectableEmployees.first?.id }
             }

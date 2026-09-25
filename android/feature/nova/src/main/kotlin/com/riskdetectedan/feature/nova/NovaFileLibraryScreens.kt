@@ -329,14 +329,12 @@ private fun FileRenameSheet(entry: NovaFileEntry, categories: List<NovaFileCateg
     var tags by remember { mutableStateOf(entry.tags.joinToString(", ")) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var choosing by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
         NovaText("Dosya kaydını düzenle", style = NovaTypeToken.sheetTitle)
         NovaText(entry.fileName, style = NovaTypeToken.metaQuiet)
         NovaTextField("Başlık", title, { title = it }, identifier = "file.rename.title")
-        NovaChooserButton("Başlık altında sakla", NovaFileWords.category(category), "file.rename.category", symbol = "folder", open = choosing) { choosing = !choosing }
-        if (choosing) NovaChooserPanel(categories.map { NovaChooserOption(it.code, NovaFileWords.category(it.code), symbol = "folder") }, category,
-            "file.rename.category.panel") { picked -> if (picked != null) category = picked; choosing = false }
+        NovaChoiceField("Başlık altında sakla", "Başlık seçin", "folder", categories.map { NovaChoiceOption(it.code, NovaFileWords.category(it.code)) }, category,
+            { picked -> if (picked != null) category = picked }, "file.rename.category", boxed = true)
         NovaTextField("Etiketler · virgülle ayırın", tags, { tags = it }, identifier = "file.rename.tags")
         NovaTextField("Not", note, { note = it }, identifier = "file.rename.note")
         error?.let { NovaText(it, style = NovaTypeToken.metaQuiet, color = NovaColorToken.statusDangerInk.color()) }

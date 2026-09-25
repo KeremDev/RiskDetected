@@ -406,18 +406,20 @@ struct NovaChecklistRunTaskScreen: View {
                 VStack(alignment: .leading, spacing: 18) {
                     NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.bu.kontrol.tamamlanmis.sayilmayacak.kaydedilmis..fea2bbc3", table: .localizable, fallback: "Bu kontrol tamamlanmış sayılmayacak. Kaydedilmiş yanıtlar geçmişte kalacak."),
                         style: .body, color: NovaColorToken.textSecondary.color(in: scheme))
-                    VStack(alignment: .leading, spacing: 8) {
-                        NovaText(text: RDLocalization.string("localizable.nova.checklist.run.flow.iptal.nedeni.25e30c32", table: .localizable, fallback: "İptal nedeni *"), style: .label)
-                        Picker(RDLocalization.string("localizable.nova.checklist.run.flow.iptal.nedeni.beec9285", table: .localizable, fallback: "İptal nedeni"), selection: $cancellationReason) {
-                            Text(RDLocalization.string("localizable.nova.checklist.run.flow.secin.d682b3f3", table: .localizable, fallback: "Seçin")).tag("")
-                            Text(RDLocalization.string("localizable.nova.checklist.run.flow.kontrol.artik.gerekli.degil.fe5f8097", table: .localizable, fallback: "Kontrol artık gerekli değil")).tag("not_required")
-                            Text(RDLocalization.string("localizable.nova.checklist.run.flow.yanlis.kapsam.veya.liste.secildi.9509766b", table: .localizable, fallback: "Yanlış kapsam veya liste seçildi")).tag("wrong_scope")
-                            Text(RDLocalization.string("localizable.nova.checklist.run.flow.saha.kosullari.uygun.degil.4a3a6143", table: .localizable, fallback: "Saha koşulları uygun değil")).tag("site_unavailable")
-                            Text(RDLocalization.string("localizable.nova.checklist.run.flow.diger.c31d7e85", table: .localizable, fallback: "Diğer")).tag("other")
-                        }
-                        .pickerStyle(.menu)
-                        .padding(12).novaControlBackground(cornerRadius: 12)
-                    }
+                    // The field's own name stands in for the empty choice: the row
+                    // shows no label until a reason is picked.
+                    NovaChoiceField(title: RDLocalization.string("localizable.nova.checklist.run.flow.iptal.nedeni.25e30c32", table: .localizable, fallback: "İptal nedeni *"),
+                        placeholder: RDLocalization.string("localizable.nova.checklist.run.flow.iptal.nedeni.25e30c32", table: .localizable, fallback: "İptal nedeni *"),
+                        symbol: "xmark.circle",
+                        options: [
+                            NovaChoiceOption<String>(value: "not_required", title: RDLocalization.string("localizable.nova.checklist.run.flow.kontrol.artik.gerekli.degil.fe5f8097", table: .localizable, fallback: "Kontrol artık gerekli değil")),
+                            NovaChoiceOption<String>(value: "wrong_scope", title: RDLocalization.string("localizable.nova.checklist.run.flow.yanlis.kapsam.veya.liste.secildi.9509766b", table: .localizable, fallback: "Yanlış kapsam veya liste seçildi")),
+                            NovaChoiceOption<String>(value: "site_unavailable", title: RDLocalization.string("localizable.nova.checklist.run.flow.saha.kosullari.uygun.degil.4a3a6143", table: .localizable, fallback: "Saha koşulları uygun değil")),
+                            NovaChoiceOption<String>(value: "other", title: RDLocalization.string("localizable.nova.checklist.run.flow.diger.c31d7e85", table: .localizable, fallback: "Diğer"))
+                        ],
+                        selection: Binding<String?>(get: { cancellationReason.isEmpty ? nil : cancellationReason },
+                                           set: { cancellationReason = $0 ?? "" }),
+                        identifier: "nova.checklist.run.cancel.reason", boxed: true)
                     if let failure { errorText(failure) }
                 }
                 .padding(20)

@@ -44,7 +44,6 @@ fun NovaDocumentWizardScreen(domain: String, companiesSource: suspend () -> List
     var step by remember { mutableIntStateOf(0) }
     var search by remember { mutableStateOf("") }
     var shown by remember { mutableIntStateOf(12) }
-    var chooser by remember { mutableStateOf<String?>(null) }
     var preview by remember { mutableStateOf<JsonObject?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
     var scopeMessage by remember { mutableStateOf<String?>(null) }
@@ -55,7 +54,7 @@ fun NovaDocumentWizardScreen(domain: String, companiesSource: suspend () -> List
     fun visibleQuestions(rt: NovaDocumentWizardRuntime) = rt.questions.filter { domain == "risk" || it.field !in listOf("method", "preset") }
     val title = if (domain == "risk") "Risk Analizi Sihirbazı" else "Acil Durum Planı Sihirbazı"
     fun changed() { preview = null; archivedHash = null; message = null }
-    fun move(index: Int) { step = index; search = ""; shown = 12; chooser = null }
+    fun move(index: Int) { step = index; search = ""; shown = 12 }
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         val captured = download
         if (uri != null && captured != null) coroutines.launch {
@@ -144,11 +143,13 @@ fun NovaDocumentWizardScreen(domain: String, companiesSource: suspend () -> List
                         NovaText(q.help, style = NovaTypeToken.meta)
                         when (q.field) {
                             "scope" -> {
-                                NovaChooserButton("Firma", companies.firstOrNull { it.id == company }?.name ?: "Firma seçmeden devam et", "wizard.company", open = chooser == "company") { if (!busy) chooser = if (chooser == "company") null else "company" }
-                                if (chooser == "company") NovaChooserPanel(listOf(NovaChooserOption(null, "Firma seçmeden devam et")) + companies.map { NovaChooserOption(it.id, it.name) }, company, "wizard.companies") { if (!busy) { company = it; workplace = null; workplaces = emptyList(); chooser = null; changed() } }
+                                NovaChoiceField("Firma", "Firma seçin", "building.2", companies.map { NovaChoiceOption(it.id, it.name) }, company,
+                                    { if (!busy) { company = it; workplace = null; workplaces = emptyList(); changed() } }, "wizard.company", enabled = !busy,
+                                    noneTitle = "Firma seçmeden devam et", searchable = true, boxed = true)
                                 if (workplaces.isNotEmpty()) {
-                                    NovaChooserButton("İşyeri", workplaces.firstOrNull { it.id == workplace }?.name ?: "İşyeri seçmeden devam et", "wizard.workplace", open = chooser == "workplace") { if (!busy) chooser = if (chooser == "workplace") null else "workplace" }
-                                    if (chooser == "workplace") NovaChooserPanel(listOf(NovaChooserOption(null, "İşyeri seçmeden devam et")) + workplaces.map { NovaChooserOption(it.id, it.name) }, workplace, "wizard.workplaces") { if (!busy) { workplace = it; chooser = null; changed() } }
+                                    NovaChoiceField("İşyeri", "İşyeri seçin", "building.2", workplaces.map { NovaChoiceOption(it.id, it.name) }, workplace,
+                                        { if (!busy) { workplace = it; changed() } }, "wizard.workplace", enabled = !busy,
+                                        noneTitle = "İşyeri seçmeden devam et", searchable = true, boxed = true)
                                 }
                                 scopeMessage?.let { NovaText(it, style = NovaTypeToken.metaQuiet) }
                             }

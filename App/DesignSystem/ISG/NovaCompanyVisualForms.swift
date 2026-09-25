@@ -47,10 +47,11 @@ struct NovaCompanyLiveEditor: View {
                     VStack(spacing: 14) {
                         field(RDLocalization.string("localizable.company.picker.sheet.firma.adi.32866b14", table: .localizable,
                             fallback: "Firma adı"), text: $draft.name, symbol: "building.2")
-                        Picker(RDLocalization.string("localizable.nova.visual.6", table: .localizable,
-                            fallback: "Tehlike sınıfı"), selection: $draft.hazardClass) {
-                            ForEach(CompanyHazardClass.allCases) { value in Text(value.title).tag(value) }
-                        }.font(NovaFont.font(.body))
+                        NovaChoiceField(title: RDLocalization.string("localizable.nova.visual.6", table: .localizable,
+                            fallback: "Tehlike sınıfı"), placeholder: NovaHazardChoice.placeholder, symbol: "exclamationmark.triangle",
+                            message: NovaHazardChoice.message, options: NovaHazardChoice.options,
+                            selection: Binding(get: { draft.hazardClass }, set: { if let new = $0 { draft.hazardClass = new } }),
+                            identifier: "nova.company.editor.hazard")
                         field(RDLocalization.string("localizable.nova.company.visual.forms.adres.55c44314", table: .localizable, fallback: "Adres"), text: $draft.address, symbol: "mappin")
                         field(RDLocalization.string("localizable.company.picker.sheet.ilgili.kisi.c54dd4c6", table: .localizable,
                             fallback: "İlgili kişi"), text: $draft.contactPerson, symbol: "person")
@@ -104,11 +105,13 @@ struct NovaCompanyVisualEditor: View {
                 NovaCard(padding: 14) {
                     VStack(spacing: 16) {
                         field(RDLocalization.string("localizable.nova.visual.5", table: .localizable, fallback: "Firma adı *"), "building.2", $name)
-                        Picker(RDLocalization.string("localizable.nova.visual.6", table: .localizable, fallback: "Tehlike sınıfı"), selection: $hazard) {
-                            Text(RDLocalization.string("localizable.nova.visual.7", table: .localizable, fallback: "Az Tehlikeli")).tag("low")
-                            Text(RDLocalization.string("localizable.nova.visual.8", table: .localizable, fallback: "Tehlikeli")).tag("medium")
-                            Text(RDLocalization.string("localizable.nova.visual.9", table: .localizable, fallback: "Çok Tehlikeli")).tag("high")
-                        }.font(NovaFont.font(.body))
+                        NovaChoiceField(title: RDLocalization.string("localizable.nova.visual.6", table: .localizable, fallback: "Tehlike sınıfı"),
+                            placeholder: NovaHazardChoice.placeholder, symbol: "exclamationmark.triangle", message: NovaHazardChoice.message,
+                            options: NovaHazardChoice.options.map {
+                                NovaChoiceOption<String>(value: $0.value.rawValue, title: $0.title, detail: $0.detail, tone: $0.tone, level: $0.level)
+                            },
+                            selection: Binding(get: { hazard.isEmpty ? nil : hazard }, set: { if let new = $0 { hazard = new } }),
+                            identifier: "nova.company.visual.hazard")
                         field(RDLocalization.string("localizable.nova.visual.10", table: .localizable, fallback: "Sektör *"), "square.grid.2x2", $sector)
                         field(RDLocalization.string("localizable.nova.visual.11", table: .localizable, fallback: "Firma e-posta"), "envelope", $email).keyboardType(.emailAddress)
                         field(RDLocalization.string("localizable.nova.visual.12", table: .localizable, fallback: "Çalışan sayısı"), "person.2", $employees).keyboardType(.numberPad)

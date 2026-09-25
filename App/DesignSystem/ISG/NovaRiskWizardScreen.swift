@@ -292,16 +292,22 @@ struct NovaRiskWizardScreen: View {
             if !companies.isEmpty {
                 NovaCard(padding: 14) {
                     VStack(alignment: .leading, spacing: 8) {
-                        NovaText(text: "Firma", style: .label).frame(maxWidth: .infinity, alignment: .leading)
-                        Picker("Firma", selection: Binding(get: { company }, set: { selectCompany($0) })) {
-                            Text(RDLocalization.string("localizable.nova.risk.wizard.screen.firma.secmeden.devam.et.52b96f77", table: .localizable, fallback: "Firma seçmeden devam et")).tag(nil as UUID?)
-                            ForEach(companies) { Text($0.name).tag(Optional($0.id)) }
-                        }.pickerStyle(.menu).accessibilityIdentifier("riskWizard.company")
+                        NovaChoiceField(title: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
+                            placeholder: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
+                            symbol: "building.2",
+                            options: companies.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                            selection: Binding(get: { company }, set: { selectCompany($0) }),
+                            identifier: "riskWizard.company",
+                            noneTitle: RDLocalization.string("localizable.nova.risk.wizard.screen.firma.secmeden.devam.et.52b96f77", table: .localizable, fallback: "Firma seçmeden devam et"),
+                            searchable: true)
                         if !workplaces.isEmpty {
-                            Picker(RDLocalization.string("localizable.nova.risk.wizard.screen.isyeri.e5eb159e", table: .localizable, fallback: "İşyeri"), selection: $workplace) {
-                                Text(RDLocalization.string("localizable.nova.risk.wizard.screen.isyeri.secmeden.devam.et.d526e82c", table: .localizable, fallback: "İşyeri seçmeden devam et")).tag(nil as UUID?)
-                                ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-                            }.pickerStyle(.menu)
+                            NovaChoiceField(title: RDLocalization.string("localizable.nova.risk.wizard.screen.isyeri.e5eb159e", table: .localizable, fallback: "İşyeri"),
+                                placeholder: RDLocalization.string("localizable.nova.risk.wizard.screen.isyeri.e5eb159e", table: .localizable, fallback: "İşyeri"),
+                                symbol: "building.2",
+                                options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                                selection: $workplace, identifier: "nova.riskWizard.workplace",
+                                noneTitle: RDLocalization.string("localizable.nova.risk.wizard.screen.isyeri.secmeden.devam.et.d526e82c", table: .localizable, fallback: "İşyeri seçmeden devam et"),
+                                searchable: true)
                         }
                     }
                 }

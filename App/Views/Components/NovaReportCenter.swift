@@ -275,11 +275,13 @@ private struct NovaReportCreateFlow: View {
             }
         case 1:
             NovaText(text: RDLocalization.string("reports.nova.report.center.firma.ve.donem.ef19139e", table: .reports, fallback: "Firma ve dönem"), style: .sectionTitle)
-            NovaFilterField(label: "Firma", options: [.init(id: nil, title: RDLocalization.string("reports.nova.report.center.tum.firmalar.7e5cae36", table: .reports, fallback: "Tüm firmalar"))] + companies.map {
-                .init(id: $0.id.uuidString, title: $0.name)
-            }, selected: company?.uuidString, identifier: "report.create.company") {
-                company = $0.flatMap(UUID.init(uuidString:))
-            }
+            NovaChoiceField(title: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
+                placeholder: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
+                symbol: "building.2",
+                options: companies.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                selection: $company, identifier: "report.create.company",
+                noneTitle: RDLocalization.string("reports.nova.report.center.tum.firmalar.7e5cae36", table: .reports, fallback: "Tüm firmalar"),
+                searchable: true, boxed: true)
             Picker(RDLocalization.string("reports.nova.report.center.donem.69a6690a", table: .reports, fallback: "Dönem"), selection: $period) {
                 Text(RDLocalization.string("reports.nova.report.center.son.30.gun.0c3e510d", table: .reports, fallback: "Son 30 gün")).tag("30"); Text(RDLocalization.string("reports.nova.report.center.son.90.gun.df60a216", table: .reports, fallback: "Son 90 gün")).tag("90")
                 Text(RDLocalization.string("reports.nova.report.center.son.1.yil.48beda4d", table: .reports, fallback: "Son 1 yıl")).tag("365"); Text(RDLocalization.string("reports.nova.report.center.tum.zamanlar.3949f1d7", table: .reports, fallback: "Tüm zamanlar")).tag("all")

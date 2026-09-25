@@ -256,7 +256,6 @@ struct NovaFileRenameSheet: View {
     @State private var tags: String
     @State private var busy = false
     @State private var error: String?
-    @State private var choosing = false
 
     init(entry: NovaFileEntry, catalogue: [NovaFileCategory],
          save: @escaping (String, String, String, [String]) async throws -> Void) {
@@ -297,18 +296,13 @@ struct NovaFileRenameSheet: View {
 
     /// The same chooser the archive uses, so refiling reads the way filing did.
     @ViewBuilder private var categoryPicker: some View {
-        NovaFileChooserButton(
-            label: RDLocalization.string("localizable.nova.file.field.category", table: .localizable, fallback: "Başlık altında sakla"),
-            value: NovaFileWords.category(category), symbol: "folder",
-            isOpen: choosing, identifier: "file.rename.category") { choosing.toggle() }
-        if choosing {
-            NovaFileChooserPanel(
-                options: catalogue.map { .init(id: $0.code, title: NovaFileWords.category($0.code), symbol: "folder") },
-                selected: category, identifier: "file.rename.category") { picked in
-                    if let picked { category = picked }
-                    choosing = false
-                }
-        }
+        NovaChoiceField(
+            title: RDLocalization.string("localizable.nova.file.field.category", table: .localizable, fallback: "Başlık altında sakla"),
+            placeholder: RDLocalization.string("localizable.nova.file.category.choose", table: .localizable, fallback: "Başlık seçin"),
+            symbol: "folder",
+            options: catalogue.map { NovaChoiceOption<String>(value: $0.code, title: NovaFileWords.category($0.code)) },
+            selection: Binding(get: { category }, set: { if let picked = $0 { category = picked } }),
+            identifier: "file.rename.category", boxed: true)
     }
 
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
@@ -417,7 +411,6 @@ struct NovaFileAddInline: View {
     /// Opened on its own once a file is chosen, because filing it is the next
     /// thing the expert has to decide.
     @State private var choosingCategory = false
-    @State private var choosingCompany = false
 
     private var maxBytes: Int { accepts.map(\.maxBytes).max() ?? 0 }
     private var allExtensions: [String] { accepts.flatMap(\.extensions).sorted() }
@@ -463,20 +456,14 @@ struct NovaFileAddInline: View {
 
     /// The same chooser as the heading, so a long company list stays reachable.
     @ViewBuilder private var companyPicker: some View {
-        NovaFileChooserButton(
-            label: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
-            value: companies.first { $0.id == company }?.name
-                ?? "Kişisel dosya",
-            symbol: "building.2", isOpen: choosingCompany, isAnswered: true,
-            identifier: "file.add.company") { choosingCompany.toggle() }
-        if choosingCompany {
-            NovaFileChooserPanel(
-                options: [NovaFileChooserOption(id: nil, title: RDLocalization.string("localizable.nova.file.library.sheets.kisisel.dosya.1c93d4e6", table: .localizable, fallback: "Kişisel dosya"), symbol: "person")] + companies.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
-                selected: company?.uuidString, identifier: "file.add.company") { picked in
-                    company = picked.flatMap(UUID.init(uuidString:))
-                    choosingCompany = false
-                }
-        }
+        NovaChoiceField(
+            title: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
+            placeholder: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
+            symbol: "building.2",
+            options: companies.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+            selection: $company, identifier: "file.add.company",
+            noneTitle: RDLocalization.string("localizable.nova.file.library.sheets.kisisel.dosya.1c93d4e6", table: .localizable, fallback: "Kişisel dosya"),
+            searchable: true, boxed: true)
     }
 
     private var filePicker: some View {
@@ -491,20 +478,11 @@ struct NovaFileAddInline: View {
     /// that runs off the side: thirteen headings are all reachable, and the one
     /// in force is always the thing on the button.
     @ViewBuilder private var categoryPicker: some View {
-        NovaFileChooserButton(
-            label: RDLocalization.string("localizable.nova.file.field.category", table: .localizable, fallback: "Başlık altında sakla"),
-            value: draft.category.map(NovaFileWords.category)
-                ?? RDLocalization.string("localizable.nova.file.category.choose", table: .localizable, fallback: "Başlık seçin"),
-            symbol: "folder", isOpen: choosingCategory, isAnswered: draft.category != nil,
-            identifier: "file.add.category") { choosingCategory.toggle() }
-        if choosingCategory {
-            NovaFileChooserPanel(
-                options: categories.map { .init(id: $0.code, title: NovaFileWords.category($0.code), symbol: "folder") },
-                selected: draft.category, identifier: "file.add.category") { picked in
-                    draft.category = picked
-                    choosingCategory = false
-                }
-        }
+        // Opens by itself once a file is picked without a heading.
+        NovaChoiceField(title: RDLocalization.string("localizable.nova.file.field.category", table: .localizable, fallback: "Başlık altında sakla"),
+            placeholder: RDLocalization.string("localizable.nova.file.category.choose", table: .localizable, fallback: "Başlık seçin"),
+            symbol: "folder", options: categories.map { NovaChoiceOption<String>(value: $0.code, title: NovaFileWords.category($0.code)) },
+            selection: $draft.category, identifier: "file.add.category", boxed: true, openRequest: $choosingCategory)
     }
 
     /// What actually happened to the file, from the server's own row.

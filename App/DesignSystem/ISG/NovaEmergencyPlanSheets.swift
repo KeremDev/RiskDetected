@@ -217,8 +217,6 @@ struct NovaEmergencyPlanSheet: View {
     let onClose: () -> Void
     @State private var failure: String?
     @State private var saving = false
-    @State private var choosingWorkplace = false
-    @State private var supportStaffPicker = false
     @State private var personnel: [NovaEmployeeRow] = []
     @State private var personnelLoading = false
     @State private var personnelFailure: String?
@@ -321,31 +319,24 @@ struct NovaEmergencyPlanSheet: View {
     private var scopeStep: some View {
         VStack(alignment: .leading, spacing: 12) {
             let workplaces = catalogue?.workplaces ?? []
-            if !workplaces.isEmpty { NovaCard(padding: 12) {
-                fieldIcon("building.2") {
-                    if draft.isRenewal || workplaces.count == 1 {
-                        VStack(alignment: .leading, spacing: 4) {
-                            NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.isyeri.b018b168", table: .localizable, fallback: "İşyeri"), style: .label)
-                            NovaText(text: workplaceTitle, style: .cardTitle)
-                        }
-                    } else {
-                        VStack(alignment: .leading, spacing: 4) {
-                            NovaFileChooserButton(label: RDLocalization.string("localizable.nova.emergency.plan.sheets.isyeri.2cb75cfe", table: .localizable, fallback: "İşyeri"), value: workplaceTitle,
-                                isOpen: choosingWorkplace, identifier: "nova.emergency.form.workplace") {
-                                    choosingWorkplace.toggle()
-                                }
-                            if choosingWorkplace {
-                                NovaFileChooserPanel(options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name) },
-                                    selected: draft.workplaceID?.uuidString,
-                                    identifier: "nova.emergency.form.workplace.panel") { value in
-                                        draft.workplaceID = value.flatMap(UUID.init(uuidString:))
-                                        choosingWorkplace = false
-                                    }
+            if !workplaces.isEmpty {
+                if draft.isRenewal || workplaces.count == 1 {
+                    NovaCard(padding: 12) {
+                        fieldIcon("building.2") {
+                            VStack(alignment: .leading, spacing: 4) {
+                                NovaText(text: RDLocalization.string("localizable.nova.emergency.plan.sheets.isyeri.b018b168", table: .localizable, fallback: "İşyeri"), style: .label)
+                                NovaText(text: workplaceTitle, style: .cardTitle)
                             }
                         }
                     }
+                } else {
+                    NovaChoiceField(title: RDLocalization.string("localizable.nova.emergency.plan.sheets.isyeri.2cb75cfe", table: .localizable, fallback: "İşyeri"),
+                        placeholder: RDLocalization.string("localizable.nova.emergency.form.pickplace", table: .localizable, fallback: "İşyeri seçin"),
+                        symbol: "building.2",
+                        options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                        selection: $draft.workplaceID, identifier: "nova.emergency.form.workplace", searchable: true, boxed: true)
                 }
-            } }
+            }
         }
     }
 
@@ -543,24 +534,19 @@ struct NovaEmergencyPlanSheet: View {
                     table: .localizable, fallback: "Ekip henüz boş; kişileri daha sonra da ekleyebilirsiniz."), style: .meta,
                     color: NovaColorToken.textSecondary.color(in: scheme))
             }
-            NovaFileChooserButton(label: RDLocalization.string("localizable.nova.emergency.plan.sheets.firma.personeli.a5cb6b09", table: .localizable, fallback: "Firma personeli"),
-                value: personnel.first { $0.id == selectedEmployeeID }?.name ?? "Personel seçin",
-                symbol: "person", isOpen: supportStaffPicker,
-                isAnswered: selectedEmployeeID != nil,
-                identifier: "nova.emergency.form.employee") { supportStaffPicker.toggle() }
-            if supportStaffPicker {
-                NovaFileChooserPanel(options: personnel.filter { employee in
+            NovaChoiceField(title: RDLocalization.string("localizable.nova.emergency.plan.sheets.firma.personeli.a5cb6b09", table: .localizable, fallback: "Firma personeli"),
+                placeholder: RDLocalization.string("localizable.nova.appointment.form.pickperson", table: .localizable, fallback: "Personel seçin"),
+                symbol: "person",
+                options: personnel.filter { employee in
                     !draft.team.contains { $0.fullName == employee.name }
-                }.map { .init(id: $0.id.uuidString, title: $0.name) },
-                    selected: selectedEmployeeID?.uuidString,
-                    identifier: "nova.emergency.form.employee.options") { value in
-                    selectedEmployeeID = value.flatMap(UUID.init(uuidString:))
+                }.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                selection: Binding<UUID?>(get: { selectedEmployeeID }, set: { value in
+                    selectedEmployeeID = value
                     if let person = personnel.first(where: { $0.id == selectedEmployeeID }) {
                         memberName = person.fullName
                     }
-                    supportStaffPicker = false
-                }
-            }
+                }),
+                identifier: "nova.emergency.form.employee", searchable: true, boxed: true)
             if personnelLoading { ProgressView().controlSize(.small) }
             if let personnelFailure { NovaText(text: personnelFailure, style: .metaQuiet) }
             ForEach(draft.team) { member in

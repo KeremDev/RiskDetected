@@ -484,16 +484,14 @@ private fun RiskVersionSheet(initial: NovaRiskVersionDraft, onClose: () -> Unit,
     var draft by remember { mutableStateOf(initial) }
     var failure by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
-    var choosingKind by remember { mutableStateOf(false) }
     val busy = LocalNovaPopupBusy.current
     val coroutines = rememberCoroutineScope()
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         NovaPopupHeading(if (draft.versionToEdit != null) "Taslağı düzenle" else "Yeni sürüm", symbol = "checkmark.shield")
-        NovaChooserButton("Sürüm türü", draft.kind.title, "nova.risk.version.kind", open = choosingKind) {
-            if (draft.versionToEdit == null) choosingKind = !choosingKind
-        }
-        if (choosingKind) NovaChooserPanel(NovaRiskKind.entries.filter { it != NovaRiskKind.rescan }.map { NovaChooserOption(it.name, it.title) },
-            draft.kind.name, "nova.risk.version.kind.panel") { value -> NovaRiskKind.of(value)?.let { draft = draft.copy(kind = it) }; choosingKind = false }
+        // A rescan is never offered; it is listed only so an edited rescan still shows its kind.
+        NovaChoiceField("Sürüm türü", "Sürüm türü seçin", "checkmark.shield",
+            NovaRiskKind.entries.filter { it != NovaRiskKind.rescan || it == draft.kind }.map { NovaChoiceOption(it, it.title, it.explain) }, draft.kind,
+            { value -> value?.let { draft = draft.copy(kind = it) } }, "nova.risk.version.kind", enabled = draft.versionToEdit == null, boxed = true)
         NovaHelpHint(draft.kind.explain)
         if (draft.kind.carriesAssessmentDate) NovaDayField("Değerlendirme tarihi", draft.assessmentOn, { draft = draft.copy(assessmentOn = it) }, "nova.risk.version.assessed")
         else NovaHelpHint("Bu tür, belgenin özgün değerlendirme tarihini korur.")
@@ -516,7 +514,6 @@ private fun RiskFinalizeSheet(initial: NovaRiskFinalizeDraft, catalogue: NovaRis
     var draft by remember { mutableStateOf(initial) }
     var failure by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
-    var choosingRule by remember { mutableStateOf(false) }
     val busy = LocalNovaPopupBusy.current
     val coroutines = rememberCoroutineScope()
     val expertOption = "Kendi belirlediğim süre"
@@ -527,9 +524,9 @@ private fun RiskFinalizeSheet(initial: NovaRiskFinalizeDraft, catalogue: NovaRis
             val rules = catalogue?.rules.orEmpty()
             when {
                 rules.isNotEmpty() -> {
-                    NovaChooserButton("Süre kaynağı", draft.ruleCode.ifEmpty { expertOption }, "nova.risk.finalize.rule", open = choosingRule) { choosingRule = !choosingRule }
-                    if (choosingRule) NovaChooserPanel(listOf(NovaChooserOption(null, expertOption)) + rules.map { NovaChooserOption(it.ruleCode, it.ruleCode) },
-                        draft.ruleCode.ifEmpty { null }, "nova.risk.finalize.rule.panel") { draft = draft.copy(ruleCode = it.orEmpty()); choosingRule = false }
+                    NovaChoiceField("Süre kaynağı", "Süre kaynağı seçin", "hourglass", rules.map { NovaChoiceOption(it.ruleCode, it.ruleCode) },
+                        draft.ruleCode.ifEmpty { null }, { draft = draft.copy(ruleCode = it.orEmpty()) }, "nova.risk.finalize.rule",
+                        noneTitle = expertOption, boxed = true)
                 }
                 draft.suggestedYears != null -> NovaHelpHint("İşyerinin tehlike sınıfına göre ${draft.suggestedYears} yıl otomatik dolduruldu. Gerekirse değiştirebilirsiniz.")
                 else -> NovaHelpHint("Onaylanmış bir süre kataloğu yok. Gireceğiniz süre \"uzman tarafından belirlenen\" olarak kaydedilir.")

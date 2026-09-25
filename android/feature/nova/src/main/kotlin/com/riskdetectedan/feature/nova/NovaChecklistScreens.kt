@@ -517,11 +517,8 @@ private fun ChecklistStartFlow(client: NovaChecklistClient, initialCompany: Stri
                     NovaDayField("Kontrol tarihi", day, { picked -> if ((NovaDay.parse(picked) ?: LocalDate.MAX) <= LocalDate.now()) day = picked }, "nova.checklist.start.day")
                     val workplaces = catalogue?.workplaces.orEmpty()
                     if (company != null && workplaces.size > 1) {
-                        NovaChooserButton("İşyeri", workplaces.firstOrNull { it.id == workplace }?.name ?: "İşyeri seçin", "nova.checklist.start.workplace",
-                            open = chooser == "workplace") { chooser = if (chooser == "workplace") null else "workplace" }
-                        if (chooser == "workplace") NovaChooserPanel(workplaces.map { NovaChooserOption(it.id, it.name) }, workplace, "nova.checklist.start.workplace.options") {
-                            workplace = it; chooser = null
-                        }
+                        NovaChoiceField("İşyeri", "İşyeri seçin", "building.2", workplaces.map { NovaChoiceOption(it.id, it.name) }, workplace, { workplace = it },
+                            "nova.checklist.start.workplace", searchable = true, boxed = true)
                     } else if (company != null) workplaces.firstOrNull()?.let { DetailRow("İşyeri", it.name) }
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).novaRowPress { showsSite = !showsSite }, verticalAlignment = Alignment.CenterVertically) {
@@ -889,16 +886,13 @@ private fun ChecklistRunTask(run: NovaChecklistRun, canWrite: Boolean, onAnswer:
                 }
             }
             RunPage.cancel -> {
-                var choosing by remember { mutableStateOf(false) }
                 val reasons = linkedMapOf("not_required" to "Kontrol artık gerekli değil", "wrong_scope" to "Yanlış kapsam veya liste seçildi",
                     "site_unavailable" to "Saha koşulları uygun değil", "other" to "Diğer")
                 ChecklistHeader("Kontrolü iptal et", "Kontrole dön", { page = RunPage.question })
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                     NovaText("Bu kontrol tamamlanmış sayılmayacak. Kaydedilmiş yanıtlar geçmişte kalacak.", color = NovaColorToken.textSecondary.color())
-                    NovaChooserButton("İptal nedeni *", cancellationReason?.let { reasons[it] } ?: "Seçin", "nova.checklist.cancel.reason", open = choosing) { choosing = !choosing }
-                    if (choosing) NovaChooserPanel(reasons.map { (key, label) -> NovaChooserOption(key, label) }, cancellationReason, "nova.checklist.cancel.reason.options") {
-                        cancellationReason = it; choosing = false
-                    }
+                    NovaChoiceField("İptal nedeni *", "İptal nedeni seçin", "xmark.circle", reasons.map { (key, label) -> NovaChoiceOption(key, label) },
+                        cancellationReason, { cancellationReason = it }, "nova.checklist.cancel.reason", boxed = true)
                     failure?.let { ErrorText(it) }
                 }
                 ChecklistBottomAction {

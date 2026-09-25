@@ -112,28 +112,11 @@ struct IsgWorkspaceAssignmentManagement: View {
     }
 
     private var expertMenu: some View {
-        Menu {
-            ForEach(experts, id: \.id) { member in
-                Button { membershipID = member.id } label: {
-                    HStack {
-                        Text(memberLabel(member))
-                        if membershipID == member.id { Image(systemName: "checkmark") }
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 9) {
-                NovaIcon(symbol: "person.badge.shield.checkmark", size: 17)
-                VStack(alignment: .leading, spacing: 2) {
-                    NovaText(text: label("localizable.nova.workspace.assignment.expert", "Uzman"), style: .metaQuiet)
-                    NovaText(text: membershipID.flatMap { id in experts.first { $0.id == id }.map(memberLabel) }
-                        ?? label("localizable.nova.workspace.assignment.expert.pick", "Uzman seçin"), style: .body)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .semibold))
-            }.padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-                .novaControlBackground(cornerRadius: 14)
-        }.buttonStyle(NovaRowPressStyle())
+        NovaChoiceField(title: label("localizable.nova.workspace.assignment.expert", "Uzman"),
+                        placeholder: label("localizable.nova.workspace.assignment.expert.pick", "Uzman seçin"),
+                        symbol: "person.badge.shield.checkmark",
+                        options: experts.map { NovaChoiceOption<UUID>(value: $0.id, title: memberLabel($0)) },
+                        selection: $membershipID, identifier: "nova.workspace.assignment.expert", boxed: true)
     }
 
     @ViewBuilder private var assignmentList: some View {

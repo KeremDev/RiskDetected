@@ -75,11 +75,11 @@ struct NovaTrainingSessionEditor: View {
     private var form: some View {
         NovaCard(padding: 14) {
             VStack(alignment: .leading, spacing: 12) {
-                Menu {
-                    ForEach(choices) { value in Button(value.title) { selectedCatalog = value.id } }
-                } label: {
-                    HStack { Image(systemName: "books.vertical"); Text(item?.title ?? "Kayıtlı eğitim seçin *"); Spacer(); Image(systemName: "chevron.down") }
-                }.tint(.primary)
+                // The saved-training name carries the required mark like the other required fields here.
+                let savedTraining = RDLocalization.string("localizable.isg.workspace.parity.editors.kayitli.egitim.39f1eb4d", table: .localizable, fallback: "Kayıtlı eğitim") + " *"
+                NovaChoiceField(title: savedTraining, placeholder: savedTraining, symbol: "books.vertical",
+                    options: choices.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.title) },
+                    selection: $selectedCatalog, identifier: "nova.training.session.catalog")
                 Button { custom.toggle() } label: { Label(RDLocalization.string("localizable.nova.training.session.editor.yeni.egitim.basligi.olustur.8fea0e4e", table: .localizable, fallback: "Yeni eğitim başlığı oluştur"), systemImage: "plus") }.font(NovaFont.font(.body))
                 if custom {
                     field(RDLocalization.string("localizable.nova.training.session.editor.egitim.basligi.c5463e15", table: .localizable, fallback: "Eğitim başlığı *"), "graduationcap", $customTitle)

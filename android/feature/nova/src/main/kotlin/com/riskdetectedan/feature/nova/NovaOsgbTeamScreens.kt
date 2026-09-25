@@ -46,7 +46,8 @@ fun NovaOsgbCompanyEditor(context: IsgWorkspaceContext, repository: IsgWorkspace
     val coroutines = rememberCoroutineScope()
     val celebrate = rememberNovaCelebrate()
     var name by remember { mutableStateOf(company?.name.orEmpty()) }
-    var hazard by remember { mutableStateOf(company?.hazardClass?.takeIf { it in setOf("low", "medium", "high") } ?: "medium") }
+    // A new company starts with no class chosen; an edited one keeps its own.
+    var hazard by remember { mutableStateOf(company?.hazardClass?.takeIf { it in setOf("low", "medium", "high") }) }
     var sector by remember { mutableStateOf(company?.sector.orEmpty()) }
     var email by remember { mutableStateOf(company?.email.orEmpty()) }
     var employeeCount by remember { mutableStateOf(company?.declaredEmployeeCount?.toString().orEmpty()) }
@@ -87,13 +88,14 @@ fun NovaOsgbCompanyEditor(context: IsgWorkspaceContext, repository: IsgWorkspace
     val total = if (company == null) 4 else 3
     val stepTitle = when { step == 0 -> "Temel bilgiler"; step == 1 -> "İletişim ve kapasite"; company == null && step == 2 -> "Uzman ataması"
         else -> "Kontrol ve kaydet" }
-    val canSave = name.isNotBlank() && sector.isNotBlank() && (employeeCount.isEmpty() || employeeCount.toIntOrNull() != null) &&
+    val canSave = name.isNotBlank() && hazard != null && sector.isNotBlank() && (employeeCount.isEmpty() || employeeCount.toIntOrNull() != null) &&
         (!addResponsible || listOf(responsibleName, responsiblePhone, responsibleEmail).all { it.isNotBlank() })
     fun save() {
         if (!canSave || saving) return
-        val draft = IsgWorkspaceCompanyDraft(name, hazard, sector, email, employeeCount.toIntOrNull(), address,
+        val chosenHazard = hazard ?: return
+        val draft = IsgWorkspaceCompanyDraft(name, chosenHazard, sector, email, employeeCount.toIntOrNull(), address,
             if (addResponsible) responsibleName else "", if (addResponsible) responsiblePhone else "", if (addResponsible) responsibleEmail else "")
-        val companyMutation = companyAttempt.id(if (company == null) "company.create" else "company.update", name, hazard, (company?.version ?: 0).toString())
+        val companyMutation = companyAttempt.id(if (company == null) "company.create" else "company.update", name, chosenHazard, (company?.version ?: 0).toString())
         val profileMutation = profileAttempt.id("company.profile", sector, email, employeeCount, address, draft.responsibleName,
             draft.responsiblePhone, draft.responsibleEmail, (company?.profileVersion ?: 0).toString())
         saving = true; error = null
@@ -122,7 +124,7 @@ fun NovaOsgbCompanyEditor(context: IsgWorkspaceContext, repository: IsgWorkspace
         if (step == total - 1) "checkmark" else "arrow.right", saving, goBack, {
             error = null
             when {
-                step == 0 && (name.isBlank() || sector.isBlank()) -> error = "Firma adı ve sektör zorunludur."
+                step == 0 && (name.isBlank() || hazard == null || sector.isBlank()) -> error = "Firma adı, tehlike sınıfı ve sektör zorunludur."
                 step == 1 && !canSave -> error = "Çalışan sayısı ve sorumlu personel bilgilerini kontrol edin."
                 step < total - 1 -> step++
                 else -> save()
@@ -135,7 +137,7 @@ fun NovaOsgbCompanyEditor(context: IsgWorkspaceContext, repository: IsgWorkspace
                 NovaCard(Modifier.fillMaxWidth(), padding = 14) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         NovaCompanyIconField("Firma adı *", "building.2", name, "osgb.name", editable) { name = it }
-                        NovaDivider(); NovaCompanyHazardField("Tehlike sınıfı", hazard, editable) { hazard = it }
+                        NovaDivider(); NovaCompanyHazardField("Tehlike sınıfı", hazard, editable, "osgb.company.hazard") { hazard = it; error = null }
                         NovaDivider(); NovaCompanyIconField("Sektör *", "square.grid.2x2", sector, "osgb.sector", editable) { sector = it }
                     }
                 }
@@ -190,7 +192,7 @@ fun NovaOsgbCompanyEditor(context: IsgWorkspaceContext, repository: IsgWorkspace
                     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         NovaText("Firma özeti", style = NovaTypeToken.bodyStrong)
                         NovaText(name, style = NovaTypeToken.cardTitle)
-                        NovaText("${hazardTitle(hazard) ?: "Tehlikeli"} · $sector", style = NovaTypeToken.metaQuiet)
+                        NovaText(listOfNotNull(hazard?.let(::hazardTitle), sector).joinToString(" · "), style = NovaTypeToken.metaQuiet)
                         if (address.isNotEmpty()) NovaText(address, style = NovaTypeToken.metaQuiet)
                         if (company == null) NovaText("${selectedExperts.size} uzman seçildi", style = NovaTypeToken.metaQuiet)
                     }

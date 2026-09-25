@@ -132,12 +132,13 @@ struct IsgWorkspaceFileCreateEditor: View {
                         "localizable.nova.workspace.file.title", table: .localizable,
                         fallback: "Dosya başlığı"), text: $title)
                         .font(NovaFont.font(.body)).padding(14).novaControlBackground(cornerRadius: 14)
-                    Picker(RDLocalization.string(
+                    let categoryLabel = RDLocalization.string(
                         "localizable.nova.workspace.file.category", table: .localizable,
-                        fallback: "Kategori"), selection: $category) {
-                            ForEach(categories, id: \.self) { value in Text(categoryTitle(value)).tag(value) }
-                        }
-                        .pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+                        fallback: "Kategori")
+                    NovaChoiceField(title: categoryLabel, placeholder: categoryLabel, symbol: "square.grid.2x2",
+                        options: categories.map { NovaChoiceOption<String>(value: $0, title: categoryTitle($0)) },
+                        selection: Binding(get: { category }, set: { if let new = $0 { category = new } }),
+                        identifier: "nova.workspace.file.category", searchable: true, boxed: true)
                 }
                 if let error { NovaHelpHint(text: error) }
                 NovaCompactActionButton(title: saving ? RDLocalization.string(

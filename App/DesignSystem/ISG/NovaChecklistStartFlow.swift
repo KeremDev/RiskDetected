@@ -330,16 +330,11 @@ struct NovaChecklistStartFlowScreen: View {
     }
 
     private func workplaceField(_ catalogue: NovaChecklistCatalogue) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
-            NovaText(text: RDLocalization.string("localizable.nova.checklist.start.flow.isyeri.a1d04ce5", table: .localizable, fallback: "İşyeri"), style: .meta,
-                color: NovaColorToken.textSecondary.color(in: scheme))
-            Picker(RDLocalization.string("localizable.nova.checklist.start.flow.isyeri.eb2fcef7", table: .localizable, fallback: "İşyeri"), selection: $workplace) {
-                Text(RDLocalization.string("localizable.nova.checklist.start.flow.isyeri.secin.2e94e039", table: .localizable, fallback: "İşyeri seçin")).tag(Optional<UUID>.none)
-                ForEach(catalogue.workplaces) { item in Text(item.name).tag(Optional(item.id)) }
-            }
-            .pickerStyle(.menu)
-            .padding(12).novaControlBackground(cornerRadius: 12)
-        }
+        NovaChoiceField(title: RDLocalization.string("localizable.nova.checklist.start.flow.isyeri.a1d04ce5", table: .localizable, fallback: "İşyeri"),
+            placeholder: RDLocalization.string("localizable.nova.checklist.start.flow.isyeri.secin.2e94e039", table: .localizable, fallback: "İşyeri seçin"),
+            symbol: "building.2",
+            options: catalogue.workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+            selection: $workplace, identifier: "nova.checklist.start.workplace", searchable: true, boxed: true)
     }
 
     private func input(_ title: String, text: Binding<String>) -> some View {

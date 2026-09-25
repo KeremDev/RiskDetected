@@ -135,8 +135,6 @@ struct NovaAppointmentSheet: View {
     let onClose: () -> Void
     @State private var failure: String?
     @State private var saving = false
-    @State private var openChooser: String?
-    @State private var personSearch = ""
     @State private var step = 0
     @State private var saved = false
     @Environment(\.colorScheme) private var scheme
@@ -153,18 +151,6 @@ struct NovaAppointmentSheet: View {
         _draft = State(initialValue: value)
         self.catalogue = catalogue; self.fileClient = fileClient; self.fileCompany = fileCompany
         self.onSave = onSave; self.onClose = onClose
-    }
-
-    /// Filtered locally: the catalogue already scopes to the chosen company,
-    /// so searching never re-asks the server.
-    private var matchingEmployees: [NovaAppointmentCatalogue.Employee] {
-        let all = catalogue?.employees ?? []
-        let needle = personSearch.trimmingCharacters(in: .whitespacesAndNewlines)
-        // Large personnel registers must not render in full just because the
-        // picker opened. Wait for a search term, then filter the already scoped
-        // company catalogue locally.
-        guard !needle.isEmpty else { return [] }
-        return all.filter { $0.fullName.localizedCaseInsensitiveContains(needle) }
     }
 
     private var personTitle: String {
@@ -222,43 +208,24 @@ struct NovaAppointmentSheet: View {
     private var personAndWorkplace: some View {
         VStack(alignment: .leading, spacing: 12) {
             NovaHelpHint(text: RDLocalization.string("localizable.nova.appointment.sheets.personel.ve.isyeri.secimi.sonraki.adimlara.otoma.97c9f86f", table: .localizable, fallback: "Personel ve işyeri seçimi sonraki adımlara otomatik taşınır."))
-            fieldCard("person.2") {
-                NovaFileChooserButton(label: "Personel", value: personTitle,
-                    isOpen: openChooser == "person", identifier: "nova.appointment.form.person") {
-                    openChooser = openChooser == "person" ? nil : "person"
-                }
-                if openChooser == "person" {
-                    NovaAnalysisSearchField(text: $personSearch, placeholder: RDLocalization.string("localizable.nova.appointment.sheets.personel.ara.b1eb985f", table: .localizable, fallback: "Personel ara"),
-                        identifier: "nova.appointment.form.person.search")
-                    if matchingEmployees.isEmpty {
-                        NovaText(text: personSearch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? "Personel adını yazarak arayın."
-                            : "Aramanızla eşleşen personel bulunamadı.", style: .metaQuiet)
-                            .padding(.vertical, 8)
-                    } else {
-                        NovaFileChooserPanel(options: matchingEmployees.map { .init(id: $0.id.uuidString, title: $0.fullName) },
-                            selected: draft.employeeID?.uuidString,
-                            identifier: "nova.appointment.form.person.panel") { value in
-                            draft.employeeID = value.flatMap(UUID.init(uuidString:)); openChooser = nil; personSearch = ""
-                        }
-                    }
+            // The catalogue already scopes to the chosen company, so the
+            // sheet's search filters it locally and never re-asks the server.
+            NovaChoiceField(title: RDLocalization.string("localizable.nova.appointment.form.person", table: .localizable, fallback: "Personel"),
+                placeholder: RDLocalization.string("localizable.nova.appointment.form.pickperson", table: .localizable, fallback: "Personel seçin"),
+                symbol: "person.2",
+                options: (catalogue?.employees ?? []).map { NovaChoiceOption<UUID>(value: $0.id, title: $0.fullName) },
+                selection: $draft.employeeID, identifier: "nova.appointment.form.person", searchable: true, boxed: true)
+            if let workplaces = catalogue?.workplaces, !workplaces.isEmpty {
+                if workplaces.count <= 1 {
+                    fieldCard("building.2") { NovaText(text: placeTitle, style: .cardTitle) }
+                } else {
+                    NovaChoiceField(title: RDLocalization.string("localizable.nova.appointment.sheets.isyeri.1c1ca3c4", table: .localizable, fallback: "İşyeri"),
+                        placeholder: RDLocalization.string("localizable.nova.appointment.form.pickplace", table: .localizable, fallback: "İşyeri seçin"),
+                        symbol: "building.2",
+                        options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                        selection: $draft.workplaceID, identifier: "nova.appointment.form.workplace", searchable: true, boxed: true)
                 }
             }
-            if !(catalogue?.workplaces.isEmpty ?? true) { fieldCard("building.2") {
-                let count = catalogue?.workplaces.count ?? 0
-                if count <= 1 {
-                    NovaText(text: placeTitle, style: .cardTitle)
-                } else {
-                    NovaFileChooserButton(label: RDLocalization.string("localizable.nova.appointment.sheets.isyeri.1c1ca3c4", table: .localizable, fallback: "İşyeri"), value: placeTitle, isOpen: openChooser == "place",
-                        identifier: "nova.appointment.form.workplace") { openChooser = openChooser == "place" ? nil : "place" }
-                    if openChooser == "place" {
-                        NovaFileChooserPanel(options: (catalogue?.workplaces ?? []).map { .init(id: $0.id.uuidString, title: $0.name) },
-                            selected: draft.workplaceID?.uuidString, identifier: "nova.appointment.form.workplace.panel") {
-                            draft.workplaceID = $0.flatMap(UUID.init(uuidString:)); openChooser = nil
-                        }
-                    }
-                }
-            } }
         }
     }
 

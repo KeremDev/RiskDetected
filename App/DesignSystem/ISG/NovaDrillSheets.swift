@@ -155,7 +155,6 @@ struct NovaDrillPlanSheet: View {
     let onClose: () -> Void
     @State private var failure: String?
     @State private var saving = false
-    @State private var choosingPlan = false
     @State private var step = 0
     @State private var saved = false
     @Environment(\.colorScheme) private var scheme
@@ -205,25 +204,16 @@ struct NovaDrillPlanSheet: View {
                             table: .localizable,
                             fallback: "Önce bir acil durum planı yayımlayın; tatbikat bir plan sürümünü prova eder."))
                     } else {
-                        NovaFileChooserButton(
-                            label: RDLocalization.string("localizable.nova.drill.form.plan",
+                        NovaChoiceField(
+                            title: RDLocalization.string("localizable.nova.drill.form.plan",
                                 table: .localizable, fallback: "Prova edilecek plan"),
-                            value: chosen.map { $0.scope + " · " + $0.workplaceName }
-                                ?? RDLocalization.string("localizable.nova.drill.form.pickplan",
-                                    table: .localizable, fallback: "Plan seçin"),
-                            isOpen: choosingPlan,
-                            identifier: "nova.drill.form.plan") { choosingPlan.toggle() }
-                        if choosingPlan {
-                            NovaFileChooserPanel(
-                                options: (catalogue?.plans ?? []).map {
-                                    .init(id: $0.planID.uuidString,
-                                          title: $0.scope + " · " + $0.workplaceName) },
-                                selected: draft.planID?.uuidString,
-                                identifier: "nova.drill.form.plan.panel") { value in
-                                draft.planID = value.flatMap(UUID.init(uuidString:))
-                                choosingPlan = false
-                            }
-                        }
+                            placeholder: RDLocalization.string("localizable.nova.drill.form.pickplan",
+                                table: .localizable, fallback: "Plan seçin"),
+                            symbol: "flame",
+                            options: (catalogue?.plans ?? []).map {
+                                NovaChoiceOption<UUID>(value: $0.planID, title: $0.scope + " · " + $0.workplaceName) },
+                            selection: $draft.planID,
+                            identifier: "nova.drill.form.plan", boxed: true)
                         if let chosen {
                             NovaWhyDisclosure {
                                 NovaText(text: String(format: RDLocalization.string(

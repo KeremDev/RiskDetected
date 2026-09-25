@@ -93,6 +93,18 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                   validityYears: 1, topics: Self.topicPlan(total: 960, workSpecific: 240))
         ]
     }
+    /// The saved-training choices in menu order: custom, the statutory
+    /// presets, then the OSGB catalogue.
+    private var templateOptions: [NovaChoiceOption<String>] {
+        var options = [NovaChoiceOption<String>(value: "custom", title: RDLocalization.string("localizable.isg.workspace.parity.editors.ozel.egitim.3289bc89", table: .localizable, fallback: "Özel eğitim"))]
+        options += statutoryPresets.map { preset in
+            NovaChoiceOption<String>(value: preset.id, title: RDLocalization.format("localizable.isg.workspace.parity.editors.1.2.dk.0bc864e3", table: .localizable, fallback: "%1$@ · %2$@ dk", arguments: [String(describing: preset.title), String(describing: preset.minutes)]))
+        }
+        options += usableCurricula.map { row in
+            NovaChoiceOption<String>(value: "curriculum:\(row.id.uuidString)", title: RDLocalization.format("localizable.isg.workspace.parity.editors.title.minutes", table: .localizable, fallback: "%1$@ · %2$@ dk", arguments: [String(describing: row.title), String(describing: row.text("total_minutes") ?? "0")]))
+        }
+        return options
+    }
     private var filteredEmployees: [IsgWorkspaceEmployeeEntry] {
         let needle = employeeQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !needle.isEmpty else { return employees }
@@ -169,22 +181,10 @@ struct IsgWorkspaceTrainingCreateEditor: View {
 
     private var infoStep: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.kayitli.egitim.39f1eb4d", table: .localizable, fallback: "Kayıtlı eğitim"), selection: $templateKey) {
-                Text(RDLocalization.string("localizable.isg.workspace.parity.editors.ozel.egitim.3289bc89", table: .localizable, fallback: "Özel eğitim")).tag("custom")
-                Section(RDLocalization.string("localizable.isg.workspace.parity.editors.zorunlu.temel.egitim.sablonlari.cc56aaed", table: .localizable, fallback: "Zorunlu temel eğitim şablonları")) {
-                    ForEach(statutoryPresets) { preset in
-                        Text(RDLocalization.format("localizable.isg.workspace.parity.editors.1.2.dk.0bc864e3", table: .localizable, fallback: "%1$@ · %2$@ dk", arguments: [String(describing: preset.title), String(describing: preset.minutes)])).tag(preset.id)
-                    }
-                }
-                if !usableCurricula.isEmpty {
-                    Section(RDLocalization.string("localizable.isg.workspace.parity.editors.osgb.egitim.katalogu.a9df621d", table: .localizable, fallback: "OSGB eğitim kataloğu")) {
-                        ForEach(usableCurricula) { row in
-                            Text(RDLocalization.format("localizable.isg.workspace.parity.editors.title.minutes", table: .localizable, fallback: "%1$@ · %2$@ dk", arguments: [String(describing: row.title), String(describing: row.text("total_minutes") ?? "0")]))
-                                .tag("curriculum:\(row.id.uuidString)")
-                        }
-                    }
-                }
-            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+            let savedTraining = RDLocalization.string("localizable.isg.workspace.parity.editors.kayitli.egitim.39f1eb4d", table: .localizable, fallback: "Kayıtlı eğitim")
+            NovaChoiceField(title: savedTraining, placeholder: savedTraining, symbol: "graduationcap", options: templateOptions,
+                selection: Binding(get: { templateKey }, set: { if let new = $0 { templateKey = new } }),
+                identifier: "nova.workspace.training.template", boxed: true)
             field(RDLocalization.string("localizable.isg.workspace.parity.editors.egitim.basligi.a92e4c87", table: .localizable, fallback: "Eğitim başlığı"), text: $title, symbol: "text.book.closed")
             if !topics.isEmpty {
                 Button { showingTopics = true } label: {
@@ -623,9 +623,10 @@ struct IsgWorkspaceManualNonconformityEditor: View {
                         title: RDLocalization.string("localizable.isg.workspace.parity.editors.fotograf.veya.kanit.ekle.istege.bagli.8d857ece", table: .localizable, fallback: "Fotoğraf veya kanıt ekle (isteğe bağlı)"), attachment: $attachment)
                 case .workplace:
                     if !workplaces.isEmpty {
-                        Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.e1bb9871", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
-                            ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-                        }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+                        let workplaceTitle = RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.e1bb9871", table: .localizable, fallback: "İşyeri")
+                        NovaChoiceField(title: workplaceTitle, placeholder: workplaceTitle, symbol: "building.2",
+                            options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                            selection: $workplaceID, identifier: "nova.workspace.nonconformity.workplace", boxed: true)
                     }
                     HStack(spacing: 10) {
                         compactDate("Kayıt tarihi", selection: $openedOn)
@@ -907,9 +908,12 @@ struct IsgWorkspaceRiskCreateEditor: View {
 
     private var detailsStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if !workplaces.isEmpty { Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.2cdb4091", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
-                ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14) }
+            if !workplaces.isEmpty {
+                let workplaceTitle = RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.2cdb4091", table: .localizable, fallback: "İşyeri")
+                NovaChoiceField(title: workplaceTitle, placeholder: workplaceTitle, symbol: "building.2",
+                    options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                    selection: $workplaceID, identifier: "nova.workspace.risk.workplace", boxed: true)
+            }
             if assessment == nil {
                 NovaFormValueRow(label: RDLocalization.string("localizable.isg.workspace.parity.editors.surum.turu.b94a9c4c", table: .localizable, fallback: "Sürüm türü"), symbol: "square.stack.3d.up") {
                     NovaText(text: RDLocalization.string("localizable.isg.workspace.parity.editors.tam.degerlendirme.d82127f4", table: .localizable, fallback: "Tam değerlendirme"), style: .bodyStrong)
@@ -1114,16 +1118,21 @@ struct IsgWorkspaceEquipmentCreateEditor: View {
             VStack(alignment: .leading, spacing: 10) {
                 switch step {
                 case .type:
-                    Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.turu.4b3f9668", table: .localizable, fallback: "Ekipman türü"), selection: $typeCode) {
-                        ForEach(catalog.suggestions) { suggestion in
-                            Text(IsgWorkspaceDisplayText.value(suggestion.code)).tag(suggestion.code)
-                        }
-                    }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+                    let typeTitle = RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.turu.4b3f9668", table: .localizable, fallback: "Ekipman türü")
+                    NovaChoiceField(title: typeTitle, placeholder: typeTitle, symbol: "shippingbox",
+                        options: catalog.suggestions.map { suggestion in
+                            NovaChoiceOption<String>(value: suggestion.code, title: IsgWorkspaceDisplayText.value(suggestion.code))
+                        },
+                        selection: Binding(get: { typeCode.isEmpty ? nil : typeCode }, set: { typeCode = $0 ?? "" }),
+                        identifier: "nova.workspace.equipment.type", boxed: true)
                     if typeCode == "other_equipment" { field(RDLocalization.string("localizable.isg.workspace.parity.editors.ekipman.turu.acf583e3", table: .localizable, fallback: "Ekipman türü"), text: $customType, symbol: "shippingbox") }
                 case .identity:
-                    if !workplaces.isEmpty { Picker(RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.f1e6629d", table: .localizable, fallback: "İşyeri"), selection: $workplaceID) {
-                        ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-                    }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14) }
+                    if !workplaces.isEmpty {
+                        let workplaceTitle = RDLocalization.string("localizable.isg.workspace.parity.editors.isyeri.f1e6629d", table: .localizable, fallback: "İşyeri")
+                        NovaChoiceField(title: workplaceTitle, placeholder: workplaceTitle, symbol: "building.2",
+                            options: workplaces.map { NovaChoiceOption<UUID>(value: $0.id, title: $0.name) },
+                            selection: $workplaceID, identifier: "nova.workspace.equipment.workplace", boxed: true)
+                    }
                     field(RDLocalization.string("localizable.isg.workspace.parity.editors.seri.kod.istege.bagli.9f07a640", table: .localizable, fallback: "Seri / kod (isteğe bağlı)"), text: $serial, symbol: "number")
                     field(RDLocalization.string("localizable.isg.workspace.parity.editors.konum.istege.bagli.7814e4d4", table: .localizable, fallback: "Konum (isteğe bağlı)"), text: $location, symbol: "mappin.and.ellipse")
                 case .period:

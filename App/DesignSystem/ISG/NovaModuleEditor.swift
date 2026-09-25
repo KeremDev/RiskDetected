@@ -129,13 +129,28 @@ struct NovaModuleEditor: View {
         }
     }
     private func options(_ title: String, _ key: String, _ items: [Option]) -> some View {
-        Picker(title, selection: binding(key)) {
-            Text(RDLocalization.string("localizable.nova.module.editor.secin.44cf451c", table: .localizable, fallback: "Seçin")).tag("")
-            ForEach(items) { Text($0.name).tag($0.id.uuidString.lowercased()) }
-        }
+        let value = binding(key)
+        return NovaChoiceField(title: title, placeholder: title, symbol: symbol(key),
+            options: items.map { NovaChoiceOption<String>(value: $0.id.uuidString.lowercased(), title: $0.name) },
+            // Clearing stores null, as the former empty row did.
+            selection: Binding(get: { value.wrappedValue.isEmpty ? nil : value.wrappedValue }, set: { value.wrappedValue = $0 ?? "" }),
+            identifier: "nova.module.editor.\(key)", noneTitle: NovaChoiceText.none, boxed: true)
     }
     private func choices(_ title: String, _ key: String, _ items: [(String,String)]) -> some View {
-        Picker(title, selection: binding(key)) { ForEach(items, id: \.0) { Text($0.1).tag($0.0) } }
+        let value = binding(key)
+        return NovaChoiceField(title: title, placeholder: title, symbol: symbol(key),
+            options: items.map { NovaChoiceOption<String>(value: $0.0, title: $0.1) },
+            selection: Binding(get: { value.wrappedValue.isEmpty ? nil : value.wrappedValue }, set: { if let new = $0 { value.wrappedValue = new } }),
+            identifier: "nova.module.editor.\(key)", boxed: true)
+    }
+    private func symbol(_ key: String) -> String {
+        switch key {
+        case "workplace_id", "scope_workplace_id": return "building.2"
+        case "employee_id": return "person"
+        case "plan_id": return "doc.text"
+        case "kind": return "person.badge.key"
+        default: return "list.bullet"
+        }
     }
     private var members: [[String: NovaModuleValue]] {
         guard case .array(let list) = values["team_snapshot"] else { return [] }
@@ -146,10 +161,16 @@ struct NovaModuleEditor: View {
             NovaText(text: "Ekip", style: .cardTitle)
             ForEach(members.indices, id: \.self) { index in
                 TextField(RDLocalization.string("localizable.nova.module.editor.ad.soyad.5a7dcd07", table: .localizable, fallback: "Ad soyad"), text: memberBinding(index,"full_name"))
-                Picker(RDLocalization.string("localizable.nova.module.editor.gorev.a6bf9337", table: .localizable, fallback: "Görev"), selection: memberBinding(index,"role")) {
-                    Text(RDLocalization.string("localizable.nova.module.editor.koordinator.45ecae2b", table: .localizable, fallback: "Koordinatör")).tag("coordinator"); Text(RDLocalization.string("localizable.nova.module.editor.yangin.b885b8d4", table: .localizable, fallback: "Yangın")).tag("fire")
-                    Text(RDLocalization.string("localizable.nova.module.editor.ilk.yardim.5870e931", table: .localizable, fallback: "İlk yardım")).tag("first_aid"); Text("Tahliye").tag("evacuation"); Text(RDLocalization.string("localizable.nova.module.editor.diger.6340eb6e", table: .localizable, fallback: "Diğer")).tag("other")
-                }
+                let roleTitle = RDLocalization.string("localizable.nova.module.editor.gorev.a6bf9337", table: .localizable, fallback: "Görev")
+                let role = memberBinding(index,"role")
+                NovaChoiceField(title: roleTitle, placeholder: roleTitle, symbol: "person.badge.key",
+                    options: [NovaChoiceOption<String>(value: "coordinator", title: RDLocalization.string("localizable.nova.module.editor.koordinator.45ecae2b", table: .localizable, fallback: "Koordinatör")),
+                              NovaChoiceOption<String>(value: "fire", title: RDLocalization.string("localizable.nova.module.editor.yangin.b885b8d4", table: .localizable, fallback: "Yangın")),
+                              NovaChoiceOption<String>(value: "first_aid", title: RDLocalization.string("localizable.nova.module.editor.ilk.yardim.5870e931", table: .localizable, fallback: "İlk yardım")),
+                              NovaChoiceOption<String>(value: "evacuation", title: "Tahliye"),
+                              NovaChoiceOption<String>(value: "other", title: RDLocalization.string("localizable.nova.module.editor.diger.6340eb6e", table: .localizable, fallback: "Diğer"))],
+                    selection: Binding(get: { role.wrappedValue.isEmpty ? nil : role.wrappedValue }, set: { if let new = $0 { role.wrappedValue = new } }),
+                    identifier: "nova.module.editor.team.\(index).role")
                 TextField(RDLocalization.string("localizable.nova.module.editor.iletisim.9ffe02c1", table: .localizable, fallback: "İletişim"), text: memberBinding(index,"contact"))
                 Button(RDLocalization.string("localizable.nova.module.editor.ekipten.kaldir.b6350981", table: .localizable, fallback: "Ekipten kaldır"), role: .destructive) {
                     var list=members; list.remove(at:index); values["team_snapshot"] = .array(list.map { .object($0) })

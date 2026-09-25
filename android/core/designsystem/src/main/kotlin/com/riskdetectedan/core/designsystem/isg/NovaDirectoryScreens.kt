@@ -284,14 +284,19 @@ private fun DirectoryEditor(scope: NovaPersonnelScope, kind: NovaDirectoryKind, 
             }
             if (kind == NovaDirectoryKind.engagements && original != null) NovaText("Firma, işyeri ve başlangıç değişmez. Bitişi ve açıklamayı düzenleyebilirsiniz.", style = NovaTypeToken.metaQuiet)
             definition.filterNot { it.id == "workplace_id" && options["workplace_id"]?.isEmpty() == true }.forEach { field -> NovaCard(Modifier.fillMaxWidth(), padding = 16) { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                DirectoryLabel(field.label, field.choices?.symbol ?: "pencil")
-                val editable = pending == null && !(kind == NovaDirectoryKind.engagements && original != null && field.id in setOf("organization_id", "workplace_id", "starts_on"))
                 val fixed = fixedChoices(field.id)
+                // A fixed choice names itself in its chooser row.
+                if (fixed == null) DirectoryLabel(field.label, field.choices?.symbol ?: "pencil")
+                val editable = pending == null && !(kind == NovaDirectoryKind.engagements && original != null && field.id in setOf("organization_id", "workplace_id", "starts_on"))
                 if (fixed != null) {
-                    val selected = fixed.indexOfFirst { it.first == fields[field.id].orEmpty() }
-                    NovaSegmentedControl(fixed.map { it.second }, selected, Modifier.alpha(if (editable) 1f else 0.5f).testTag("directory.field.${field.id}")) { index ->
-                        if (editable) fields = fields + (field.id to fixed[index].first)
-                    }
+                    val hazard = field.id == "hazard_class"
+                    NovaChoiceField(field.label, if (hazard) NovaHazardChoice.placeholder else "${field.label} seçin",
+                        if (hazard) "exclamationmark.triangle" else "link",
+                        if (hazard) NovaHazardChoice.options else fixed.filter { it.first.isNotEmpty() }.map { NovaChoiceOption(it.first, it.second) },
+                        fields[field.id]?.ifEmpty { null }, { value -> fields = fields + (field.id to value.orEmpty()) }, "directory.field.${field.id}",
+                        message = if (hazard) NovaHazardChoice.message else null, enabled = editable,
+                        // The class may be left open, as the old "Seçin" segment allowed.
+                        noneTitle = if (fixed.any { it.first.isEmpty() }) "Seçilmedi" else null)
                 } else if (field.choices != null || field.id == "previous_id") {
                     val selected = fields[field.id].orEmpty()
                     Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).alpha(if (editable) 1f else 0.5f)

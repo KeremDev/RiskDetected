@@ -368,8 +368,6 @@ private fun EmergencyPlanSheet(initial: NovaEmergencyPlanDraft, catalogue: NovaE
     var saving by remember { mutableStateOf(false) }
     var didSave by remember { mutableStateOf(false) }
     var confirmingExit by remember { mutableStateOf(false) }
-    var choosingWorkplace by remember { mutableStateOf(false) }
-    var choosingPerson by remember { mutableStateOf(false) }
     var personnel by remember { mutableStateOf<List<NovaPersonOption>>(emptyList()) }
     var personnelLoading by remember { mutableStateOf(false) }
     var personnelFailure by remember { mutableStateOf<String?>(null) }
@@ -435,11 +433,8 @@ private fun EmergencyPlanSheet(initial: NovaEmergencyPlanDraft, catalogue: NovaE
                                         NovaText(workplaceTitle, style = NovaTypeToken.cardTitle)
                                     }
                                     else -> {
-                                        NovaChooserButton("İşyeri", workplaceTitle, "nova.emergency.form.workplace", open = choosingWorkplace) {
-                                            choosingWorkplace = !choosingWorkplace
-                                        }
-                                        if (choosingWorkplace) NovaChooserPanel(workplaces.map { NovaChooserOption(it.id, it.name) }, draft.workplaceId,
-                                            "nova.emergency.form.workplace.panel") { draft = draft.copy(workplaceId = it); choosingWorkplace = false }
+                                        NovaChoiceField("İşyeri", "İşyeri seçin", "building.2", workplaces.map { NovaChoiceOption(it.id, it.name) }, draft.workplaceId,
+                                            { draft = draft.copy(workplaceId = it) }, "nova.emergency.form.workplace", searchable = true, boxed = true)
                                     }
                                 }
                             }
@@ -461,12 +456,9 @@ private fun EmergencyPlanSheet(initial: NovaEmergencyPlanDraft, catalogue: NovaE
                                 FieldIcon("person.2") {
                                     NovaText("Ekip", style = NovaTypeToken.label)
                                     if (draft.team.isEmpty()) NovaText("Ekip henüz boş; kişileri daha sonra da ekleyebilirsiniz.", style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())
-                                    NovaChooserButton("Firma personeli", selectedPerson?.name ?: "Personel seçin", "nova.emergency.form.employee",
-                                        symbol = "person", open = choosingPerson) { choosingPerson = !choosingPerson }
-                                    if (choosingPerson) NovaChooserPanel(personnel.filter { person -> draft.team.none { it.fullName == person.name } }
-                                        .map { NovaChooserOption(it.id, it.name) }, selectedPerson?.id, "nova.emergency.form.employee.options") { picked ->
-                                        selectedPerson = personnel.firstOrNull { it.id == picked }; choosingPerson = false
-                                    }
+                                    NovaChoiceField("Firma personeli", "Personel seçin", "person", personnel.filter { person -> draft.team.none { it.fullName == person.name } }
+                                        .map { NovaChoiceOption(it.id, it.name) }, selectedPerson?.id, { picked -> selectedPerson = personnel.firstOrNull { it.id == picked } },
+                                        "nova.emergency.form.employee", searchable = true, boxed = true)
                                     if (personnelLoading) NovaSpinner(NovaColorToken.text.color())
                                     personnelFailure?.let { NovaText(it, style = NovaTypeToken.metaQuiet) }
                                     draft.team.forEach { member ->

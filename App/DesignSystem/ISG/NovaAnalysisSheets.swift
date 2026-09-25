@@ -696,16 +696,17 @@ struct NovaAnalysisFileSheet: View {
                             fallback: "Bu bulgunun risk bandı okunamadı. Önem derecesini siz seçin.")
                         : RDLocalization.string("localizable.nova.analysis.file.unscored", table: .localizable,
                             fallback: "Bu madde skorsuz geliyor. Önem derecesini siz seçin."), style: .metaQuiet)
-                    Picker(RDLocalization.string("localizable.nova.nonconformity.field.severity", table: .localizable,
-                        fallback: "Önem derecesi"), selection: Binding<NovaNonconformitySeverity?>(
-                        get: { severity[item.id] }, set: { severity[item.id] = $0 })) {
-                        Text(RDLocalization.string("localizable.nova.analysis.severity.pick", table: .localizable,
-                            fallback: "Önem derecesi seçin")).tag(NovaNonconformitySeverity?.none)
-                        ForEach(NovaNonconformitySeverity.allCases) { value in
-                            Text(verbatim: NovaNonconformityWords.severity(value)).tag(Optional(value))
-                        }
-                    }.pickerStyle(.menu).disabled(running)
-                        .accessibilityIdentifier("analysis.file.severity.\(item.id.uuidString.lowercased())")
+                    NovaChoiceField(title: RDLocalization.string("localizable.nova.nonconformity.field.severity", table: .localizable,
+                        fallback: "Önem derecesi"),
+                        placeholder: RDLocalization.string("localizable.nova.analysis.severity.pick", table: .localizable,
+                            fallback: "Önem derecesi seçin"),
+                        symbol: "exclamationmark.triangle",
+                        options: NovaNonconformitySeverity.allCases.map {
+                            NovaChoiceOption<NovaNonconformitySeverity>(value: $0, title: NovaNonconformityWords.severity($0)) },
+                        selection: Binding<NovaNonconformitySeverity?>(
+                            get: { severity[item.id] }, set: { severity[item.id] = $0 }),
+                        identifier: "analysis.file.severity.\(item.id.uuidString.lowercased())")
+                        .disabled(running)
                 } else if let band = item.band(method) {
                     NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band))
                 }

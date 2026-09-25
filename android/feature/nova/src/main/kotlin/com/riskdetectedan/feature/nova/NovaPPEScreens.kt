@@ -269,15 +269,11 @@ private fun HandoverSheet(initial: NovaPPEHandoverDraft, catalogue: NovaPPECatal
     var draft by remember { mutableStateOf(initial) }
     var failure by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
-    var choosingPerson by remember { mutableStateOf(false) }
     val people = catalogue?.employees.orEmpty()
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         NovaText("Zimmet ver", style = NovaTypeToken.screenTitle)
-        NovaChooserButton("Personel", people.firstOrNull { it.id == draft.employeeId }?.fullName ?: "Personel seçin", "nova.ppe.form.person",
-            open = choosingPerson) { choosingPerson = !choosingPerson }
-        if (choosingPerson) NovaChooserPanel(people.map { NovaChooserOption(it.id, it.fullName) }, draft.employeeId, "nova.ppe.form.person.panel") {
-            draft = draft.copy(employeeId = it); choosingPerson = false
-        }
+        NovaChoiceField("Personel", "Personel seçin", "person", people.map { NovaChoiceOption(it.id, it.fullName) }, draft.employeeId,
+            { draft = draft.copy(employeeId = it) }, "nova.ppe.form.person", searchable = true, boxed = true)
         if (people.isEmpty()) NovaHelpHint("Bu firmada aktif personel kaydı yok.")
         NovaTextField("Ekipman", draft.item, { draft = draft.copy(item = it) }, identifier = "nova.ppe.form.item")
         NovaText(NovaPPEWords.noCatalogueNote, style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())

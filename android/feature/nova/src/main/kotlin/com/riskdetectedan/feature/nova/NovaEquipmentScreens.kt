@@ -568,18 +568,15 @@ private fun ResultPicker(result: String, onPick: (String) -> Unit, identifier: S
 
 /** Picks a filed report or uploads a new one inline (iOS `reportPicker`). */
 @Composable
-private fun ReportPicker(company: String?, reports: List<NovaFileEntry>, client: NovaEquipmentClient, assetId: String?, title: String?,
+private fun ReportPicker(company: String?, reports: List<NovaFileEntry>, client: NovaEquipmentClient, assetId: String?,
                          onPick: (NovaFileEntry?) -> Unit, onUploaded: (NovaFileEntry) -> Unit, allowUpload: Boolean, identifier: String) {
-    var choosing by remember { mutableStateOf(false) }
     var adding by remember { mutableStateOf(false) }
     var filing by remember { mutableStateOf<NovaFileLibraryService.Catalogue?>(null) }
     LaunchedEffect(adding) { if (adding && filing == null) filing = runCatching { client.files.catalogue() }.getOrNull() }
-    NovaChooserButton("Arşivdeki rapor", title ?: "Seçilmedi", identifier, symbol = "doc", open = choosing) { choosing = !choosing; adding = false }
-    if (!choosing) return
-    if (reports.isNotEmpty()) NovaChooserPanel(listOf(NovaChooserOption(null, "Seçilmedi", symbol = "xmark")) +
-        reports.map { NovaChooserOption(it.evidenceId(), it.title, symbol = "doc") }, assetId, "$identifier.panel") { picked ->
-        onPick(reports.firstOrNull { it.evidenceId() == picked }); choosing = false
-    } else if (!allowUpload) NovaText("Bu firmaya ait hazır rapor bulunamadı.", style = NovaTypeToken.metaQuiet)
+    NovaChoiceField("Arşivdeki rapor", "Rapor seçin", "doc", reports.map { NovaChoiceOption(it.evidenceId(), it.title) }, assetId,
+        { picked -> onPick(reports.firstOrNull { it.evidenceId() == picked }); adding = false }, identifier,
+        message = if (reports.isEmpty() && !allowUpload) "Bu firmaya ait hazır rapor bulunamadı." else null, noneTitle = "Seçilmedi",
+        searchable = true, boxed = true)
     if (!allowUpload) return
     val loaded = filing
     when {
@@ -587,7 +584,7 @@ private fun ReportPicker(company: String?, reports: List<NovaFileEntry>, client:
         adding && loaded != null -> NovaFileAddInline(emptyList(), company, loaded.categories.filter { it.code == "inspection_report" }.ifEmpty { loaded.categories },
             loaded.accepts, loaded.assurance, client.files) { entry ->
             if (entry != null) onUploaded(entry)
-            adding = false; choosing = false
+            adding = false
         }
         else -> NovaButton("Yeni dosya ekle", { adding = true }, Modifier.testTag("$identifier.add"), variant = NovaButtonVariant.Surface, symbol = "plus")
     }
@@ -623,7 +620,7 @@ private fun RecordPanel(row: NovaEquipmentItem, reports: List<NovaFileEntry>, cl
             NovaButton("Rapora geç", { section = "report" }, variant = NovaButtonVariant.Surface, symbol = "chevron.down")
         }
         InspectionStep("report", section, "3 · Rapor", "doc", draft.evidenceTitle ?: "İsteğe bağlı", { section = it }) {
-            ReportPicker(row.companyId, reports, client, draft.evidenceAssetId, draft.evidenceTitle,
+            ReportPicker(row.companyId, reports, client, draft.evidenceAssetId,
                 onPick = { draft = draft.copy(evidenceAssetId = it?.evidenceId(), evidenceTitle = it?.title) },
                 onUploaded = { onReport(it); draft = draft.copy(evidenceAssetId = it.evidenceId(), evidenceTitle = it.title) },
                 allowUpload = true, identifier = "equipment.inspection.report")
@@ -813,7 +810,7 @@ private fun EquipmentInspectionTask(item: NovaEquipmentItem, client: NovaEquipme
                 }
                 InspectionStepKind.report -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     NovaText("Rapor bağlamak isteğe bağlıdır. Arşivde hazır olan bir dosyayı seçebilirsiniz.")
-                    ReportPicker(item.companyId, reports, client, draft.evidenceAssetId, draft.evidenceTitle ?: "Rapor seçilmedi",
+                    ReportPicker(item.companyId, reports, client, draft.evidenceAssetId,
                         onPick = { draft = draft.copy(evidenceAssetId = it?.evidenceId(), evidenceTitle = it?.title) }, onUploaded = {},
                         allowUpload = false, identifier = "equipment.task.report")
                     NovaCard(Modifier.fillMaxWidth(), padding = 13, tint = NovaColorToken.surfaceMuted.color()) {
@@ -850,17 +847,15 @@ private fun EquipmentAddSheet(company: String?, catalogue: NovaEquipmentCatalogu
     val coroutines = rememberCoroutineScope()
     val busyReporter = LocalNovaPopupBusy.current
     var draft by remember { mutableStateOf(NovaEquipmentDraft(workplaceId = catalogue.workplaces.firstOrNull()?.id)) }
-    var choosing by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val type = draft.equipmentType
     val rule = type?.let { code -> catalogue.rules.firstOrNull { it.equipmentType == code } }
     Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
         NovaPopupHeading("Ekipman ekle", symbol = "shippingbox")
-        NovaChooserButton("Ekipman türü", type?.let(NovaEquipmentWords::type) ?: "Tür seçin", "equipment.add.type", symbol = "shippingbox",
-            open = choosing == "type") { choosing = if (choosing == "type") null else "type" }
-        if (choosing == "type") NovaChooserPanel(catalogue.suggestions.map { NovaChooserOption(it.code, NovaEquipmentWords.type(it.code), it.defaultPeriodMonths, "shippingbox") },
-            type, "equipment.add.type") { draft = draft.copy(equipmentType = it); choosing = null }
+        NovaChoiceField("Ekipman türü", "Tür seçin", "shippingbox", catalogue.suggestions.map {
+            NovaChoiceOption(it.code, NovaEquipmentWords.type(it.code), it.defaultPeriodMonths?.let { months -> "$months ay" })
+        }, type, { draft = draft.copy(equipmentType = it) }, "equipment.add.type", boxed = true)
         if (type != null) {
             val defaultMonths = catalogue.suggestions.firstOrNull { it.code == type }?.defaultPeriodMonths
             when {
@@ -873,10 +868,8 @@ private fun EquipmentAddSheet(company: String?, catalogue: NovaEquipmentCatalogu
             }
         }
         if (catalogue.workplaces.isNotEmpty()) {
-            NovaChooserButton("Kapsam", catalogue.workplaces.firstOrNull { it.id == draft.workplaceId }?.name ?: "İşyeri seçin", "equipment.add.workplace",
-                symbol = "building.2", open = choosing == "workplace") { choosing = if (choosing == "workplace") null else "workplace" }
-            if (choosing == "workplace") NovaChooserPanel(catalogue.workplaces.map { NovaChooserOption(it.id, it.name, symbol = "building.2") },
-                draft.workplaceId, "equipment.add.workplace") { draft = draft.copy(workplaceId = it); choosing = null }
+            NovaChoiceField("Kapsam", "İşyeri seçin", "building.2", catalogue.workplaces.map { NovaChoiceOption(it.id, it.name) }, draft.workplaceId,
+                { draft = draft.copy(workplaceId = it) }, "equipment.add.workplace", searchable = true, boxed = true)
         }
         NovaTextField("Seri / kod", draft.serialTag, { draft = draft.copy(serialTag = it) }, identifier = "equipment.add.serial")
         NovaTextField("Yeri (isteğe bağlı)", draft.locationNote, { draft = draft.copy(locationNote = it) }, identifier = "equipment.add.location")
@@ -899,16 +892,15 @@ private fun EquipmentEditSheet(item: NovaEquipmentItem, workplaces: List<NovaEqu
     val coroutines = rememberCoroutineScope()
     val busyReporter = LocalNovaPopupBusy.current
     var draft by remember { mutableStateOf(NovaEquipmentDraft(item.equipmentType, item.serialTag, item.workplaceId, item.acquiredOn.orEmpty(), item.locationNote.orEmpty())) }
-    var choosing by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
         NovaPopupHeading("Ekipman kaydını düzenle", symbol = "square.and.pencil")
         NovaText(NovaEquipmentWords.type(item.equipmentType), style = NovaTypeToken.metaQuiet)
-        if (workplaces.isNotEmpty()) NovaChooserButton("Kapsam", workplaces.firstOrNull { it.id == draft.workplaceId }?.name ?: "Firma geneli", "equipment.edit.workplace",
-            symbol = "building.2", open = choosing) { choosing = !choosing }
-        if (choosing && workplaces.isNotEmpty()) NovaChooserPanel(workplaces.map { NovaChooserOption(it.id, it.name, symbol = "building.2") }, draft.workplaceId,
-            "equipment.edit.workplace") { draft = draft.copy(workplaceId = it); choosing = false }
+        // No workplace means the whole company; the update never clears one, so there is no row to pick it.
+        if (workplaces.isNotEmpty()) NovaChoiceField("Kapsam", "Firma geneli", "building.2", workplaces.map { NovaChoiceOption(it.id, it.name) },
+            draft.workplaceId, { draft = draft.copy(workplaceId = it) }, "equipment.edit.workplace", searchable = true, boxed = true,
+            heading = "İşyeri seçin")
         NovaTextField("Seri / kod", draft.serialTag, { draft = draft.copy(serialTag = it) }, identifier = "equipment.edit.serial")
         NovaTextField("Yeri (isteğe bağlı)", draft.locationNote, { draft = draft.copy(locationNote = it) }, identifier = "equipment.edit.location")
         NovaDayField("Ediniliş tarihi", draft.acquiredOn, { draft = draft.copy(acquiredOn = it) }, "equipment.edit.acquired", clearable = true)
@@ -932,19 +924,16 @@ private fun EquipmentPeriodSheet(company: String?, catalogue: NovaEquipmentCatal
     val busyReporter = LocalNovaPopupBusy.current
     var draft by remember { mutableStateOf(NovaEquipmentRuleDraft()) }
     var saved by remember { mutableStateOf<List<NovaEquipmentRule>>(emptyList()) }
-    var choosing by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val current = saved.ifEmpty { catalogue.rules }
     Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
         NovaPopupHeading("Kontrol süreleri", symbol = "hourglass")
         NovaHelpHint("Süre ekipman türüne göre tanımlanır ve hiçbir tür için önceden doldurulmaz. Doğrulanmış bir kaynağa dayanmayan süre, uzman kararı olarak işaretlenir.")
-        NovaChooserButton("Ekipman türü", draft.equipmentType?.let(NovaEquipmentWords::type) ?: "Tür seçin", "equipment.period.type",
-            symbol = "shippingbox", open = choosing) { choosing = !choosing }
-        if (choosing) NovaChooserPanel(catalogue.suggestions.map { entry ->
-            NovaChooserOption(entry.code, NovaEquipmentWords.type(entry.code),
-                current.firstOrNull { it.equipmentType == entry.code }?.periodMonths ?: entry.defaultPeriodMonths, "shippingbox")
-        }, draft.equipmentType, "equipment.period.type") { picked ->
+        NovaChoiceField("Ekipman türü", "Tür seçin", "shippingbox", catalogue.suggestions.map { entry ->
+            NovaChoiceOption(entry.code, NovaEquipmentWords.type(entry.code),
+                (current.firstOrNull { it.equipmentType == entry.code }?.periodMonths ?: entry.defaultPeriodMonths)?.let { months -> "$months ay" })
+        }, draft.equipmentType, { picked ->
             // Pre-fill from what is on file, or from the product's own starting period.
             val existing = current.firstOrNull { it.equipmentType == picked }
             draft = when {
@@ -955,8 +944,7 @@ private fun EquipmentPeriodSheet(company: String?, catalogue: NovaEquipmentCatal
                 else -> draft.copy(equipmentType = picked, periodMonths = catalogue.suggestions.firstOrNull { it.code == picked }?.defaultPeriodMonths?.toString()
                     ?: draft.periodMonths)
             }
-            choosing = false
-        }
+        }, "equipment.period.type", boxed = true)
         NovaTextField("Süre (ay)", draft.periodMonths, { value -> draft = draft.copy(periodMonths = value.filter(Char::isDigit).take(3)) },
             identifier = "equipment.period.months", keyboardType = KeyboardType.Number)
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {

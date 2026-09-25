@@ -597,7 +597,6 @@ private fun ProcessFieldRow(field: NovaProcessField, catalogue: NovaProcessPage,
 @Composable
 private fun ProcessControl(field: NovaProcessField, catalogue: NovaProcessPage, context: ProcessFieldContext) {
     val value = context.text(field.id)
-    var open by remember(field.id) { mutableStateOf(false) }
     when (field.type) {
         "lines" -> NumberedItemsEditor(field.title, value) { context.set(field.id, JsonPrimitive(it)) }
         "bool" -> Row(verticalAlignment = Alignment.CenterVertically) {
@@ -642,10 +641,8 @@ private fun ProcessControl(field: NovaProcessField, catalogue: NovaProcessPage, 
                 variant = NovaButtonVariant.Surface, symbol = "doc.viewfinder", enabled = !context.busy)
         }
         "choice" -> {
-            NovaChooserButton(field.title, field.choices[value] ?: "Seçin", "process.choice.${field.id}", open = open) { open = !open }
-            if (open) NovaChooserPanel(field.choices.map { (key, label) -> NovaChooserOption(key, label) }, value.ifEmpty { null }, "process.choice.${field.id}.panel") {
-                context.set(field.id, JsonPrimitive(it.orEmpty())); open = false
-            }
+            NovaChoiceField(field.title, "${field.title} seçin", fieldSymbol(field), field.choices.map { (key, label) -> NovaChoiceOption(key, label) },
+                value.ifEmpty { null }, { context.set(field.id, JsonPrimitive(it.orEmpty())) }, "process.choice.${field.id}", boxed = true)
         }
         "workplaces", "organizations" -> {
             val options = if (field.type == "workplaces") catalogue.workplaces else catalogue.organizations
@@ -653,9 +650,9 @@ private fun ProcessControl(field: NovaProcessField, catalogue: NovaProcessPage, 
                     if (field.type == "workplaces" && options.isEmpty()) Unit
                     else if (field.type == "workplaces" && options.size == 1) NovaText(options[0].name, style = NovaTypeToken.cardTitle)
             else {
-                NovaChooserButton(field.title, options.firstOrNull { it.id.equals(value, true) }?.name ?: "Seçin", "process.${field.type}.${field.id}", open = open) { open = !open }
-                if (open) NovaChooserPanel(options.map { NovaChooserOption(it.id, it.name) }, options.firstOrNull { it.id.equals(value, true) }?.id,
-                    "process.${field.type}.${field.id}.panel") { context.set(field.id, JsonPrimitive(it.orEmpty())); open = false }
+                NovaChoiceField(field.title, "${field.title} seçin", fieldSymbol(field), options.map { NovaChoiceOption(it.id, it.name) },
+                    options.firstOrNull { it.id.equals(value, true) }?.id, { context.set(field.id, JsonPrimitive(it.orEmpty())) },
+                    "process.${field.type}.${field.id}", searchable = true, boxed = true)
             }
         }
         "employees" -> {
@@ -742,7 +739,6 @@ private fun ProcessLinkPicker(client: NovaProcessClient, company: String, exclud
     var hasMore by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var choosingKind by remember { mutableStateOf(false) }
     suspend fun load(more: Boolean = false) {
         val selectedKind = kind; val search = query
         loading = true; error = null
@@ -757,10 +753,8 @@ private fun ProcessLinkPicker(client: NovaProcessClient, company: String, exclud
     LaunchedEffect(kind) { query = ""; rows = emptyList(); load() }
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         NovaText("İlgili kaydı seç", style = NovaTypeToken.cardTitle)
-        NovaChooserButton("Kayıt türü", NovaProcessKind.referenceTitle(kind), "process.link.kind", open = choosingKind) { choosingKind = !choosingKind }
-        if (choosingKind) NovaChooserPanel(kinds.map { NovaChooserOption(it, NovaProcessKind.referenceTitle(it)) }, kind, "process.link.kind.panel") {
-            if (it != null) kind = it; choosingKind = false
-        }
+        NovaChoiceField("Kayıt türü", "Kayıt türü seçin", "link", kinds.map { NovaChoiceOption(it, NovaProcessKind.referenceTitle(it)) },
+            kind, { if (it != null) kind = it }, "process.link.kind", boxed = true)
         NovaSearchCapsule(query, "Kayıt ara", "process.link.search") { query = it }
         NovaButton("Ara", { coroutines.launch { load() } }, variant = NovaButtonVariant.Surface, symbol = "magnifyingglass", enabled = !loading, compact = true)
         if (loading) NovaSpinner(NovaColorToken.text.color())

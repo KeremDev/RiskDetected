@@ -121,7 +121,6 @@ fun NovaFileAddInline(companies: List<NovaCompanyOption>, preselected: String?, 
     var error by remember { mutableStateOf<String?>(null) }
     var outcome by remember { mutableStateOf<NovaFileEntry?>(null) }
     var choosingCategory by remember { mutableStateOf(false) }
-    var choosingCompany by remember { mutableStateOf(false) }
     var infoOpen by remember { mutableStateOf(false) }
     val maxBytes = accepts.maxOfOrNull { it.maxBytes } ?: 0
     val extensions = accepts.flatMap { it.extensions }.map { it.lowercase() }.distinct().sorted()
@@ -161,12 +160,8 @@ fun NovaFileAddInline(companies: List<NovaCompanyOption>, preselected: String?, 
             return@Column
         }
         if (preselected == null) {
-            NovaChooserButton("Firma", companies.firstOrNull { it.id == company }?.name ?: "Kişisel dosya", "file.add.company",
-                symbol = "building.2", open = choosingCompany) { choosingCompany = !choosingCompany }
-            if (choosingCompany) NovaChooserPanel(listOf(NovaChooserOption(null, "Kişisel dosya", symbol = "person")) +
-                companies.map { NovaChooserOption(it.id, it.name, symbol = "building.2") }, company, "file.add.company") {
-                company = it; choosingCompany = false
-            }
+            NovaChoiceField("Firma", "Firma seçin", "building.2", companies.map { NovaChoiceOption(it.id, it.name) }, company, { company = it },
+                "file.add.company", noneTitle = "Kişisel dosya", searchable = true, boxed = true)
         }
         NovaPopupOption(if (payload == null) pickerLabel else draft.fileName, if (payload == null) "folder.badge.plus" else "doc",
             if (payload == null) "PDF, belge veya fotoğraf" else NovaFileWords.size(draft.bytes), identifier = "file.add.pick") {
@@ -175,10 +170,10 @@ fun NovaFileAddInline(companies: List<NovaCompanyOption>, preselected: String?, 
         }
         if (payload != null) {
             NovaTextField("Başlık", draft.title, { draft = draft.copy(title = it) }, identifier = "file.add.title")
-            NovaChooserButton("Başlık altında sakla", draft.category?.let(NovaFileWords::category) ?: "Başlık seçin", "file.add.category",
-                symbol = "folder", open = choosingCategory) { choosingCategory = !choosingCategory }
-            if (choosingCategory) NovaChooserPanel(categories.map { NovaChooserOption(it.code, NovaFileWords.category(it.code), symbol = "folder") },
-                draft.category, "file.add.category") { picked -> if (picked != null) draft = draft.copy(category = picked); choosingCategory = false }
+            // Opens by itself once a file is picked without a heading.
+            NovaChoiceField("Başlık altında sakla", "Başlık seçin", "folder", categories.map { NovaChoiceOption(it.code, NovaFileWords.category(it.code)) },
+                draft.category, { picked -> if (picked != null) draft = draft.copy(category = picked) }, "file.add.category", boxed = true,
+                openRequest = choosingCategory, onOpened = { choosingCategory = false })
             NovaTextField("Etiketler · virgülle ayırın", draft.tags, { draft = draft.copy(tags = it) }, identifier = "file.add.tags")
             NovaTextField("Not", draft.note, { draft = draft.copy(note = it) }, identifier = "file.add.note")
         }

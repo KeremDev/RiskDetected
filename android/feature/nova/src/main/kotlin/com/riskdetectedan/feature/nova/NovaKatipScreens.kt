@@ -350,7 +350,6 @@ private fun KatipContractSheet(initial: NovaKatipDraft, catalogue: NovaKatipCata
     var draft by remember { mutableStateOf(if (initial.workplaceId == null && workplaces.size == 1) initial.copy(workplaceId = workplaces[0].id) else initial) }
     var failure by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
-    var choosing by remember { mutableStateOf(false) }
     var step by remember { mutableStateOf(KatipStep.scope) }
     var didSave by remember { mutableStateOf(false) }
     var confirmingExit by remember { mutableStateOf(false) }
@@ -379,10 +378,8 @@ private fun KatipContractSheet(initial: NovaKatipDraft, catalogue: NovaKatipCata
                     NovaText("İşyeri", style = NovaTypeToken.label)
                     NovaText(placeTitle, style = NovaTypeToken.bodyStrong)
                 } else if (workplaces.size > 1) {
-                    NovaChooserButton("İşyeri", placeTitle, "nova.katip.form.workplace", open = choosing) { choosing = !choosing }
-                    if (choosing) NovaChooserPanel(workplaces.map { NovaChooserOption(it.id, it.name) }, draft.workplaceId, "nova.katip.form.workplace.panel") {
-                        draft = draft.copy(workplaceId = it); choosing = false
-                    }
+                    NovaChoiceField("İşyeri", "İşyeri seçin", "building.2", workplaces.map { NovaChoiceOption(it.id, it.name) }, draft.workplaceId,
+                        { draft = draft.copy(workplaceId = it) }, "nova.katip.form.workplace", searchable = true, boxed = true)
                 }
                 NovaTextField("Karşı taraf (OSGB veya işveren)", draft.counterparty, { draft = draft.copy(counterparty = it) }, identifier = "nova.katip.form.counterparty")
                 NovaTextField("Uzman / hekim", draft.expertContact, { draft = draft.copy(expertContact = it) }, identifier = "nova.katip.form.expert")

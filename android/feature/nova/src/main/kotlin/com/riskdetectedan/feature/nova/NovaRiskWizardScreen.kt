@@ -77,7 +77,6 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
     var step by remember { mutableStateOf("firm") }
     var companies by remember { mutableStateOf<List<NovaCompanyOption>>(emptyList()) }
     var company by remember { mutableStateOf<String?>(null) }
-    var chooser by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     var sectorHits by remember { mutableStateOf<List<RiskWizardSectorHit>>(emptyList()) }
     var searchHits by remember { mutableStateOf<List<RiskWizardPick>>(emptyList()) }
@@ -92,7 +91,6 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
     var planSaved by remember { mutableStateOf(false) }
     var workplaces by remember { mutableStateOf<List<NovaWizardWorkplace>>(emptyList()) }
     var workplace by remember { mutableStateOf<String?>(null) }
-    var workplaceChooser by remember { mutableStateOf(false) }
     var cardHits by remember { mutableStateOf<List<EmergencyCard>>(emptyList()) }
     var staff by remember { mutableStateOf<List<EmergencyWizardStaff>?>(null) }
     var staffQuery by remember { mutableStateOf("") }
@@ -265,10 +263,10 @@ fun NovaRiskWizardScreen(companiesSource: suspend () -> List<NovaCompanyOption>,
                     val emergency = current.emergency
                     val checklist = current.checklist
                     when {
-                        step == "firm" -> firmPage(current, companies, company, chooser, { chooser = !chooser }, { id ->
-                            company = id; chooser = false
+                        step == "firm" -> firmPage(current, companies, company, { id ->
+                            company = id
                             perform(mapOf("type" to "firm", "field" to "name", "value" to (companies.firstOrNull { it.id == id }?.name ?: "")))
-                        }, workplaces, workplace, workplaceChooser, { workplaceChooser = !workplaceChooser }, { workplace = it; workplaceChooser = false },
+                        }, workplaces, workplace, { workplace = it },
                             { perform(mapOf("type" to "emp", "value" to it)) }) { field, value -> perform(mapOf("type" to "firm", "field" to field, "value" to value)) }
                         emergency != null && step == "site" -> emergencySitePage(emergency) { perform(it) }
                         emergency != null && step == "cards" -> emergencyCardsPage(emergency, query, cardHits, { value ->
@@ -438,25 +436,23 @@ internal fun InputField(label: String, value: String, placeholder: String, onCha
     }
 }
 
-private fun LazyListScope.firmPage(v: RiskWizardView, companies: List<NovaCompanyOption>, company: String?, chooser: Boolean, toggleChooser: () -> Unit,
-                                   pickCompany: (String?) -> Unit, workplaces: List<NovaWizardWorkplace>, workplace: String?, workplaceChooser: Boolean,
-                                   toggleWorkplaces: () -> Unit, pickWorkplace: (String?) -> Unit, employees: (String) -> Unit, change: (String, String) -> Unit) {
+private fun LazyListScope.firmPage(v: RiskWizardView, companies: List<NovaCompanyOption>, company: String?, pickCompany: (String?) -> Unit,
+                                   workplaces: List<NovaWizardWorkplace>, workplace: String?, pickWorkplace: (String?) -> Unit,
+                                   employees: (String) -> Unit, change: (String, String) -> Unit) {
     val emergency = v.emergency
     val checklist = v.checklist
     if (emergency != null) item { PageTitle(emergency.text("firm.title"), emergency.text("firm.help")) }
     else if (checklist != null) item { PageTitle(checklist.text("firm.title"), checklist.text("firm.help")) }
     else item { PageTitle("Analiz hangi işyeri için?", "İsteğe bağlı; rapor kapağında ve dosya adında kullanılır. Çalışan sayısı kurul ve temsilci gibi genel konuları etkiler.") }
     if (companies.isNotEmpty()) {
-        item { NovaChooserButton("Firma", companies.firstOrNull { it.id == company }?.name ?: "Firma seçmeden devam et", "riskWizard.company", open = chooser) { toggleChooser() } }
-        if (chooser) item {
-            NovaChooserPanel(listOf(NovaChooserOption(null, "Firma seçmeden devam et")) + companies.map { NovaChooserOption(it.id, it.name) }, company, "riskWizard.companies") { pickCompany(it) }
+        item {
+            NovaChoiceField("Firma", "Firma seçin", "building.2", companies.map { NovaChoiceOption(it.id, it.name) }, company, pickCompany,
+                "riskWizard.company", noneTitle = "Firma seçmeden devam et", searchable = true, boxed = true)
         }
     }
-    if (emergency != null && workplaces.size > 1) {
-        item { NovaChooserButton("İşyeri", workplaces.firstOrNull { it.id == workplace }?.name ?: "İşyeri seçmeden devam et", "emergencyWizard.workplace", open = workplaceChooser) { toggleWorkplaces() } }
-        if (workplaceChooser) item {
-            NovaChooserPanel(listOf(NovaChooserOption(null, "İşyeri seçmeden devam et")) + workplaces.map { NovaChooserOption(it.id, it.name) }, workplace, "emergencyWizard.workplaces") { pickWorkplace(it) }
-        }
+    if (emergency != null && workplaces.size > 1) item {
+        NovaChoiceField("İşyeri", "İşyeri seçin", "building.2", workplaces.map { NovaChoiceOption(it.id, it.name) }, workplace, pickWorkplace,
+            "emergencyWizard.workplace", noneTitle = "İşyeri seçmeden devam et", searchable = true, boxed = true)
     }
     item { InputField("Firma / işyeri adı", v.firm.name, "Örn. Yıldız Sondaj Ltd.") { change("name", it) } }
     item { InputField("Adres", v.firm.address, "İlçe / il") { change("address", it) } }

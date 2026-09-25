@@ -320,9 +320,11 @@ private fun AdvancedEditor(scope: NovaOsgbScope, route: PersonnelRoute.Advanced,
             working = false
         }
     }
-    @Composable fun picker(label: String, values: List<Pair<String, String>>, selected: String?, id: String, optional: Boolean = false, onPick: (String?) -> Unit) {
-        val options = (if (optional) listOf(NovaChooserOption(null, "Seçilmedi")) else emptyList()) + values.map { NovaChooserOption(it.first, it.second) }
-        NovaFilterField(label, options, selected, id) { if (optional || it != null) onPick(it) }
+    @Composable fun picker(label: String, icon: String, values: List<Pair<String, String>>, selected: String?, id: String, optional: Boolean = false,
+                           searchable: Boolean = false, onPick: (String?) -> Unit) {
+        NovaChoiceField(label, "$label seçin", icon, values.map { NovaChoiceOption(it.first, it.second) }, selected,
+            { if (optional || it != null) onPick(it) }, id, noneTitle = if (optional) "Seçilmedi" else null,
+            searchable = searchable || values.size > 8, boxed = true)
     }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         NovaPopupHeading(if (entry == null) "${section.title} ekle" else section.title, symbol,
@@ -341,16 +343,18 @@ private fun AdvancedEditor(scope: NovaOsgbScope, route: PersonnelRoute.Advanced,
                 NovaTextField("Telefon veya e-posta", contactValue, { contactValue = it }, identifier = "osgb.contractor.value")
             }
             section == NovaOsgbPersonnelSection.engagement && entry == null -> {
-                picker("Dış firma", contractors.map { it.id.lowercase() to it.title }, contractorId, "osgb.engagement.contractor") { contractorId = it }
-                if (workplaces.isNotEmpty()) picker("İşyeri", workplaces.map { it.id to it.name }, workplaceId, "osgb.engagement.workplace") { workplaceId = it }
+                picker("Dış firma", "briefcase", contractors.map { it.id.lowercase() to it.title }, contractorId, "osgb.engagement.contractor",
+                    searchable = true) { contractorId = it }
+                if (workplaces.isNotEmpty()) picker("İşyeri", "building.2", workplaces.map { it.id to it.name }, workplaceId, "osgb.engagement.workplace",
+                    searchable = true) { workplaceId = it }
                 NovaTextField("İşin kapsamı", details, { details = it }, identifier = "osgb.engagement.scope", multiline = true)
                 NovaDayField("Başlangıç", startsOn, { startsOn = it }, "osgb.engagement.start")
             }
             section == NovaOsgbPersonnelSection.assignment && entry == null -> {
-                picker("Personel", employees.map { it.id to it.name }, employeeId, "osgb.history.employee") { employeeId = it }
-                picker("Departman", departments.map { it.id to it.name }, departmentId, "osgb.history.department", optional = true) { departmentId = it }
-                picker("Görev", jobRoles.map { it.id.lowercase() to it.title }, jobRoleId, "osgb.history.role", optional = true) { jobRoleId = it }
-                picker("Dış firma sözleşmesi", engagements.filter { it.status == "active" }.map { it.id.lowercase() to it.title }, engagementId,
+                picker("Personel", "person", employees.map { it.id to it.name }, employeeId, "osgb.history.employee", searchable = true) { employeeId = it }
+                picker("Departman", "person.3", departments.map { it.id to it.name }, departmentId, "osgb.history.department", optional = true) { departmentId = it }
+                picker("Görev", "person.text.rectangle", jobRoles.map { it.id.lowercase() to it.title }, jobRoleId, "osgb.history.role", optional = true) { jobRoleId = it }
+                picker("Dış firma sözleşmesi", "doc.text", engagements.filter { it.status == "active" }.map { it.id.lowercase() to it.title }, engagementId,
                     "osgb.history.engagement", optional = true) { engagementId = it }
                 NovaDayField("Başlangıç", startsOn, { startsOn = it }, "osgb.history.start")
             }

@@ -51,7 +51,8 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
     var address by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
-    var hazard by remember { mutableStateOf("medium") }
+    // Nothing is chosen until the user picks a class.
+    var hazard by remember { mutableStateOf<String?>(null) }
     var sector by remember { mutableStateOf("") }
     var employees by remember { mutableStateOf("") }
     var nace by remember { mutableStateOf("") }
@@ -66,12 +67,11 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
     var submitting by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var created by remember { mutableStateOf<String?>(null) }
-    var rolePanel by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
         try {
             client.pending()?.let { staged ->
                 pending = staged
-                name = staged.name; hazard = staged.hazard; sector = staged.sector.orEmpty(); employees = staged.employeeCount?.toString().orEmpty()
+                name = staged.name; hazard = staged.hazard.takeIf { id -> NovaHazardChoice.options.any { it.value == id } }; sector = staged.sector.orEmpty(); employees = staged.employeeCount?.toString().orEmpty()
                 staged.responsibleName?.let { person ->
                     addResponsible = true
                     contacts = listOf(CompanyResponsibleContact(name = person, phone = staged.responsiblePhone.orEmpty(),
@@ -92,7 +92,7 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
     val titles = listOf("Firma bilgileri", "İşletme bilgileri", "İşyeri ve departman", "Sorumlu & iletişim", "Firma özeti")
     val canAdvance = when (step) {
         0 -> name.isNotBlank()
-        1 -> sector.isNotBlank() && employees.trim().toIntOrNull() != null
+        1 -> hazard != null && sector.isNotBlank() && employees.trim().toIntOrNull() != null
         2 -> workplaces.all { it.name.isNotBlank() } && departments.all { it.isNotBlank() }
         3 -> !addResponsible || contacts.isEmpty() || contacts.all { it.name.isNotBlank() && it.phone.isNotBlank() && it.role.isNotBlank() }
         else -> true
@@ -101,7 +101,7 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
         submitting = true; error = null
         try {
             val contact = contacts.firstOrNull()
-            val fresh = NovaCompanyCreateIntent.contactProfile(client.ownerId, name, hazard, sector, "", employees,
+            val fresh = NovaCompanyCreateIntent.contactProfile(client.ownerId, name, hazard.orEmpty(), sector, "", employees,
                 if (addResponsible) contact?.name.orEmpty() else "", if (addResponsible) contact?.phone.orEmpty() else "",
                 if (addResponsible) contact?.email.orEmpty() else "")
             // A staged request is reconciled first: it reuses its own server row, and the edited profile follows.
@@ -140,7 +140,10 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
             }
             1 -> NovaCard(Modifier.fillMaxWidth(), padding = 16) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    NovaCompanyHazardField("Tehlike sınıfı *", hazard, editable) { hazard = it }
+                    NovaCompanyHazardField("Tehlike sınıfı *", hazard, editable, "nova.pilot.company.hazard") {
+                        // The step's error was about the missing class; a pick answers it.
+                        hazard = it; error = null
+                    }
                     NovaDivider(); NovaCompanyIconField("Sektör *", "square.grid.2x2", sector, "sector", editable) { sector = it }
                     NovaDivider(); NovaCompanyIconField("Çalışan sayısı *", "person.2", employees, "employeeCount", editable, KeyboardType.Number) { employees = it }
                     NovaDivider(); NovaCompanyIconField("NACE kodu", "number", nace, "nace", editable) { nace = it }
@@ -151,7 +154,7 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
                 NovaCard(Modifier.fillMaxWidth(), padding = 16) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         NovaCompanyToggleRow("Aynı firmaya ait farklı işyeri var mı?", workplaces.isNotEmpty(), editable) { on ->
-                            workplaces = if (on) workplaces.ifEmpty { listOf(CompanyWorkplaceProfile()) } else emptyList()
+                            workplaces = if (on) workplaces.ifEmpty { listOf(CompanyWorkplaceProfile(hazardClass = hazard ?: "medium")) } else emptyList()
                         }
                         workplaces.forEachIndexed { index, workplace ->
                             fun update(value: CompanyWorkplaceProfile) { workplaces = workplaces.toMutableList().also { it[index] = value } }
@@ -161,7 +164,9 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
                                     if (index > 0) RemoveButton("İşyeri ${index + 1} kaldır") { workplaces = workplaces.filterIndexed { i, _ -> i != index } }
                                 }
                                 NovaCompanyIconField("İşyeri adı *", "building.2", workplace.name, "workplace-$index-name", editable) { update(workplace.copy(name = it)) }
-                                NovaCompanyHazardField("İşyeri tehlike sınıfı *", workplace.hazardClass, editable) { update(workplace.copy(hazardClass = it)) }
+                                NovaCompanyHazardField("İşyeri tehlike sınıfı *", workplace.hazardClass, editable, "nova.pilot.company.workplace-$index.hazard") {
+                                    update(workplace.copy(hazardClass = it))
+                                }
                                 NovaCompanyIconField("İşyeri adresi", "mappin.and.ellipse", workplace.address, "workplace-$index-address", editable, multiline = true) {
                                     update(workplace.copy(address = it))
                                 }
@@ -169,7 +174,8 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
                             }
                             if (index < workplaces.lastIndex) NovaDivider()
                         }
-                        if (workplaces.isNotEmpty()) AddRow("plus", "Başka işyeri ekle", editable) { workplaces = workplaces + CompanyWorkplaceProfile() }
+                        // A new workplace starts from the company's class.
+                        if (workplaces.isNotEmpty()) AddRow("plus", "Başka işyeri ekle", editable) { workplaces = workplaces + CompanyWorkplaceProfile(hazardClass = hazard ?: "medium") }
                     }
                 }
                 NovaCard(Modifier.fillMaxWidth(), padding = 16) {
@@ -209,11 +215,9 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
                                 NovaCompanyIconField("Ad soyad *", "person", contact.name, "contact-$index-name", editable) { update(contact.copy(name = it)) }
                                 NovaCompanyIconField("Telefon *", "phone", contact.phone, "contact-$index-phone", editable, KeyboardType.Phone) { update(contact.copy(phone = it)) }
                                 NovaCompanyIconField("Mail adresi", "envelope", contact.email, "contact-$index-email", editable, KeyboardType.Email) { update(contact.copy(email = it)) }
-                                val key = "role-$index"
-                                NovaChooserButton("Görevi *", contact.role.ifEmpty { "Görev seçin" }, "nova.pilot.company.contact-$index-role",
-                                    open = rolePanel == key) { if (editable) rolePanel = if (rolePanel == key) null else key }
-                                if (rolePanel == key) NovaChooserPanel(contactRoles.map { NovaChooserOption(it, it) }, contact.role.ifEmpty { null },
-                                    "nova.pilot.company.contact-$index-role.panel") { picked -> update(contact.copy(role = picked.orEmpty())); rolePanel = null }
+                                NovaChoiceField("Görevi *", "Görev seçin", "briefcase", contactRoles.map { NovaChoiceOption(it, it) },
+                                    contact.role.ifEmpty { null }, { picked -> update(contact.copy(role = picked.orEmpty())) },
+                                    "nova.pilot.company.contact-$index-role", enabled = editable)
                             }
                             if (index < contacts.lastIndex) NovaDivider()
                         }
@@ -231,7 +235,7 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
                         }
                         SummaryRow("Firma", name, "building.2")
                         SummaryRow("İletişim", listOf(address, city, phone).filter { it.isNotBlank() }.joinToString(" · "), "mappin.and.ellipse")
-                        SummaryRow("İşletme", listOfNotNull(hazardName(hazard), sector, employees.ifBlank { null }?.let { "$it çalışan" }).joinToString(" · "), "shield")
+                        SummaryRow("İşletme", listOfNotNull(hazard?.let(::hazardName), sector, employees.ifBlank { null }?.let { "$it çalışan" }).joinToString(" · "), "shield")
                         if (nace.isNotBlank() || registry.isNotBlank())
                             SummaryRow("NACE / sicil", listOf(nace, registry).filter { it.isNotBlank() }.joinToString(" · "), "doc.text")
                         workplaces.forEachIndexed { index, workplace ->
@@ -269,15 +273,12 @@ internal fun NovaCompanyIconField(title: String, symbol: String, value: String, 
     }
 }
 
+/** The hazard class, picked from a sheet of described classes (iOS `NovaChoiceField` + `NovaHazardChoice`). */
 @Composable
-internal fun NovaCompanyHazardField(title: String, value: String, enabled: Boolean, onChange: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            NovaIcon("exclamationmark.triangle", 17.dp, Modifier.width(22.dp))
-            NovaText(title, style = NovaTypeToken.label, color = NovaColorToken.textTertiary.color())
-        }
-        NovaSegmentedControl(hazards.map { it.second }, hazards.indexOfFirst { it.first == value }.coerceAtLeast(0)) { if (enabled) onChange(hazards[it].first) }
-    }
+internal fun NovaCompanyHazardField(title: String, value: String?, enabled: Boolean, identifier: String, onChange: (String) -> Unit) {
+    NovaChoiceField(title, NovaHazardChoice.placeholder, "exclamationmark.triangle", NovaHazardChoice.options,
+        value?.takeIf { id -> NovaHazardChoice.options.any { it.value == id } }, { picked -> picked?.let(onChange) }, identifier,
+        message = NovaHazardChoice.message, enabled = enabled)
 }
 
 @Composable
