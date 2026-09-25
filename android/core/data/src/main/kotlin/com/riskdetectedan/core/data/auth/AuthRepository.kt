@@ -11,8 +11,10 @@ import io.github.jan.supabase.auth.providers.builtin.OTP
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.Apple
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -100,8 +102,55 @@ class AuthRepository @Inject constructor(
     suspend fun signUpWithPassword(email: String, password: String, language: RdAppLanguage): RdResult<Unit> =
         passwordSignUp(client, email, password, language)
 
-    /** Only requests the email. It does not mark the session as recovery-verified. */
+    /** Sends the signup code again; the first one comes with [signUpWithPassword] (iOS `resendSignupCode`). */
+    suspend fun resendSignupCode(email: String): RdResult<Unit> = try {
+        client.auth.resendEmail(OtpType.Email.SIGNUP, email.trim().lowercase(Locale.ROOT))
+        RdResult.Success(Unit)
+    } catch (t: Throwable) {
+        RdResult.Failure(code = "signup_code_resend_failed", message = t.message ?: "signup_code_resend_failed", cause = t)
+    }
+
+    /** Confirms a new password account with the code from its signup mail (iOS `verifySignupCode`).
+     * [password] is the one typed for this signup. An address that signed up before and never
+     * entered its code keeps its first password on the server, because signup does not overwrite
+     * it; the verified session sets the one typed now. The same password is refused and changes nothing. */
+    suspend fun verifySignupCode(email: String, token: String, password: String? = null): RdResult<Unit> = try {
+        client.auth.verifyEmailOtp(type = OtpType.Email.SIGNUP, email = email.trim().lowercase(Locale.ROOT), token = token)
+        if (password != null && IsgPasswordRules.evaluate(password).valid) passwordUpdate(client, password)
+        backfillProviderIdentityIfNeeded()
+        RdResult.Success(Unit)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (t: Throwable) {
+        codeCheckFailure(t)
+    }
+
+    /** Sends the 6-digit reset code (the auth email hook renders it). The server answers the same
+     * whether or not the address has an account. */
     suspend fun requestPasswordRecovery(email: String): RdResult<Unit> = passwordRecoveryRequest(client, email)
+
+    /** Opens the account's session with the code from the reset mail (iOS `verifyRecoveryCode`).
+     * The caller holds [AuthRouteHold] so the app waits for the new password. */
+    suspend fun verifyRecoveryCode(email: String, token: String): RdResult<Unit> = try {
+        client.auth.verifyEmailOtp(type = OtpType.Email.RECOVERY, email = email.trim().lowercase(Locale.ROOT), token = token)
+        backfillProviderIdentityIfNeeded()
+        RdResult.Success(Unit)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (t: Throwable) {
+        codeCheckFailure(t)
+    }
+
+    /** A mailed-code check the server refused (4xx: wrong or expired code) is `code_rejected`; one
+     * that never got an answer, or failed on the server's side, is `code_unreachable`, so the code
+     * page offers another try instead of calling a possibly right code wrong (iOS `codeCheckFailure`). */
+    private fun codeCheckFailure(t: Throwable): RdResult.Failure {
+        val code = if (t is RestException && t.statusCode < 500) CODE_REJECTED else CODE_UNREACHABLE
+        return RdResult.Failure(code = code, message = code, cause = t)
+    }
+
+    /** Sets the signed-in account's password: the last step of a reset. */
+    suspend fun setNewPassword(password: String): RdResult<Unit> = passwordUpdate(client, password)
 
     /** Mirrors AuthService.swift's sendEmailOTP — same data contract, see F6. */
     suspend fun sendEmailOtp(email: String, language: RdAppLanguage): RdResult<Unit> = try {
@@ -295,3 +344,7 @@ class AuthRepository @Inject constructor(
         RdResult.Failure(code = "sign_out_failed", message = t.message ?: "sign_out_failed", cause = t)
     }
 }
+
+/** [AuthRepository.verifySignupCode] / [AuthRepository.verifyRecoveryCode] failure codes. */
+const val CODE_REJECTED = "code_rejected"
+const val CODE_UNREACHABLE = "code_unreachable"

@@ -10,6 +10,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.auth.AuthRouteHold
+import com.riskdetectedan.core.data.auth.CODE_UNREACHABLE
 import com.riskdetectedan.core.data.auth.IsgPasswordRules
 import com.riskdetectedan.core.data.auth.RdAppLanguage
 import com.riskdetectedan.core.data.error.AppErrorMessages
@@ -32,6 +34,7 @@ class NovaOBAuth @Inject constructor(
     private val authRepository: AuthRepository,
     private val googleAuthClient: GoogleAuthClient,
     private val releasePolicyRepository: ReleasePolicyRepository,
+    private val routeHold: AuthRouteHold,
 ) {
     val currentUserIdFlow get() = authRepository.currentUserIdFlow
     val isAuthenticated get() = authRepository.currentUserId != null
@@ -40,9 +43,27 @@ class NovaOBAuth @Inject constructor(
 
     suspend fun signIn(email: String, password: String) = gated { authRepository.signInWithPassword(email, password) }
     suspend fun signUp(email: String, password: String) = gated { authRepository.signUpWithPassword(email, password, language) }
-    suspend fun sendCode(email: String) = gated { authRepository.sendEmailOtp(email, language) }
-    suspend fun verifyCode(email: String, code: String) = gated { authRepository.verifyEmailOtp(email, code) }
+    /** The signup code comes with [signUp]; this only sends it again. */
+    suspend fun resendSignupCode(email: String) = gated { authRepository.resendSignupCode(email) }
+    /** [password] is the one typed for this signup; see `AuthRepository.verifySignupCode`. */
+    suspend fun verifySignupCode(email: String, code: String, password: String) =
+        gated { authRepository.verifySignupCode(email, code, password) }
+    /** Sends the reset code. The server answers the same whether or not the address has an account. */
     suspend fun recoverPassword(email: String) = gated { authRepository.requestPasswordRecovery(email) }
+
+    /** Opens the account's session with the reset code and keeps the app on the sign-in surface
+     * until [finishRecovery] or [cancelRecovery], so the new password comes first. */
+    suspend fun verifyRecoveryCode(email: String, code: String): RdResult<Unit> = gated {
+        routeHold.hold()
+        authRepository.verifyRecoveryCode(email, code).also { if (it is RdResult.Failure) routeHold.release() }
+    }
+    suspend fun setNewPassword(password: String) = authRepository.setNewPassword(password)
+    fun finishRecovery() = routeHold.release()
+    /** Signs the recovery session out when the new-password page is left. */
+    suspend fun cancelRecovery() {
+        authRepository.signOut()
+        routeHold.release()
+    }
 
     /** Opens Sign in with Apple in a Custom Tab. The session arrives later through the app deep link. */
     suspend fun appleSignIn() = gated { authRepository.signInWithAppleOAuth() }
@@ -82,6 +103,15 @@ class NovaOBAuth @Inject constructor(
     }
 }
 
+/** A code the server refused, and one that never got an answer (iOS `NovaOBController`). */
+internal const val CODE_REJECTED_MESSAGE =
+    "Kod yanlış ya da süresi dolmuş. Hatalı rakama dokunup düzelt ya da yeni kod iste."
+internal const val CODE_UNREACHABLE_MESSAGE = "Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene."
+
+/** Signup for an address that already has an account (iOS `NovaOBController.accountExistsMessage`). */
+internal const val ACCOUNT_EXISTS_MESSAGE =
+    "Bu e-posta adresiyle bir hesap var. Giriş yap'a dokunup şifrenle ya da Apple veya Google ile gir."
+
 /** Screen identifiers, one per `sc-if` branch in the prototype. */
 internal enum class NovaOBScreen { Splash, Reveal, Intro1, Intro2, Intro3, Social, Questions, Prep, Card, Signup, EmailForm, Otp, Trial, TrialHow, Push }
 
@@ -105,12 +135,14 @@ class NovaOnboardingController @Inject constructor(
     internal var password by mutableStateOf("")
     internal var showPassword by mutableStateOf(false)
     internal var marketing by mutableStateOf(false)
-    internal var otpCode by mutableStateOf("")
+    internal var otpDigits by mutableStateOf(List(6) { "" })
     internal var otpError by mutableStateOf("")
+    /** [otpError] is an unreachable server, not a wrong code. */
+    internal var otpRetryable by mutableStateOf(false)
     internal var otpVerified by mutableStateOf(false)
     internal var authError by mutableStateOf("")
     internal var busy by mutableStateOf(false)
-    internal var resendNote by mutableStateOf(false)
+    internal var resendNote by mutableStateOf("")
 
     /** Set once a Custom Tab provider flow is launched; its session lands asynchronously. */
     private var awaitingProvider = false
@@ -328,60 +360,67 @@ class NovaOnboardingController @Inject constructor(
         authError = ""
         viewModelScope.launch {
             when (val result = auth.signUp(address, password)) {
-                is RdResult.Success -> openOtp(address)
-                // Supabase created the account and imported a session instead of asking for
-                // confirmation; the address is still verified the same way.
-                is RdResult.Failure -> if (result.code == "password_confirmation_required") openOtp(address) else {
-                    onFailure()
-                    authError = NovaOBAuth.message(result, "Hesap oluşturulamadı")
+                is RdResult.Success -> openCodePage()
+                is RdResult.Failure -> when (result.code) {
+                    // Supabase created the account and imported a session instead of asking for
+                    // confirmation; the address is still verified the same way.
+                    "password_confirmation_required" -> openCodePage()
+                    "password_account_exists" -> { onFailure(); authError = ACCOUNT_EXISTS_MESSAGE }
+                    else -> { onFailure(); authError = NovaOBAuth.message(result, "Hesap oluşturulamadı") }
                 }
             }
             busy = false
         }
     }
 
-    private suspend fun openOtp(address: String) {
-        val sent = auth.sendCode(address)
-        if (sent is RdResult.Failure) {
-            authError = NovaOBAuth.message(sent, "Doğrulama kodu gönderilemedi", "Kod gönderilemedi")
-            return
-        }
-        otpCode = ""
-        otpError = ""
+    /** Signup already sent the code; asking for another here would only replace it or be
+     * refused by the one-mail-a-minute limit. */
+    private fun openCodePage() {
+        otpDigits = List(6) { "" }
+        clearOtpError()
         otpVerified = false
+        resendNote = ""
         screen = NovaOBScreen.Otp
     }
 
     internal fun verifyOtp(code: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-        if (busy) return
+        if (busy || otpVerified) return
         busy = true
-        otpError = ""
+        clearOtpError()
         viewModelScope.launch {
-            when (auth.verifyCode(email.trim(), code)) {
+            when (val result = auth.verifySignupCode(email.trim(), code, password)) {
                 is RdResult.Success -> {
                     onSuccess()
                     otpVerified = true
+                    busy = false
                     delay(700)
                     go(NovaOBScreen.Trial)
                 }
                 is RdResult.Failure -> {
+                    // The digits stay: one wrong box can be fixed, and a full code is checked again.
                     onFailure()
-                    otpVerified = false
-                    otpError = "Geçersiz kod. Kodu kontrol edip yeniden dene."
-                    otpCode = ""
+                    otpRetryable = result.code == CODE_UNREACHABLE
+                    otpError = if (otpRetryable) CODE_UNREACHABLE_MESSAGE else CODE_REJECTED_MESSAGE
+                    busy = false
                 }
             }
-            busy = false
         }
+    }
+
+    internal fun clearOtpError() {
+        otpError = ""
+        otpRetryable = false
     }
 
     internal fun resendCode() {
         if (email.isBlank()) return
         viewModelScope.launch {
-            auth.sendCode(email.trim())
-            resendNote = true
+            resendNote = when (auth.resendSignupCode(email.trim())) {
+                is RdResult.Success -> { otpDigits = List(6) { "" }; clearOtpError(); "Yeni kod gönderildi." }
+                is RdResult.Failure -> "Kod gönderilemedi. Bir dakika sonra tekrar dene."
+            }
             delay(2_600)
-            resendNote = false
+            resendNote = ""
         }
     }
 

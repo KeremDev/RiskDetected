@@ -98,18 +98,104 @@ final class AuthService: ObservableObject {
                        "content_locale": .string(language == .english ? "en-001" : "tr-TR")],
                 redirectTo: deepLinkURL())
             guard response.session == nil else { throw IsgPasswordAuthError.confirmationRequired }
+            // With confirmations on, an address that already has an account comes back
+            // as a user without identities and no mail is sent.
+            if response.user.identities?.isEmpty == true { throw IsgPasswordAuthError.accountExists }
         } catch is CancellationError { throw CancellationError() }
         catch let error as IsgPasswordAuthError { throw error }
+        catch let error as AuthError where error.errorCode == .userAlreadyExists {
+            throw IsgPasswordAuthError.accountExists
+        }
         catch { throw IsgPasswordAuthError.signupFailed }
     }
 
-    /// Request only; no recovery grant, fresh-auth flag or password update is inferred here.
+    /// Sends the signup code again. The first one comes with `signUpWithPassword`.
+    func resendSignupCode(email: String) async throws {
+        lastError = nil
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
+        let address = try passwordEmail(email)
+        try await supabase.auth.resend(email: address, type: .signup, emailRedirectTo: deepLinkURL())
+    }
+
+    /// Confirms a new password account with the code from its signup mail and opens its session.
+    /// `password` is the one typed for this signup. An address that signed up before and never
+    /// entered its code keeps its first password on the server, because signup does not overwrite
+    /// it; the verified session sets the one typed now. The same password is refused and changes nothing.
+    func verifySignupCode(email: String, token: String, password: String? = nil) async throws {
+        lastError = nil
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
+        let address = try passwordEmail(email)
+        let response = try await supabase.auth.verifyOTP(email: address, token: token, type: .signup)
+        var verifiedSession = response.session
+        if verifiedSession == nil { verifiedSession = await currentValidSessionAfterShortWait() }
+        if let verifiedSession {
+            if let password, IsgPasswordRules(password).valid {
+                _ = try? await supabase.auth.update(user: UserAttributes(password: password))
+            }
+            await finishSignIn(with: verifiedSession)
+            return
+        }
+        throw NSError(
+            domain: "RiskDetected.AuthService",
+            code: -2,
+            userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.auth.service.dogrulama.tamamlandi.ama.oturum.olusturulamadi.l.2a5e70fd", table: .auth, fallback: "Doğrulama tamamlandı ama oturum oluşturulamadı. Lütfen yeni kod gönderip tekrar deneyin.")]
+        )
+    }
+
+    /// A mailed-code check that failed on the server's side (5xx) reads like a lost connection, so
+    /// the code page offers another try instead of calling a possibly right code wrong.
+    static func codeCheckFailure(_ error: Error) -> Error {
+        if case let AuthError.api(_, _, _, response) = error, response.statusCode >= 500 {
+            return URLError(.badServerResponse)
+        }
+        return error
+    }
+
+    /// Password sign-in failures the sign-in screen answers itself; anything else passes through.
+    static func passwordSignInFailure(_ error: Error) -> Error {
+        guard let error = error as? AuthError else { return error }
+        switch error.errorCode {
+        case .invalidCredentials: return IsgPasswordAuthError.invalidCredentials
+        case .emailNotConfirmed: return IsgPasswordAuthError.emailNotConfirmed
+        default: return error
+        }
+    }
+
+    /// Sends the 6-digit reset code (the auth email hook renders it). The server answers the same
+    /// whether or not the address has an account.
     func requestPasswordRecovery(email: String) async throws {
         try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
         let address = try passwordEmail(email)
         do { try await supabase.auth.resetPasswordForEmail(address, redirectTo: deepLinkURL()) }
         catch is CancellationError { throw CancellationError() }
         catch { throw IsgPasswordAuthError.recoveryFailed }
+    }
+
+    /// Opens the account's session with the code from the reset mail. The caller keeps the user
+    /// on the new-password page until `setNewPassword` succeeds or the reset is abandoned.
+    func verifyRecoveryCode(email: String, token: String) async throws {
+        lastError = nil
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
+        let address = try passwordEmail(email)
+        let response = try await supabase.auth.verifyOTP(email: address, token: token, type: .recovery)
+        var recoveredSession = response.session
+        if recoveredSession == nil { recoveredSession = await currentValidSessionAfterShortWait() }
+        guard let recoveredSession else { throw IsgPasswordAuthError.recoveryFailed }
+        await finishSignIn(with: recoveredSession)
+    }
+
+    /// Sets the signed-in account's password: the last step of a reset.
+    func setNewPassword(_ password: String) async throws {
+        guard IsgPasswordRules(password).valid else { throw IsgPasswordAuthError.invalidPassword }
+        do { _ = try await supabase.auth.update(user: UserAttributes(password: password)) }
+        catch is CancellationError { throw CancellationError() }
+        catch let error as AuthError where error.errorCode == .samePassword {
+            throw IsgPasswordAuthError.samePassword
+        }
+        catch let error as AuthError where error.errorCode == .weakPassword {
+            throw IsgPasswordAuthError.invalidPassword
+        }
+        catch { throw IsgPasswordAuthError.passwordUpdateFailed }
     }
 
     private func passwordEmail(_ value: String) throws -> String {

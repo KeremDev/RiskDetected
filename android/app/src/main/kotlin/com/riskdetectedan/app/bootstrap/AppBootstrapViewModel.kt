@@ -3,12 +3,14 @@ package com.riskdetectedan.app.bootstrap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.auth.AuthRouteHold
 import com.riskdetectedan.core.data.onboarding.OnboardingAnswersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,8 +30,10 @@ internal object BootstrapReducer {
         else -> BootstrapState.Auth
     }
 
-    fun sessionChanged(current: BootstrapState, isAuthenticated: Boolean): BootstrapState = when {
-        current == BootstrapState.Auth && isAuthenticated -> BootstrapState.Main
+    /** [routeHeld]: a session the sign-in surface is still finishing (a reset before its new
+     * password, see [AuthRouteHold]) keeps Auth on screen. */
+    fun sessionChanged(current: BootstrapState, isAuthenticated: Boolean, routeHeld: Boolean = false): BootstrapState = when {
+        current == BootstrapState.Auth && isAuthenticated && !routeHeld -> BootstrapState.Main
         current == BootstrapState.Main && !isAuthenticated -> BootstrapState.Auth
         else -> current
     }
@@ -43,6 +47,7 @@ class AppBootstrapViewModel @Inject constructor(
     private val store: AppBootstrapStore,
     private val authRepository: AuthRepository,
     private val onboardingAnswersRepository: OnboardingAnswersRepository,
+    private val authRouteHold: AuthRouteHold,
 ) : ViewModel() {
     private val _state = MutableStateFlow(BootstrapState.Splash)
     val state: StateFlow<BootstrapState> = _state.asStateFlow()
@@ -64,10 +69,11 @@ class AppBootstrapViewModel @Inject constructor(
                 isAuthenticated = authRepository.currentUserId != null,
             )
 
-            authRepository.currentUserIdFlow.collectLatest { userId ->
-                if (userId != null) store.markAuthenticated()
-                _state.value = BootstrapReducer.sessionChanged(_state.value, userId != null)
-            }
+            combine(authRepository.currentUserIdFlow, authRouteHold.held) { userId, held -> userId to held }
+                .collectLatest { (userId, held) ->
+                    if (userId != null) store.markAuthenticated()
+                    _state.value = BootstrapReducer.sessionChanged(_state.value, userId != null, held)
+                }
         }
     }
 

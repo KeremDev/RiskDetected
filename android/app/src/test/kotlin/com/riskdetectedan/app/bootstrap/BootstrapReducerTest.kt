@@ -27,4 +27,10 @@ class BootstrapReducerTest {
     @Test fun onboardingDoesNotSkipRemainingStepsWhenAuthCompletes() {
         assertEquals(BootstrapState.Onboarding, BootstrapReducer.sessionChanged(BootstrapState.Onboarding, true))
     }
+
+    @Test fun heldRouteKeepsAuthUntilReleased() {
+        // A reset's recovery session waits on the sign-in surface for the new password.
+        assertEquals(BootstrapState.Auth, BootstrapReducer.sessionChanged(BootstrapState.Auth, true, routeHeld = true))
+        assertEquals(BootstrapState.Main, BootstrapReducer.sessionChanged(BootstrapState.Auth, true, routeHeld = false))
+    }
 }

@@ -1,20 +1,16 @@
 package com.riskdetectedan.feature.onboarding.nova
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,13 +20,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,6 +47,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.data.auth.CODE_UNREACHABLE
+import com.riskdetectedan.core.data.auth.IsgPasswordRules
 import com.riskdetectedan.core.designsystem.isg.novaPress
 import com.riskdetectedan.core.designsystem.isg.rememberNovaHaptics
 import com.riskdetectedan.feature.onboarding.R
@@ -62,11 +58,19 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
 
-internal enum class NovaLoginPhase { Form, Sheet, Forgot, Done }
+internal enum class NovaLoginPhase { Form, Signup, Code, Forgot, ResetCode, NewPassword, Done }
+internal enum class NovaLoginDone { Login, Signup, Reset }
+
+internal const val WRONG_PASSWORD_MESSAGE =
+    "Şifren yanlış. Şifreni bilmiyorsan aşağıdan kodla yenisini belirleyebilirsin. Apple veya Google ile kaydolduysan o butonla giriş yap."
+internal const val PASSWORD_RULES_MESSAGE = "Şifre en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli."
 
 /**
- * `İSGADA Giriş.dc.html` — one surface for sign-in and sign-up (iOS `NovaLoginScreen`): providers
- * on top, mail below. A known address signs straight in; an unknown one opens the verification sheet.
+ * `İSGADA Giriş.dc.html` (iOS `NovaLoginScreen`): providers on top, mail and password below.
+ * "Mail ile devam et" signs an existing account straight in and answers a wrong password on this
+ * page; an address without an account signs up with the same password and gets its code on its
+ * own page. "Hesap oluştur" opens the signup page for the same result. A reset mails a code, then
+ * asks for the new password.
  */
 @HiltViewModel
 class NovaLoginViewModel @Inject constructor(private val auth: NovaOBAuth) : ViewModel() {
@@ -76,18 +80,27 @@ class NovaLoginViewModel @Inject constructor(private val auth: NovaOBAuth) : Vie
     internal var showPassword by mutableStateOf(false)
     internal var error by mutableStateOf("")
     internal var busy by mutableStateOf(false)
-    internal var code by mutableStateOf("")
+    internal var signupPassword by mutableStateOf("")
+    internal var showSignupPassword by mutableStateOf(false)
+    internal var digits by mutableStateOf(List(6) { "" })
     internal var codeVerified by mutableStateOf(false)
+    internal var codeError by mutableStateOf("")
+    /** [codeError] is an unreachable server, not a wrong code. */
+    internal var codeRetryable by mutableStateOf(false)
+    internal var codeChecking by mutableStateOf(false)
     internal var resendNote by mutableStateOf("")
-    internal var resetBusy by mutableStateOf(false)
-    internal var resetSent by mutableStateOf(false)
-    /** True once the account was created here rather than signed into. */
-    internal var createdAccount by mutableStateOf(false)
+    /** Where the signup code page's back button leads: the signup page, or sign-in. */
+    internal var codeReturn by mutableStateOf(NovaLoginPhase.Signup)
+    /** The password typed for the signup the code page confirms. */
+    private var codePassword = ""
+    internal var newPassword by mutableStateOf("")
+    internal var showNewPassword by mutableStateOf(false)
+    internal var done by mutableStateOf(NovaLoginDone.Login)
 
     private val address get() = email.trim().lowercase(Locale.ROOT)
 
-    internal fun openForm() { phase = NovaLoginPhase.Form; error = ""; resetSent = false; codeVerified = false }
-    internal fun openForgot() { phase = NovaLoginPhase.Forgot; error = ""; resetSent = false }
+    internal fun openForm() { phase = NovaLoginPhase.Form; error = "" }
+    internal fun openForgot() { phase = NovaLoginPhase.Forgot; error = "" }
 
     internal fun runApple() {
         if (busy) return
@@ -108,105 +121,277 @@ class NovaLoginViewModel @Inject constructor(private val auth: NovaOBAuth) : Vie
         error = ""
         viewModelScope.launch {
             when (val result = auth.googleSignIn(activity)) {
-                is RdResult.Success -> { createdAccount = false; phase = NovaLoginPhase.Done }
+                is RdResult.Success -> { done = NovaLoginDone.Login; phase = NovaLoginPhase.Done }
                 is RdResult.Failure -> if (!NovaOBAuth.isCancellation(result)) error = NovaOBAuth.message(result, "Giriş yapılamadı")
             }
             busy = false
         }
     }
 
-    /** Known address signs in; anything else gets a verification code (the prototype's registered/new split). */
+    /** "Mail ile devam et": an existing account signs in, a new address signs up with the same
+     * password and gets its code. Supabase answers a wrong password and an unknown address the
+     * same way, so a refused sign-in tries signup, which reports an existing account without
+     * sending mail. Every password account was made under [IsgPasswordRules], so a password that
+     * breaks them is refused here, before any request. */
     internal fun submitMail(onFailure: () -> Unit) {
         if (busy) return
         when {
             !NovaOBAuth.isValidEmail(address) -> { onFailure(); error = "Geçerli bir e-posta adresi yaz."; return }
-            password.length < 6 -> { onFailure(); error = "Şifren en az 6 karakter olmalı."; return }
+            password.isEmpty() -> { onFailure(); error = "Şifreni yaz."; return }
+            !IsgPasswordRules.evaluate(password).valid -> { onFailure(); error = PASSWORD_RULES_MESSAGE; return }
         }
         busy = true
         error = ""
         viewModelScope.launch {
-            if (auth.signIn(address, password) is RdResult.Success) {
-                createdAccount = false
-                phase = NovaLoginPhase.Done
-            } else {
-                when (val sent = auth.sendCode(address)) {
-                    is RdResult.Success -> { code = ""; codeVerified = false; phase = NovaLoginPhase.Sheet }
-                    is RdResult.Failure -> error = NovaOBAuth.message(sent, "Doğrulama kodu gönderilemedi", "Kod gönderilemedi")
+            when (val result = auth.signIn(address, password)) {
+                is RdResult.Success -> { done = NovaLoginDone.Login; phase = NovaLoginPhase.Done }
+                is RdResult.Failure -> when (result.code) {
+                    "password_invalid_credentials" -> signUpFromForm(onFailure)
+                    // The account was created but its code never entered: finish the signup.
+                    "password_email_not_confirmed" -> {
+                        val sent = auth.resendSignupCode(address) is RdResult.Success
+                        openCode(NovaLoginPhase.Form, password)
+                        if (!sent) resendNote = "Kod gönderilemedi. Bir dakika sonra tekrar dene."
+                    }
+                    else -> { onFailure(); error = NovaOBAuth.message(result, "Giriş yapılamadı") }
                 }
             }
             busy = false
         }
     }
 
-    internal fun verify(value: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    private suspend fun signUpFromForm(onFailure: () -> Unit) {
+        when (val result = auth.signUp(address, password)) {
+            is RdResult.Success -> openCode(NovaLoginPhase.Form, password)
+            is RdResult.Failure -> when (result.code) {
+                "password_confirmation_required" -> openCode(NovaLoginPhase.Form, password)
+                "password_account_exists" -> { onFailure(); error = WRONG_PASSWORD_MESSAGE }
+                else -> { onFailure(); error = NovaOBAuth.message(result, "Giriş yapılamadı") }
+            }
+        }
+    }
+
+    internal fun openSignup() { error = ""; signupPassword = ""; phase = NovaLoginPhase.Signup }
+
+    internal fun submitSignup(onFailure: () -> Unit) {
+        if (busy) return
+        when {
+            !NovaOBAuth.isValidEmail(address) -> { onFailure(); error = "Geçerli bir e-posta adresi yaz."; return }
+            !IsgPasswordRules.evaluate(signupPassword).valid -> {
+                onFailure()
+                error = "Parola en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli."
+                return
+            }
+        }
+        busy = true
         error = ""
         viewModelScope.launch {
-            when (auth.verifyCode(address, value)) {
+            when (val result = auth.signUp(address, signupPassword)) {
+                is RdResult.Success -> openCode(NovaLoginPhase.Signup, signupPassword)
+                is RdResult.Failure -> when (result.code) {
+                    "password_confirmation_required" -> openCode(NovaLoginPhase.Signup, signupPassword)
+                    "password_account_exists" -> { onFailure(); error = ACCOUNT_EXISTS_MESSAGE }
+                    else -> { onFailure(); error = NovaOBAuth.message(result, "Hesap oluşturulamadı") }
+                }
+            }
+            busy = false
+        }
+    }
+
+    private fun openCode(returnTo: NovaLoginPhase, typedPassword: String) {
+        resetCodeState()
+        codeReturn = returnTo
+        codePassword = typedPassword
+        phase = NovaLoginPhase.Code
+    }
+
+    private fun resetCodeState() {
+        digits = List(6) { "" }
+        codeVerified = false
+        codeChecking = false
+        clearCodeError()
+        resendNote = ""
+    }
+
+    internal fun clearCodeError() {
+        codeError = ""
+        codeRetryable = false
+    }
+
+    /** A refused code keeps its digits, so one wrong box can be fixed and checked again. */
+    private fun showCodeFailure(result: RdResult.Failure, onFailure: () -> Unit) {
+        onFailure()
+        codeVerified = false
+        codeRetryable = result.code == CODE_UNREACHABLE
+        codeError = if (codeRetryable) CODE_UNREACHABLE_MESSAGE else CODE_REJECTED_MESSAGE
+    }
+
+    internal fun leaveCode() { error = ""; phase = codeReturn }
+
+    internal fun verify(value: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+        if (codeChecking || codeVerified) return
+        codeChecking = true
+        clearCodeError()
+        viewModelScope.launch {
+            val result = auth.verifySignupCode(address, value, codePassword)
+            codeChecking = false
+            when (result) {
                 is RdResult.Success -> {
                     onSuccess()
                     codeVerified = true
                     delay(900)
-                    createdAccount = true
+                    done = NovaLoginDone.Signup
                     phase = NovaLoginPhase.Done
                 }
-                is RdResult.Failure -> {
-                    onFailure()
-                    codeVerified = false
-                    code = ""
-                    error = "Geçersiz kod. Kodu kontrol edip yeniden dene."
-                }
+                is RdResult.Failure -> showCodeFailure(result, onFailure)
             }
         }
     }
 
     internal fun resend() {
         viewModelScope.launch {
-            resendNote = when (auth.sendCode(address)) {
-                is RdResult.Success -> { code = ""; "Yeni kod gönderildi." }
-                is RdResult.Failure -> "Kod gönderilemedi, tekrar dene."
+            resendNote = when (auth.resendSignupCode(address)) {
+                is RdResult.Success -> { digits = List(6) { "" }; clearCodeError(); "Yeni kod gönderildi." }
+                is RdResult.Failure -> "Kod gönderilemedi. Bir dakika sonra tekrar dene."
             }
         }
     }
 
-    internal fun submitReset() {
-        if (resetBusy) return
-        if (!NovaOBAuth.isValidEmail(address)) {
-            error = "Geçerli bir e-posta adresi yaz."
-            resetSent = false
+    // MARK: reset
+
+    internal fun submitReset(onFailure: () -> Unit) {
+        if (busy) return
+        if (!NovaOBAuth.isValidEmail(address)) { onFailure(); error = "Geçerli bir e-posta adresi yaz."; return }
+        busy = true
+        error = ""
+        viewModelScope.launch {
+            when (auth.recoverPassword(address)) {
+                is RdResult.Success -> { resetCodeState(); phase = NovaLoginPhase.ResetCode }
+                is RdResult.Failure -> { onFailure(); error = "Kod gönderilemedi. Bir dakika sonra tekrar dene." }
+            }
+            busy = false
+        }
+    }
+
+    internal fun verifyReset(value: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+        if (codeChecking || codeVerified) return
+        codeChecking = true
+        clearCodeError()
+        viewModelScope.launch {
+            val result = auth.verifyRecoveryCode(address, value)
+            codeChecking = false
+            when (result) {
+                is RdResult.Success -> {
+                    onSuccess()
+                    codeVerified = true
+                    delay(700)
+                    newPassword = ""
+                    error = ""
+                    phase = NovaLoginPhase.NewPassword
+                }
+                is RdResult.Failure -> showCodeFailure(result, onFailure)
+            }
+        }
+    }
+
+    internal fun resendReset() {
+        viewModelScope.launch {
+            resendNote = when (auth.recoverPassword(address)) {
+                is RdResult.Success -> { digits = List(6) { "" }; clearCodeError(); "Yeni kod gönderildi." }
+                is RdResult.Failure -> "Kod gönderilemedi. Bir dakika sonra tekrar dene."
+            }
+        }
+    }
+
+    /** The code opened a session; leaving without a new password ends it. */
+    internal fun leaveNewPassword() {
+        viewModelScope.launch { auth.cancelRecovery() }
+        openForm()
+    }
+
+    internal fun saveNewPassword(onSuccess: () -> Unit, onFailure: () -> Unit) {
+        if (busy) return
+        if (!IsgPasswordRules.evaluate(newPassword).valid) {
+            onFailure()
+            error = PASSWORD_RULES_MESSAGE
             return
         }
-        resetBusy = true
+        busy = true
         error = ""
-        resetSent = false
         viewModelScope.launch {
-            when (val result = auth.recoverPassword(address)) {
-                is RdResult.Success -> resetSent = true
-                is RdResult.Failure -> error = NovaOBAuth.message(result, "Sıfırlama bağlantısı gönderilemedi", "Bağlantı gönderilemedi")
+            val result = auth.setNewPassword(newPassword)
+            // Already the account's password: the reset has what it wanted.
+            if (result is RdResult.Failure && result.code != "password_same_password") {
+                onFailure()
+                error = "Şifre kaydedilemedi. Bağlantını kontrol edip yeniden dene."
+                busy = false
+                return@launch
             }
-            resetBusy = false
+            onSuccess()
+            done = NovaLoginDone.Reset
+            phase = NovaLoginPhase.Done
+            busy = false
+            delay(1200)
+            auth.finishRecovery()
         }
     }
 }
 
 @Composable
 fun NovaLoginScreen(model: NovaLoginViewModel = hiltViewModel()) {
+    ObResizesForKeyboard()
+    // System back walks the pages like their back buttons; only the sign-in form leaves the app.
+    BackHandler(enabled = model.phase != NovaLoginPhase.Form && model.phase != NovaLoginPhase.Done) {
+        when (model.phase) {
+            NovaLoginPhase.Code -> model.leaveCode()
+            NovaLoginPhase.ResetCode -> model.openForgot()
+            NovaLoginPhase.NewPassword -> model.leaveNewPassword()
+            else -> model.openForm()
+        }
+    }
+    val haptics = rememberNovaHaptics()
     Box(Modifier.fillMaxSize().background(NovaOB.surface)) {
-        AnimatedContent(if (model.phase == NovaLoginPhase.Sheet) NovaLoginPhase.Form else model.phase,
-            transitionSpec = { fadeIn(tween(240)) togetherWith fadeOut(tween(240)) }, label = "nova-login") { phase ->
+        AnimatedContent(model.phase, transitionSpec = { fadeIn(tween(240)) togetherWith fadeOut(tween(240)) }, label = "nova-login") { phase ->
             when (phase) {
-                NovaLoginPhase.Forgot -> NovaLoginForgot(model)
-                NovaLoginPhase.Done -> NovaLoginDone(model.createdAccount)
-                else -> NovaLoginForm(model)
+                NovaLoginPhase.Form -> NovaLoginForm(model)
+                NovaLoginPhase.Signup -> ObSignupPage(
+                    email = model.email, onEmail = { model.email = it },
+                    password = model.signupPassword, onPassword = { model.signupPassword = it },
+                    showPassword = model.showSignupPassword, onShowPassword = { model.showSignupPassword = it },
+                    error = model.error, busy = model.busy,
+                    onBack = model::openForm, onLogin = model::openForm,
+                    onSubmit = { model.submitSignup(onFailure = haptics::failure) },
+                )
+                NovaLoginPhase.Code -> ObCodePage(
+                    email = model.email, digits = { model.digits }, onDigits = { model.digits = it },
+                    error = model.codeError, retryable = model.codeRetryable, checking = model.codeChecking,
+                    verified = model.codeVerified,
+                    verifiedNote = "Kod doğrulandı, hesabın oluşturuluyor…", resendNote = model.resendNote,
+                    onBack = model::leaveCode, onEdit = model::clearCodeError,
+                    onComplete = { value -> model.verify(value, onSuccess = haptics::success, onFailure = haptics::failure) },
+                    onResend = model::resend,
+                )
+                NovaLoginPhase.Forgot -> ObResetEmailPage(
+                    email = model.email, onEmail = { model.email = it }, error = model.error, busy = model.busy,
+                    onBack = model::openForm, onSubmit = { model.submitReset(onFailure = haptics::failure) },
+                )
+                NovaLoginPhase.ResetCode -> ObCodePage(
+                    email = model.email, digits = { model.digits }, onDigits = { model.digits = it },
+                    error = model.codeError, retryable = model.codeRetryable, checking = model.codeChecking,
+                    verified = model.codeVerified,
+                    verifiedNote = "Kod doğrulandı.", resendNote = model.resendNote,
+                    onBack = model::openForgot, onEdit = model::clearCodeError,
+                    onComplete = { value -> model.verifyReset(value, onSuccess = haptics::success, onFailure = haptics::failure) },
+                    onResend = model::resendReset,
+                )
+                NovaLoginPhase.NewPassword -> ObNewPasswordPage(
+                    password = model.newPassword, onPassword = { model.newPassword = it },
+                    showPassword = model.showNewPassword, onShowPassword = { model.showNewPassword = it },
+                    error = model.error, busy = model.busy, onBack = model::leaveNewPassword,
+                    onSubmit = { model.saveNewPassword(onSuccess = haptics::success, onFailure = haptics::failure) },
+                )
+                NovaLoginPhase.Done -> NovaLoginDone(model.done)
             }
-        }
-        AnimatedVisibility(model.phase == NovaLoginPhase.Sheet, enter = fadeIn(tween(340)), exit = fadeOut(tween(240))) {
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.42f))
-                .clickable(remember { MutableInteractionSource() }, null) { model.openForm() })
-        }
-        AnimatedVisibility(model.phase == NovaLoginPhase.Sheet, Modifier.align(Alignment.BottomCenter),
-            enter = slideInVertically(tween(340, easing = CubicBezierEasing(0.2f, 0.85f, 0.25f, 1f))) { it },
-            exit = slideOutVertically(tween(240)) { it }) {
-            NovaLoginVerificationSheet(model)
         }
     }
 }
@@ -224,7 +409,7 @@ private fun NovaLoginForm(model: NovaLoginViewModel) {
                 .scale(0.7f + 0.3f * logo.value).alpha(logo.value))
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 ObText("Hoş geldin", 28f, weight = 700, lineHeight = 1.15f, tracking = -0.5f)
-                ObText("Giriş yap ya da saniyeler içinde hesabını oluştur. Ayrı bir kayıt adımı yok.", 15.5f, Modifier.widthIn(max = 290.dp),
+                ObText("Giriş yap ya da saniyeler içinde hesabını oluştur.", 15.5f, Modifier.widthIn(max = 290.dp),
                     color = NovaOB.muted, lineHeight = 1.45f, align = TextAlign.Center)
             }
         }
@@ -243,14 +428,19 @@ private fun NovaLoginForm(model: NovaLoginViewModel) {
                         lineWidth = 1.7f)
                 }
             }
-            if (model.error.isNotEmpty() && model.phase == NovaLoginPhase.Form) ObErrorNote(model.error)
+            if (model.error.isNotEmpty()) ObErrorNote(model.error)
             ObOutlineButton(if (model.busy) "Kontrol ediliyor" else "Mail ile devam et", busy = model.busy,
                 icon = { ObIcon(NovaOB.MAIL, 20f, NovaOB.ink, lineWidth = 1.8f) }) {
                 focus.clearFocus()
                 model.submitMail(onFailure = haptics::failure)
             }
             Box(Modifier.fillMaxWidth().height(40.dp).novaPress(onClick = model::openForgot), contentAlignment = Alignment.Center) {
-                ObText("Şifremi unuttum", 14.5f, weight = 600, color = NovaOB.muted)
+                ObText("Şifreni bilmiyor musun?", 14.5f, weight = 600, color = NovaOB.muted)
+            }
+            Row(Modifier.fillMaxWidth().height(40.dp).novaPress(onClick = model::openSignup),
+                horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                ObText("Hesabın yok mu? ", 14.5f, weight = 600, color = NovaOB.muted)
+                ObText("Hesap oluştur", 14.5f, weight = 600)
             }
         }
         Spacer(Modifier.weight(1f))
@@ -259,97 +449,7 @@ private fun NovaLoginForm(model: NovaLoginViewModel) {
 }
 
 @Composable
-private fun NovaLoginVerificationSheet(model: NovaLoginViewModel) {
-    val haptics = rememberNovaHaptics()
-    val address = model.email.trim().ifEmpty { "E-posta" }
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)).background(NovaOB.surface)
-        .clickable(remember { MutableInteractionSource() }, null) {}
-        .padding(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Box(Modifier.size(44.dp, 5.dp).clip(CircleShape).background(NovaOB.line))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(NovaOB.fill), contentAlignment = Alignment.Center) {
-                ObAnimatedLock(NovaOB.ink, NovaOB.ink, Color.White)
-            }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                ObText("Doğrulama", 21f, weight = 700, tracking = -0.3f)
-                ObText("$address adresine gönderdiğimiz doğrulama kodunu gir.", 14.5f, color = NovaOB.muted, lineHeight = 1.4f)
-            }
-            Box(Modifier.size(34.dp).clip(CircleShape).background(NovaOB.fill2).novaPress(onClick = model::openForm),
-                contentAlignment = Alignment.Center) {
-                ObIcon("M6 6l12 12|M18 6L6 18", 13f, NovaOB.ink, lineWidth = 2.4f)
-            }
-        }
-        ObCodeField(model.code, { model.code = it }, when {
-            model.error.isNotEmpty() -> ObCodeState.Invalid
-            model.codeVerified -> ObCodeState.Verified
-            else -> ObCodeState.Idle
-        }) { value -> model.verify(value, onSuccess = haptics::success, onFailure = haptics::failure) }
-        if (model.codeVerified) {
-            ObInfoNote("Kod doğrulandı, hesabın oluşturuluyor…", NovaOB.DONE_CIRCLE)
-        } else {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Row(Modifier.novaPress(onClick = model::resend).padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(7.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    ObIcon(NovaOB.RESEND, 14f, NovaOB.ink, lineWidth = 1.9f)
-                    ObText("Yeniden gönder", 13f, weight = 600)
-                }
-                ObText(model.resendNote.ifEmpty { "Kod gelmediyse spam klasörünü kontrol et." }, 12f, Modifier.weight(1f),
-                    color = NovaOB.muted2, lineHeight = 1.35f, align = TextAlign.End)
-            }
-        }
-        if (model.error.isNotEmpty()) ObErrorNote(model.error)
-    }
-}
-
-@Composable
-private fun NovaLoginForgot(model: NovaLoginViewModel) {
-    val focus = LocalFocusManager.current
-    val address = model.email.trim().ifEmpty { "Adresin" }
-    ObFittedScroll(PaddingValues(start = 24.dp, end = 24.dp, top = obPadTop(56f), bottom = obPadBottom(28f)), 16.dp) {
-        ObBackButton(Modifier.offset(x = (-10).dp), onClick = model::openForm)
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Box(Modifier.size(60.dp).clip(RoundedCornerShape(18.dp)).background(NovaOB.fill2), contentAlignment = Alignment.Center) {
-                ObIcon("M8.1 11.4V8.5a3.9 3.9 0 017.8 0|M4.6 11.2h14.8v9.6H4.6z|circle:12,16,1.5", 26f, NovaOB.ink, lineWidth = 2f)
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                ObText("Şifreni sıfırlayalım", 26f, weight = 700, lineHeight = 1.18f, tracking = -0.4f)
-                ObText("Kayıtlı e-posta adresini yaz; sıfırlama bağlantısını hemen gönderelim.", 15.5f, Modifier.widthIn(max = 296.dp),
-                    color = NovaOB.muted, lineHeight = 1.45f, align = TextAlign.Center)
-            }
-        }
-        Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            ObField(model.email, { model.email = it }, "E-posta adresin", leadingIcon = "M2.5 4.5h19v15h-19z|M3 7l9 6 9-6",
-                keyboardType = KeyboardType.Email)
-            if (model.error.isNotEmpty()) ObErrorNote(model.error)
-            if (model.resetSent) ObInfoNote("$address ile kayıtlı bir hesap varsa sıfırlama bağlantısını gönderdik.",
-                "circle:12,12,9.2|M7.8 12.3l2.9 2.9 5.5-5.9")
-            Box(Modifier.padding(top = 2.dp)) {
-                ObOutlineButton(when {
-                    model.resetBusy -> "Gönderiliyor"
-                    model.resetSent -> "Tekrar gönder"
-                    else -> "Sıfırlama bağlantısı gönder"
-                }, busy = model.resetBusy) {
-                    focus.clearFocus()
-                    model.submitReset()
-                }
-            }
-            Box(Modifier.fillMaxWidth().height(44.dp).novaPress(onClick = model::openForm), contentAlignment = Alignment.Center) {
-                ObText("Girişe dön", 14.5f, weight = 600, color = NovaOB.muted)
-            }
-        }
-        Spacer(Modifier.weight(1f))
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(NovaOB.fill3).padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            ObIcon("circle:12,12,9.2|M12 11v5.2|M12 7.8v.1", 15f, NovaOB.muted2, lineWidth = 1.8f, modifier = Modifier.padding(top = 1.dp))
-            ObText("Bağlantı 30 dakika geçerlidir. Apple veya Google ile giriş yaptıysan şifre gerekmez.", 12.5f, Modifier.weight(1f),
-                color = NovaOB.muted, lineHeight = 1.4f)
-        }
-    }
-}
-
-@Composable
-private fun NovaLoginDone(createdAccount: Boolean) {
+private fun NovaLoginDone(kind: NovaLoginDone) {
     Column(Modifier.fillMaxSize().padding(horizontal = 30.dp), horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterVertically)) {
         Image(painterResource(R.drawable.nova_ob_logo), null, Modifier.width(120.dp))
@@ -357,9 +457,16 @@ private fun NovaLoginDone(createdAccount: Boolean) {
             ObIcon("M5 12.6l4.4 4.4L19 7", 38f, Color.White, lineWidth = 2.2f)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ObText(if (createdAccount) "Hesabın hazır" else "Tekrar hoş geldin", 26f, weight = 700, tracking = -0.4f)
-            ObText(if (createdAccount) "Hesabını oluşturduk. Kurulumu uygulama içinde tamamlayacaksın."
-                else "Giriş yaptın. Çalışma alanın olduğu gibi duruyor.", 15.5f, color = NovaOB.muted, lineHeight = 1.45f, align = TextAlign.Center)
+            ObText(when (kind) {
+                NovaLoginDone.Login -> "Tekrar hoş geldin"
+                NovaLoginDone.Signup -> "Hesabın hazır"
+                NovaLoginDone.Reset -> "Şifren kaydedildi"
+            }, 26f, weight = 700, tracking = -0.4f)
+            ObText(when (kind) {
+                NovaLoginDone.Login -> "Giriş yaptın. Çalışma alanın olduğu gibi duruyor."
+                NovaLoginDone.Signup -> "Hesabını oluşturduk. Kurulumu uygulama içinde tamamlayacaksın."
+                NovaLoginDone.Reset -> "Yeni şifrenle giriş yaptın. Sonraki girişlerinde bu şifreyi kullan."
+            }, 15.5f, color = NovaOB.muted, lineHeight = 1.45f, align = TextAlign.Center)
         }
         Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
             ObSpinner(15f)

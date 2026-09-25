@@ -22,6 +22,7 @@ private val backScreens = setOf(NovaOBScreen.Questions, NovaOBScreen.Signup, Nov
  */
 @Composable
 fun NovaOnboardingFlow(onOpenLogin: () -> Unit, onFinished: () -> Unit, controller: NovaOnboardingController = hiltViewModel()) {
+    ObResizesForKeyboard()
     BackHandler(enabled = controller.screen in backScreens) { controller.back() }
     val finish = {
         controller.saveDraft()
@@ -41,7 +42,7 @@ fun NovaOnboardingFlow(onOpenLogin: () -> Unit, onFinished: () -> Unit, controll
             NovaOBScreen.Prep -> NovaOBPrepScreen(controller)
             NovaOBScreen.Card -> NovaOBProfileCardScreen(controller)
             NovaOBScreen.Signup -> NovaOBSignupScreen(controller, onOpenLogin)
-            NovaOBScreen.EmailForm -> NovaOBEmailFormScreen(controller)
+            NovaOBScreen.EmailForm -> NovaOBEmailFormScreen(controller, onOpenLogin)
             NovaOBScreen.Otp -> NovaOBOtpScreen(controller)
             NovaOBScreen.Trial -> NovaOBTrialScreen(controller)
             NovaOBScreen.TrialHow -> NovaOBTrialHowScreen(controller)

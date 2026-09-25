@@ -6,9 +6,19 @@ import SwiftUI
 struct NovaOBAuthBridge {
     var signIn: (_ email: String, _ password: String) async throws -> Void
     var signUp: (_ email: String, _ password: String) async throws -> Void
-    var sendCode: (_ email: String) async throws -> Void
-    var verifyCode: (_ email: String, _ code: String) async throws -> Void
+    /// The code comes with `signUp`; this only sends it again.
+    var resendSignupCode: (_ email: String) async throws -> Void
+    /// `password` is the one typed for this signup; see `AuthService.verifySignupCode`.
+    var verifySignupCode: (_ email: String, _ code: String, _ password: String) async throws -> Void
+    /// Sends the reset code. The server answers the same whether or not the address has an account.
     var recoverPassword: (_ email: String) async throws -> Void
+    /// Opens the account's session with the reset code. The app stays on the sign-in surface
+    /// until `finishRecovery` or `cancelRecovery`, so the new password comes first.
+    var verifyRecoveryCode: (_ email: String, _ code: String) async throws -> Void
+    var setNewPassword: (_ password: String) async throws -> Void
+    var finishRecovery: () async -> Void
+    /// Signs the recovery session out when the new-password page is left.
+    var cancelRecovery: () async -> Void
     var appleSignIn: () async throws -> Void
     var googleSignIn: () async throws -> Void
     var requestPush: () async -> Void
@@ -48,10 +58,12 @@ final class NovaOBController: ObservableObject {
     @Published var marketing = false
     @Published var otpDigits = Array(repeating: "", count: 6)
     @Published var otpError = ""
+    /// `otpError` is a lost connection, not a wrong code.
+    @Published var otpRetryable = false
     @Published var otpVerified = false
     @Published var authError = ""
     @Published var busy = false
-    @Published var resendNote = false
+    @Published var resendNote = ""
 
     let auth: NovaOBAuthBridge
     private var prepTask: Task<Void, Never>?
@@ -358,10 +370,12 @@ final class NovaOBController: ObservableObject {
         authError = ""
         do {
             try await auth.signUp(address, password)
-            await openOtp(for: address)
+            openCodePage()
         } catch IsgPasswordAuthError.confirmationRequired {
-            // Expected: Supabase created the account and wants the address verified.
-            await openOtp(for: address)
+            openCodePage()
+        } catch IsgPasswordAuthError.accountExists {
+            NovaHaptics.failure()
+            authError = NovaOBController.accountExistsMessage
         } catch {
             NovaHaptics.failure()
             authError = AppErrorMessage.make(
@@ -371,44 +385,56 @@ final class NovaOBController: ObservableObject {
         busy = false
     }
 
-    private func openOtp(for address: String) async {
-        do { try await auth.sendCode(address) } catch {
-            authError = AppErrorMessage.make(
-                error, context: "Doğrulama kodu gönderilemedi", fallbackTitle: "Kod gönderilemedi"
-            ).message
-            return
-        }
+    static let accountExistsMessage =
+        "Bu e-posta adresiyle bir hesap var. Giriş yap'a dokunup şifrenle ya da Apple veya Google ile gir."
+
+    /// Signup already sent the code; asking for another here would only replace it
+    /// or be refused by the one-mail-a-minute limit.
+    private func openCodePage() {
         otpDigits = Array(repeating: "", count: 6)
-        otpError = ""
+        clearOtpError()
         otpVerified = false
+        resendNote = ""
         screen = .otp
     }
 
     func verifyOtp(_ code: String) async {
-        guard !busy else { return }
+        guard !busy, !otpVerified else { return }
         busy = true
-        otpError = ""
+        clearOtpError()
         do {
-            try await auth.verifyCode(email.novaTrimmed, code)
+            try await auth.verifySignupCode(email.novaTrimmed, code, password)
             NovaHaptics.success()
             otpVerified = true
+            busy = false
             try? await Task.sleep(nanoseconds: 700_000_000)
             go(.trial)
         } catch {
+            // The digits stay: one wrong box can be fixed, and a full code is checked again.
             NovaHaptics.failure()
-            otpVerified = false
-            otpError = "Geçersiz kod. Kodu kontrol edip yeniden dene."
-            otpDigits = Array(repeating: "", count: 6)
+            otpRetryable = Self.isConnectionFailure(error)
+            otpError = otpRetryable ? Self.codeConnectionMessage : Self.codeRejectedMessage
+            busy = false
         }
-        busy = false
+    }
+
+    func clearOtpError() {
+        otpError = ""
+        otpRetryable = false
     }
 
     func resendCode() async {
         guard !email.novaTrimmed.isEmpty else { return }
-        try? await auth.sendCode(email.novaTrimmed)
-        resendNote = true
+        do {
+            try await auth.resendSignupCode(email.novaTrimmed)
+            otpDigits = Array(repeating: "", count: 6)
+            clearOtpError()
+            resendNote = "Yeni kod gönderildi."
+        } catch {
+            resendNote = "Kod gönderilemedi. Bir dakika sonra tekrar dene."
+        }
         try? await Task.sleep(nanoseconds: 2_600_000_000)
-        resendNote = false
+        resendNote = ""
     }
 
     func runApple() async {
@@ -448,6 +474,15 @@ final class NovaOBController: ObservableObject {
         return !domain.isEmpty && domain.contains(".") && !domain.hasSuffix(".")
             && !domain.hasPrefix(".") && !address.contains(" ")
             && address.filter { $0 == "@" }.count == 1
+    }
+
+    static let codeRejectedMessage =
+        "Kod yanlış ya da süresi dolmuş. Hatalı rakama dokunup düzelt ya da yeni kod iste."
+    static let codeConnectionMessage = "Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene."
+
+    /// A code check that never reached the server, as opposed to a code the server refused.
+    static func isConnectionFailure(_ error: Error) -> Bool {
+        error is URLError || (error as NSError).domain == NSURLErrorDomain
     }
 
     static func isCancellation(_ error: Error) -> Bool {

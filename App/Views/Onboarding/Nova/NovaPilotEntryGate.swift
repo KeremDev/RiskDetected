@@ -26,14 +26,23 @@ struct NovaPilotEntryGate: View {
     }
 
     private var showsLogin: Bool { onboardingCompleted || returningUser || showLogin }
+    /// Nova pages size their top and bottom padding from the screen insets, so they
+    /// wait one layout pass for the measurement.
+    @State private var insetsMeasured = false
 
     var body: some View {
         Group {
-            if showsLogin {
+            if !insetsMeasured {
+                NovaOB.surface.ignoresSafeArea()
+            } else if showsLogin {
                 NovaLoginScreen(auth: bridge)
             } else {
                 NovaOnboardingFlow(auth: bridge, onOpenLogin: { openLogin() })
             }
+        }
+        .onGeometryChange(for: EdgeInsets.self) { $0.safeAreaInsets } action: { insets in
+            NovaOB.screenInsets = insets
+            insetsMeasured = true
         }
         .onDisappear { app.novaPilotOnboardingActive = false }
     }
@@ -59,23 +68,54 @@ struct NovaPilotEntryGate: View {
     }
 
     private var bridge: NovaOBAuthBridge {
-        NovaOBAuthBridge(
+        #if targetEnvironment(simulator)
+        if CommandLine.arguments.contains("RD_UI_TEST_NOVA_AUTH_STUB") { return Self.uiTestAuth }
+        #endif
+        return NovaOBAuthBridge(
             signIn: { email, password in
-                try await app.auth.signInWithPassword(email: email, password: password)
+                do { try await app.auth.signInWithPassword(email: email, password: password) }
+                catch { throw AuthService.passwordSignInFailure(error) }
                 await app.auth.refreshProfile()
             },
             signUp: { email, password in
                 try await funnelAuth { try await app.auth.signUpWithPassword(email: email, password: password) }
             },
-            sendCode: { email in
-                try await app.auth.sendEmailOTP(email: email)
+            resendSignupCode: { email in
+                try await app.auth.resendSignupCode(email: email)
             },
-            verifyCode: { email, code in
-                try await funnelAuth { try await app.auth.verifyEmailOTP(email: email, token: code) }
+            verifySignupCode: { email, code, password in
+                do {
+                    try await funnelAuth {
+                        try await app.auth.verifySignupCode(email: email, token: code, password: password)
+                    }
+                } catch { throw AuthService.codeCheckFailure(error) }
                 await app.auth.refreshProfile()
             },
             recoverPassword: { email in
                 try await app.auth.requestPasswordRecovery(email: email)
+            },
+            verifyRecoveryCode: { email, code in
+                // Holds AppState's routing the way the funnel does: the recovery session
+                // must not open the app before the new password is set.
+                app.novaPilotOnboardingActive = true
+                do { try await app.auth.verifyRecoveryCode(email: email, token: code) }
+                catch {
+                    app.novaPilotOnboardingActive = false
+                    throw AuthService.codeCheckFailure(error)
+                }
+            },
+            setNewPassword: { password in
+                try await app.auth.setNewPassword(password)
+            },
+            finishRecovery: {
+                app.novaPilotOnboardingActive = false
+                Self.markReturningUser()
+                await app.auth.refreshProfile()
+                app.signIn()
+            },
+            cancelRecovery: {
+                try? await app.auth.signOut()
+                app.novaPilotOnboardingActive = false
             },
             appleSignIn: {
                 let result = try await appleService.signIn()
@@ -120,5 +160,27 @@ struct NovaPilotEntryGate: View {
             }
         )
     }
+
+    #if targetEnvironment(simulator)
+    /// UI tests on the real sign-in surface, without the network. `exists@example.com`
+    /// has an account, so a password sign-in is refused as a wrong password and signup
+    /// reports the account; any other address has none and signs up. A code starting with
+    /// `0` is refused, `999999` fails as a lost connection, and any other six digits verify.
+    private static let uiTestAuth = NovaOBAuthBridge(
+        signIn: { _, _ in throw IsgPasswordAuthError.invalidCredentials },
+        signUp: { email, _ in if email == "exists@example.com" { throw IsgPasswordAuthError.accountExists } },
+        resendSignupCode: { _ in },
+        verifySignupCode: { _, code, _ in try uiTestCheck(code) },
+        recoverPassword: { _ in },
+        verifyRecoveryCode: { _, code in try uiTestCheck(code) },
+        setNewPassword: { _ in }, finishRecovery: {}, cancelRecovery: {},
+        appleSignIn: {}, googleSignIn: {}, requestPush: {},
+        saveDraft: { _ in }, finish: { _ in })
+
+    private static func uiTestCheck(_ code: String) throws {
+        if code == "999999" { throw URLError(.notConnectedToInternet) }
+        if code.hasPrefix("0") { throw NSError(domain: "NovaUITestAuth", code: 403) }
+    }
+    #endif
 }
 #endif

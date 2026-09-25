@@ -1,5 +1,14 @@
 package com.riskdetectedan.feature.onboarding.nova
 
+import android.content.Context
+import android.graphics.Rect
+import android.text.InputType
+import android.view.KeyEvent
+import android.view.View
+import android.view.inputmethod.BaseInputConnection
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -11,22 +20,25 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -34,22 +46,26 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -58,6 +74,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.riskdetectedan.core.data.auth.IsgPasswordRules
 import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.designsystem.RdLegalDocument
@@ -66,6 +83,7 @@ import com.riskdetectedan.core.designsystem.isg.novaPress
 import com.riskdetectedan.core.designsystem.isg.rememberNovaHaptics
 import com.riskdetectedan.core.designsystem.isg.rememberNovaReduceMotion
 import com.riskdetectedan.feature.onboarding.R
+import kotlinx.coroutines.delay
 
 // MARK: - Shared auth chrome
 
@@ -216,13 +234,39 @@ internal fun NovaOBSignupScreen(controller: NovaOnboardingController, onLogin: (
 // MARK: - Mail ile kayıt
 
 @Composable
-internal fun NovaOBEmailFormScreen(controller: NovaOnboardingController) {
-    val focus = LocalFocusManager.current
+internal fun NovaOBEmailFormScreen(controller: NovaOnboardingController, onLogin: () -> Unit) {
     val haptics = rememberNovaHaptics()
-    val hasError = controller.authError.isNotEmpty()
+    ObSignupPage(
+        email = controller.email, onEmail = { controller.email = it },
+        password = controller.password, onPassword = { controller.password = it },
+        showPassword = controller.showPassword, onShowPassword = { controller.showPassword = it },
+        marketing = controller.marketing, onMarketing = { controller.marketing = it },
+        error = controller.authError, busy = controller.busy,
+        onBack = { controller.go(NovaOBScreen.Signup) },
+        onLogin = onLogin,
+        onSubmit = { controller.submitSignup(onFailure = haptics::failure) },
+    )
+}
+
+/**
+ * "Mail ile hesap oluştur": the one place a new password account starts, from the funnel and
+ * from the login screen (iOS `NovaOBSignupPage`). The code page follows it. [marketing] is the
+ * optional updates checkbox; the login screen leaves it out.
+ */
+@Composable
+internal fun ObSignupPage(
+    email: String, onEmail: (String) -> Unit,
+    password: String, onPassword: (String) -> Unit,
+    showPassword: Boolean, onShowPassword: (Boolean) -> Unit,
+    marketing: Boolean? = null, onMarketing: (Boolean) -> Unit = {},
+    error: String, busy: Boolean,
+    onBack: () -> Unit, onLogin: () -> Unit, onSubmit: () -> Unit,
+) {
+    val focus = LocalFocusManager.current
+    val hasError = error.isNotEmpty()
     ObFittedScroll(PaddingValues(start = 24.dp, end = 24.dp, top = obPadTop(70f), bottom = obPadBottom(34f)), 18.dp,
         Modifier.background(NovaOB.surface)) {
-            ObBackButton(Modifier.offset(x = (-12).dp)) { controller.go(NovaOBScreen.Signup) }
+            ObBackButton(Modifier.offset(x = (-12).dp), onClick = onBack)
             Image(painterResource(R.drawable.nova_ob_email_art), null, Modifier.size(124.dp).align(Alignment.CenterHorizontally)
                 .offset(y = (-10).dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -230,78 +274,178 @@ internal fun NovaOBEmailFormScreen(controller: NovaOnboardingController) {
                 ObText("Adresini doğrulamak için 6 haneli bir kod göndereceğiz.", 15.5f, color = NovaOB.muted, lineHeight = 1.45f)
             }
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                ObField(controller.email, { controller.email = it }, "E-posta adresin", leadingIcon = NovaOB.MAIL,
-                    keyboardType = KeyboardType.Email, errorBorder = hasError && !NovaOBAuth.isValidEmail(controller.email))
-                ObField(controller.password, { controller.password = it }, "Parola oluştur", leadingIcon = NovaOB.LOCK,
-                    keyboardType = KeyboardType.Password, secure = !controller.showPassword,
-                    errorBorder = hasError && !IsgPasswordRules.evaluate(controller.password).valid) {
-                    ObText(if (controller.showPassword) "Gizle" else "Göster", 14f,
-                        Modifier.padding(end = 8.dp).novaPress { controller.showPassword = !controller.showPassword }
-                            .padding(horizontal = 12.dp, vertical = 12.dp))
-                }
-                ObPasswordStrength(controller.password)
-                ObText("En az 8 karakter; büyük harf, küçük harf ve rakam içermeli.", 13f, color = NovaOB.muted, lineHeight = 1.4f)
-                if (hasError) ObErrorNote(controller.authError)
-                Row(Modifier.fillMaxWidth().novaPress(scale = 1f) { controller.marketing = !controller.marketing }.padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    val shape = RoundedCornerShape(7.dp)
-                    Box(Modifier.padding(top = 1.dp).size(24.dp).clip(shape).background(if (controller.marketing) NovaOB.ink else NovaOB.surface)
-                        .border(1.5.dp, if (controller.marketing) NovaOB.ink else NovaOB.line2, shape), contentAlignment = Alignment.Center) {
-                        if (controller.marketing) ObIcon(NovaOB.CHECK, 13f, Color.White, lineWidth = 2.2f, viewBox = 14f)
+                ObField(email, onEmail, "E-posta adresin", leadingIcon = NovaOB.MAIL,
+                    keyboardType = KeyboardType.Email, errorBorder = hasError && !NovaOBAuth.isValidEmail(email))
+                ObNewPasswordField("Parola oluştur", password, onPassword, showPassword, onShowPassword, hasError)
+                if (hasError) ObErrorNote(error)
+                if (marketing != null) {
+                    Row(Modifier.fillMaxWidth().novaPress(scale = 1f) { onMarketing(!marketing) }.padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val shape = RoundedCornerShape(7.dp)
+                        Box(Modifier.padding(top = 1.dp).size(24.dp).clip(shape).background(if (marketing) NovaOB.ink else NovaOB.surface)
+                            .border(1.5.dp, if (marketing) NovaOB.ink else NovaOB.line2, shape), contentAlignment = Alignment.Center) {
+                            if (marketing) ObIcon(NovaOB.CHECK, 13f, Color.White, lineWidth = 2.2f, viewBox = 14f)
+                        }
+                        ObText("İSGADA güncellemeleri ve bilgilendirmelerini e-posta ile almak istiyorum. (İsteğe bağlı)", 13.5f,
+                            Modifier.weight(1f), color = NovaOB.muted, lineHeight = 1.4f)
                     }
-                    ObText("İSGADA güncellemeleri ve bilgilendirmelerini e-posta ile almak istiyorum. (İsteğe bağlı)", 13.5f,
-                        Modifier.weight(1f), color = NovaOB.muted, lineHeight = 1.4f)
                 }
             }
             Spacer(Modifier.weight(1f))
-            ObPrimaryButton(if (controller.busy) "İşleniyor…" else "Hesap oluştur", enabled = !controller.busy, showsArrow = true) {
+            ObPrimaryButton(if (busy) "İşleniyor…" else "Hesap oluştur", enabled = !busy, showsArrow = true) {
                 focus.clearFocus()
-                controller.submitSignup(onFailure = haptics::failure)
+                onSubmit()
+            }
+            Box(Modifier.fillMaxWidth().height(40.dp).novaPress(onClick = onLogin), contentAlignment = Alignment.Center) {
+                ObText("Zaten hesabın var mı? Giriş yap", 14.5f, weight = 600, color = NovaOB.muted)
             }
     }
 }
 
-private class ObPasswordRule(val ok: Boolean, val path: String)
-
-/** Four-bar meter plus the rule chips from the prototype. */
+/** A password being chosen, on signup and at the end of a reset (iOS `NovaOBNewPasswordField`). The
+ * rules under it are checked as the user types: a met rule turns green, a missing one red, and the
+ * field turns green once all are met. While the field is focused the rules are kept above the
+ * keyboard ([ObResizesForKeyboard] makes the page end there). [showsError]: a refused submit, which marks missing rules
+ * red even with nothing typed. */
 @Composable
-internal fun ObPasswordStrength(password: String) {
-    val rules = listOf(
-        ObPasswordRule(password.length >= 8, "M4 12h16"),
-        ObPasswordRule(Regex("[a-zçğıöşü]").containsMatchIn(password) && Regex("[A-ZÇĞİÖŞÜ]").containsMatchIn(password),
-            "M5 18L9.5 6l4.5 12M6.8 14h5.4M17 18v-6a2.6 2.6 0 10-2.6 2.6"),
-        ObPasswordRule(Regex("\\d").containsMatchIn(password), "M7 8.5L10 6.5V18M14 9a3 3 0 115.6 1.6L14 18h6"),
-        ObPasswordRule(Regex("[^A-Za-z0-9ÇĞİÖŞÜçğıöşü]").containsMatchIn(password), "M12 4.5v15M4.5 12h15M7 7l10 10M17 7L7 17"),
-    )
-    val score = rules.count { it.ok }
-    val (label, color) = when (score) {
-        0 -> if (password.isEmpty()) "Parola gücü" to NovaOB.muted2 else "Çok zayıf" to Color(0xFFB4564C)
-        1 -> "Zayıf" to Color(0xFFB4564C)
-        2 -> "Orta" to Color(0xFFC08A3E)
-        3 -> "Güçlü" to NovaOB.ink
-        else -> "Çok güçlü" to NovaOB.ink
+internal fun ObNewPasswordField(
+    placeholder: String, password: String, onPassword: (String) -> Unit,
+    showPassword: Boolean, onShowPassword: (Boolean) -> Unit, showsError: Boolean,
+) {
+    val rulesInView = remember { BringIntoViewRequester() }
+    var focused by remember { mutableStateOf(false) }
+    // Follows the keyboard as it opens; the last run, once it has settled, leaves the rules in sight.
+    val keyboard = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(focused, keyboard) {
+        if (focused && keyboard > 0) {
+            delay(60)
+            rulesInView.bringIntoView()
+        }
     }
-    Column(Modifier.padding(vertical = 2.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            repeat(4) { index ->
-                val bar by animateColorAsState(if (index < score) color else NovaOB.line, tween(260), label = "ob-strength")
-                Box(Modifier.weight(1f).height(5.dp).clip(CircleShape).background(bar))
-            }
+    val state = when {
+        IsgPasswordRules.evaluate(password).valid -> NovaOB.successBorder
+        password.isNotEmpty() || showsError -> NovaOB.errorBorder
+        else -> null
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ObField(password, onPassword, placeholder,
+            Modifier.onFocusChanged { focused = it.isFocused },
+            leadingIcon = NovaOB.LOCK, keyboardType = KeyboardType.Password, secure = !showPassword,
+            focusBorder = state ?: NovaOB.ink, idleBorder = state ?: NovaOB.line) {
+            ObText(if (showPassword) "Gizle" else "Göster", 14f,
+                Modifier.padding(end = 8.dp).novaPress { onShowPassword(!showPassword) }
+                    .padding(horizontal = 12.dp, vertical = 12.dp))
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                ObIcon("M12 3l7 3v5.5c0 4.3-2.9 7.7-7 9.5-4.1-1.8-7-5.2-7-9.5V6z|M8.8 12.2l2.3 2.3 4.1-4.5", 16f, color, lineWidth = 1.9f)
-                ObText(label, 13f, weight = 600, color = color)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                rules.forEach { rule ->
-                    Box(Modifier.size(26.dp).clip(CircleShape).background(if (rule.ok) Color(0xFFF0F0F0) else Color(0xFFF2F2F2)),
-                        contentAlignment = Alignment.Center) {
-                        ObIcon(rule.path, 14f, if (rule.ok) NovaOB.ink else Color(0xFFADADAD), lineWidth = 2f)
-                    }
-                }
-            }
+        ObPasswordRules(password, showsError, Modifier.bringIntoViewRequester(rulesInView).padding(bottom = 12.dp))
+    }
+}
+
+/** The four rules of [IsgPasswordRules], two per row (iOS `NovaOBPasswordRules`). Neutral while nothing is typed. */
+@Composable
+internal fun ObPasswordRules(password: String, flagged: Boolean, modifier: Modifier = Modifier) {
+    val rules = IsgPasswordRules.evaluate(password)
+    val marked = password.isNotEmpty() || flagged
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            ObPasswordRule(rules.minimumCharacters && rules.maximumBytes,
+                if (rules.maximumBytes) "En az 8 karakter" else "En fazla 72 karakter", marked, Modifier.weight(1f))
+            ObPasswordRule(rules.uppercase, "Büyük harf", marked, Modifier.weight(1f))
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            ObPasswordRule(rules.lowercase, "Küçük harf", marked, Modifier.weight(1f))
+            ObPasswordRule(rules.digit, "Rakam", marked, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun ObPasswordRule(met: Boolean, title: String, marked: Boolean, modifier: Modifier) {
+    val color by animateColorAsState(when {
+        met -> NovaOB.successInk
+        marked -> NovaOB.errorInk
+        else -> NovaOB.muted2
+    }, tween(200), label = "ob-password-rule")
+    Row(modifier.semantics(mergeDescendants = true) { stateDescription = if (met) "tamam" else "eksik" },
+        horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(17.dp).clip(CircleShape).then(
+            when {
+                met -> Modifier.background(color)
+                else -> Modifier.border(1.5.dp, if (marked) color else NovaOB.line2, CircleShape)
+            }), contentAlignment = Alignment.Center) {
+            if (met) ObIcon("M7 12.4l3.2 3.2L17 8.8", 12f, Color.White, lineWidth = 2.6f)
+            else if (marked) ObIcon("M8.5 8.5l7 7|M15.5 8.5l-7 7", 10f, color, lineWidth = 2.4f)
+        }
+        ObText(title, 13.5f, weight = 500, color = color)
+    }
+}
+
+// MARK: - Şifre sıfırlama
+
+/** "Şifreni belirle", step one: the address the 6-digit code goes to (iOS `NovaOBResetEmailPage`). It
+ * serves a forgotten password and an account that never had one (everyone signed in with mailed codes
+ * before passwords). The code page follows, then [ObNewPasswordPage]. */
+@Composable
+internal fun ObResetEmailPage(
+    email: String, onEmail: (String) -> Unit, error: String, busy: Boolean,
+    onBack: () -> Unit, onSubmit: () -> Unit,
+) {
+    val focus = LocalFocusManager.current
+    val hasError = error.isNotEmpty()
+    ObFittedScroll(PaddingValues(start = 24.dp, end = 24.dp, top = obPadTop(70f), bottom = obPadBottom(34f)), 18.dp,
+        Modifier.background(NovaOB.surface)) {
+            ObBackButton(Modifier.offset(x = (-12).dp), onClick = onBack)
+            Image(painterResource(R.drawable.nova_ob_email_art), null, Modifier.size(124.dp).align(Alignment.CenterHorizontally)
+                .offset(y = (-10).dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ObText("Şifreni belirle", 27f, weight = 700, lineHeight = 1.2f, tracking = -0.3f)
+                ObText("Mailine 6 haneli bir kod gönderelim; kodu girince yeni şifreni belirlersin.", 15.5f,
+                    color = NovaOB.muted, lineHeight = 1.45f)
+            }
+            ObField(email, onEmail, "E-posta adresin", leadingIcon = NovaOB.MAIL,
+                keyboardType = KeyboardType.Email, errorBorder = hasError && !NovaOBAuth.isValidEmail(email))
+            if (hasError) ObErrorNote(error)
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(NovaOB.fill3)
+                .padding(horizontal = 14.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                ObIcon("circle:12,12,9.2|M12 11v5.2|M12 7.8v.1", 15f, NovaOB.muted2, lineWidth = 1.8f, modifier = Modifier.padding(top = 1.dp))
+                ObText("Apple veya Google ile kaydolduysan şifre gerekmez; o butonla giriş yap.", 12.5f, Modifier.weight(1f),
+                    color = NovaOB.muted, lineHeight = 1.4f)
+            }
+            Spacer(Modifier.weight(1f))
+            ObPrimaryButton(if (busy) "Gönderiliyor…" else "Kod gönder", enabled = !busy, showsArrow = true) {
+                focus.clearFocus()
+                onSubmit()
+            }
+            Box(Modifier.fillMaxWidth().height(40.dp).novaPress(onClick = onBack), contentAlignment = Alignment.Center) {
+                ObText("Girişe dön", 14.5f, weight = 600, color = NovaOB.muted)
+            }
+    }
+}
+
+/** Reset, last step: the new password, once the code from the reset mail is verified (iOS `NovaOBNewPasswordPage`). */
+@Composable
+internal fun ObNewPasswordPage(
+    password: String, onPassword: (String) -> Unit,
+    showPassword: Boolean, onShowPassword: (Boolean) -> Unit,
+    error: String, busy: Boolean, onBack: () -> Unit, onSubmit: () -> Unit,
+) {
+    val focus = LocalFocusManager.current
+    val hasError = error.isNotEmpty()
+    ObFittedScroll(PaddingValues(start = 24.dp, end = 24.dp, top = obPadTop(70f), bottom = obPadBottom(34f)), 18.dp,
+        Modifier.background(NovaOB.surface)) {
+            ObBackButton(Modifier.offset(x = (-12).dp), onClick = onBack)
+            Image(painterResource(R.drawable.nova_ob_email_art), null, Modifier.size(124.dp).align(Alignment.CenterHorizontally)
+                .offset(y = (-10).dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ObText("Yeni şifreni belirle", 27f, weight = 700, lineHeight = 1.2f, tracking = -0.3f)
+                ObText("Kod doğrulandı. Bundan sonra bu şifreyle giriş yapacaksın.", 15.5f, color = NovaOB.muted, lineHeight = 1.45f)
+            }
+            ObNewPasswordField("Yeni şifre", password, onPassword, showPassword, onShowPassword, hasError)
+            if (hasError) ObErrorNote(error)
+            Spacer(Modifier.weight(1f))
+            ObPrimaryButton(if (busy) "Kaydediliyor…" else "Şifreyi kaydet", enabled = !busy, showsArrow = true) {
+                focus.clearFocus()
+                onSubmit()
+            }
     }
 }
 
@@ -310,10 +454,41 @@ internal fun ObPasswordStrength(password: String) {
 @Composable
 internal fun NovaOBOtpScreen(controller: NovaOnboardingController) {
     val haptics = rememberNovaHaptics()
-    val address = controller.email.trim()
+    ObCodePage(
+        email = controller.email, digits = { controller.otpDigits }, onDigits = { controller.otpDigits = it },
+        error = controller.otpError, retryable = controller.otpRetryable, checking = controller.busy,
+        verified = controller.otpVerified,
+        verifiedNote = "Kod doğrulandı, yönlendiriliyorsun…", resendNote = controller.resendNote,
+        onBack = { controller.go(NovaOBScreen.EmailForm) },
+        onEdit = controller::clearOtpError,
+        onComplete = { code -> controller.verifyOtp(code, onSuccess = haptics::success, onFailure = haptics::failure) },
+        onResend = controller::resendCode,
+    )
+}
+
+/** "Kodu gir": a mailed code as its own page (iOS `NovaOBCodePage`). The funnel and the login screen use
+ * it for the signup code, the login screen also for the reset code. A full code is checked on its own;
+ * a right one turns the boxes green and the owner moves on, a wrong one turns them red with the digits
+ * kept for fixing, and an unreachable server ([retryable]) offers "Tekrar dene" instead. */
+@Composable
+internal fun ObCodePage(
+    email: String, digits: () -> List<String>, onDigits: (List<String>) -> Unit,
+    error: String, retryable: Boolean = false, checking: Boolean = false,
+    verified: Boolean, verifiedNote: String, resendNote: String,
+    onBack: () -> Unit, onEdit: () -> Unit = {}, onComplete: (String) -> Unit, onResend: () -> Unit,
+) {
+    val address = email.trim()
+    val helpInView = remember { BringIntoViewRequester() }
+    // The keyboard stays up after a refused code; keep the warning and resend in sight.
+    LaunchedEffect(error) {
+        if (error.isNotEmpty()) {
+            delay(60)
+            helpInView.bringIntoView()
+        }
+    }
     ObFittedScroll(PaddingValues(start = 24.dp, end = 24.dp, top = obPadTop(70f), bottom = obPadBottom(34f)), 18.dp,
         Modifier.background(NovaOB.surface)) {
-            ObBackButton(Modifier.offset(x = (-12).dp)) { controller.go(NovaOBScreen.EmailForm) }
+            ObBackButton(Modifier.offset(x = (-12).dp), onClick = onBack)
             Image(painterResource(R.drawable.nova_ob_otp_art), null, Modifier.size(130.dp).align(Alignment.CenterHorizontally)
                 .offset(y = (-12).dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -321,21 +496,39 @@ internal fun NovaOBOtpScreen(controller: NovaOnboardingController) {
                 ObText(if (address.isEmpty()) "Kodu e-posta adresine gönderdik." else "Kodu $address adresine gönderdik.", 15.5f,
                     color = NovaOB.muted, lineHeight = 1.45f)
             }
-            ObCodeField(controller.otpCode, { controller.otpCode = it },
+            ObCodeField(digits, onDigits,
                 when {
-                    controller.otpError.isNotEmpty() -> ObCodeState.Invalid
-                    controller.otpVerified -> ObCodeState.Verified
+                    verified -> ObCodeState.Verified
+                    error.isNotEmpty() && !retryable -> ObCodeState.Invalid
                     else -> ObCodeState.Idle
-                }) { code -> controller.verifyOtp(code, onSuccess = haptics::success, onFailure = haptics::failure) }
-            if (controller.otpError.isNotEmpty()) ObErrorNote(controller.otpError)
-            if (controller.otpVerified) ObInfoNote("Kod doğrulandı, yönlendiriliyorsun…", NovaOB.DONE_CIRCLE)
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Row(Modifier.height(40.dp).clip(CircleShape).background(NovaOB.fill).novaPress(onClick = controller::resendCode)
-                    .padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    ObIcon(NovaOB.RESEND, 16f, NovaOB.ink, lineWidth = 1.9f)
-                    ObText("Kodu yeniden gönder", 14.5f, weight = 600)
+                }, onEdit, onComplete)
+            Column(Modifier.bringIntoViewRequester(helpInView).padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                if (checking) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
+                        ObSpinner(15f)
+                        ObText("Kod kontrol ediliyor…", 13.5f, color = NovaOB.muted)
+                    }
                 }
-                if (controller.resendNote) ObText("Yeni kod gönderildi.", 13.5f)
+                if (error.isNotEmpty()) {
+                    ObErrorNote(error)
+                    if (retryable) {
+                        Box(Modifier.height(40.dp).clip(CircleShape).background(NovaOB.fill)
+                            .novaPress { onComplete(digits().joinToString("")) }.padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.Center) {
+                            ObText("Tekrar dene", 14.5f, weight = 600)
+                        }
+                    }
+                }
+                if (verified) ObInfoNote(verifiedNote, NovaOB.DONE_CIRCLE)
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.height(40.dp).clip(CircleShape).background(NovaOB.fill).novaPress(onClick = onResend)
+                        .padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        ObIcon(NovaOB.RESEND, 16f, NovaOB.ink, lineWidth = 1.9f)
+                        ObText("Kodu yeniden gönder", 14.5f, weight = 600)
+                    }
+                    if (resendNote.isNotEmpty()) ObText(resendNote, 13.5f, Modifier.weight(1f))
+                }
+                ObText("Kod gelmediyse spam klasörünü kontrol et.", 13f, color = NovaOB.muted2)
             }
             Spacer(Modifier.weight(1f))
     }
@@ -344,43 +537,175 @@ internal fun NovaOBOtpScreen(controller: NovaOnboardingController) {
 internal enum class ObCodeState { Idle, Invalid, Verified }
 
 /**
- * Six single-digit boxes that behave like one field: paste fills them all, backspace walks back,
- * and a full code fires [onComplete].
+ * Six digit boxes backed by [ObCodeKeysView], a view that holds no text and reports every key (iOS
+ * `NovaOBCodeField`), so the boxes own the digits and which one is selected. Typing fills the
+ * selected box and moves on; backspace clears it, or the nearest filled one before it; a tap selects
+ * any box, so one wrong digit of a refused code can be replaced; paste and keyboard suggestions fill
+ * all six. A full code fires [onComplete] after every change, so a fixed digit is checked again
+ * without a button. [digits] is read live, not captured: keys can arrive faster than a
+ * recomposition, and each one must see the digit before it. (A hidden text field reset after every
+ * key lost digits the same way.)
  */
 @Composable
-internal fun ObCodeField(code: String, onCodeChange: (String) -> Unit, state: ObCodeState, onComplete: (String) -> Unit) {
-    val requester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { requester.requestFocus() }
-    BasicTextField(code, { value ->
-        val digits = value.filter(Char::isDigit).take(6)
-        onCodeChange(digits)
-        if (digits.length == 6 && digits != code) onComplete(digits)
-    }, Modifier.fillMaxWidth().focusRequester(requester), singleLine = true, cursorBrush = SolidColor(Color.Transparent),
-        textStyle = obStyle(1f, color = Color.Transparent),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-        decorationBox = { inner ->
-            Box {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    repeat(6) { index ->
-                        val digit = code.getOrNull(index)?.toString().orEmpty()
-                        val shape = RoundedCornerShape(14.dp)
-                        val border = when (state) {
-                            ObCodeState.Invalid -> NovaOB.errorBorder
-                            ObCodeState.Verified -> NovaOB.ink
-                            ObCodeState.Idle -> if (digit.isEmpty()) NovaOB.line2 else NovaOB.ink
-                        }
-                        val background = when (state) {
-                            ObCodeState.Invalid -> Color(0xFFFDF3F2)
-                            ObCodeState.Verified -> Color(0xFFF5F5F5)
-                            ObCodeState.Idle -> NovaOB.surface
-                        }
-                        Box(Modifier.weight(1f).height(62.dp).clip(shape).background(background).border(1.5.dp, border, shape),
-                            contentAlignment = Alignment.Center) {
-                            ObText(digit, 24f, weight = 700)
-                        }
-                    }
-                }
-                Box(Modifier.size(1.dp)) { inner() }
+internal fun ObCodeField(
+    digits: () -> List<String>, onDigits: (List<String>) -> Unit, state: ObCodeState,
+    onEdit: () -> Unit, onComplete: (String) -> Unit,
+) {
+    var focused by remember { mutableStateOf(false) }
+    var cursor by remember { mutableIntStateOf(digits().indexOfFirst { it.isEmpty() }.let { if (it < 0) 5 else it }) }
+    var keys by remember { mutableStateOf<ObCodeKeysView?>(null) }
+    val verified = state == ObCodeState.Verified
+    val shown = digits()
+    val allEmpty = shown.all { it.isEmpty() }
+    // A new code (resend) empties the boxes: start again at the first one, unless typing has
+    // already begun by the time this runs.
+    LaunchedEffect(allEmpty) { if (allEmpty && digits().all { it.isEmpty() }) cursor = 0 }
+
+    fun commit(next: List<String>) {
+        if (next == digits()) return
+        onDigits(next)
+        onEdit()
+        if (next.all { it.isNotEmpty() }) onComplete(next.joinToString(""))
+    }
+
+    fun type(text: String) {
+        val entered = text.filter(Char::isDigit)
+        if (verified || entered.isEmpty()) return
+        val next = digits().toMutableList()
+        if (entered.length >= 6) {
+            // Paste or a keyboard suggestion: the whole code.
+            entered.take(6).forEachIndexed { index, digit -> next[index] = digit.toString() }
+            cursor = 5
+        } else {
+            var index = cursor
+            for (digit in entered) {
+                next[index] = digit.toString()
+                if (index == 5) break
+                index += 1
             }
-        })
+            cursor = index
+        }
+        commit(next)
+    }
+
+    // Clears the selected box, else the nearest filled one before it, else the last filled one:
+    // holding backspace always ends with every box empty, wherever the selection was.
+    fun backspace() {
+        if (verified) return
+        val next = digits().toMutableList()
+        if (next[cursor].isEmpty()) {
+            val filled = next.indices.filter { next[it].isNotEmpty() }
+            cursor = filled.lastOrNull { it < cursor } ?: filled.lastOrNull() ?: return
+        }
+        next[cursor] = ""
+        commit(next)
+    }
+
+    fun select(index: Int) {
+        if (verified) return
+        // A filled box can be replaced; past the first empty one there is nothing to edit yet.
+        val now = digits()
+        val firstEmpty = now.indexOfFirst { it.isEmpty() }
+        cursor = if (now[index].isEmpty() && firstEmpty >= 0) firstEmpty else index
+        keys?.showKeyboard()
+    }
+
+    Box {
+        AndroidView(
+            factory = { context ->
+                ObCodeKeysView(context).also { view ->
+                    view.onFocus = { focused = it }
+                    keys = view
+                    view.post { view.showKeyboard() }
+                }
+            },
+            modifier = Modifier.size(1.dp).alpha(0f),
+            update = { view ->
+                view.onInsert = ::type
+                view.onDelete = ::backspace
+            },
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            repeat(6) { index ->
+                val digit = shown.getOrNull(index).orEmpty()
+                val selected = focused && index == cursor && !verified
+                val shape = RoundedCornerShape(14.dp)
+                val border = when (state) {
+                    ObCodeState.Verified -> NovaOB.successBorder
+                    ObCodeState.Invalid -> if (selected) NovaOB.errorInk else NovaOB.errorBorder
+                    ObCodeState.Idle -> if (selected || digit.isNotEmpty()) NovaOB.ink else NovaOB.line2
+                }
+                val background = when (state) {
+                    ObCodeState.Verified -> Color(0xFFEEF7F1)
+                    ObCodeState.Invalid -> Color(0xFFFDF3F2)
+                    ObCodeState.Idle -> if (selected && digit.isNotEmpty()) NovaOB.fill3 else NovaOB.surface
+                }
+                Box(Modifier.weight(1f).height(62.dp).clip(shape).background(background)
+                    .border(if (selected) 2.2.dp else 1.5.dp, border, shape)
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { select(index) },
+                    contentAlignment = Alignment.Center) {
+                    if (selected && digit.isEmpty()) Box(Modifier.size(2.dp, 26.dp).background(NovaOB.ink))
+                    else ObText(digit, 24f, weight = 700)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The keyboard side of [ObCodeField] (iOS `NovaOBCodeKeys`): a focusable view with a number-pad input
+ * connection that never holds text. Every digit the keyboard commits and every backspace, from the soft
+ * keyboard or a hardware one, is reported as it comes, so nothing can drift however fast keys arrive.
+ */
+internal class ObCodeKeysView(context: Context) : View(context) {
+    var onInsert: (String) -> Unit = {}
+    var onDelete: () -> Unit = {}
+    var onFocus: (Boolean) -> Unit = {}
+
+    init {
+        isFocusable = true
+        isFocusableInTouchMode = true
+        contentDescription = "Doğrulama kodu"
+    }
+
+    fun showKeyboard() {
+        requestFocus()
+        context.getSystemService(InputMethodManager::class.java)?.showSoftInput(this, 0)
+    }
+
+    override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
+        onFocus(gainFocus)
+    }
+
+    override fun onCheckIsTextEditor() = true
+
+    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
+        outAttrs.inputType = InputType.TYPE_CLASS_NUMBER
+        outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_FLAG_NO_FULLSCREEN
+        return object : BaseInputConnection(this, false) {
+            override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
+                if (!text.isNullOrEmpty()) onInsert(text.toString())
+                return true
+            }
+
+            override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
+                repeat(beforeLength) { onDelete() }
+                return true
+            }
+
+            override fun sendKeyEvent(event: KeyEvent): Boolean = handle(event) || super.sendKeyEvent(event)
+        }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean = handle(event) || super.onKeyDown(keyCode, event)
+
+    private fun handle(event: KeyEvent): Boolean {
+        val digit = event.unicodeChar.toChar().takeIf(Char::isDigit)
+        if (event.keyCode != KeyEvent.KEYCODE_DEL && digit == null) return false
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            if (digit != null) onInsert(digit.toString()) else onDelete()
+        }
+        return true
+    }
 }

@@ -78,7 +78,7 @@ Kanıt: [132 kontrol ve kaynak hash'leri](evidence/P02_SYNTHETIC_PASSWORD_AUTH_2
 2. Signup/email/recovery amaç koordinatörü; cold/warm start, PKCE, expired/resend, hesap değişimi, eski istek completion'ının iptali. iOS gerçek SDK transport/Android gerçek cihaz karşılığı.
 3. Gerçek hook + controlled provider teslimi: TR/EN metadata, signup/magiclink/recovery ayrımı, idempotency/retry, Apple relay. Bu tur yalnız mevcut şablon renderer'ını sınadı; gönderici/marka değiştirmedi.
 4. Etkin TOTP/MFA ve secure-password-change/fresh-auth kontrolleri; mevcut OTP/OAuth/RC bootstrap regresyonu.
-5. Bu kapılar geçtikten sonra yeni gri tuval/beyaz kart standardındaki kayıt/kurtarma UI'ını bağla; sonra opsiyonel parola önerisi, presentation coordinator ve alias gateway.
+5. Bu kapılar geçtikten sonra yeni gri tuval/beyaz kart standardındaki kayıt/kurtarma UI'ını bağla; sonra presentation coordinator ve alias gateway. Apple/Google ile girenlere parola önerisi yapılmaz (karar 2026-09-25).
 
 Bu kayıt P02'nin tamamlandığını veya P18 sentetik hedeflerinin gerçek domain ekranına dönüştüğünü söylemez. Canlı DB/şablon/SMTP değişikliği, deploy, push veya store yayını yapılmadı. Rollback gerçek hesap/parola silmez; mevcut checkpoint korunur.
 

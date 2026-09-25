@@ -1,9 +1,11 @@
 #if DEBUG && NOVA_PILOT_BUILD
 import SwiftUI
 
-/// `İSGADA Giriş.dc.html` — one surface for sign-in and sign-up: providers on
-/// top, mail below. A known address signs straight in; an unknown one opens the
-/// verification sheet, exactly as the prototype describes.
+/// `İSGADA Giriş.dc.html` — providers on top, mail and password below. "Mail ile devam et"
+/// signs an existing account straight in and answers a wrong password on this page; an
+/// address without an account signs up with the same password and gets its code on its own
+/// page. "Hesap oluştur" opens the signup page for the same result. A reset mails a code,
+/// then asks for the new password.
 struct NovaLoginScreen: View {
     let auth: NovaOBAuthBridge
     var onBack: (() -> Void)? = nil
@@ -14,25 +16,40 @@ struct NovaLoginScreen: View {
     @State private var showPassword = false
     @State private var error = ""
     @State private var busy = false
+    @State private var signupPassword = ""
+    @State private var showSignupPassword = false
     @State private var digits = Array(repeating: "", count: 6)
     @State private var codeVerified = false
+    @State private var codeError = ""
+    /// `codeError` is a lost connection, not a wrong code.
+    @State private var codeRetryable = false
+    @State private var codeChecking = false
     @State private var resendNote = ""
-    @State private var resetBusy = false
-    @State private var resetSent = false
+    /// Where the signup code page's back button leads: the signup page, or sign-in.
+    @State private var codeReturn: Phase = .signup
+    /// The password typed for the signup the code page confirms.
+    @State private var codePassword = ""
+    @State private var newPassword = ""
+    @State private var showNewPassword = false
     @State private var doneKind: DoneKind = .login
     @State private var logoShown = false
+    @State private var pageHeight: CGFloat = 0
     @FocusState private var focus: Field?
 
-    private enum Phase: Equatable { case form, sheet, forgot, done }
-    private enum DoneKind { case login, signup }
+    private enum Phase: Equatable { case form, signup, code, forgot, resetCode, newPassword, done }
+    private enum DoneKind { case login, signup, reset }
     private enum Field { case email, password }
 
     var body: some View {
         ZStack {
             NovaOB.surface.ignoresSafeArea()
             switch phase {
-            case .form, .sheet: formScreen
+            case .form: formScreen
+            case .signup: signupScreen
+            case .code: codeScreen
             case .forgot: forgotScreen
+            case .resetCode: resetCodeScreen
+            case .newPassword: newPasswordScreen
             case .done: doneScreen
             }
         }
@@ -43,57 +60,56 @@ struct NovaLoginScreen: View {
     // MARK: form
 
     private var formScreen: some View {
-        ZStack {
-            NovaOBFittedScroll {
-                VStack(spacing: 16) {
-                    VStack(spacing: 14) {
-                        Image("NovaOBLogo")
-                            .resizable().scaledToFit()
-                            .frame(width: 168)
-                            .padding(.top, 28)
-                            .padding(.bottom, 56)
-                            .scaleEffect(logoShown ? 1 : 0.7)
-                            .opacity(logoShown ? 1 : 0)
-                            .onAppear {
-                                withAnimation(.timingCurve(0.2, 0.8, 0.25, 1, duration: 0.42)) { logoShown = true }
-                            }
-
-                        VStack(spacing: 7) {
-                            Text("Hoş geldin")
-                                .font(NovaOB.font(28, 700))
-                                .tracking(-0.5)
-                                .lineSpacing(NovaOB.lineSpacing(28, 1.15))
-                            Text("Giriş yap ya da saniyeler içinde hesabını oluştur. Ayrı bir kayıt adımı yok.")
-                                .font(NovaOB.font(15.5))
-                                .foregroundColor(NovaOB.muted)
-                                .multilineTextAlignment(.center)
-                                .lineSpacing(NovaOB.lineSpacing(15.5, 1.45))
-                                .fixedSize(horizontal: false, vertical: true)
-                                .frame(maxWidth: 290)
+        ScrollView {
+            VStack(spacing: 16) {
+                VStack(spacing: 14) {
+                    Image("NovaOBLogo")
+                        .resizable().scaledToFit()
+                        .frame(width: 168)
+                        .padding(.top, 28)
+                        .padding(.bottom, 56)
+                        .scaleEffect(logoShown ? 1 : 0.7)
+                        .opacity(logoShown ? 1 : 0)
+                        .onAppear {
+                            withAnimation(.timingCurve(0.2, 0.8, 0.25, 1, duration: 0.42)) { logoShown = true }
                         }
+
+                    VStack(spacing: 7) {
+                        Text("Hoş geldin")
+                            .font(NovaOB.font(28, 700))
+                            .tracking(-0.5)
+                            .lineSpacing(NovaOB.lineSpacing(28, 1.15))
+                        Text("Giriş yap ya da saniyeler içinde hesabını oluştur.")
+                            .font(NovaOB.font(15.5))
+                            .foregroundColor(NovaOB.muted)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(NovaOB.lineSpacing(15.5, 1.45))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: 290)
                     }
-
-                    NovaOBProviderButtons(
-                        onApple: { Task { await runProvider(auth.appleSignIn) } },
-                        onGoogle: { Task { await runProvider(auth.googleSignIn) } }
-                    )
-                    .padding(.top, 4)
-
-                    NovaOBDivider(text: "veya mail ile").padding(.vertical, 2)
-
-                    credentials
-
-                    Spacer(minLength: 20)
-
-                    NovaOBLegalLine(prefix: "Devam ederek", alignment: .center)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, NovaOB.padTop(64))
-                .padding(.bottom, NovaOB.padBottom(28))
-            }
 
-            if phase == .sheet { verificationSheet }
+                NovaOBProviderButtons(
+                    onApple: { Task { await runProvider(auth.appleSignIn) } },
+                    onGoogle: { Task { await runProvider(auth.googleSignIn) } }
+                )
+                .padding(.top, 4)
+
+                NovaOBDivider(text: "veya mail ile").padding(.vertical, 2)
+
+                credentials
+
+                Spacer(minLength: 20)
+
+                NovaOBLegalLine(prefix: "Devam ederek", alignment: .center)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, NovaOB.padTop(64))
+            .padding(.bottom, NovaOB.padBottom(28))
+            .frame(minHeight: pageHeight, alignment: .top)
         }
+        .scrollDismissesKeyboard(.interactively)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pageHeight = $0 }
     }
 
     private var credentials: some View {
@@ -154,15 +170,73 @@ struct NovaLoginScreen: View {
                 Task { await submitMail() }
             }
 
-            Button { phase = .forgot; error = ""; resetSent = false } label: {
-                Text("Şifremi unuttum")
+            Button { openForgot() } label: {
+                Text("Şifreni bilmiyor musun?")
                     .font(NovaOB.font(14.5, 600))
                     .foregroundColor(NovaOB.muted)
                     .frame(maxWidth: .infinity)
                     .frame(height: 40)
             }
             .buttonStyle(NovaPressStyle())
+
+            Button { openSignup() } label: {
+                (Text("Hesabın yok mu? ").foregroundColor(NovaOB.muted)
+                 + Text("Hesap oluştur").foregroundColor(NovaOB.ink))
+                    .font(NovaOB.font(14.5, 600))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+            }
+            .buttonStyle(NovaPressStyle())
+            .accessibilityIdentifier("nova.login.signup")
         }
+    }
+
+    // MARK: signup and code
+
+    private var signupScreen: some View {
+        NovaOBSignupPage(
+            email: $email, password: $signupPassword, showPassword: $showSignupPassword,
+            error: error, busy: busy,
+            onBack: backToForm, onLogin: backToForm,
+            onSubmit: { Task { await submitSignup() } }
+        )
+    }
+
+    private var codeScreen: some View {
+        NovaOBCodePage(
+            email: email, digits: $digits, error: codeError, retryable: codeRetryable,
+            checking: codeChecking, verified: codeVerified,
+            verifiedNote: "Kod doğrulandı, hesabın oluşturuluyor…", resendNote: resendNote,
+            onBack: { error = ""; phase = codeReturn },
+            onEdit: clearCodeError,
+            onComplete: { code in Task { await verify(code) } },
+            onResend: { Task { await resend() } }
+        )
+    }
+
+    private var resetCodeScreen: some View {
+        NovaOBCodePage(
+            email: email, digits: $digits, error: codeError, retryable: codeRetryable,
+            checking: codeChecking, verified: codeVerified,
+            verifiedNote: "Kod doğrulandı.", resendNote: resendNote,
+            onBack: { phase = .forgot },
+            onEdit: clearCodeError,
+            onComplete: { code in Task { await verifyReset(code) } },
+            onResend: { Task { await resendReset() } }
+        )
+    }
+
+    private var newPasswordScreen: some View {
+        NovaOBNewPasswordPage(
+            password: $newPassword, showPassword: $showNewPassword,
+            error: error, busy: busy,
+            onBack: {
+                // The code opened a session; leaving without a new password ends it.
+                Task { await auth.cancelRecovery() }
+                backToForm()
+            },
+            onSubmit: { Task { await saveNewPassword() } }
+        )
     }
 
     private var eyeIcon: some View {
@@ -174,175 +248,14 @@ struct NovaLoginScreen: View {
         )
     }
 
-    // MARK: verification sheet
-
-    private var verificationSheet: some View {
-        ZStack(alignment: .bottom) {
-            Color.black.opacity(0.42)
-                .ignoresSafeArea()
-                .onTapGesture { phase = .form; codeVerified = false }
-
-            VStack(spacing: 16) {
-                Capsule().fill(NovaOB.line).frame(width: 44, height: 5)
-
-                HStack(alignment: .top, spacing: 12) {
-                    NovaOBAnimatedLock(tint: NovaOB.ink, bodyColor: NovaOB.ink, keyholeColor: .white)
-                        .frame(width: 40, height: 40)
-                        .background(NovaOB.fill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Doğrulama").font(NovaOB.font(21, 700)).tracking(-0.3)
-                        Text("\(email.novaTrimmed.isEmpty ? "E-posta" : email.novaTrimmed) adresine gönderdiğimiz doğrulama kodunu gir.")
-                            .font(NovaOB.font(14.5))
-                            .foregroundColor(NovaOB.muted)
-                            .lineSpacing(NovaOB.lineSpacing(14.5, 1.4))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer(minLength: 0)
-                    Button { phase = .form; codeVerified = false } label: {
-                        NovaOBIconPath(path: "M6 6l12 12|M18 6L6 18", size: 13, color: NovaOB.ink, lineWidth: 2.4)
-                            .frame(width: 34, height: 34)
-                            .background(NovaOB.fill2, in: Circle())
-                    }
-                    .buttonStyle(NovaPressStyle())
-                }
-
-                NovaOBCodeField(digits: $digits, state: error.isEmpty ? (codeVerified ? .verified : .idle) : .invalid) { code in
-                    Task { await verify(code) }
-                }
-
-                if codeVerified {
-                    NovaOBInfoNote(
-                        text: "Kod doğrulandı, hesabın oluşturuluyor…",
-                        icon: "circle:12,12,9.2|M7.8 12.3l2.9 2.9 5.5-6"
-                    )
-                } else {
-                    HStack(spacing: 12) {
-                        Button { Task { await resend() } } label: {
-                            HStack(spacing: 7) {
-                                NovaOBIconPath(path: "M20 11a8 8 0 10-2.6 5.9|M20 4.5V11h-6",
-                                               size: 14, color: NovaOB.ink, lineWidth: 1.9)
-                                Text("Yeniden gönder").font(NovaOB.font(13, 600)).foregroundColor(NovaOB.ink)
-                            }
-                            .padding(.vertical, 4)
-                        }
-                        .buttonStyle(NovaPressStyle())
-                        Spacer(minLength: 0)
-                        Text(resendNote.isEmpty ? "Kod gelmediyse spam klasörünü kontrol et." : resendNote)
-                            .font(NovaOB.font(12))
-                            .foregroundColor(NovaOB.muted2)
-                            .multilineTextAlignment(.trailing)
-                            .lineSpacing(NovaOB.lineSpacing(12, 1.35))
-                    }
-                }
-
-                if !error.isEmpty { NovaOBErrorNote(text: error) }
-            }
-            .padding(.horizontal, 22)
-            .padding(.top, 12)
-            .padding(.bottom, 28)
-            .frame(maxWidth: .infinity)
-            .background(
-                NovaOB.surface,
-                in: RoundedRectangle(cornerRadius: 26, style: .continuous)
-            )
-            .shadow(color: .black.opacity(0.18), radius: 20, y: -12)
-            .transition(.move(edge: .bottom))
-        }
-        .animation(.timingCurve(0.2, 0.85, 0.25, 1, duration: 0.34), value: phase)
-    }
-
     // MARK: forgot
 
     private var forgotScreen: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            NovaOBBackButton { phase = .form; error = ""; resetSent = false }
-                .padding(.leading, -10)
-
-            VStack(spacing: 14) {
-                NovaOBIconPath(
-                    path: "M8.1 11.4V8.5a3.9 3.9 0 017.8 0|M4.6 11.2h14.8v9.6H4.6z|circle:12,16,1.5",
-                    size: 26, color: NovaOB.ink, lineWidth: 2
-                )
-                .frame(width: 60, height: 60)
-                .background(NovaOB.fill2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-
-                VStack(spacing: 7) {
-                    Text("Şifreni sıfırlayalım")
-                        .font(NovaOB.font(26, 700))
-                        .tracking(-0.4)
-                        .lineSpacing(NovaOB.lineSpacing(26, 1.18))
-                    Text("Kayıtlı e-posta adresini yaz; sıfırlama bağlantısını hemen gönderelim.")
-                        .font(NovaOB.font(15.5))
-                        .foregroundColor(NovaOB.muted)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(NovaOB.lineSpacing(15.5, 1.45))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: 296)
-                }
-            }
-            .frame(maxWidth: .infinity)
-
-            VStack(spacing: 10) {
-                HStack(spacing: 0) {
-                    NovaOBIconPath(path: "M2.5 4.5h19v15h-19z|M3 7l9 6 9-6", size: 19,
-                                   color: NovaOB.muted2, lineWidth: 1.7)
-                        .padding(.leading, 16)
-                    TextField("E-posta adresin", text: $email)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .focused($focus, equals: .email)
-                        .padding(.leading, 8)
-                }
-                .novaOBField(leadingInset: 0, border: focus == .email ? NovaOB.ink : NovaOB.line)
-
-                if !error.isEmpty { NovaOBErrorNote(text: error) }
-                if resetSent {
-                    NovaOBInfoNote(
-                        text: "\(email.novaTrimmed.isEmpty ? "Adresin" : email.novaTrimmed) ile kayıtlı bir hesap varsa sıfırlama bağlantısını gönderdik.",
-                        icon: "circle:12,12,9.2|M7.8 12.3l2.9 2.9 5.5-5.9"
-                    )
-                }
-
-                NovaOBOutlineButton(
-                    title: resetBusy ? "Gönderiliyor" : (resetSent ? "Tekrar gönder" : "Sıfırlama bağlantısı gönder"),
-                    busy: resetBusy
-                ) {
-                    focus = nil
-                    Task { await submitReset() }
-                }
-                .padding(.top, 2)
-
-                Button { phase = .form; error = ""; resetSent = false } label: {
-                    Text("Girişe dön")
-                        .font(NovaOB.font(14.5, 600))
-                        .foregroundColor(NovaOB.muted)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                }
-                .buttonStyle(NovaPressStyle())
-            }
-            .padding(.top, 8)
-
-            Spacer(minLength: 0)
-
-            HStack(alignment: .top, spacing: 9) {
-                NovaOBIconPath(path: "circle:12,12,9.2|M12 11v5.2|M12 7.8v.1", size: 15,
-                               color: NovaOB.muted2, lineWidth: 1.8)
-                    .padding(.top, 1)
-                Text("Bağlantı 30 dakika geçerlidir. Apple veya Google ile giriş yaptıysan şifre gerekmez.")
-                    .font(NovaOB.font(12.5))
-                    .foregroundColor(NovaOB.muted)
-                    .lineSpacing(NovaOB.lineSpacing(12.5, 1.4))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(NovaOB.fill3, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .padding(.horizontal, 24)
-        .padding(.top, NovaOB.padTop(56))
-        .padding(.bottom, NovaOB.padBottom(28))
+        NovaOBResetEmailPage(
+            email: $email, error: error, busy: busy,
+            onBack: backToForm,
+            onSubmit: { Task { await submitReset() } }
+        )
     }
 
     // MARK: done
@@ -355,12 +268,10 @@ struct NovaLoginScreen: View {
                 .frame(width: 78, height: 78)
                 .background(NovaOB.ink, in: Circle())
             VStack(spacing: 8) {
-                Text(doneKind == .login ? "Tekrar hoş geldin" : "Hesabın hazır")
+                Text(doneTitle)
                     .font(NovaOB.font(26, 700))
                     .tracking(-0.4)
-                Text(doneKind == .login
-                     ? "Giriş yaptın. Çalışma alanın olduğu gibi duruyor."
-                     : "Hesabını oluşturduk. Kurulumu uygulama içinde tamamlayacaksın.")
+                Text(doneNote)
                     .font(NovaOB.font(15.5))
                     .foregroundColor(NovaOB.muted)
                     .multilineTextAlignment(.center)
@@ -377,6 +288,22 @@ struct NovaLoginScreen: View {
         }
         .padding(.horizontal, 30)
         .frame(maxWidth: .infinity)
+    }
+
+    private var doneTitle: String {
+        switch doneKind {
+        case .login: return "Tekrar hoş geldin"
+        case .signup: return "Hesabın hazır"
+        case .reset: return "Şifren kaydedildi"
+        }
+    }
+
+    private var doneNote: String {
+        switch doneKind {
+        case .login: return "Giriş yaptın. Çalışma alanın olduğu gibi duruyor."
+        case .signup: return "Hesabını oluşturduk. Kurulumu uygulama içinde tamamlayacaksın."
+        case .reset: return "Yeni şifrenle giriş yaptın. Sonraki girişlerinde bu şifreyi kullan."
+        }
     }
 
     // MARK: actions
@@ -400,19 +327,28 @@ struct NovaLoginScreen: View {
         busy = false
     }
 
-    /// Known address signs in; anything else gets a verification code, which is
-    /// how the prototype splits "kayıtlı kullanıcı" from "yeni kullanıcı".
+    static let wrongPasswordMessage =
+        "Şifren yanlış. Şifreni bilmiyorsan aşağıdan kodla yenisini belirleyebilirsin. Apple veya Google ile kaydolduysan o butonla giriş yap."
+    static let passwordRulesMessage = "Şifre en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli."
+
+    /// "Mail ile devam et": an existing account signs in, a new address signs up with the
+    /// same password and gets its code. Supabase answers a wrong password and an unknown
+    /// address the same way, so a refused sign-in tries signup, which reports an existing
+    /// account without sending mail. Every password account was made under
+    /// `IsgPasswordRules`, so a password that breaks them is refused here, before any request.
     private func submitMail() async {
         guard !busy else { return }
         let address = email.novaTrimmed.lowercased()
         guard NovaOBController.isValidEmail(address) else {
-            NovaHaptics.failure()
-            error = "Geçerli bir e-posta adresi yaz."
+            fail("Geçerli bir e-posta adresi yaz.")
             return
         }
-        guard password.count >= 6 else {
-            NovaHaptics.failure()
-            error = "Şifren en az 6 karakter olmalı."
+        guard !password.isEmpty else {
+            fail("Şifreni yaz.")
+            return
+        }
+        guard IsgPasswordRules(password).valid else {
+            fail(Self.passwordRulesMessage)
             return
         }
         busy = true
@@ -421,68 +357,218 @@ struct NovaLoginScreen: View {
             try await auth.signIn(address, password)
             doneKind = .login
             phase = .done
+        } catch IsgPasswordAuthError.invalidCredentials {
+            await signUpFromForm(address)
+        } catch IsgPasswordAuthError.emailNotConfirmed {
+            // The account was created but its code never entered: finish the signup.
+            let sent = (try? await auth.resendSignupCode(address)) != nil
+            openCode(returningTo: .form, password: password)
+            if !sent { resendNote = "Kod gönderilemedi. Bir dakika sonra tekrar dene." }
         } catch {
-            do {
-                try await auth.sendCode(address)
-                digits = Array(repeating: "", count: 6)
-                codeVerified = false
-                phase = .sheet
-            } catch {
-                self.error = AppErrorMessage.make(
-                    error, context: "Doğrulama kodu gönderilemedi", fallbackTitle: "Kod gönderilemedi"
-                ).message
-            }
+            fail(AppErrorMessage.make(error, context: "Giriş yapılamadı", fallbackTitle: "Giriş yapılamadı").message)
         }
         busy = false
     }
 
-    private func verify(_ code: String) async {
+    private func signUpFromForm(_ address: String) async {
+        do {
+            try await auth.signUp(address, password)
+            openCode(returningTo: .form, password: password)
+        } catch IsgPasswordAuthError.confirmationRequired {
+            openCode(returningTo: .form, password: password)
+        } catch IsgPasswordAuthError.accountExists {
+            fail(Self.wrongPasswordMessage)
+        } catch {
+            fail(AppErrorMessage.make(error, context: "Giriş yapılamadı", fallbackTitle: "Giriş yapılamadı").message)
+        }
+    }
+
+    private func fail(_ message: String) {
+        NovaHaptics.failure()
+        error = message
+    }
+
+    private func openSignup() {
+        error = ""
+        signupPassword = ""
+        focus = nil
+        phase = .signup
+    }
+
+    private func backToForm() {
+        error = ""
+        phase = .form
+    }
+
+    private func submitSignup() async {
+        guard !busy else { return }
+        let address = email.novaTrimmed.lowercased()
+        guard NovaOBController.isValidEmail(address) else {
+            NovaHaptics.failure()
+            error = "Geçerli bir e-posta adresi yaz."
+            return
+        }
+        guard IsgPasswordRules(signupPassword).valid else {
+            NovaHaptics.failure()
+            error = "Parola en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli."
+            return
+        }
+        busy = true
         error = ""
         do {
-            try await auth.verifyCode(email.novaTrimmed.lowercased(), code)
+            try await auth.signUp(address, signupPassword)
+            openCode(returningTo: .signup, password: signupPassword)
+        } catch IsgPasswordAuthError.confirmationRequired {
+            openCode(returningTo: .signup, password: signupPassword)
+        } catch IsgPasswordAuthError.accountExists {
+            NovaHaptics.failure()
+            error = NovaOBController.accountExistsMessage
+        } catch {
+            NovaHaptics.failure()
+            self.error = AppErrorMessage.make(
+                error, context: "Hesap oluşturulamadı", fallbackTitle: "Hesap oluşturulamadı"
+            ).message
+        }
+        busy = false
+    }
+
+    private func openCode(returningTo previous: Phase, password: String) {
+        resetCodeState()
+        codeReturn = previous
+        codePassword = password
+        phase = .code
+    }
+
+    private func resetCodeState() {
+        digits = Array(repeating: "", count: 6)
+        codeVerified = false
+        codeChecking = false
+        clearCodeError()
+        resendNote = ""
+    }
+
+    private func clearCodeError() {
+        codeError = ""
+        codeRetryable = false
+    }
+
+    /// A refused code keeps its digits, so one wrong box can be fixed and checked again.
+    private func showCodeFailure(_ error: Error) {
+        NovaHaptics.failure()
+        codeVerified = false
+        codeRetryable = NovaOBController.isConnectionFailure(error)
+        codeError = codeRetryable ? NovaOBController.codeConnectionMessage : NovaOBController.codeRejectedMessage
+    }
+
+    private func verify(_ code: String) async {
+        guard !codeChecking, !codeVerified else { return }
+        codeChecking = true
+        clearCodeError()
+        do {
+            try await auth.verifySignupCode(email.novaTrimmed.lowercased(), code, codePassword)
             NovaHaptics.success()
             codeVerified = true
+            codeChecking = false
             try? await Task.sleep(nanoseconds: 900_000_000)
             doneKind = .signup
             phase = .done
         } catch {
-            NovaHaptics.failure()
-            codeVerified = false
-            digits = Array(repeating: "", count: 6)
-            self.error = "Geçersiz kod. Kodu kontrol edip yeniden dene."
+            codeChecking = false
+            showCodeFailure(error)
         }
     }
 
     private func resend() async {
         do {
-            try await auth.sendCode(email.novaTrimmed.lowercased())
+            try await auth.resendSignupCode(email.novaTrimmed.lowercased())
             digits = Array(repeating: "", count: 6)
+            clearCodeError()
             resendNote = "Yeni kod gönderildi."
         } catch {
-            resendNote = "Kod gönderilemedi, tekrar dene."
+            resendNote = "Kod gönderilemedi. Bir dakika sonra tekrar dene."
         }
     }
 
+    // MARK: reset
+
+    private func openForgot() {
+        error = ""
+        focus = nil
+        phase = .forgot
+    }
+
     private func submitReset() async {
-        guard !resetBusy else { return }
+        guard !busy else { return }
         let address = email.novaTrimmed.lowercased()
         guard NovaOBController.isValidEmail(address) else {
-            error = "Geçerli bir e-posta adresi yaz."
-            resetSent = false
+            fail("Geçerli bir e-posta adresi yaz.")
             return
         }
-        resetBusy = true
+        busy = true
         error = ""
-        resetSent = false
         do {
             try await auth.recoverPassword(address)
-            resetSent = true
+            resetCodeState()
+            phase = .resetCode
         } catch {
-            self.error = AppErrorMessage.make(
-                error, context: "Sıfırlama bağlantısı gönderilemedi", fallbackTitle: "Bağlantı gönderilemedi"
-            ).message
+            fail("Kod gönderilemedi. Bir dakika sonra tekrar dene.")
         }
-        resetBusy = false
+        busy = false
+    }
+
+    private func verifyReset(_ code: String) async {
+        guard !codeChecking, !codeVerified else { return }
+        codeChecking = true
+        clearCodeError()
+        do {
+            try await auth.verifyRecoveryCode(email.novaTrimmed.lowercased(), code)
+            NovaHaptics.success()
+            codeVerified = true
+            codeChecking = false
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            newPassword = ""
+            error = ""
+            phase = .newPassword
+        } catch {
+            codeChecking = false
+            showCodeFailure(error)
+        }
+    }
+
+    private func resendReset() async {
+        do {
+            try await auth.recoverPassword(email.novaTrimmed.lowercased())
+            digits = Array(repeating: "", count: 6)
+            clearCodeError()
+            resendNote = "Yeni kod gönderildi."
+        } catch {
+            resendNote = "Kod gönderilemedi. Bir dakika sonra tekrar dene."
+        }
+    }
+
+    private func saveNewPassword() async {
+        guard !busy else { return }
+        guard IsgPasswordRules(newPassword).valid else {
+            fail(Self.passwordRulesMessage)
+            return
+        }
+        busy = true
+        error = ""
+        do {
+            try await auth.setNewPassword(newPassword)
+        } catch IsgPasswordAuthError.samePassword {
+            // Already the account's password: the reset has what it wanted.
+        } catch {
+            fail("Şifre kaydedilemedi. Bağlantını kontrol edip yeniden dene.")
+            busy = false
+            return
+        }
+        NovaHaptics.success()
+        doneKind = .reset
+        phase = .done
+        busy = false
+        try? await Task.sleep(nanoseconds: 1_200_000_000)
+        await auth.finishRecovery()
     }
 }
 #endif

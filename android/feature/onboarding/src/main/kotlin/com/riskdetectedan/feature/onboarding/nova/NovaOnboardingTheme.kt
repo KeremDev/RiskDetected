@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.onboarding.nova
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.view.WindowManager
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -36,6 +40,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +60,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -102,6 +108,9 @@ internal object NovaOB {
     val errorInk = Color(0xFFA4453C)
     val errorBg = Color(0xFFFBECEA)
     val errorBorder = Color(0xFFC97A72)
+    /** Muted green, in the tone of the error colors: a met password rule. */
+    val successInk = Color(0xFF2F7A4B)
+    val successBorder = Color(0xFF6FAF86)
     val gold = Color(0xFFC8873F)
 
     val intro1Bg = Color(0xFFF6DCD6)
@@ -187,6 +196,31 @@ internal fun ObFittedScroll(padding: PaddingValues, spacing: Dp, modifier: Modif
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = minHeight).padding(padding),
             verticalArrangement = Arrangement.spacedBy(spacing), content = content)
     }
+}
+
+/**
+ * Nova onboarding and sign-in pages end above the keyboard while they are on screen. The app window
+ * pans otherwise, and only far enough to show the focused field, so what sits under the field (the
+ * new-password rules) stays behind the keyboard. With resize, MainActivity's `safeDrawingPadding()`
+ * takes the keyboard in and [ObFittedScroll] scrolls. The previous mode comes back on leave.
+ */
+@Composable
+internal fun ObResizesForKeyboard() {
+    val activity = LocalContext.current.findActivity() ?: return
+    DisposableEffect(activity) {
+        val window = activity.window
+        val previous = window.attributes.softInputMode
+        window.setSoftInputMode(
+            (previous and WindowManager.LayoutParams.SOFT_INPUT_MASK_ADJUST.inv()) or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+        )
+        onDispose { window.setSoftInputMode(previous) }
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 // MARK: - Shared primitives

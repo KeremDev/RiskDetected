@@ -21,6 +21,9 @@ enum NovaOB {
     static let errorInk = Color(hex: 0xA4453C)
     static let errorBg = Color(hex: 0xFBECEA)
     static let errorBorder = Color(hex: 0xC97A72)
+    /// Muted green, in the tone of the error colors: a met password rule.
+    static let successInk = Color(hex: 0x2F7A4B)
+    static let successBorder = Color(hex: 0x6FAF86)
     static let gold = Color(hex: 0xC8873F)
 
     static let intro1Bg = Color(hex: 0xF6DCD6)
@@ -60,17 +63,14 @@ enum NovaOB {
     /// of the 393×852 frame — status bar and home indicator included. SwiftUI
     /// already lays content out inside the safe area, so the design values are
     /// reduced by the inset to land in the same visual place on device.
-    static func padTop(_ design: CGFloat) -> CGFloat { max(0, design - insets.top) }
-    static func padBottom(_ design: CGFloat) -> CGFloat { max(0, design - insets.bottom) }
+    @MainActor static func padTop(_ design: CGFloat) -> CGFloat { max(0, design - screenInsets.top) }
+    @MainActor static func padBottom(_ design: CGFloat) -> CGFloat { max(0, design - screenInsets.bottom) }
 
-    private static var insets: UIEdgeInsets {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first { $0.isKeyWindow }?
-            .safeAreaInsets
-            ?? UIEdgeInsets(top: 47, left: 0, bottom: 34, right: 0)
-    }
+    /// Measured by `NovaPilotEntryGate` before it draws any Nova page. These were
+    /// read from the key window inside view bodies, which forced UIKit layout in
+    /// the middle of a SwiftUI update; SwiftUI then stopped redrawing the page, so
+    /// error notes, the logo fade-in and page changes never appeared.
+    @MainActor static var screenInsets = EdgeInsets(top: 47, leading: 0, bottom: 34, trailing: 0)
 }
 
 extension Color {
@@ -82,23 +82,6 @@ extension Color {
             blue: Double(hex & 0xFF) / 255,
             opacity: 1
         )
-    }
-}
-
-/// A scroll view whose content is at least as tall as the visible area, so a
-/// `Spacer` can push a footer to the bottom without ever overflowing it off
-/// screen the way a hard-coded screen height does.
-struct NovaOBFittedScroll<Content: View>: View {
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        GeometryReader { proxy in
-            ScrollView {
-                content()
-                    .frame(minHeight: proxy.size.height, alignment: .top)
-            }
-            .scrollDismissesKeyboard(.interactively)
-        }
     }
 }
 

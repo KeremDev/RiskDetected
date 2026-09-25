@@ -95,7 +95,7 @@ Bu sürümler kaynakta görülen değerlerdir; mağazada şu anda hangi binary'n
 |---|---|---|
 | B01 | RiskDetected.xcodeproj/project.pbxproj: iOS bundle com.riskdetected.app | Yeni ad için bundle değiştirilmez |
 | B02 | android/app/build.gradle.kts: Android applicationId/namespace com.riskdetectedan.app | Android ID iOS'tan farklıdır; “eşitleme” kesinlikle yapılmaz |
-| B03 | App/Services/AuthService.swift: signInWithPassword zaten mevcut | iOS parola girişini yeniden yazma; kayıt/doğrulama/parola ekleme/recovery yolunu mevcut bootstrap'a bağla |
+| B03 | App/Services/AuthService.swift: signInWithPassword zaten mevcut | iOS parola girişini yeniden yazma; kayıt/doğrulama/recovery yolunu mevcut bootstrap'a bağla |
 | B04 | Android AuthRepository: OTP, Google ve Apple yolları mevcut; parola yolu tespit edilmedi | Android parola giriş/kayıt/recovery adaptörü ayrıca gerekir |
 | B05 | private.company_limit_for_user: Plus 5, Pro 25; migration ve 12 Eylül SQL snapshot'ında aynı | Yeni aday Plus 3 limiti eski Plus hakkını 5'ten 3'e indiremez; Pro hedef 30 artış olur |
 | B06 | company_limit_for_user, enforce_company_write_rules, company RLS ve diğer paid helper'lar mevcut | Gift erişimi sadece istemcide açılmaz; SQL/RPC/Edge'lerin tümü aynı capability kararına bağlanır |
@@ -401,13 +401,13 @@ Idempotency kapsamı firma+dosya hash+mapping version+mutation ID; kullanıcı a
 
 ### 9.1. Auth ve presentation coordinator
 
-Yeni e-posta+parola kaydı → Supabase doğrulama kodu → doğrulama → mevcut finishSignIn/bootstrap → aynı profile/UUID/RC yapılandırması. Eski OTP ve Apple/Google korunur. OAuth kullanıcısına parola ekleme isteğe bağlı, atlanabilir ve aynı user üzerinde update'dir; provider parolası istenmez. Aynı ad/benzer e-posta yüzünden hesap/abonelik merge edilmez.
+Yeni e-posta+parola kaydı → Supabase doğrulama kodu (ayrı sayfada girilir) → doğrulama → mevcut finishSignIn/bootstrap → aynı profile/UUID/RC yapılandırması. Giriş sayfasındaki "Mail ile devam et" hesabı olanı doğrudan içeri alır, kod istemez; yanlış parolada aynı sayfada "Şifren yanlış" der. Hesabı olmayan adres aynı parolayla kaydolur ve kod sayfasına geçer ("kayıtlı değilsin" uyarısı yok); "Hesap oluştur" bağlantısı da aynı sonuca götürür. Kodu hiç girilmemiş bir kayıtla giriş denenirse kod sayfası açılır. Parola sıfırlama da kodla: e-posta → 6 haneli kod → yeni parola (karar 2026-09-25). Daha önce kodla giriş yapmış kullanıcıların bildiği bir parola yok: giriş sayfasındaki "Şifreni bilmiyor musun?" onları aynı akışla "Şifreni belirle"ye götürür; yanlış parola uyarısı da oraya yönlendirir. Yazılan parolayı kodsuz kabul etmek hesabı ele geçirmeye açık olduğu için yapılmaz. Kayıt ve sıfırlama mailleri staging ve live'da `auth-send-email-hook` ile gider ve kodu içerir; dashboard şablonları kullanılmaz. Apple/Google korunur. Apple/Google ile girenden parola istenmez ve parola oluşturma önerilmez (karar 2026-09-25); sonraki girişlerini aynı butonla yaparlar. Aynı ad/benzer e-posta yüzünden hesap/abonelik merge edilmez.
 
 Parola kuralı V5: en az 8 karakter, ASCII büyük/küçük harf ve rakam; ek Unicode kabulü, karakter/byte üst sınırı ve SDK sunucu davranışı ortak fixture ile netleştirilir. Parola trim/kısaltma/log yok. Autofill/password-manager/paste çalışır. Alias 3–30 ASCII aday politikası, gizli e-posta çözümü, generic hata, rate limit ve recovery freshness gerektirir. Hesap bulunup bulunmadığını response/timing ile ifşa etmeme testi yapılır.
 
 Global sunucu Auth politikası eski binary'yi de etkileyebilir; mobile feature flag tek başına izolasyon değildir. Staging'de eski OTP login, yeni signup OTP tipi, recovery deep link, expired/used link, resend cooldown, offline submit, interrupted verification, Apple relay teslimi ve link cold-start test edilir.
 
-Modal önceliği: zorunlu hukuki işlem → kullanıcının başlattığı akış → bağlamsal bildirim → isteğe bağlı parola önerisi. Parola önerisi ile paywall/OS izinleri üst üste açılmaz. Dismiss/cooldown hesap/cihaz semantiğiyle belirlenir; güncellemede tekrar tekrar gösterilmez.
+Modal önceliği: zorunlu hukuki işlem → kullanıcının başlattığı akış → bağlamsal bildirim. Paywall ve OS izinleri üst üste açılmaz. Dismiss/cooldown hesap/cihaz semantiğiyle belirlenir; güncellemede tekrar tekrar gösterilmez.
 
 ### 9.2. Hak otoritesi
 
@@ -622,10 +622,10 @@ Durum: aşağıdaki testlerin tamamı planlıdır; bu tur çalıştırılmadı. 
 | X25 | Belge üretildikten sonra logo/adres/personel/template değişir | Eski iki format hash/snapshot aynı | P11; golden+hash |
 | X26 | CSV/XLSX tarih1900/1904, TR decimal, sağlık kolonları | Açık preview, sağlık verisi hiçbir yeni alana yazılmaz | P11; parser+DB |
 | X27 | Import preview'dan sonra hedef edit; batch kesinti; compensation | Conflict; idempotent resume; sonradan edit silinmez | P11; DB fault injection |
-| X28 | OTP/Apple relay/Google hesabına parola ekle; duplicate email | Aynı UUID, güvenli conflict; auto merge yok | P02; Auth staging+native |
+| X28 | Apple relay/Google hesabının e-postasıyla parola kaydı; duplicate email | "Bu e-posta adresiyle bir hesap var" mesajı; yeni hesap veya auto merge yok | P02; Auth staging+native |
 | X29 | Alias enumeration, OTP expiry/resend, cold-start recovery | Generic/limitli güvenli akış; hesap/token sızıntısı yok | P02; security+native |
 | X30 | Parola Unicode/byte sınırları/autofill/paste + global Auth policy eski client | Sessiz trim/truncate yok; OTP bozulmaz | P02; parity+old binary |
-| X31 | Legal/paywall/notification/password prompt aynı anda eligible | Tek doğru öncelikli presentation; dismiss kalıcı semantik | P02/P12/P18; UI |
+| X31 | Legal/paywall/notification aynı anda eligible | Tek doğru öncelikli presentation; dismiss kalıcı semantik | P02/P12/P18; UI |
 | X32 | Gift activation iki cihaz, expiry anı, quota dolu | Tek Plus7, server 7×24h, quota reset yok | P03/P14; DB+clock |
 | X33 | Discount kaydı var, store ödeme yok | Paid tier veya AI quota açılmaz | P14; negative access |
 | X34 | Duplicate/out-of-order webhook, restore/sync yarışı, linked token | Son kanıtlı lifecycle; tekrar grant/downgrade yok | P14; replay |
@@ -754,7 +754,7 @@ Her yolculuk iki platformda, gerçek backend staging + deterministik provider fi
 |---|---|
 | E01 Eski uzman update | Mevcut login/session → yeni marka → aynı şirket/analiz/rapor → Plus/Pro yeni modüller → restore → eski opt-out korunması |
 | E02 Yeni e-posta hesabı | Email+parola → kod/resend/verify → bootstrap → onboarding izin kararı → Free işlem → aynı UUID ile ikinci cihaz |
-| E03 OAuth/relay | Apple veya Google → optional parola dismiss/create → tekrar provider/parola login → recovery → şirketler/RC kimliği değişmez |
+| E03 OAuth/relay | Apple veya Google → parola istenmez → tekrar aynı provider ile login → şirketler/RC kimliği değişmez |
 | E04 Eğitim tam döngü | Firma/işyeri/çalışan → ihtiyaç → plan/oturum/yoklama/sınav → completion → PDF/XLSX → süre/task/skor → görev değişimi sonrası review |
 | E05 Risk tam döngü | Mevcut fotoğraf analizi → seçilmiş aktarım → risk version → rescan/kısmi/tam → eski doküman erişimi → stale bildirim iptali |
 | E06 Saha uygunsuzluğu | Checklist/gözlem → uygunsuzluk → aksiyon → kanıt upload/scan → doğrulama → kapatma/reopen → rapor/takip |
@@ -823,7 +823,7 @@ Grafik ana kritik yolu sadeleştirir; paket tablosundaki ek önkoşullar bağlay
 |---|---|---|---|---|
 | P00 Başlangıç envanteri | Bu plan | Ana uygulama/panel/ilgili web bağlantı manifest'i; canlı read-only store+Auth/cron/flags envanteri; kimlik/SDK/helper listesi; panel checkpoint; backup kapsamı ve restore drill; SLO baseline | X01/X02 hazırlığı, X57; restore raporu + açık farklar; secret içermeyen BASELINE_DIFF | Kaynak baseline değişmez; restore başarısızsa riskli faz durur |
 | P01 Contract ve test omurgası | P00 | contracts/isg/v1; error/state machine; mutation/outbox/audit/lease; environment verifier; function-test manifest; iOS CI ve test runner; **13 Eylül: gerçek şemada tüketici dağıtım defteri** | X09–X12/X60; unit+pgTAP+Edge/native DTO parity; test izolasyonu | Yeni flag kapalı; eski API etkilenmez; altyapı henüz domain açmaz |
-| P02 Auth | P01 | iOS mevcut parola girişini reuse; signup-code, Android parola yolları, same-user password, alias/recovery, presentation coordinator | AUTH-* ve X28–X31; provider/parola/OTP aynı UUID; eski binary global Auth ayarı testi | Yeni auth giriş yolları kapatılır; OTP/OAuth çalışır; kullanıcı parolaları silinmez |
+| P02 Auth | P01 | iOS mevcut parola girişini reuse; signup-code, Android parola yolları, alias/recovery, presentation coordinator | AUTH-* ve X28–X31; provider/parola/OTP aynı UUID; eski binary global Auth ayarı testi | Yeni auth giriş yolları kapatılır; OTP/OAuth çalışır; kullanıcı parolaları silinmez |
 | P03 Plan/legacy/quota | P01 | Catalog/floor dry-run; SQL helper ve paid check envanteri; shadow quota, atomic new reservations; read-only downgrade UX sözleşmesi; **13 Eylül: shadow rezervasyon defteri ve ölçülmüş hak tabanı uygulandı** | BILL/QUOTA, X04–X08/X32; hak kaybı/çift tüketim sıfır | Yeni tüketici shadow'a döner; eski otorite korunur; kazanılmış floor silinmez |
 | P04 Güvenli dosya/belge çekirdeği | P01/P03 | Purpose matrix, quarantine/scan/immutable assets; sandbox worker spike; upload intent; document snapshot/export abstraction; **13 Eylül: kabul matrisi, intent/karantina, anti-TOCTOU promotion ve türev ayrımı uygulandı; sandbox/belge/import dilimleri açık** | FILE-* X21–X25; DOC/XLS dahil pozitif; scan fail-closed; maliyet sınırı | Yeni upload/import kapalı; clean mevcut dosya okunur; legacy photos/reports etkilenmez |
 | P05 Firma/personel | P01/P03 | D05 migration; default workplace backfill/catch-up; assignment history; API; iki native liste/form/detail | **13 Eylül: P05 geliştirme ve yerel kabul tamamlandı.** REV01, DAT04/05, X07/12; REV21/23/X13 P05 parçaları doğrulandı. Native E2E ve tarihli/hiyerarşik ekran kanıtı mevcut; bileşik downstream/mağaza kabulü ayrı ve açık. [Kapanış](P05_CLOSURE_2026-09-13.md) | Yeni write read-only; companies legacy okuma/yazma sözleşmesi devam |

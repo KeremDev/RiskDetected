@@ -1,23 +1,139 @@
 import XCTest
 
 final class NovaPilotUITests: XCTestCase {
-    /// The six code boxes used to be six focused fields that took the keyboard
-    /// from each other every frame, so no digit ever landed and sign-up stopped.
-    func testVerificationCodeAcceptsTypedDigits() throws {
+    /// "Mail ile devam et" on the sign-in page: a password that breaks the rules is refused
+    /// before any request; an address with an account and a wrong password is told so and
+    /// never asked for a code; a new address signs up with the typed password and gets the
+    /// code page. The code boxes once dropped every key, and after a refused code the
+    /// keyboard stayed down.
+    func testMailButtonSignsInOrSignsUp() throws {
         #if NOVA_PILOT_BUILD
-        let app = XCUIApplication()
-        app.launchArguments = ["RD_UI_TEST_MAIN", "RD_UI_TEST_NOVA_REVIEW", "RD_UI_TEST_NOVA_LOGIN", "RD_UI_TEST_LIGHT_MODE"]
-        app.launch()
-        let email = app.textFields["E-posta adresin"]
-        XCTAssertTrue(email.waitForExistence(timeout: 20))
-        email.tap(); email.typeText("harness@example.com")
-        let password = app.secureTextFields["Şifren"]
-        password.tap(); password.typeText("harness1")
+        var app = launchNovaLogin()
+        fillSignIn(app, email: "yeni@example.com", password: "kisa1")
         app.buttons["Mail ile devam et"].tap()
+        XCTAssertTrue(app.staticTexts["Şifre en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli."]
+            .waitForExistence(timeout: 8))
+        XCTAssertFalse(app.staticTexts["Kodu gir"].exists)
+        app.terminate()
+
+        app = launchNovaLogin()
+        fillSignIn(app, email: "exists@example.com", password: "Yanlis123")
+        app.buttons["Mail ile devam et"].tap()
+        // Over the 128-character limit of a plain element query, so matched by label.
+        let wrongPassword = "Şifren yanlış. Şifreni bilmiyorsan aşağıdan kodla yenisini belirleyebilirsin. "
+            + "Apple veya Google ile kaydolduysan o butonla giriş yap."
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label == %@", wrongPassword)).firstMatch
+            .waitForExistence(timeout: 8))
+        XCTAssertFalse(app.textFields["Doğrulama kodu"].exists, "a wrong password must not ask for a code")
+        XCTAssertTrue(app.buttons["Şifreni bilmiyor musun?"].exists)
+        app.terminate()
+
+        app = launchNovaLogin()
+        fillSignIn(app, email: "yeni@example.com", password: "Yeni12345")
+        app.buttons["Mail ile devam et"].tap()
+        XCTAssertTrue(app.staticTexts["Kodu gir"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Kodu yeni@example.com adresine gönderdik."].exists)
+        dismissSavePassword(app)
         let code = app.textFields["Doğrulama kodu"]
         XCTAssertTrue(code.waitForExistence(timeout: 8))
-        code.typeText("123456")
+        // A refused code keeps its digits and the keyboard; fixing one box checks it again.
+        code.typeText("012345")
+        XCTAssertTrue(app.staticTexts[codeRejected].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["Kodu yeniden gönder"].exists)
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "the keyboard stays for the fix")
+        XCTAssertEqual(code.value as? String, "012345")
+        let keyboard = app.keyboards.firstMatch
+        let keyboardTop = keyboard.frame.minY
+        tapCodeBox(app, 0)
+        // Selecting a box keeps the keyboard where it was; it does not drop and come back.
+        for _ in 0..<5 {
+            XCTAssertTrue(keyboard.exists)
+            XCTAssertEqual(keyboard.frame.minY, keyboardTop, accuracy: 1)
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        app.typeText("7")
         XCTAssertTrue(app.staticTexts["Hesabın hazır"].waitForExistence(timeout: 8))
+        #endif
+    }
+
+    /// "Hesap oluştur" still opens the signup page, which ends on the same code page.
+    func testSignupLinkOpensSignupAndCode() throws {
+        #if NOVA_PILOT_BUILD
+        let app = launchNovaLogin()
+        let email = app.textFields["E-posta adresin"]
+        email.tap(); email.typeText("harness@example.com\n")
+        app.buttons["nova.login.signup"].tap()
+        XCTAssertTrue(app.staticTexts["Mail ile hesap oluştur"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.textFields["E-posta adresin"].value as? String, "harness@example.com")
+        // A visible field: iOS offers a strong password over a secure new-password field.
+        let show = app.buttons["Göster"]
+        waitUntilHittable(show)
+        show.tap()
+        let newPassword = app.textFields["Parola oluştur"]
+        newPassword.tap(); newPassword.typeText("harness")
+        // The rules under the field follow the typing.
+        XCTAssertEqual(ruleValue(app, "lower"), "tamam")
+        XCTAssertEqual(ruleValue(app, "upper"), "eksik")
+        newPassword.typeText("H12\n")
+        XCTAssertEqual(ruleValue(app, "upper"), "tamam")
+        XCTAssertEqual(ruleValue(app, "digit"), "tamam")
+        app.buttons["nova.signup.submit"].tap()
+
+        XCTAssertTrue(app.staticTexts["Kodu gir"].waitForExistence(timeout: 8))
+        dismissSavePassword(app)
+        let code = app.textFields["Doğrulama kodu"]
+        XCTAssertTrue(code.waitForExistence(timeout: 8))
+        // A lost connection is not a wrong code: it offers another try.
+        code.typeText("999999")
+        XCTAssertTrue(app.staticTexts["Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene."].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["Tekrar dene"].exists)
+        XCTAssertFalse(app.staticTexts[codeRejected].exists)
+        app.typeText(XCUIKeyboardKey.delete.rawValue)
+        app.typeText("8")
+        XCTAssertTrue(app.staticTexts["Hesabın hazır"].waitForExistence(timeout: 8))
+        #endif
+    }
+
+    /// "Şifreni bilmiyor musun?" (forgotten, or never set after mailed-code sign-ins): the address, then the 6-digit code from the reset mail on the
+    /// code page, then the new password.
+    func testPasswordResetWithCode() throws {
+        #if NOVA_PILOT_BUILD
+        let app = launchNovaLogin()
+        app.buttons["Şifreni bilmiyor musun?"].tap()
+        XCTAssertTrue(app.staticTexts["Şifreni belirle"].waitForExistence(timeout: 8))
+        let email = app.textFields["E-posta adresin"]
+        waitUntilHittable(email)
+        email.tap(); email.typeText("exists@example.com")
+        app.buttons["nova.reset.send"].tap()
+
+        XCTAssertTrue(app.staticTexts["Kodu gir"].waitForExistence(timeout: 8))
+        let code = app.textFields["Doğrulama kodu"]
+        XCTAssertTrue(code.waitForExistence(timeout: 8))
+        code.typeText("000000")
+        XCTAssertTrue(app.staticTexts[codeRejected].waitForExistence(timeout: 8))
+        // Backspace clears every box, and the code can be typed again from the start.
+        app.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 6))
+        XCTAssertFalse(app.staticTexts[codeRejected].exists)
+        XCTAssertEqual((code.value as? String) ?? "", "")
+        app.typeText("123456")
+        let verified = XCTAttachment(screenshot: app.screenshot())
+        verified.name = "İSGADA-code-verified"
+        verified.lifetime = .keepAlways; add(verified)
+
+        XCTAssertTrue(app.staticTexts["Yeni şifreni belirle"].waitForExistence(timeout: 8))
+        let show = app.buttons["Göster"]
+        waitUntilHittable(show)
+        show.tap()
+        let newPassword = app.textFields["Yeni şifre"]
+        newPassword.tap(); newPassword.typeText("Zayif")
+        app.buttons["nova.reset.save"].tap()
+        XCTAssertTrue(app.staticTexts["Şifre en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli."]
+            .waitForExistence(timeout: 5))
+        XCTAssertEqual(ruleValue(app, "digit"), "eksik")
+        newPassword.tap(); newPassword.typeText("Guclu123\n")
+        XCTAssertEqual(ruleValue(app, "length"), "tamam")
+        app.buttons["nova.reset.save"].tap()
+        XCTAssertTrue(app.staticTexts["Şifren kaydedildi"].waitForExistence(timeout: 8))
         #endif
     }
 
@@ -457,4 +573,57 @@ final class NovaDesignAuditUITests: XCTestCase {
         add(attachment)
     }
     #endif
+}
+
+private extension XCTestCase {
+    /// Page changes cross-fade; a control is only tappable once the old page has gone.
+    func waitUntilHittable(_ element: XCUIElement) {
+        let hittable = expectation(for: NSPredicate(format: "isHittable == true"), evaluatedWith: element)
+        wait(for: [hittable], timeout: 8)
+    }
+
+    /// The pilot entry gate on the sign-in page, with the network-free auth stub.
+    func launchNovaLogin() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["RD_UI_TEST_AUTH", "RD_UI_TEST_NOVA_AUTH_STUB", "RD_UI_TEST_LIGHT_MODE",
+                               "-nova.pilot.onboarding.completed.v1", "YES"]
+        app.launch()
+        XCTAssertTrue(app.textFields["E-posta adresin"].waitForExistence(timeout: 20))
+        return app
+    }
+
+    func fillSignIn(_ app: XCUIApplication, email: String, password: String) {
+        let emailField = app.textFields["E-posta adresin"]
+        emailField.tap(); emailField.typeText(email + "\n")
+        let passwordField = app.secureTextFields["Şifren"]
+        passwordField.tap(); passwordField.typeText(password + "\n")
+    }
+
+    var codeRejected: String {
+        "Kod yanlış ya da süresi dolmuş. Hatalı rakama dokunup düzelt ya da yeni kod iste."
+    }
+
+    /// Taps one of the six code boxes. They carry no accessibility element of their own (the
+    /// hidden text field does), so the tap goes by position: 24 pt page margins, 8 pt gaps.
+    func tapCodeBox(_ app: XCUIApplication, _ index: Int) {
+        let field = app.textFields["Doğrulama kodu"]
+        let width = app.windows.firstMatch.frame.width
+        let box = (width - 48 - 40) / 6
+        let x = 24 + CGFloat(index) * (box + 8) + box / 2
+        app.windows.firstMatch.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: x, dy: field.frame.midY)).tap()
+    }
+
+    /// "tamam" or "eksik" for one rule under a new-password field.
+    func ruleValue(_ app: XCUIApplication, _ rule: String) -> String? {
+        let element = app.descendants(matching: .any)["nova.password.rule.\(rule)"]
+        XCTAssertTrue(element.waitForExistence(timeout: 5))
+        return element.value as? String
+    }
+
+    /// Leaving a page with a password, iOS offers to save it.
+    func dismissSavePassword(_ app: XCUIApplication) {
+        let notNow = app.buttons["Sonra"]
+        if notNow.waitForExistence(timeout: 4) { notNow.tap() }
+    }
 }

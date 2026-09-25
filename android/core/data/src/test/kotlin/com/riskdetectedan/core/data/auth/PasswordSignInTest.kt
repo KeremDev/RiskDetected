@@ -91,9 +91,32 @@ class PasswordSignInTest {
         assertEquals(1, server.requestCount)
     }
 
+    @Test fun wrongPasswordAndUnconfirmedSignupKeepOnlyTheirCodes() = runBlocking {
+        // A wrong password is answered on the sign-in page; an unconfirmed signup goes on to its code page.
+        for ((serverCode, expected) in listOf("invalid_credentials" to "password_invalid_credentials",
+            "email_not_confirmed" to "password_email_not_confirmed")) {
+            server.enqueue(MockResponse().setResponseCode(400).setBody("""{"error_code":"$serverCode","msg":"private-email@example.invalid raw-password"}"""))
+            val result = passwordSignIn(client, "x@y.invalid", "Some1pass") as RdResult.Failure
+            assertEquals(expected, result.code)
+            assertEquals(expected, result.message)
+            assertNull(result.cause)
+            requireNotNull(server.takeRequest(3, TimeUnit.SECONDS))
+        }
+        assertNull(client.auth.currentSessionOrNull())
+    }
+
+    @Test fun signupForAnExistingAddressSaysSoWithoutImportingASession() = runBlocking {
+        // With confirmations on, an existing address comes back as a user without identities.
+        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"id":"11111111-1111-4111-8111-111111111111","aud":"authenticated","email":"x@y.invalid","created_at":"2026-09-13T00:00:00Z","identities":[],"app_metadata":{},"user_metadata":{}}"""))
+        assertEquals("password_account_exists", (passwordSignUp(client, "x@y.invalid", "Some1pass", RdAppLanguage.English) as RdResult.Failure).code)
+        server.enqueue(MockResponse().setResponseCode(422).setBody("""{"error_code":"user_already_exists","msg":"User already registered"}"""))
+        assertEquals("password_account_exists", (passwordSignUp(client, "x@y.invalid", "Some1pass", RdAppLanguage.English) as RdResult.Failure).code)
+        assertNull(client.auth.currentSessionOrNull())
+        assertEquals(2, server.requestCount)
+    }
+
     @Test fun signupSubmissionDoesNotClaimANewAccountOrImportASession() = runBlocking {
-        // An obfuscated existing-account response must not be interpreted as password creation.
-        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"id":"11111111-1111-4111-8111-111111111111","aud":"authenticated","email":"test+tag@example.invalid","created_at":"2026-09-13T00:00:00Z","identities":[],"app_metadata":{},"user_metadata":{}}"""))
+        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"id":"11111111-1111-4111-8111-111111111111","aud":"authenticated","email":"test+tag@example.invalid","created_at":"2026-09-13T00:00:00Z","identities":[{"identity_id":"22222222-2222-4222-8222-222222222222","id":"11111111-1111-4111-8111-111111111111","user_id":"11111111-1111-4111-8111-111111111111","provider":"email","identity_data":{},"created_at":"2026-09-13T00:00:00Z","updated_at":"2026-09-13T00:00:00Z"}],"app_metadata":{},"user_metadata":{}}"""))
         assertEquals(RdResult.Success(Unit), passwordSignUp(client, " TEST+tag@Example.invalid ", " Ab1şifreİ ", RdAppLanguage.Turkish))
         val request = requireNotNull(server.takeRequest(3, TimeUnit.SECONDS))
         assertEquals("/auth/v1/signup", request.requestUrl?.encodedPath)
@@ -153,6 +176,34 @@ class PasswordSignInTest {
         // confirmed server configuration AND an account-scoped purpose coordinator.
         assertNotNull(client.auth.currentSessionOrNull())
         assertEquals(1, server.requestCount)
+    }
+
+    @Test fun resetPasswordUpdateKeepsOnlyItsCodes() = runBlocking {
+        assertEquals("password_policy_invalid", (passwordUpdate(client, "zayif") as RdResult.Failure).code)
+        assertEquals(0, server.requestCount)
+        successfulResponseUsesTheSameSdkSessionAndUuid()
+        val user = """{"id":"11111111-1111-4111-8111-111111111111","aud":"authenticated","email":"x@y.invalid","created_at":"2026-09-13T00:00:00Z","app_metadata":{},"user_metadata":{}}"""
+        server.enqueue(MockResponse().setResponseCode(200).setBody(user))
+        assertEquals(RdResult.Success(Unit), passwordUpdate(client, "Yeni12345"))
+        // The code opened the session, so the update goes out as the account; the password as typed.
+        requireNotNull(server.takeRequest(3, TimeUnit.SECONDS))
+        val update = requireNotNull(server.takeRequest(3, TimeUnit.SECONDS))
+        assertEquals("PUT", update.method)
+        assertEquals("/auth/v1/user", update.requestUrl?.encodedPath)
+        assertEquals("Bearer synthetic-access", update.getHeader("Authorization"))
+        assertEquals("Yeni12345", Json.parseToJsonElement(update.body.readUtf8()).jsonObject["password"]?.jsonPrimitive?.content)
+        for ((status, body, expected) in listOf(
+            Triple(422, """{"error_code":"same_password","msg":"New password should be different"}""", "password_same_password"),
+            Triple(422, """{"error_code":"weak_password","msg":"weak","weak_password":{"reasons":["length"]}}""", "password_policy_invalid"),
+            Triple(500, """{"msg":"private-email@example.invalid raw-password"}""", "password_update_failed"),
+        )) {
+            server.enqueue(MockResponse().setResponseCode(status).setBody(body))
+            val result = passwordUpdate(client, "Yeni12345") as RdResult.Failure
+            assertEquals(expected, result.code)
+            assertEquals(expected, result.message)
+            assertNull(result.cause)
+            requireNotNull(server.takeRequest(3, TimeUnit.SECONDS))
+        }
     }
 
     @Test fun cancellationIsNotConvertedIntoAnAuthenticationFailure() = runBlocking {

@@ -77,14 +77,7 @@ struct NovaPilotReviewHarness: View {
     }
     var body: some View {
         Group {
-        if CommandLine.arguments.contains("RD_UI_TEST_NOVA_LOGIN") {
-            // An unknown address opens the verification sheet; any six digits verify.
-            NovaLoginScreen(auth: NovaOBAuthBridge(
-                signIn: { _, _ in throw URLError(.userAuthenticationRequired) },
-                signUp: { _, _ in }, sendCode: { _ in }, verifyCode: { _, _ in },
-                recoverPassword: { _ in }, appleSignIn: {}, googleSignIn: {}, requestPush: {},
-                saveDraft: { _ in }, finish: { _ in }))
-        } else if CommandLine.arguments.contains("RD_UI_TEST_CHECKLIST_PICKER") {
+        if CommandLine.arguments.contains("RD_UI_TEST_CHECKLIST_PICKER") {
             NovaChecklistStartFlowScreen(client: reviewChecklistClient, initialCompany: nil,
                 onStarted: { _ in }, onClose: {})
         } else if CommandLine.arguments.contains("RD_UI_TEST_CHECKLIST_WIZARD") {

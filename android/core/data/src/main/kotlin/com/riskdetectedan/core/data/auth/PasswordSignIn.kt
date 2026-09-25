@@ -3,6 +3,8 @@ package com.riskdetectedan.core.data.auth
 import com.riskdetectedan.core.common.RdResult
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.exception.AuthErrorCode
+import io.github.jan.supabase.auth.exception.AuthRestException
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.CancellationException
 import java.util.Locale
@@ -24,6 +26,15 @@ internal suspend fun passwordSignIn(client: SupabaseClient, email: String, passw
         RdResult.Success(Unit)
     } catch (cancelled: CancellationException) {
         throw cancelled
+    } catch (error: AuthRestException) {
+        // Only the code is kept: a wrong password (the server does not say whether the
+        // address or the password was wrong), or a signup whose code was never entered.
+        val code = when (error.errorCode) {
+            AuthErrorCode.InvalidCredentials -> "password_invalid_credentials"
+            AuthErrorCode.EmailNotConfirmed -> "password_email_not_confirmed"
+            else -> "password_sign_in_failed"
+        }
+        RdResult.Failure(code, code)
     } catch (_: Exception) {
         RdResult.Failure("password_sign_in_failed", "password_sign_in_failed")
     }
