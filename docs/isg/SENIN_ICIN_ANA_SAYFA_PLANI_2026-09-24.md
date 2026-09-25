@@ -440,7 +440,7 @@ NovaWizardDraft { schema: 1, id, domain: "risk" | "emergency", engine_version, c
 
 ## 8. Açık konular
 
-- Başka bir oturum liste ekranlarının görünümünü yeniliyor (`NovaListHint`, `NovaListSectionHeading`, `NovaListActionButton`); aynı dosyalara (uygunsuzluk, analiz, eğitim listeleri) bu işin küçük eklemeleri de girdi. O işin henüz kataloğa alınmamış metinleri yüzünden L10N-004, L10N-013 (`localizable.nova.document.filter.all`) ve envanter kontrolü şu an kırmızı; bu işin metinleri kapılardan geçiyor, L10N-018 kilidi güncel.
+- Başka bir oturum liste ekranlarının görünümünü yeniledi (`NovaListHint`, `NovaListSectionHeading`, `NovaListActionButton`, 9f52156b); aynı dosyalara (uygunsuzluk, analiz, eğitim listeleri) bu işin küçük eklemeleri de girdi. O işin kataloğa alınmamış metinleri L10N-004, L10N-013 (`localizable.nova.document.filter.all`) ve envanter kontrolünü kırmızıya çevirmişti; 2026-09-25'te metinler kataloğa taşındı (18 yeni birim, `localizable.nova.file.add.short` "Dosya Ekle" oldu) ve bütün yerelleştirme kapıları yeniden yeşil.
 - Uygunsuzluk listesi sunucuda firma başına en yeni 200 kaydı döndürüyor. 200'den fazla kaydı olan firmada eski tarihli geciken kayıt listede görünmeyebilir; pilot ölçeğinde sorun değil, büyüyünce sunucu tarafında `overdue` filtresi eklenecek.
 - `risk_assessments` (taslak listesi) ve `drills` hedefleri henüz beyan edilmiyor (3.8); OSGB oturumunda `checklists` beyan edilmiyor. Bu hedefler beyan edilene kadar sunucu ilgili kartları göndermiyor.
 - Staging migration geçmişinde kayıtsız uygulanmış dört migration var (20260922123500, 20260922124000, 20260924235900, 20260924235930). Bu migration MCP ile tek başına uygulanacak; toplu `db push` yapılmayacak.

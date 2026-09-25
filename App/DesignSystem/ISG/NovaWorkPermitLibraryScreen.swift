@@ -110,7 +110,7 @@ struct NovaWorkPermitLibraryScreen: View {
                             self.openFilter = nil
                         }
                     }
-                    NovaListSectionHeading(title: "Örnek Formlar",
+                    NovaListSectionHeading(title: RDLocalization.string("localizable.nova.work.permit.library.list.title", table: .localizable, fallback: "Örnek Formlar"),
                         count: RDLocalization.format("localizable.nova.work.permit.library.screen.1.2.ornek.form.27f33b22", table: .localizable, fallback: "%1$@ / %2$@ örnek form", arguments: [String(describing: visible.count), String(describing: templates.count)]))
                     if let exportError { NovaText(text: exportError, style: .metaQuiet) }
                     if templates.isEmpty {

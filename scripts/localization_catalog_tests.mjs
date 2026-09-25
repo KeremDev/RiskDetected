@@ -782,7 +782,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 6_517, "Turkish localized-unit count");
+  assert.equal(rows.length, 6_535, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
@@ -825,7 +825,14 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // 2026-09-25: 1 new Localizable unit, localizable.nova.checklist.wizard.open
     // ("Sihirbaz ile liste oluştur") for the checklist wizard entry; the
     // wizard's own copy ships in rd-checklist.js. None removed or changed.
-    "91d9ab5cfe6571d14898fd3c14aab3dd6c43c4ef026e7e756d7832d1ddd6191d",
+    // 2026-09-25: reviewed against 93be1f66: 18 new units (Localizable 16,
+    // Reports 2) for list-screen copy that 9f52156b left hard-coded or
+    // uncatalogued: list hints, section titles and counts, the equipment and
+    // nonconformity action and stat labels, and the missing
+    // localizable.nova.document.filter.all ("Tüm durumlar"). One unit changed:
+    // localizable.nova.file.add.short "Dosya" -> "Dosya Ekle", the label the
+    // restyled add button asks for. None removed.
+    "3fda6b01f9321764b3007eb7cd0c6139ce03d2df3ad8160919a2604c2a12f693",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

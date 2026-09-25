@@ -8770,6 +8770,60 @@
         }
       }
     },
+    "localizable.nova.analysis.reports.hint": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search the PDF and Excel reports you created and filter them by file type."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oluşturduğunuz PDF ve Excel raporlarını arayıp dosya türüne göre filtreleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.list.count": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; review: human_draft; placeholders: %d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d rapor"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.list.title": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporlar"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.reports.loading": {
       "comment": "nova_analysis; analysis result sections, analysis list and report archive; review: human_draft; placeholders: none",
       "extractionState": "manual",
@@ -14841,6 +14895,24 @@
         }
       }
     },
+    "localizable.nova.document.filter.all": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All statuses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm durumlar"
+          }
+        }
+      }
+    },
     "localizable.nova.document.hint": {
       "comment": "nova_document_tracking; document obligation tracker screens and service; review: human_draft; placeholders: none",
       "extractionState": "manual",
@@ -20180,6 +20252,24 @@
         }
       }
     },
+    "localizable.nova.equipment.inspection.add": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Inspection"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol Ekle"
+          }
+        }
+      }
+    },
     "localizable.nova.equipment.report.add": {
       "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; review: human_draft; placeholders: none",
       "extractionState": "manual",
@@ -22586,13 +22676,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File"
+            "value": "Add File"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dosya"
+            "value": "Dosya Ekle"
           }
         }
       }
@@ -24571,6 +24661,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fotoğraftan analiz firmasız da yapılabilir; kayıt açmak için bir firma gerekir."
+          }
+        }
+      }
+    },
+    "localizable.nova.followup.list.count": {
+      "comment": "nova_followup; Evrak Takibi list count, a number or a number with + while more pages remain; review: human_draft; placeholders: %@",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.followup.list.title": {
+      "comment": "nova_followup; Evrak Takibi list heading; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documents"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evraklar"
           }
         }
       }
@@ -28632,6 +28758,24 @@
         }
       }
     },
+    "localizable.nova.nonconformity.list.hint": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter records by company, status and record type; tap a card to open its correction process."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtları firma, durum ve kayıt türüne göre filtreleyin; karta dokunarak düzeltme sürecini açın."
+          }
+        }
+      }
+    },
     "localizable.nova.nonconformity.loading": {
       "comment": "nova_manual; nonconformity screens; review: human_draft; placeholders: none",
       "extractionState": "manual",
@@ -28826,6 +28970,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Yeni Uygunsuzluk"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.new.record": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add new record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni kayıt ekle"
           }
         }
       }
@@ -29042,6 +29204,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Orta"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.stat.total": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toplam kayıt"
           }
         }
       }
@@ -33807,6 +33987,42 @@
         }
       }
     },
+    "localizable.nova.risk.list.count": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; review: human_draft; placeholders: %d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.list.title": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk assessments"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Değerlendirmeleri"
+          }
+        }
+      }
+    },
     "localizable.nova.risk.saved.novalidity": {
       "comment": "isg_risk_versions; Risk Değerlendirmesi: saved-version success message; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -35193,6 +35409,24 @@
         }
       }
     },
+    "localizable.nova.risk.period.detail": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detay"
+          }
+        }
+      }
+    },
     "localizable.nova.risk.period.expert": {
       "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
       "extractionState": "manual",
@@ -35225,6 +35459,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tehlike sınıfına göre otomatik"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.period.hint": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The validity period is set per record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik süresi kayıt bazında belirlenir."
           }
         }
       }
@@ -36919,6 +37171,24 @@
         }
       },
       "comment": "placeholders: none"
+    },
+    "localizable.nova.work.permit.library.list.title": {
+      "comment": "nova_work_permit_library; sample form list heading; review: human_draft; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sample forms"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Örnek Formlar"
+          }
+        }
+      }
     },
     "localizable.nova.work.permit.library.screen.1.2.ornek.form.27f33b22": {"comment":"custom_ui_copy; App/DesignSystem/ISG/NovaWorkPermitLibraryScreen.swift:114; placeholders: %1$@|%2$@; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"%1$@ / %2$@ sample forms"}},"tr":{"stringUnit":{"state":"translated","value":"%1$@ / %2$@ örnek form"}}}},
     "localizable.nova.work.permit.library.screen.1.word.dosyasini.indir.17a3d8f1": {"comment":"swiftui_modifier; App/DesignSystem/ISG/NovaWorkPermitLibraryScreen.swift:141; placeholders: %1$@; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Download %1$@ Word file"}},"tr":{"stringUnit":{"state":"translated","value":"%1$@ Word dosyasını indir"}}}},
@@ -45235,6 +45505,24 @@
     "localizable.nova.workspace.personnel.add": {"comment":"Add personnel directory record; placeholders: none","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Add record"}},"tr":{"stringUnit":{"state":"translated","value":"Kayıt ekle"}}}},
     "localizable.nova.workspace.personnel.archive": {"comment":"Archive personnel record; placeholders: none","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Archive"}},"tr":{"stringUnit":{"state":"translated","value":"Arşivle"}}}},
     "localizable.nova.workspace.personnel.code": {"comment":"Personnel code field; placeholders: none","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Code"}},"tr":{"stringUnit":{"state":"translated","value":"Kod"}}}},
+    "localizable.nova.workspace.personnel.count": {
+      "comment": "Personnel directory section heading record count; review: human_draft; placeholders: %d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d kayıt"
+          }
+        }
+      }
+    },
     "localizable.nova.workspace.personnel.department.none": {"comment":"No department picker value; placeholders: none","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"No department"}},"tr":{"stringUnit":{"state":"translated","value":"Departman yok"}}}},
     "localizable.nova.workspace.personnel.departments": {"comment":"Departments segment; placeholders: none","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Departments"}},"tr":{"stringUnit":{"state":"translated","value":"Departmanlar"}}}},
     "localizable.nova.workspace.personnel.edit": {"comment":"Edit personnel record; placeholders: none","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Edit"}},"tr":{"stringUnit":{"state":"translated","value":"Düzenle"}}}},

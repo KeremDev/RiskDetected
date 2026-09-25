@@ -223,6 +223,24 @@
     "reports.nova.report.center.isyeri.7af4fd48": {"comment":"custom_ui_copy; App/Views/Components/NovaReportCenter.swift:491; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Workplace"}},"tr":{"stringUnit":{"state":"translated","value":"İşyeri"}}}},
     "reports.nova.report.center.kapsam.ve.donem.ba95ad7e": {"comment":"swift_user_copy; App/Views/Components/NovaReportCenter.swift:212; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Scope and period"}},"tr":{"stringUnit":{"state":"translated","value":"Kapsam ve dönem"}}}},
     "reports.nova.report.center.katilimci.e7b876c9": {"comment":"custom_ui_copy; App/Views/Components/NovaReportCenter.swift:486; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Participant"}},"tr":{"stringUnit":{"state":"translated","value":"Katılımcı"}}}},
+    "reports.nova.report.center.kind.count": {
+      "comment": "nova_report_center; count beside the report types heading; review: human_draft; placeholders: %d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d types"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d tür"
+          }
+        }
+      }
+    },
     "reports.nova.report.center.kkd.zimmetleri.fbb5a361": {"comment":"custom_ui_copy; App/Views/Components/NovaReportCenter.swift:512; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"PPE handovers"}},"tr":{"stringUnit":{"state":"translated","value":"KKD zimmetleri"}}}},
     "reports.nova.report.center.kontrol.listeleri.f19ad1a3": {"comment":"custom_ui_copy; App/Views/Components/NovaReportCenter.swift:503; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Checklists"}},"tr":{"stringUnit":{"state":"translated","value":"Kontrol listeleri"}}}},
     "reports.nova.report.center.kontrol.ve.olustur.42f6cea8": {"comment":"swift_user_copy; App/Views/Components/NovaReportCenter.swift:212; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Review and create"}},"tr":{"stringUnit":{"state":"translated","value":"Kontrol ve oluştur"}}}},
@@ -248,6 +266,24 @@
     "reports.nova.report.center.raporda.neler.yer.alsin.5f78a7cc": {"comment":"custom_ui_copy; App/Views/Components/NovaReportCenter.swift:306; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"What should the report include?"}},"tr":{"stringUnit":{"state":"translated","value":"Raporda neler yer alsın?"}}}},
     "reports.nova.report.center.raporu.indir.a77b8e41": {"comment":"swift_user_copy; App/Views/Components/NovaReportCenter.swift:223; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Download report"}},"tr":{"stringUnit":{"state":"translated","value":"Raporu indir"}}}},
     "reports.nova.report.center.raporu.olustur.ad23d521": {"comment":"swift_user_copy; App/Views/Components/NovaReportCenter.swift:243; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Create the report"}},"tr":{"stringUnit":{"state":"translated","value":"Raporu oluştur"}}}},
+    "reports.nova.report.center.recent.count": {
+      "comment": "nova_report_center; count beside the recently created heading; review: human_draft; placeholders: %d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d rapor"
+          }
+        }
+      }
+    },
     "reports.nova.report.center.risk.degerlendirmeleri.15bb5974": {"comment":"custom_ui_copy; App/Views/Components/NovaReportCenter.swift:499; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Risk assessments"}},"tr":{"stringUnit":{"state":"translated","value":"Risk değerlendirmeleri"}}}},
     "reports.nova.report.center.secilen.kapsamda.kayit.bulunamadi.7e9fac58": {"comment":"swift_user_copy; App/Views/Components/NovaReportCenter.swift:566; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"No records found in the selected scope."}},"tr":{"stringUnit":{"state":"translated","value":"Seçilen kapsamda kayıt bulunamadı."}}}},
     "reports.nova.report.center.secimi.temizle.3871a9a3": {"comment":"custom_ui_copy; App/Views/Components/NovaReportCenter.swift:312; placeholders: none; review: human_draft","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Clear selection"}},"tr":{"stringUnit":{"state":"translated","value":"Seçimi temizle"}}}},

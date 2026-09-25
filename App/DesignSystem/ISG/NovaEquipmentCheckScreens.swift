@@ -203,8 +203,8 @@ struct NovaEquipmentCheckScreen: View {
                 Spacer(minLength: 0)
             }
             if canWrite, company != nil {
-                NovaListActionButton(title: "Kontrol Ekle", symbol: "plus", tone: .primary,
-                    identifier: "equipment.inspection.new") { Task { await openInspection() } }
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.equipment.inspection.add", table: .localizable, fallback: "Kontrol Ekle"),
+                    symbol: "plus", tone: .primary, identifier: "equipment.inspection.new") { Task { await openInspection() } }
             }
         }
     }
@@ -324,8 +324,8 @@ struct NovaEquipmentCheckScreen: View {
             NovaListActionButton(title: RDLocalization.string("localizable.nova.equipment.add.short", table: .localizable, fallback: "Ekipman Ekle"),
                 symbol: "shippingbox.badge.plus", tone: .primary, enabled: canWrite) { adding = true }
                 .accessibilityIdentifier("equipment.add")
-            NovaListActionButton(title: "Kontrol süreleri", symbol: "hourglass", tone: .discovery,
-                enabled: canWrite) { editingPeriods = true }
+            NovaListActionButton(title: RDLocalization.string("localizable.nova.equipment.periods.title", table: .localizable, fallback: "Kontrol süreleri"),
+                symbol: "hourglass", tone: .discovery, enabled: canWrite) { editingPeriods = true }
         }
     }
 

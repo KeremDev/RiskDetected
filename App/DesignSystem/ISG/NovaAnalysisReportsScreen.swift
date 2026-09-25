@@ -51,12 +51,14 @@ struct NovaAnalysisReportsScreen: View {
                 VStack(alignment: .leading, spacing: 11) {
                     header
                     overview
-                    NovaListHint(text: "Oluşturduğunuz PDF ve Excel raporlarını arayıp dosya türüne göre filtreleyin.")
+                    NovaListHint(text: RDLocalization.string("localizable.nova.analysis.reports.hint", table: .localizable,
+                        fallback: "Oluşturduğunuz PDF ve Excel raporlarını arayıp dosya türüne göre filtreleyin."))
                     NovaAnalysisSearchField(text: $query,
                         placeholder: RDLocalization.string("localizable.nova.analysis.reports.search", table: .localizable, fallback: "Rapor ara"),
                         identifier: "analysis.reports.search")
                     chips
-                    NovaListSectionHeading(title: "Raporlar", count: "\(visible.count) rapor")
+                    NovaListSectionHeading(title: RDLocalization.string("localizable.nova.analysis.reports.list.title", table: .localizable, fallback: "Raporlar"),
+                        count: RDLocalization.format("localizable.nova.analysis.reports.list.count", table: .localizable, fallback: "%d rapor", arguments: [visible.count]))
                     list.novaAsyncContent(isLoading: rows == nil)
                         .novaListEntrance(hasRecords: !(rows ?? []).isEmpty)
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)

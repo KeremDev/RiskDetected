@@ -105,8 +105,9 @@ struct NovaFollowupScreen: View {
                     filters
                     if busy && rows.isEmpty { ProgressView("Evraklar yükleniyor…").frame(maxWidth: .infinity) }
                     if failure { NovaText(text: RDLocalization.string("localizable.nova.followup.screen.evrak.takibi.alinamadi.8599ee59", table: .localizable, fallback: "Evrak takibi alınamadı."), style: .meta); Button(RDLocalization.string("localizable.nova.followup.screen.yeniden.dene.c5c2272a", table: .localizable, fallback: "Yeniden dene")) { revision += 1 } }
-                    NovaListSectionHeading(title: "Evraklar",
-                        count: "\(rows.count)\(page?.has_more == true ? "+" : "") kayıt")
+                    NovaListSectionHeading(title: RDLocalization.string("localizable.nova.followup.list.title", table: .localizable, fallback: "Evraklar"),
+                        count: RDLocalization.format("localizable.nova.followup.list.count", table: .localizable, fallback: "%@ kayıt",
+                            arguments: [page?.has_more == true ? "\(rows.count)+" : String(rows.count)]))
                     if !busy && !failure && rows.isEmpty {
                         NovaEmptyState(title: RDLocalization.string("localizable.nova.followup.screen.bu.filtrede.evrak.yok.fe176eb3", table: .localizable, fallback: "Bu filtrede evrak yok"),
                             message: RDLocalization.string("localizable.nova.followup.screen.firma.evrak.turu.veya.durum.filtresini.degistiri.9ee2bc44", table: .localizable, fallback: "Firma, evrak türü veya durum filtresini değiştirin."))

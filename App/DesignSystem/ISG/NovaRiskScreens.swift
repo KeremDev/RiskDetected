@@ -294,7 +294,9 @@ struct NovaRiskScreen: View {
     }
 
     private var riskPeriodHint: some View {
-        NovaListHint(text: "Geçerlilik süresi kayıt bazında belirlenir.", actionTitle: "Detay",
+        NovaListHint(text: RDLocalization.string("localizable.nova.risk.period.hint", table: .localizable,
+            fallback: "Geçerlilik süresi kayıt bazında belirlenir."),
+            actionTitle: RDLocalization.string("localizable.nova.risk.period.detail", table: .localizable, fallback: "Detay"),
             action: { showingPeriodInfo = true })
     }
 
@@ -421,7 +423,8 @@ struct NovaRiskScreen: View {
 
     @ViewBuilder private func list(_ board: NovaRiskBoard) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            NovaListSectionHeading(title: "Risk Değerlendirmeleri", count: "\(board.total) kayıt")
+            NovaListSectionHeading(title: RDLocalization.string("localizable.nova.risk.list.title", table: .localizable, fallback: "Risk Değerlendirmeleri"),
+                count: RDLocalization.format("localizable.nova.risk.list.count", table: .localizable, fallback: "%d kayıt", arguments: [board.total]))
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.risk.empty.title", table: .localizable,
                 fallback: "Kayıt yok"),

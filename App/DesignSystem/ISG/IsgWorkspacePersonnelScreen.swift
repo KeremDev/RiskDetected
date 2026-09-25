@@ -100,7 +100,8 @@ struct IsgWorkspacePersonnelScreen: View {
                     }
                     searchField
                     sectionPicker
-                    NovaListSectionHeading(title: section.title, count: "\(visibleCount) kayıt")
+                    NovaListSectionHeading(title: section.title, count: RDLocalization.format("localizable.nova.workspace.personnel.count",
+                        table: .localizable, fallback: "%d kayıt", arguments: [visibleCount]))
                     if loading {
                         NovaLoadingView(message: RDLocalization.string("localizable.nova.workspace.domain.loading",
                             table: .localizable, fallback: "Kayıtlar yükleniyor…"))

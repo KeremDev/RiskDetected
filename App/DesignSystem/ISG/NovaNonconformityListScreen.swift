@@ -44,7 +44,8 @@ struct NovaNonconformityListScreen: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     header
-                    NovaListHint(text: "Kayıtları firma, durum ve kayıt türüne göre filtreleyin; karta dokunarak düzeltme sürecini açın.")
+                    NovaListHint(text: RDLocalization.string("localizable.nova.nonconformity.list.hint", table: .localizable,
+                        fallback: "Kayıtları firma, durum ve kayıt türüne göre filtreleyin; karta dokunarak düzeltme sürecini açın."))
                     if entries != nil { stats }
                     search
                     filters
@@ -77,7 +78,7 @@ struct NovaNonconformityListScreen: View {
                 Spacer(minLength: 0)
             }
             if let create = client.create {
-                NovaListActionButton(title: RDLocalization.string("localizable.nova.nonconformity.new.short", table: .localizable, fallback: "Yeni kayıt ekle"),
+                NovaListActionButton(title: RDLocalization.string("localizable.nova.nonconformity.new.record", table: .localizable, fallback: "Yeni kayıt ekle"),
                     symbol: "plus", tone: .primary, identifier: "nonconformity.new", action: create)
             }
         }
@@ -162,9 +163,11 @@ struct NovaNonconformityListScreen: View {
     private var stats: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8),
                                  count: typeSize.isAccessibilitySize ? 1 : 2), spacing: 8) {
-            NovaListStat(title: "Toplam kayıt", symbol: "list.bullet", value: entries?.count ?? 0,
+            NovaListStat(title: RDLocalization.string("localizable.nova.nonconformity.stat.total", table: .localizable, fallback: "Toplam kayıt"),
+                symbol: "list.bullet", value: entries?.count ?? 0,
                 status: .neutral, isSelected: filter.isEmpty) { filter = NovaNonconformityFilter() }
-            NovaListStat(title: "Termini geçen", symbol: "clock.badge.exclamationmark", value: overdueCount,
+            NovaListStat(title: RDLocalization.string("localizable.nova.nonconformity.filter.overdue", table: .localizable, fallback: "Termini geçen"),
+                symbol: "clock.badge.exclamationmark", value: overdueCount,
                 status: .danger, isSelected: filter.overdueOnly) {
                 filter.overdueOnly.toggle()
                 if filter.overdueOnly { filter.state = nil }

@@ -121,7 +121,8 @@ struct NovaReportCenter: View {
                         createRoute = .init(kind: .company, skipsTypeSelection: false)
                     }
                     NovaListSectionHeading(title: RDLocalization.string("reports.nova.report.center.rapor.turleri.ca33c777", table: .reports, fallback: "Rapor türleri"),
-                        count: "\(NovaGeneratedReportKind.allCases.count) tür")
+                        count: RDLocalization.format("reports.nova.report.center.kind.count", table: .reports, fallback: "%d tür",
+                            arguments: [NovaGeneratedReportKind.allCases.count]))
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(NovaGeneratedReportKind.allCases) { kind in
                             Button { createRoute = .init(kind: kind, skipsTypeSelection: true) } label: {
@@ -139,7 +140,8 @@ struct NovaReportCenter: View {
                     }
                     if !recent.isEmpty {
                         NovaListSectionHeading(title: RDLocalization.string("reports.nova.report.center.son.olusturulanlar.3ee091ac", table: .reports, fallback: "Son oluşturulanlar"),
-                            count: "\(recent.count) rapor")
+                            count: RDLocalization.format("reports.nova.report.center.recent.count", table: .reports, fallback: "%d rapor",
+                                arguments: [recent.count]))
                         ForEach(recent.prefix(3)) { report in
                             Button { file = NovaGeneratedReportArchive.url(for: report) } label: {
                                 NovaCard(padding: 13) {
