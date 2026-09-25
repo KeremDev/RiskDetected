@@ -88,6 +88,40 @@ final class OnboardingAnswersService {
         }
     }
 
+    /// The name typed in the Nova funnel ("Sana nasıl hitap edelim?") becomes the profile name while
+    /// the profile still has none, or only the default the signup trigger takes from the address.
+    /// A name from Apple or Google, or one set on the profile, stays. Never fails the answer sync.
+    private func adoptOnboardingName(_ name: String) async {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, let userID = supabase.currentUserID else { return }
+        struct ProfileName: Decodable {
+            let email: String?
+            let full_name: String?
+        }
+        struct NameUpdate: Encodable {
+            let full_name: String
+        }
+        do {
+            let profile: ProfileName = try await supabase.client
+                .from("profiles")
+                .select("email, full_name")
+                .eq("id", value: userID.uuidString)
+                .single()
+                .execute()
+                .value
+            let current = (profile.full_name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let fromAddress = (profile.email ?? "").split(separator: "@").first.map(String.init) ?? ""
+            guard current.isEmpty || current == fromAddress, current != name else { return }
+            try await supabase.client
+                .from("profiles")
+                .update(NameUpdate(full_name: name))
+                .eq("id", value: userID.uuidString)
+                .execute()
+        } catch {
+            Self.logger.error("Failed to adopt onboarding name: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     func upsert(_ draft: OnboardingAnswersDraft) async throws {
         guard RDGlobalLocalizationBuildGate.isEnabled
                 || draft.appLanguage != RDLanguage.english.rawValue
@@ -105,6 +139,8 @@ final class OnboardingAnswersService {
         try await supabase.client
             .rpc("upsert_onboarding_v2_answers", params: draft.rpcPayload)
             .execute()
+
+        if let name = draft.nova?.name { await adoptOnboardingName(name) }
 
         guard
             draft.appLanguage == RDLanguage.english.rawValue,

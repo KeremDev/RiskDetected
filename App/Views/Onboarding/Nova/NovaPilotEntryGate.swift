@@ -140,14 +140,14 @@ struct NovaPilotEntryGate: View {
             requestPush: {
                 await NotificationService.shared.requestPermissionAndRegisterFromOnboarding()
             },
-            saveDraft: { answers in
+            saveDraft: { draft in
                 // Stored locally now; AppState's session observer syncs it the
                 // moment the account exists.
-                OnboardingAnswersService.shared.savePendingDraft(answers.makeDraft())
+                OnboardingAnswersService.shared.savePendingDraft(draft)
             },
-            finish: { answers in
-                if let answers {
-                    OnboardingAnswersService.shared.savePendingDraft(answers.makeDraft())
+            finish: { draft in
+                if let draft {
+                    OnboardingAnswersService.shared.savePendingDraft(draft)
                 }
                 onboardingCompleted = true
                 app.novaPilotOnboardingActive = false

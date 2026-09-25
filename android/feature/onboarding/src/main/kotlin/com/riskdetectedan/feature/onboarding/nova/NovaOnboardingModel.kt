@@ -2,6 +2,7 @@ package com.riskdetectedan.feature.onboarding.nova
 
 import com.riskdetectedan.core.data.onboarding.OnboardingAnswerChoice
 import com.riskdetectedan.core.data.onboarding.OnboardingAnswersDraft
+import com.riskdetectedan.core.data.onboarding.OnboardingNovaAnswers
 
 /** The eleven-question catalogue from the prototype, verbatim: same ids, order, copy and icon geometry as iOS. */
 internal object NovaOBIcon {
@@ -268,23 +269,79 @@ internal data class NovaOBAnswers(
 
     private fun choice(questionId: String, value: String) = OnboardingAnswerChoice(value, NovaOBCatalogue.label(questionId, value))
 
+    /** A "Diğer" choice carries the text the user wrote, when there is one. */
+    private fun choices(questionId: String, values: List<String>, other: String) = values.map { value ->
+        if (value == "diger" && other.isNotBlank()) OnboardingAnswerChoice(value, other.trim()) else choice(questionId, value)
+    }
+
+    private val experienceChoice: OnboardingAnswerChoice?
+        get() = when {
+            expLess -> OnboardingAnswerChoice("0-1", "1 yıldan az")
+            exp != null && exp in EXPERIENCE_VALUES.indices ->
+                OnboardingAnswerChoice(EXPERIENCE_VALUES[exp], NovaOBCatalogue.experienceStops[exp].first)
+            else -> null
+        }
+
+    /** The server's audit-frequency buckets; no inspection is no answer there. */
+    private val auditFrequency: OnboardingAnswerChoice?
+        get() = when {
+            inspections < 1 -> null
+            inspections == 1 -> "1"
+            inspections <= 5 -> "2-5"
+            inspections <= 15 -> "6-15"
+            else -> "15+"
+        }?.let { OnboardingAnswerChoice(it, "$inspections teftiş") }
+
     /**
-     * Maps the funnel onto the draft the rest of the app already syncs, so a Nova profile lands
-     * where a V2 profile would (iOS `NovaOBAnswers.makeDraft`).
+     * The draft [com.riskdetectedan.core.data.onboarding.OnboardingAnswersRepository] keeps on the
+     * device until an account exists, then sends (iOS `NovaOBAnswers.makeDraft`). The server takes
+     * one answer schema ("v2") and checks its columns, so the answers that fit are mapped onto them;
+     * every answer also goes whole into `raw_answers.nova`.
      */
-    fun makeDraft(): OnboardingAnswersDraft = OnboardingAnswersDraft(
-        onboardingVersion = "nova-v1",
-        certificateClass = cert?.let { choice("cert", it) },
-        hazardClasses = emptyList(),
-        professionalRole = role?.let { value ->
+    fun makeDraft(skipped: Set<String> = emptySet(), marketing: Boolean? = null): OnboardingAnswersDraft {
+        val sectorChoices = choices("sectors", sectors, sectorsOther)
+        val serverSectors = sectorChoices.mapNotNull { sector -> SERVER_SECTORS[sector.value]?.let { OnboardingAnswerChoice(it, sector.label) } }
+            .distinctBy { it.value }
+        val roleChoice = role?.let { value ->
             if (value == "diger" && roleOther.isNotBlank()) OnboardingAnswerChoice(value, roleOther.trim()) else choice("role", value)
-        },
-        safetyProfileId = null,
-        sectors = sectors.map { value ->
-            if (value == "diger" && sectorsOther.isNotBlank()) OnboardingAnswerChoice(value, sectorsOther.trim()) else choice("sectors", value)
-        },
-        auditFrequency = OnboardingAnswerChoice("inspections_$inspections",
-            if (inspections == 0) "Teftiş deneyimi yok" else "$inspections teftiş"),
-        selectedPlan = null,
-    )
+        }
+        return OnboardingAnswersDraft(
+            onboardingVersion = "v2",
+            certificateClass = cert?.takeIf { it in listOf("A", "B", "C") }?.let { choice("cert", it) },
+            hazardClasses = emptyList(),
+            professionalRole = roleChoice,
+            safetyProfileId = null,
+            sectors = serverSectors,
+            auditFrequency = auditFrequency,
+            selectedPlan = null,
+            nova = OnboardingNovaAnswers(
+                flow = "nova-v1",
+                name = name.trim().ifEmpty { null },
+                certificate = cert?.let { choice("cert", it) },
+                work = work?.let { choice("work", it) },
+                role = roleChoice,
+                experience = experienceChoice,
+                sectors = sectorChoices,
+                trainings = choices("trainings", trainings, trainingsOther),
+                approach = approach.map { choice("approach", it) },
+                inspections = inspections,
+                growth = choices("growth", growth, growthOther),
+                assist = assist.map { choice("assist", it) },
+                skipped = skipped.sorted(),
+                marketingEmailOptIn = marketing,
+            ),
+        )
+    }
+
+    companion object {
+        /** Nova sector keys onto the server's sector list. Textile and metal are manufacturing there,
+         * services has no match; `raw_answers.nova.sectors` keeps the Nova keys either way. */
+        val SERVER_SECTORS = mapOf(
+            "maden" to "mining", "insaat" to "construction", "imalat" to "manufacturing", "saglik" to "healthcare",
+            "enerji" to "energy", "tekstil" to "manufacturing", "gida" to "food_production",
+            "lojistik" to "logistics_warehouse", "kimya" to "chemical_laboratory", "metal" to "manufacturing",
+            "hizmet" to "other", "diger" to "other",
+        )
+        val EXPERIENCE_VALUES = listOf("1-3", "3-7", "7-10", "10+")
+    }
 }

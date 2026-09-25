@@ -5,6 +5,34 @@ struct OnboardingAnswerChoice: Codable, Equatable {
     let label: String
 }
 
+/// Every answer of the Nova funnel, kept whole in `raw_answers.nova`: the server's answer columns
+/// only cover the V2 questions. Single and multiple choices keep their Nova value and label; a
+/// "Diğer" choice carries the text the user wrote as its label.
+struct OnboardingNovaAnswers: Codable, Equatable {
+    var flow = "nova-v1"
+    let name: String?
+    let certificate: OnboardingAnswerChoice?
+    let work: OnboardingAnswerChoice?
+    let role: OnboardingAnswerChoice?
+    let experience: OnboardingAnswerChoice?
+    let sectors: [OnboardingAnswerChoice]
+    let trainings: [OnboardingAnswerChoice]
+    let approach: [OnboardingAnswerChoice]
+    let inspections: Int
+    let growth: [OnboardingAnswerChoice]
+    let assist: [OnboardingAnswerChoice]
+    /// Question ids the user skipped.
+    let skipped: [String]
+    /// The optional updates box on the mail signup page; nil when that page was not used.
+    let marketingEmailOptIn: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case flow, name, certificate, work, role, experience, sectors, trainings, approach
+        case inspections, growth, assist, skipped
+        case marketingEmailOptIn = "marketing_email_opt_in"
+    }
+}
+
 struct OnboardingAnswersDraft: Codable, Equatable {
     let onboardingVersion: String
     let certificateClass: OnboardingAnswerChoice?
@@ -16,6 +44,8 @@ struct OnboardingAnswersDraft: Codable, Equatable {
     let auditFrequency: OnboardingAnswerChoice?
     let selectedPlan: OnboardingAnswerChoice?
     let capturedAt: String
+    /// Nova funnel only; drafts saved before it existed decode it as nil.
+    let nova: OnboardingNovaAnswers?
 
     init(
         onboardingVersion: String = "v2",
@@ -27,7 +57,8 @@ struct OnboardingAnswersDraft: Codable, Equatable {
         sectors: [OnboardingAnswerChoice],
         auditFrequency: OnboardingAnswerChoice?,
         selectedPlan: OnboardingAnswerChoice?,
-        capturedAt: String = ISO8601DateFormatter().string(from: Date())
+        capturedAt: String = ISO8601DateFormatter().string(from: Date()),
+        nova: OnboardingNovaAnswers? = nil
     ) {
         self.onboardingVersion = onboardingVersion
         self.certificateClass = certificateClass
@@ -39,6 +70,7 @@ struct OnboardingAnswersDraft: Codable, Equatable {
         self.auditFrequency = auditFrequency
         self.selectedPlan = selectedPlan
         self.capturedAt = capturedAt
+        self.nova = nova
     }
 
     var hasProfileAnswers: Bool {
@@ -47,7 +79,8 @@ struct OnboardingAnswersDraft: Codable, Equatable {
             professionalRole != nil ||
             safetyProfileID != nil ||
             !sectors.isEmpty ||
-            auditFrequency != nil
+            auditFrequency != nil ||
+            nova != nil
     }
 
     var rpcPayload: OnboardingAnswersRPCPayload {
@@ -67,7 +100,8 @@ struct OnboardingAnswersDraft: Codable, Equatable {
                 appLanguage: appLanguage,
                 sectors: sectors,
                 auditFrequency: auditFrequency,
-                selectedPlan: selectedPlan
+                selectedPlan: selectedPlan,
+                nova: nova
             )
         )
     }
@@ -83,6 +117,7 @@ struct OnboardingAnswersRawPayload: Codable, Equatable {
     let sectors: [OnboardingAnswerChoice]
     let auditFrequency: OnboardingAnswerChoice?
     let selectedPlan: OnboardingAnswerChoice?
+    let nova: OnboardingNovaAnswers?
 
     enum CodingKeys: String, CodingKey {
         case capturedAt = "captured_at"
@@ -94,6 +129,7 @@ struct OnboardingAnswersRawPayload: Codable, Equatable {
         case sectors
         case auditFrequency = "audit_frequency"
         case selectedPlan = "selected_plan"
+        case nova
     }
 }
 

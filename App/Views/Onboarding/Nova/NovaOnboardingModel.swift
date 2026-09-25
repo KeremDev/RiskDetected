@@ -324,50 +324,90 @@ struct NovaOBAnswers: Equatable {
 // MARK: - Answer persistence
 
 extension NovaOBAnswers {
+    /// Nova sector keys onto the server's sector list. Textile and metal are manufacturing there,
+    /// services has no match; `raw_answers.nova.sectors` keeps the Nova keys either way.
+    static let serverSectors: [String: String] = [
+        "maden": "mining", "insaat": "construction", "imalat": "manufacturing", "saglik": "healthcare",
+        "enerji": "energy", "tekstil": "manufacturing", "gida": "food_production",
+        "lojistik": "logistics_warehouse", "kimya": "chemical_laboratory", "metal": "manufacturing",
+        "hizmet": "other", "diger": "other"
+    ]
+    static let experienceValues = ["1-3", "3-7", "7-10", "10+"]
+
     private func choice(_ questionID: String, _ value: String) -> OnboardingAnswerChoice {
         OnboardingAnswerChoice(value: value, label: NovaOBCatalogue.label(questionID, value))
     }
 
-    /// Maps the funnel onto the draft the rest of the app already syncs
-    /// (`OnboardingAnswersService`), so a Nova profile lands in the same place
-    /// a V2 profile would.
-    func makeDraft() -> OnboardingAnswersDraft {
-        OnboardingAnswersDraft(
-            onboardingVersion: "nova-v1",
-            certificateClass: cert.map { choice("cert", $0) },
-            hazardClasses: [],
-            professionalRole: role.map { value in
-                value == "diger" && !roleOther.novaTrimmed.isEmpty
-                    ? OnboardingAnswerChoice(value: value, label: roleOther.novaTrimmed)
-                    : choice("role", value)
-            },
-            safetyProfileID: nil,
-            sectors: sectors.map { value in
-                value == "diger" && !sectorsOther.novaTrimmed.isEmpty
-                    ? OnboardingAnswerChoice(value: value, label: sectorsOther.novaTrimmed)
-                    : choice("sectors", value)
-            },
-            auditFrequency: OnboardingAnswerChoice(
-                value: "inspections_\(inspections)",
-                label: inspections == 0 ? "Teftiş deneyimi yok" : "\(inspections) teftiş"
-            ),
-            selectedPlan: nil
-        )
+    /// A "Diğer" choice carries the text the user wrote, when there is one.
+    private func choices(_ questionID: String, _ values: [String], other: String) -> [OnboardingAnswerChoice] {
+        values.map { value in
+            value == "diger" && !other.novaTrimmed.isEmpty
+                ? OnboardingAnswerChoice(value: value, label: other.novaTrimmed)
+                : choice(questionID, value)
+        }
     }
 
-    /// The answers the draft schema has no column for. Kept locally so the app
-    /// can personalise without inventing server fields the backend never agreed to.
-    var localProfileSnapshot: [String: String] {
-        var snapshot: [String: String] = [:]
-        snapshot["name"] = name.novaTrimmed
-        snapshot["work"] = work ?? ""
-        snapshot["experience"] = expLess ? "less_than_year" : exp.map { NovaOBCatalogue.experienceStops[$0].label } ?? ""
-        snapshot["trainings"] = trainings.joined(separator: ",")
-        snapshot["approach"] = approach.joined(separator: ",")
-        snapshot["growth"] = growth.joined(separator: ",")
-        snapshot["assist"] = assist.joined(separator: ",")
-        snapshot["inspections"] = String(inspections)
-        return snapshot
+    private var experienceChoice: OnboardingAnswerChoice? {
+        if expLess { return OnboardingAnswerChoice(value: "0-1", label: "1 yıldan az") }
+        guard let exp, Self.experienceValues.indices.contains(exp) else { return nil }
+        return OnboardingAnswerChoice(value: Self.experienceValues[exp],
+                                      label: NovaOBCatalogue.experienceStops[exp].label)
+    }
+
+    /// The server's audit-frequency buckets; no inspection is no answer there.
+    private var auditFrequency: OnboardingAnswerChoice? {
+        let bucket: String
+        switch inspections {
+        case ..<1: return nil
+        case 1: bucket = "1"
+        case 2...5: bucket = "2-5"
+        case 6...15: bucket = "6-15"
+        default: bucket = "15+"
+        }
+        return OnboardingAnswerChoice(value: bucket, label: "\(inspections) teftiş")
+    }
+
+    /// The draft `OnboardingAnswersService` keeps on the device until an account exists, then
+    /// sends. The server takes one answer schema ("v2") and checks its columns, so the answers
+    /// that fit are mapped onto them; every answer also goes whole into `raw_answers.nova`.
+    func makeDraft(skipped: Set<String> = [], marketing: Bool? = nil) -> OnboardingAnswersDraft {
+        let sectorChoices = choices("sectors", sectors, other: sectorsOther)
+        var serverSectors: [OnboardingAnswerChoice] = []
+        for sector in sectorChoices {
+            guard let key = Self.serverSectors[sector.value],
+                  !serverSectors.contains(where: { $0.value == key }) else { continue }
+            serverSectors.append(OnboardingAnswerChoice(value: key, label: sector.label))
+        }
+        let roleChoice = role.map { value in
+            value == "diger" && !roleOther.novaTrimmed.isEmpty
+                ? OnboardingAnswerChoice(value: value, label: roleOther.novaTrimmed)
+                : choice("role", value)
+        }
+        return OnboardingAnswersDraft(
+            onboardingVersion: "v2",
+            certificateClass: cert.flatMap { ["A", "B", "C"].contains($0) ? choice("cert", $0) : nil },
+            hazardClasses: [],
+            professionalRole: roleChoice,
+            safetyProfileID: nil,
+            sectors: serverSectors,
+            auditFrequency: auditFrequency,
+            selectedPlan: nil,
+            nova: OnboardingNovaAnswers(
+                name: name.novaTrimmed.isEmpty ? nil : name.novaTrimmed,
+                certificate: cert.map { choice("cert", $0) },
+                work: work.map { choice("work", $0) },
+                role: roleChoice,
+                experience: experienceChoice,
+                sectors: sectorChoices,
+                trainings: choices("trainings", trainings, other: trainingsOther),
+                approach: approach.map { choice("approach", $0) },
+                inspections: inspections,
+                growth: choices("growth", growth, other: growthOther),
+                assist: assist.map { choice("assist", $0) },
+                skipped: skipped.sorted(),
+                marketingEmailOptIn: marketing
+            )
+        )
     }
 }
 

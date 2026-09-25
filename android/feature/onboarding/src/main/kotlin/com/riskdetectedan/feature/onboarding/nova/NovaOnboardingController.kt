@@ -342,7 +342,14 @@ class NovaOnboardingController @Inject constructor(
     // MARK: auth actions
 
     /** Stores the profile before the account exists, so the session-time sync lands it. */
-    internal fun saveDraft() { answersRepository.savePending(answers.makeDraft()) }
+    /** The mail signup page was submitted, so [marketing] is an answer rather than a default. */
+    private var marketingAnswered = false
+
+    /** Every answer, with the skipped questions and the updates choice, kept on the device until
+     * the first session sends it. */
+    internal fun saveDraft() {
+        answersRepository.savePending(answers.makeDraft(skipped.toSet(), if (marketingAnswered) marketing else null))
+    }
 
     internal fun submitSignup(onFailure: () -> Unit) {
         if (busy) return
@@ -356,6 +363,9 @@ class NovaOnboardingController @Inject constructor(
                 return
             }
         }
+        // The draft must already hold the updates choice made on this page when the session starts.
+        marketingAnswered = true
+        saveDraft()
         busy = true
         authError = ""
         viewModelScope.launch {

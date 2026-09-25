@@ -1159,7 +1159,11 @@ final class AppState: ObservableObject {
                         await NotificationService.shared.refreshSettings()
                         NotificationService.shared.syncCurrentTokenIfPossible()
                         await self.subscriptions.identify(userID: session.user.id)
-                        await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+                        // A synced onboarding draft can rename the profile; show the new name.
+                        let hadDraft = OnboardingAnswersService.shared.pendingDraft() != nil
+                        if await OnboardingAnswersService.shared.syncPendingDraftIfPossible(), hadDraft {
+                            await self.auth.refreshProfile()
+                        }
                         await self.syncLocalizationPreferences()
                         await self.refreshPlanState()
                         await self.sendWelcomeEmailIfPossible()

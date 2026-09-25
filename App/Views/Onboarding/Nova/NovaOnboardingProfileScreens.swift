@@ -149,7 +149,7 @@ struct NovaOBProfileCardScreen: View {
                 }
                 Spacer(minLength: 0)
                 NovaOBPillButton(title: "Devam et", showsArrow: true) {
-                    controller.auth.saveDraft(controller.answers)
+                    controller.saveDraft()
                     controller.go(.signup)
                 }
             }

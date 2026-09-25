@@ -22,10 +22,10 @@ struct NovaOBAuthBridge {
     var appleSignIn: () async throws -> Void
     var googleSignIn: () async throws -> Void
     var requestPush: () async -> Void
-    /// Stores the profile before the account exists, so signing in later syncs it.
-    var saveDraft: (_ answers: NovaOBAnswers) -> Void
+    /// Stores the answers on the device before the account exists; the first session sends them.
+    var saveDraft: (_ draft: OnboardingAnswersDraft) -> Void
     /// Persists the collected profile and hands control back to the app.
-    var finish: (_ answers: NovaOBAnswers?) -> Void
+    var finish: (_ draft: OnboardingAnswersDraft?) -> Void
 }
 
 /// Screen identifiers, one per `sc-if` branch in the prototype.
@@ -56,6 +56,8 @@ final class NovaOBController: ObservableObject {
     @Published var password = ""
     @Published var showPassword = false
     @Published var marketing = false
+    /// The mail signup page was submitted, so `marketing` is an answer rather than a default.
+    private var marketingAnswered = false
     @Published var otpDigits = Array(repeating: "", count: 6)
     @Published var otpError = ""
     /// `otpError` is a lost connection, not a wrong code.
@@ -368,6 +370,10 @@ final class NovaOBController: ObservableObject {
         }
         busy = true
         authError = ""
+        // The session that follows the code sends the draft at once, so it must already hold
+        // the updates choice made on this page.
+        marketingAnswered = true
+        saveDraft()
         do {
             try await auth.signUp(address, password)
             openCodePage()
@@ -465,7 +471,14 @@ final class NovaOBController: ObservableObject {
         busy = false
     }
 
-    func finish() { auth.finish(answers) }
+    /// Every answer, with the skipped questions and the updates choice.
+    func draft() -> OnboardingAnswersDraft {
+        answers.makeDraft(skipped: skipped, marketing: marketingAnswered ? marketing : nil)
+    }
+
+    func saveDraft() { auth.saveDraft(draft()) }
+
+    func finish() { auth.finish(draft()) }
 
     static func isValidEmail(_ value: String) -> Bool {
         let address = value.novaTrimmed

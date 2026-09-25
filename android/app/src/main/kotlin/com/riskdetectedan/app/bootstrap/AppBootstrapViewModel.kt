@@ -69,9 +69,14 @@ class AppBootstrapViewModel @Inject constructor(
                 isAuthenticated = authRepository.currentUserId != null,
             )
 
+            var signedIn: String? = authRepository.currentUserId
             combine(authRepository.currentUserIdFlow, authRouteHold.held) { userId, held -> userId to held }
                 .collectLatest { (userId, held) ->
                     if (userId != null) store.markAuthenticated()
+                    // A new session sends the onboarding answers kept on the device right away
+                    // (iOS AppState's session sink); MainActivity's resume retries a failed send.
+                    if (userId != null && userId != signedIn) viewModelScope.launch { onboardingAnswersRepository.syncPending() }
+                    signedIn = userId
                     _state.value = BootstrapReducer.sessionChanged(_state.value, userId != null, held)
                 }
         }

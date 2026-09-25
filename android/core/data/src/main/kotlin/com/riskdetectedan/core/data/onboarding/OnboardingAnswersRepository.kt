@@ -7,6 +7,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -67,6 +69,7 @@ class OnboardingAnswersRepository @Inject constructor(
                 ?: RdClientMetadata.localization()
             val userId = client.auth.currentUserOrNull()?.id
                 ?: return RdResult.Failure("auth_required", "auth_required")
+            draft.nova?.name?.let { adoptOnboardingName(userId, it) }
             client.postgrest.from("profiles").update(
                 OnboardingLocalizationPayload(
                     appLanguage = localization.appLanguage,
@@ -94,11 +97,39 @@ class OnboardingAnswersRepository @Inject constructor(
     suspend fun syncPending(): RdResult<Unit> = loadPending()?.let { upsert(it) }
         ?: RdResult.Success(Unit)
 
+    /** The name typed in the Nova funnel ("Sana nasıl hitap edelim?") becomes the profile name while
+     * the profile still has none, or only the default the signup trigger takes from the address. A
+     * name from Apple or Google, or one set on the profile, stays (iOS `adoptOnboardingName`). Never
+     * fails the answer sync. */
+    private suspend fun adoptOnboardingName(userId: String, typed: String) {
+        val name = typed.trim()
+        if (name.isEmpty()) return
+        try {
+            val profile = client.postgrest.from("profiles").select(Columns.list("email", "full_name")) {
+                filter { eq("id", userId) }
+            }.decodeSingle<ProfileName>()
+            val current = profile.fullName?.trim().orEmpty()
+            val fromAddress = profile.email?.substringBefore('@').orEmpty()
+            if ((current.isEmpty() || current == fromAddress) && current != name) {
+                client.postgrest.from("profiles").update(NameUpdate(name)) { filter { eq("id", userId) } }
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Throwable) {
+        }
+    }
+
     private companion object {
         const val PREFERENCES_NAME = "onboarding_answers"
         const val PENDING_DRAFT_KEY = "pending_v2_draft"
     }
 }
+
+@Serializable
+private data class ProfileName(val email: String? = null, @SerialName("full_name") val fullName: String? = null)
+
+@Serializable
+private data class NameUpdate(@SerialName("full_name") val fullName: String)
 
 @Serializable
 private data class OnboardingLocalizationPayload(
