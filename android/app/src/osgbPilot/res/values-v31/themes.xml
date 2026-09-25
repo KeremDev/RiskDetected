@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      OSGB pilot (İSGADA): Android 12+ draws its launch splash with the launcher icon, which is
+      still the RiskDetected mark. The pilot opens on the white Nova splash instead, so the system
+      splash is plain white with no icon. Otherwise the same as main's Theme.RiskDetected.
+    -->
+    <style name="Theme.RiskDetected" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FAFBFA</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowSplashScreenBackground">#FFFFFF</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+    </style>
+</resources>

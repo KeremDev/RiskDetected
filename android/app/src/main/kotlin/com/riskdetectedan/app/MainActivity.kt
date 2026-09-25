@@ -50,6 +50,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -84,13 +85,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val appearanceMode by appearanceViewModel.mode.collectAsState()
             val systemDark = isSystemInDarkTheme()
-            RiskDetectedTheme(
-                darkTheme = when (appearanceMode) {
-                    AppearanceMode.System -> systemDark
-                    AppearanceMode.Light -> false
-                    AppearanceMode.Dark -> true
-                },
-            ) {
+            val darkTheme = when (appearanceMode) {
+                AppearanceMode.System -> systemDark
+                AppearanceMode.Light -> false
+                AppearanceMode.Dark -> true
+            }
+            RiskDetectedTheme(darkTheme = darkTheme) {
                 // Mirrors AppState.swift: the release-policy gate wraps the whole app, checked
                 // before anything else renders — a hard-update requirement replaces the nav
                 // graph entirely, not just one screen inside it.
@@ -115,7 +115,9 @@ class MainActivity : ComponentActivity() {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(RdTheme.colors.cloud)
+                            // The pilot launches through white screens only (system splash to the
+                            // Nova splash); the grey paper would show for the first frame.
+                            .background(if (BuildConfig.NOVA_PILOT && !darkTheme) Color.White else RdTheme.colors.cloud)
                             .safeDrawingPadding(),
                     ) {
                         // No UI of its own — registers/refreshes the FCM token for an already

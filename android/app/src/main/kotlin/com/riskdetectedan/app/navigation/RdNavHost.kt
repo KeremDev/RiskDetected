@@ -1,5 +1,7 @@
 package com.riskdetectedan.app.navigation
 
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.EnterTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -101,8 +103,10 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
     }
 
     NavHost(navController = navController, startDestination = Splash) {
-        composable<Splash> { AppSplashScreen() }
-        composable<Onboarding> {
+        // Pilot launch is white from the system splash to the Nova splash; a cross-fade between
+        // these white screens would show the grey app background for a frame.
+        composable<Splash>(exitTransition = pilotCut { ExitTransition.None }) { AppSplashScreen() }
+        composable<Onboarding>(enterTransition = pilotCut { EnterTransition.None }) {
             // Live iOS pins the complete V2 onboarding surface to light mode. Nesting the
             // design-system provider here preserves that behavior even when the device/app
             // appearance preference is dark, while the main application remains theme-aware.
@@ -118,7 +122,7 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 }
             }
         }
-        composable<Auth> {
+        composable<Auth>(enterTransition = pilotCut { EnterTransition.None }) {
             // AuthView.swift is also explicitly light-only on iOS.
             RiskDetectedLightOnlyTheme {
                 // The session flow moves Auth to Main on its own; the Nova surface needs no callback.
@@ -322,3 +326,7 @@ private val com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.wireVa
         com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.TrainingRecommendations -> "training_recommendations"
         com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.ApprovedNotebook -> "approved_notebook"
     }
+
+/** A transition for the pilot's launch screens only; other builds keep the NavHost default. */
+private fun <T> pilotCut(transition: T): T? = if (BuildConfig.NOVA_PILOT) transition else null
+

@@ -34,6 +34,8 @@ import com.riskdetectedan.core.designsystem.RdLegalDocument
 import com.riskdetectedan.core.designsystem.RdLegalDocumentSheet
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
+import com.riskdetectedan.app.BuildConfig
+import androidx.compose.ui.graphics.Color
 
 /**
  * Wraps the real app content, mirroring AppState.swift's release-policy gating: a hard-update
@@ -53,8 +55,14 @@ fun ReleaseGate(
 
     when (val current = state) {
         ReleaseGateState.Checking -> {
-            Box(modifier = Modifier.fillMaxSize().background(colors.cloud), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+            // The pilot opens on the white Nova splash (İSGADA): a plain white wait keeps the
+            // launch one continuous white screen instead of a grey spinner in between.
+            if (BuildConfig.NOVA_PILOT) {
+                Box(modifier = Modifier.fillMaxSize().background(Color.White))
+            } else {
+                Box(modifier = Modifier.fillMaxSize().background(colors.cloud), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
         }
         is ReleaseGateState.ClientBlocked -> {
