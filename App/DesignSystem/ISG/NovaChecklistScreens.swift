@@ -32,6 +32,12 @@ struct NovaChecklistClient {
     var setSectionItem: ((UUID?, String, Int, Int64, String, String, Bool, Int, String) async throws -> Void)? = nil
 }
 
+/// One opening of the start flow, optionally with a list already chosen.
+struct NovaChecklistStartRequest: Identifiable {
+    let id = UUID()
+    let template: String?
+}
+
 /// The module opens on real controls. Reusable lists live on their own page,
 /// because a template and a field control are different mental objects.
 struct NovaChecklistScreen: View {
@@ -50,12 +56,15 @@ struct NovaChecklistScreen: View {
     @State private var loading = true
     @State private var failure: String?
     @State private var showingFilters = false
-    @State private var showingStart = false
+    /// The start flow is driven by an item so it receives the handed-over list:
+    /// an `isPresented` cover built its content from a stale capture and got nil.
+    @State private var startRequest: NovaChecklistStartRequest?
     @State private var showingLists = false
     @State private var showingWizard = false
     @State private var detail: NovaChecklistRun?
     @State private var startedRun: NovaChecklistRun?
-    @State private var preselectedTemplate: String?
+    /// A list Listelerim or the wizard handed over; the start flow opens with it once that cover is gone.
+    @State private var pendingStart: String?
     @State private var pendingAnswerCount = 0
     @State private var conflictAnswerCount = 0
     @Environment(\.colorScheme) private var scheme
@@ -105,36 +114,27 @@ struct NovaChecklistScreen: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
-        .novaFullScreenCover(isPresented: $showingLists) {
+        .novaFullScreenCover(isPresented: $showingLists, onDismiss: openPendingStart) {
             NovaChecklistListsScreen(client: client, canWrite: canWrite,
                 initialCompany: initialCompany, onBack: { showingLists = false },
                 onStart: { template in
-                    preselectedTemplate = template
+                    pendingStart = template
                     showingLists = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        startedRun = nil
-                        showingStart = true
-                    }
                 })
         }
-        .novaFullScreenCover(isPresented: $showingWizard) {
+        .novaFullScreenCover(isPresented: $showingWizard, onDismiss: openPendingStart) {
             NovaRiskWizardScreen.checklist(client: client, initialCompany: initialCompany ?? query.company,
                 onStart: { template in
+                    pendingStart = template
                     showingWizard = false
-                    preselectedTemplate = template
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        startedRun = nil
-                        showingStart = true
-                    }
                 }, onBack: { showingWizard = false })
         }
-        .novaFullScreenCover(isPresented: $showingStart, onDismiss: finishStarting) {
+        .novaFullScreenCover(item: $startRequest, onDismiss: finishStarting) { request in
             NovaChecklistStartFlowScreen(client: client, initialCompany: initialCompany,
-                preselectedTemplate: preselectedTemplate, onStarted: { run in
+                preselectedTemplate: request.template, onStarted: { run in
                     startedRun = run
-                    preselectedTemplate = nil
-                    showingStart = false
-                }, onClose: { showingStart = false })
+                    startRequest = nil
+                }, onClose: { startRequest = nil })
         }
         .novaFullScreenCover(isPresented: detailPresentation) {
             if let run = detail {
@@ -152,7 +152,7 @@ struct NovaChecklistScreen: View {
         NovaListHeading(title: headingOverride ?? "Kontroller", onBack: onBack, actionBelow: true) {
             if canWrite {
                 NovaListActionButton(title: RDLocalization.string("localizable.nova.checklist.screens.yeni.kontrol.050e3985", table: .localizable, fallback: "Yeni kontrol"), symbol: "plus", tone: .primary) {
-                    showingStart = true
+                    startRequest = .init(template: nil)
                 }
                 .accessibilityIdentifier("nova.checklist.start")
             }
@@ -296,6 +296,15 @@ struct NovaChecklistScreen: View {
             self.startedRun = nil
         }
         Task { await load(reset: true) }
+    }
+
+    /// Presenting the start flow while the handing-over cover is still sliding
+    /// away cancelled its first load, which then read as "no connection".
+    private func openPendingStart() {
+        guard let template = pendingStart else { return }
+        pendingStart = nil
+        startedRun = nil
+        startRequest = .init(template: template)
     }
 
     private func load(reset: Bool) async {

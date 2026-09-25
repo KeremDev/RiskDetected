@@ -26,6 +26,8 @@ struct NovaChecklistListsScreen: View {
     @State private var showingFilters = false
     @State private var showingCreate = false
     @State private var showingWizard = false
+    /// A list the wizard asked to start; handed on once the wizard cover is gone.
+    @State private var startAfterWizard: String?
     @State private var detail: NovaChecklistTemplateDetail?
     @State private var editingTemplateCode: String?
     @State private var loading = true
@@ -88,11 +90,18 @@ struct NovaChecklistListsScreen: View {
                     onAssign: { await assign(detail) })
             }
         }
-        .novaFullScreenCover(isPresented: $showingWizard, onDismiss: { Task { await loadTemplates() } }) {
+        .novaFullScreenCover(isPresented: $showingWizard, onDismiss: {
+            if let template = startAfterWizard {
+                startAfterWizard = nil
+                onStart(template)
+            } else {
+                Task { await loadTemplates() }
+            }
+        }) {
             NovaRiskWizardScreen.checklist(client: client, initialCompany: initialCompany,
                 onStart: { template in
+                    startAfterWizard = template
                     showingWizard = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { onStart(template) }
                 }, onBack: { showingWizard = false })
         }
         .novaFullScreenCover(isPresented: $showingCreate) {

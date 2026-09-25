@@ -368,7 +368,10 @@ struct NovaChecklistStartFlowScreen: View {
     private func selectCompany(_ id: UUID?) async {
         company = id
         await loadCatalogue(id)
-        if failure == nil { step = .list }
+        // A list handed over from Listelerim or the wizard goes straight to the
+        // details; their back button still leads to the list page.
+        let handedOver = preselectedTemplate != nil && selectedTemplate == preselectedTemplate
+        if failure == nil { step = handedOver ? .details : .list }
     }
 
     private func loadCatalogue(_ id: UUID?) async {
