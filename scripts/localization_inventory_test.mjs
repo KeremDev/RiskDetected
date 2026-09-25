@@ -66,5 +66,6 @@ test("versioned safety catalogues remain separate from application-copy inventor
     scanTypeScript(resolve("supabase/functions/_shared", file), entries);
     assert.deepEqual(entries, [], file);
   }
-  assert.equal(scanContent().filter(x => x.surface === "backend").length, 248);
+  // The approved L10N-005 backend count in localization_catalog_tests.mjs; change both together.
+  assert.equal(scanContent().filter(x => x.surface === "backend").length, 269);
 });
