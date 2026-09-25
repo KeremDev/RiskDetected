@@ -574,29 +574,31 @@ struct NovaOBOtpScreen: View {
     }
 }
 
-/// Six single-digit boxes that behave like one field: paste fills them all,
-/// backspace walks back, and a full code fires `onComplete`.
+/// Six digit boxes backed by one text field: typing, paste and one-time-code
+/// AutoFill all land in the same field, backspace walks back, and a full code
+/// fires `onComplete`. Six separately focused fields handed first responder
+/// back and forth every frame and dropped every key (iOS 26.5 simulator).
 struct NovaOBCodeField: View {
     enum State { case idle, invalid, verified }
 
     @Binding var digits: [String]
     var state: State = .idle
     let onComplete: (String) -> Void
-    @FocusState private var focusedIndex: Int?
+    @FocusState private var focused: Bool
 
     var body: some View {
         HStack(spacing: 8) {
             ForEach(0..<6, id: \.self) { index in
-                TextField("", text: binding(for: index))
-                    .keyboardType(.numberPad)
-                    .textContentType(.oneTimeCode)
-                    .multilineTextAlignment(.center)
+                Text(digits.indices.contains(index) ? digits[index] : "")
                     .font(NovaOB.font(24, 700))
                     .foregroundColor(NovaOB.ink)
-                    .tint(NovaOB.ink)
-                    .focused($focusedIndex, equals: index)
                     .frame(maxWidth: .infinity)
                     .frame(height: 62)
+                    .overlay {
+                        if focused && index == activeIndex && digits[index].isEmpty {
+                            RoundedRectangle(cornerRadius: 1).fill(NovaOB.ink).frame(width: 2, height: 26)
+                        }
+                    }
                     .background(background(index), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -604,33 +606,32 @@ struct NovaOBCodeField: View {
                     )
             }
         }
-        .onAppear { focusedIndex = 0 }
+        .accessibilityHidden(true)
+        .overlay {
+            // The real input sits over the boxes, so a tap anywhere on them focuses it.
+            TextField("", text: code)
+                .keyboardType(.numberPad)
+                .textContentType(.oneTimeCode)
+                .focused($focused)
+                .foregroundColor(.clear)
+                .tint(.clear)
+                .accessibilityLabel("Doğrulama kodu")
+                .accessibilityValue(digits.joined())
+        }
+        .onAppear { focused = true }
     }
 
-    private func binding(for index: Int) -> Binding<String> {
+    private var activeIndex: Int { min(digits.joined().count, 5) }
+
+    private var code: Binding<String> {
         Binding(
-            get: { digits.indices.contains(index) ? digits[index] : "" },
+            get: { digits.joined() },
             set: { newValue in
-                let filtered = newValue.filter(\.isNumber)
-                guard !filtered.isEmpty else {
-                    digits[index] = ""
-                    if index > 0 { focusedIndex = index - 1 }
-                    return
-                }
-                var next = digits
-                var cursor = index
-                for character in filtered {
-                    guard cursor < 6 else { break }
-                    next[cursor] = String(character)
-                    cursor += 1
-                }
-                digits = next
-                let code = next.joined()
-                if code.count == 6 {
-                    focusedIndex = nil
-                    onComplete(code)
-                } else {
-                    focusedIndex = min(cursor, 5)
+                let entered = Array(newValue.filter(\.isNumber).prefix(6)).map(String.init)
+                digits = (0..<6).map { $0 < entered.count ? entered[$0] : "" }
+                if entered.count == 6 {
+                    focused = false
+                    onComplete(entered.joined())
                 }
             }
         )

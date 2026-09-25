@@ -1,6 +1,26 @@
 import XCTest
 
 final class NovaPilotUITests: XCTestCase {
+    /// The six code boxes used to be six focused fields that took the keyboard
+    /// from each other every frame, so no digit ever landed and sign-up stopped.
+    func testVerificationCodeAcceptsTypedDigits() throws {
+        #if NOVA_PILOT_BUILD
+        let app = XCUIApplication()
+        app.launchArguments = ["RD_UI_TEST_MAIN", "RD_UI_TEST_NOVA_REVIEW", "RD_UI_TEST_NOVA_LOGIN", "RD_UI_TEST_LIGHT_MODE"]
+        app.launch()
+        let email = app.textFields["E-posta adresin"]
+        XCTAssertTrue(email.waitForExistence(timeout: 20))
+        email.tap(); email.typeText("harness@example.com")
+        let password = app.secureTextFields["Şifren"]
+        password.tap(); password.typeText("harness1")
+        app.buttons["Mail ile devam et"].tap()
+        let code = app.textFields["Doğrulama kodu"]
+        XCTAssertTrue(code.waitForExistence(timeout: 8))
+        code.typeText("123456")
+        XCTAssertTrue(app.staticTexts["Hesabın hazır"].waitForExistence(timeout: 8))
+        #endif
+    }
+
     func testWizardExpansionVisualAudit() throws {
         #if NOVA_PILOT_BUILD
         let app = XCUIApplication()
